@@ -1,0 +1,128 @@
+
+
+///////////////////////////////////////////////////////////////////////////////
+// DBL():  
+
+Deg2DBL_GEO:= function(u1,u0,v1,v0,uu1,uu0,f)
+vv := v1^2; 
+valpha :=(v1+u1)^2-vv-uu1; 
+M1:=2*v0-2*valpha; 
+M2:=2*v1*(u0+2*uu1);
+M3:=-2*v1; 
+M4:=valpha+2*v0; 
+z1:=Coefficient(f,2)+2*uu1*u1+2*uu0-vv;
+z2:=Coefficient(f,3)-2*u0+3*uu1; 
+t1:=(M2-z1)*(z2-M1); 
+t2:=(-z1-M2)*(z2+M1);
+t3:=(-z1+M4)*(z2-M3); 
+t4:=(-z1-M4)*(z2+M3); 
+l2:=t1-t2; 
+l3:=t3-t4;
+d :=t3+t4-t1-t2-2*(M2-M4)*(M1+M3); 
+a := d*l3;
+if IsZero(a) then
+    R<x>:=Parent(f);
+    u := x^2 + u1*x + u0;
+    v := v1*x + v0;
+    w := ExactQuotient(f-v^2,u);
+    generic := Double_RAM(<u,v,w>,f,2);
+    return <Coefficient(generic[1],2), Coefficient(generic[1],1), Coefficient(generic[1],0), Coefficient(generic[2],1),Coefficient(generic[2],0), Coefficient(generic[1],1)^2, Coefficient(generic[1],1)*Coefficient(generic[1],0)>;
+end if;
+A :=1/a;
+B :=d*A; 
+C :=d*B; 
+D :=l2*B; 
+E :=(l3^2)*A; 
+u1dd := 2*D-C^2 -2*u1;
+u0dd := (D-u1)^2 + 2*C*(v1 +C*u1); 
+uu1dd:=u1dd^2 ;   
+uu0dd:=u1dd*u0dd;
+v1dd := D*(u1-u1dd)+uu1dd-uu1-u0dd+u0; 
+v0dd := D*(u0-u0dd)+(uu0dd-uu0);
+v1dd := -(E*v1dd + v1);   
+v0dd := -(E*v0dd + v0);
+return  <1,u1dd,u0dd,v1dd,v0dd,uu1dd,uu0dd>;
+
+end function;
+
+       
+
+DBL_GEO:= function(d1,f)  
+    
+    if IsOne(d1[1]) then
+        return Deg2DBL_GEO(d1[2],d1[3],d1[4],d1[5],d1[6],d1[7],f);
+    else
+        R<x>:=Parent(f);
+        u := d1[2]*x + d1[3];
+        v := R!d1[5];
+        w := ExactQuotient(f-v^2,u);
+        generic := Double_RAM(<u,v,w>,f,2);
+        return <Coefficient(generic[1],2), Coefficient(generic[1],1), Coefficient(generic[1],0), Coefficient(generic[2],1),Coefficient(generic[2],0), Coefficient(generic[1],1)^2, Coefficient(generic[1],1)*Coefficient(generic[1],0)>;
+    end if;
+end function;
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ADD():         
+Deg2ADD_GEO:= function(u1,u0,v1,v0,u1s,u01,u1d,u0d,v1d,v0d,u1ds,u01d,f)
+    uS:=u1+u1d; 
+    v0D:=v0-v0d; 
+    v1D:=v1-v1d; 
+    M1:=u1s-u0-u1ds+u0d; 
+    M2:=u01d-u01;M3:=u1-u1d; 
+    M4:=u0d-u0; 
+    t1:=(M2-v0D)*(v1D-M1); 
+    t2:=(-v0D-M2)*(v1D+M1);
+    t3:=(-v0D+M4)*(v1D-M3); 
+    t4:=(-v0D-M4)*(v1D+M3);
+    l2:=t1-t2; 
+    l3:=t3-t4; 
+    d:=t3+t4-t1-t2-2*(M2-M4)*(M1+M3);
+    a := d*l3;
+    if IsZero(a) then
+        R<x>:=Parent(f);
+        u := x^2 + u1*x + u0;
+        v := v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        ud := x^2 + u1d*x + u0d;
+        vd := v1d*x + v0d;
+        wd := ExactQuotient(f-vd^2,ud);
+        generic := Add_RAM(<u,v,w>,<ud,vd,wd>,f,2);
+        return <Coefficient(generic[1],2), Coefficient(generic[1],1), Coefficient(generic[1],0), Coefficient(generic[2],1),Coefficient(generic[2],0), Coefficient(generic[1],1)^2, Coefficient(generic[1],1)*Coefficient(generic[1],0)>;
+    end if;
+    A :=1/a; 
+    B :=d*A; 
+    C :=d*B; 
+    D :=l2*B;
+    E :=(l3^2)*A; Cs :=C^2; 
+    u1dd := 2*D-Cs-uS;
+    u0dd := D^2 + C*(v1+v1d) -((u1dd-Cs)*uS+(u1s+u1ds))/2;
+    uu1dd :=u1dd^2; 
+    uu0dd:=u1dd*u0dd; 
+    v1dd := D*(u1-u1dd)+ uu1dd-u0dd-u1s+u0;
+    v0dd := D*(u0-u0dd) + uu0dd - u01; 
+    v1dd := -(E*v1dd + v1);   
+    v0dd:= -(E*v0dd + v0);
+    return   <1,u1dd,u0dd,v1dd,v0dd,uu1dd,uu0dd>;
+end function;
+
+
+
+ADD_GEO:= function(d1,d2,f)
+    if IsOne(d1[1]) and IsOne(d2[1]) then
+        return Deg2ADD_GEO(d1[2],d1[3],d1[4],d1[5],d1[6],d1[7],d2[2],d2[3],d2[4],d2[5],d2[6],d2[7],f);
+    else
+        R<x>:=Parent(f);
+        u1 := d1[1]*x^2 + d1[2]*x + d1[3];
+        v1 := d1[4]*x + d1[5];
+        w1 := ExactQuotient(f-v1^2,u1);
+        u2 := d2[1]*x^2 + d2[2]*x + d2[3];
+        v2 := d2[4]*x + d2[5];
+        w2 := ExactQuotient(f-v2^2,u2);
+        generic := Add_RAM(<u1,v1,w1>,<u2,v2,w2>,f,2);
+        return <Coefficient(generic[1],2), Coefficient(generic[1],1), Coefficient(generic[1],0), Coefficient(generic[2],1),Coefficient(generic[2],0), Coefficient(generic[1],1)^2, Coefficient(generic[1],1)*Coefficient(generic[1],0)>;
+    end if;
+    
+end function;

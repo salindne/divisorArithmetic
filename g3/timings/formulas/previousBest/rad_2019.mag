@@ -1,0 +1,508 @@
+Precompute_Rad := function(f,q)
+    f4:= Coeff(f,4); 
+    f5:= Coeff(f,5); 
+    f6:= Coeff(f,6);
+
+
+    FF := GF(q);
+    R<x> := PolynomialRing(GF(q));
+    // y4 is a solution of quadratic equation x^2 - 1
+    // We pick the second solution from the factorization given by magma.
+    //y4 := -Coeff(Factorization(x^2 - 1)[2][1],0);
+    // Compute rest making ComputeVpl from poly_balanced_arithmetic explicit
+    
+    //y4 := FF!1;
+    //yn4 := FF!-1;
+    //c4  := FF!2;
+    //c6  := FF!1/2;
+
+    //y3  := 0;
+    //yn3 := 0;
+    //c3  := 0;
+
+    y2  := f6/2;
+    //yn2 := -f6/2;
+    //c2  := f6;
+
+    y1  := f5/2;
+    //yn1 := -f5/2;
+    //c1  := f5;
+
+    y0  := (f4 - y2^2)/2;
+    //yn0 := -(f4 + c10)/2;
+    
+
+    
+
+
+return <y0,y1,y2>;        
+end function;    
+
+
+Deg3ADD_Rad:= function(u12,u11,u10,v12,v11,v10,u22,u21,u20,v22,v21,v20,ccs)
+    y2 := ccs[2][3];
+    y1 := ccs[2][2];
+    y0 := ccs[2][1];
+
+
+    /*f:= ccs[1];
+    R<x>:=Parent(f);
+    V := ComputeVpl(f,3);
+    u := x^3 + u12*x^2 + u11*x + u10;
+    v := x^4 + v12*x^2 + v11*x + v10;
+    up := x^3 + u22*x^2 + u21*x + u20;
+    vp := x^4 + v22*x^2 + v21*x + v20;
+    Q := quo<R | u>;
+
+
+    r := Resultant(u,up);
+    if IsZero(r) then
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := x^3 + u12*x^2 + u11*x + u10;
+        v := x^4 + v12*x^2 + v11*x + v10;
+        w := ExactQuotient(f-v^2,u);
+        up := x^3 + u22*x^2 + u21*x + u20;
+        vp := x^4 + v22*x^2 + v21*x + v20;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+
+    i := R!(Q!(up)^-1);
+    i := r*i;
+
+    sp := (v - vp)*i mod u;
+    s := sp/r;
+    
+
+    if IsZero(Coefficient(s,2)) then
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := x^3 + u12*x^2 + u11*x + u10;
+        v := x^4 + v12*x^2 + v11*x + v10;
+        w := ExactQuotient(f-v^2,u);
+        up := x^3 + u22*x^2 + u21*x + u20;
+        vp := x^4 + v22*x^2 + v21*x + v20;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+
+    s2 := Coefficient(s,2);
+    w := 1/s2;
+    sm := s/s2;
+    l := sm*up;
+    k := ExactQuotient(f - vp^2,up);
+
+    ut := ExactQuotient(sm*(l + 2*w*vp) - w^2*k,u);
+
+    //vt := V -  (V - vp - l*s2) mod ut;
+    temp := (l*s2 + vp) mod ut;
+    vt := V - (V - temp) mod ut;
+    upp := ExactQuotient(f - vt^2, ut);
+
+    upp3 := LeadingCoefficient(upp);
+    upp := upp/upp3;
+
+       
+    ttt := -2*(Coefficient(ut,3) + Coefficient(temp,3));
+
+
+    if IsZero(Coefficient(upp,3)) then
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := x^3 + u12*x^2 + u11*x + u10;
+        v := x^4 + v12*x^2 + v11*x + v10;
+        w := ExactQuotient(f-v^2,u);
+        up := x^3 + u22*x^2 + u21*x + u20;
+        vp := x^4 + v22*x^2 + v21*x + v20;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+
+    vpp := V - (V - vt) mod upp;
+
+    //return <Coefficient(upp,3), Coefficient(upp,2), Coefficient(upp,1), Coefficient(upp,0), Coefficient(vpp,2), Coefficient(vpp,1), Coefficient(vpp,0) ,0>;
+    */
+
+    //Step 1
+    t0:= u10 - u20;
+    t1:= u11 - u21;
+    t2:= u12 - u22;
+    t3:= t1 - t2*u12;
+    t4:= t0 - t2*u11;
+    t5:= t4 - t3*u12;
+    t6:= t2*u10 + t3*u11;
+    i0:= t4*t5 + t3*t6;
+    i1:= -(t2*t6 + t1*t5);
+    i2:= t1*t3 - t2*t4;
+    r := u10*(i2*t3 + i1*t2) - i0*t0;
+    
+    //Step 2
+    w0:= v10 - v20;
+    w1:= v11 - v21;
+    w2:= v12 - v22;
+    t0:= w0*i0;
+    t1:= w1*i1;
+    t2:= w2*i2;
+    t3:= u12*t2;
+    t4:= (w1 + w2)*(i1 + i2) - t1 - t2 - t3;
+    t5:= u10 + u12;
+    t6:= (t5 + u11)*(t2 + t4);
+    t7:= (t5 - u11)*(t2 - t4);
+    sp0:= t0 - t4*u10;
+    sp1:= (w0 + w1)*(i0 + i1) - (t7 + t6)/2 - t0 - t1 + t3;
+    sp2:= (w0 + w2)*(i0 + i2) + (t7 - t6)/2 + t1 - sp0 - t2;
+
+    
+    //Step 3
+
+
+
+    //uh3 := sp2*(sp2*u11 - sp0) - sp1*(sp2*u12 - sp1);
+    uh3 := sp2*(sp0 - u11*sp2 + 2*r*(u12 - u22)) - sp1*(sp1 - sp2*u12 + 4*r) -  4*r^2;
+    t1 := sp2*r;    //sp2*r
+    wp := t1*uh3;   //sp2*r*uh3
+
+    if IsZero(wp) then
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := x^3 + u12*x^2 + u11*x + u10;
+        v := x^4 + v12*x^2 + v11*x + v10;
+        w := ExactQuotient(f-v^2,u);
+        up := x^3 + u22*x^2 + u21*x + u20;
+        vp := x^4 + v22*x^2 + v21*x + v20;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+
+    I := wp^-1;      //1/sp2*r*uh3;
+    t2 := I*t1;     //1/uh3
+    t3 := I*uh3;    //1/sp2*r
+    Ir := t3*sp2;   //1/r
+    Is := t3*r;     //1/sp2
+    Iup := t1*t2;   //1/uh3 no weight
+    w := Is*r;      //1/s2
+    s2 := Ir*sp2;   //s2
+
+    //Step 4
+    s1 := Is*sp1;
+    s0 := Is*sp0;
+
+    //Step 5
+    t1:= u20 + u22;
+    t2:= (s0 + s1)*(t1 + u21);
+    t3:= (s0 - s1)*(t1 - u21);
+    t4:= s1*u22;
+    l0:= s0*u20;
+    l1:= (t2 - t3)/2 - t4;
+    l2:= (t2 + t3)/2 - l0 + u20;
+    l3:= t4 + s0 + u21;
+    l4:= s1 + u22;
+    
+    //Step 6
+    k3 := 2*(y2 - v22);
+
+    //Step 7
+    t0:= l4 + 2*w;
+    t1:= t0*s1;
+    t2:= s0*l3;
+    t3:= 2*v22*w;
+    ut3:= t0 + s1 - u12;
+    t4:= u12*ut3;
+    ut2:= t1 + l3 + s0 - u11 - t4;
+    t5:= u11*ut2;
+    ut1:= (s0 + s1)*(l3 + t0) - (u11 + u12)*(ut2 + ut3) - t1 - t2 + t3 + l2 + t4 + t5 - u10;
+    ut0:= s1*(t3 + l2) + w*(2*v21 - k3*w) + t2 + l1 - t5 - u12*ut1 - u10*ut3;
+
+    
+    //Step 8
+    t1:= s2*(ut3 - l4) - 1;
+    vt3:= t1*ut3 - s2*(ut2 - l3);
+    vt2:= t1*ut2 - s2*(ut1 - l2) + v22;
+    vt1:= t1*ut1 - s2*(ut0 - l1) + v21;
+    vt0:= t1*ut0 + s2*l0 + v20;
+
+    //Step 9
+    //w3:= vt3 - ut3;
+    //w2:= vt2 - ut2;
+    //w1:= vt1 - ut1;
+    //w0:= vt0 - ut0 + y0;
+    w3:= -vt3 - ut3;
+    w2:= -vt2 - ut2;
+    w1:= -vt1 - ut1;
+    w0:= -vt0 - ut0 + y0;
+    upp2:= Iup*(w2 + y2) - w3/2 - ut3;
+    upp1:= Iup*(w1 + y1) - w2 - ut3*upp2 - ut2;
+    upp0:= Iup*((y2^2 - w2^2)/2 + w0) - w1 - ut3*upp1 - ut2*upp2 - ut1;
+
+    
+    //Step10
+    //t1:= w3 + 2*up2;
+    //vp2:=-t1*up2 + 2*up1 + w2;
+    //vp1:=-t1*up1 + 2*up0 + w1;
+    //vp0:=-t1*up0 + w0 - y0;
+    vpp2:=upp2*w3 - w2;
+    vpp1:=upp1*w3 - w1;
+    vpp0:=upp0*w3 - w0 + y0;
+    
+
+    return < 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0>; 
+end function;
+
+
+ADD_Rad_SPLIT:= function(d1,d2,ccs)
+    if IsOne(d1[1]) and IsOne(d2[1]) then 
+        return Deg3ADD_Rad(d1[2],d1[3],d1[4],d1[5],d1[6],d1[7],d2[2],d2[3],d2[4],d2[5],d2[6],d2[7],ccs); 
+        f := ccs[1];
+        R<x>:= Parent(f);
+        V := ComputeVpl(f,3);
+        u := d1[1]*x^3 + d1[2]*x^2 + d1[3]*x + d1[4];
+        v := x^4 + d1[5]*x^2 + d1[6]*x + d1[7];
+        w := ExactQuotient(f-v^2,u);
+        up := d2[1]*x^3 + d2[2]*x^2 + d2[3]*x + d2[4];
+        vp := x^4 + d2[5]*x^2 + d2[6]*x + d2[7];
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,d1[8]>,<up,vp,wp,d2[8]>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    
+    else
+        f := ccs[1];
+        R<x>:= Parent(f);
+        V := ComputeVpl(f,3);
+        u := d1[1]*x^3 + d1[2]*x^2 + d1[3]*x + d1[4];
+        v := x^4 + d1[5]*x^2 + d1[6]*x + d1[7];
+        w := ExactQuotient(f-v^2,u);
+        up := d2[1]*x^3 + d2[2]*x^2 + d2[3]*x + d2[4];
+        vp := x^4 + d2[5]*x^2 + d2[6]*x + d2[7];
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,d1[8]>,<up,vp,wp,d2[8]>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+end function;
+
+
+
+Deg3DBL_Rad:= function(u2,u1,u0,v2,v1,v0,ccs)
+    y2 := ccs[2][3];
+    y1 := ccs[2][2];
+    y0 := ccs[2][1];
+    f3 := Coefficient(ccs[1],3);
+
+    /*f:= ccs[1];
+    R<x>:=Parent(f);
+    V := ComputeVpl(f,3);
+    u := x^3 + u2*x^2 + u1*x + u0;
+    v := x^4 + v2*x^2 + v1*x + v0;
+    Q := quo<R | u>;
+
+
+    r := Resultant(2*v,u);
+    if IsZero(r) then
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := x^3 + u2*x^2 + u1*x + u0;
+        v := x^4 + v2*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,0>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+    kp := ExactQuotient(f - v^2,u);
+    k :=  kp mod u;
+    i := R!(Q!(2*v)^-1);
+    i := r*i;
+    sp := k*i mod u;
+    s := sp/r;
+
+    if IsZero(Coefficient(s,2)) then
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := x^3 + u2*x^2 + u1*x + u0;
+        v := x^4 + v2*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,0>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+
+    s2 := Coefficient(s,2);
+    w := 1/s2;
+    sm := s/s2;
+    l := sm*u;
+    ut := sm^2 + ExactQuotient(sm*w*2*v - w^2*kp,u);
+    vt := V -  (V - v - l*s2) mod ut;
+    temp := (l*s2 + v) mod ut;
+    vt := V - (V - temp) mod ut;
+    up := ExactQuotient(f - vt^2, ut);
+    u3p := LeadingCoefficient(up);
+
+
+
+    if IsZero(Coefficient(up,3)) then
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := x^3 + u2*x^2 + u1*x + u0;
+        v := x^4 + v2*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,0>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+    vp := V - (V - vt) mod up;
+
+    vp;
+    //return <Coefficient(up,3), Coefficient(up,2), Coefficient(up,1), Coefficient(up,0), Coefficient(vp,2), Coefficient(vp,1), Coefficient(vp,0) ,0>;
+    */
+
+    //Step 1
+    w0:= 2*(v0 + u0*u2);
+    w1:= 2*(v1 - u0 + u1*u2);
+    w2:= 2*(v2 - u1 + u2^2);
+    t1:= w1 - u2*w2;
+    t2:= w0 - u1*w2;
+    t3:= t2 - u2*t1;
+    t4:= u0*w2 + u1*t1;
+    i0:= t2*t3 + t1*t4;
+    i1:= -(w1*t3 + w2*t4);
+    i2:= w1*t1 - w2*t2;
+    r:= w0*i0 - u0*(t1*i2 + w2*i1);
+
+
+    //Step 2
+    t1:= y2 - v2;
+    t2:= u2*t1;
+    k3:= 2*t1;
+    //k2:= -4*t1 + 2*y1 - 2*v1;
+    k2:= -4*t2 + 2*y1 - 2*v1;
+    //k1:= 2*u2*(t2 - y1 + v1) + t2*(y2 + v2 - 4*u1) + 2*y0 - 2*v0;
+    k1:= 2*u2*(t2 - y1 + v1) + t1*(y2 + v2 - 4*u1) + 2*y0 - 2*v0;
+    k0:= f3 - u2*k1 - 4*u0*t1 - 2*u1*(y1 - v1) - 2*v1*v2;
+
+
+    //Step 3
+    t0:= k0*i0;
+    t1:= k1*i1;
+    t2:= k2*i2;
+    t3:= u2*t2;
+    t4:= (k1 + k2)*(i1 + i2) - t1 - t2 - t3;
+    t5:= t4*u0;
+    t6:= u0 + u2;
+    t7:= t6 + u1;
+    t8:= t6 - u1;
+    t9:= t7*(t4 + t2);
+    t10:= t8*(t4 - t2);
+    sp2:= (k0 + k2)*(i0 + i2) - (t10 + t9)/2 - t0 - t2 + t1 + t5;
+    sp1:= (k0 + k1)*(i0 + i1) + (t10 - t9)/2 - t0 - t1 + t3;
+    sp0:= t0 - t5;
+
+
+    //Step 4
+    //uh3:= sp2*(sp2*u2 - sp0) - sp1*(sp1 - sp2*u2);
+    uh3 := sp2*(sp0 - sp2*u1) - sp1*(sp1 - u2*sp2) - 4*r*(r + sp1);
+    t1 := sp2*r;
+    wp := t1*uh3;
+
+    if IsZero(wp) then
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := x^3 + u2*x^2 + u1*x + u0;
+        v := x^4 + v2*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,0>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+
+    I:= wp^-1; //1/sp2*r*uh3
+    t2:= I*t1; //1/uh3
+    t3:= I*uh3; //1/sp2*r
+    Ir:= t3*sp2; //1/r
+    Is:= t3*r;  //1/sp2
+    Iup := t1*t2;
+    w:= Is*r;   // 1/s2
+    s2:= Ir*sp2;  
+
+    //Step 5
+    s1:= Is*sp1;
+    s0:= Is*sp0;
+
+
+    //Step 6
+    t1:= u0 + u2;
+    t2:= (s0 + s1)*(t1 + u1);
+    t3:= (s0 - s1)*(t1 - u1);  
+    wt1:= s1*u2;
+    l0:= s0*u0;
+    l1:= (t2 - t3)/2 - wt1;
+    l2:= (t2 + t3)/2 - l0 + u0;
+    l3:= wt1 + s0 + u1;
+    l4:= s1 + u2;
+
+
+
+    //Step 7
+    ut3:= 2*(w + s1);
+    t1:= u2*ut3;
+    ut2:= s1*(2*w + s1) + 2*wt1 - t1 + 2*s0;
+    t2:= u1*ut2;
+    ut1:= 2*w*(s0 + v2) + s1*(wt1 + 2*s0) - (ut2 + ut3)*(u1 + u2) + 2*l2 - 2*u0 + t1 + t2;
+    //ut0:= w*(2*s1*v2 - w*2*k3 + 2*v1) + s1*(l2 + u0) + s0*(s0 + wt1 + 2*u1) - t2 - u2*ut1 - u0*ut3;
+    ut0:= w*(2*s1*v2 - w*k3 + 2*v1) + s1*(l2 + u0) + s0*(s0 + wt1 + 2*u1) - t2 - u2*ut1 - u0*ut3;
+
+
+
+    //Step 8
+    t1:= s2*(ut3 - l4) - 1;
+    vt3:= ut3*t1 - s2*(ut2 - l3);
+    vt2:= ut2*t1 - s2*(ut1 - l2) + v2;
+    vt1:= ut1*t1 - s2*(ut0 - l1) + v1;
+    vt0:= ut0*t1 + s2*l0 + v0;
+
+    //Step9
+    //w3:= vt3 - ut3;
+    //w2:= vt2 - ut2;
+    //w1:= vt1 - ut1;
+    //w0:= vt0 - ut0 + y0;
+    w3:= -vt3 - ut3;
+    w2:= -vt2 - ut2;
+    w1:= -vt1 - ut1;
+    w0:= -vt0 - ut0 + y0;
+    up2:= Iup*(w2 + y2) - w3/2 - ut3;
+    up1:= Iup*(w1 + y1) - w2 - ut3*up2 - ut2;
+    up0:= Iup*((y2^2 - w2^2)/2 + w0) - w1 - ut3*up1 - ut2*up2 - ut1;
+
+    //Step10
+    //t1:= w3 + 2*up2;
+    //vp2:=-t1*up2 + 2*up1 + w2;
+    //vp1:=-t1*up1 + 2*up0 + w1;
+    //vp0:=-t1*up0 + w0 - y0;
+    vp2:=up2*w3 - w2;
+    vp1:=up1*w3 - w1;
+    vp0:=up0*w3 - w0 + y0;
+
+    return <1,up2,up1,up0,vp2,vp1,vp0,0>;
+end function;
+
+
+DBL_Rad_SPLIT:= function(d,ccs)
+    if IsOne(d[1]) then 
+        return Deg3DBL_Rad(d[2],d[3],d[4],d[5],d[6],d[7],ccs); 
+    else
+        f:= ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,3);
+        u := d[1]*x^3 + d[2]*x^2 + d[3]*x + d[4];
+        v := x^4 + d[5]*x^2 + d[6]*x + d[7];
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,d[8]>,f,V,3);
+        return <Coefficient(gen[1],3), Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],2), Coefficient(gen[2],1), Coefficient(gen[2],0) , gen[4]>;
+    end if;
+end function;

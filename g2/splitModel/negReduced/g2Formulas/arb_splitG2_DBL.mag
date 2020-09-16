@@ -1,0 +1,467 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner, 2019                                                        
+//                                                   
+// Description: Genus 2 divisor doubling formulas for the 4 coordinate Mumford         
+//              representation in reduced basis over arbitrary fields where:              
+//              h(x) = h3*x^2 + h2*x^2 + h1*x + h0 and             
+//              f(x) = f6*x^6 + f5*x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0           
+//                                                                      
+///////////////////////////////////////////////////////////////////////////////
+
+//Must keep next two lines in this format for latex conversion
+//Constant: f6,f5,f4,f3,f2,f1,f0,h3,h2,h1,h0,y3,y2,y1,y0,d9,d8,d7,d6,d5,d4,d3,d2,d1,d0,c5,c4,c3,c2,c1,c0
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg1DBLDWN():         
+// Input: u0,v0,n : Mumford coordinates for divisor D=<x + u0,v0,1> in reduced
+//                  basis.
+//            ccs : Table of curve constants and precomputations, see 
+//                  Precompuation in arb_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dp ~ D + D.               
+// Description: Explicit computation for doubling a degree 1 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg1DBLDWN:= function(u0,v0,ccs)  
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1][1];
+    h := R!ccs[1][2];
+    V := R!ccs[1][3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + v0;
+    
+    v := -V-h - ((-V-h - v) mod u);
+    d := (v + v + h) mod u;
+    if IsZero(d) then
+        return 0,0,1,Coeff(V,1),Coeff(V,0),2;
+    end if;
+    b1 := FF!d^-1;
+    k := ExactQuotient(f - v*(v + h),u);
+    s  := b1*k mod u;
+    M2  := ExactQuotient(s*(v + v + h) - k, u);
+    upp := -s^2 - M2;
+    upp := upp/LeadingCoefficient(upp);
+    vpp := V - (u*s + v + h + V) mod upp;
+
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0; 
+    */ //endIGNORE
+    
+    h0:= ccs[1][2][1];  
+    yn0:= ccs[1][3][1]; 
+    yn1:= ccs[1][3][2]; 
+    c2:= ccs[1][4][3]; 
+    c3:= ccs[1][4][4]; 
+    c1:= ccs[1][4][2];
+    d0:= ccs[2][1][1];
+    d5:= ccs[2][1][6];
+    d6:= ccs[2][1][7];
+    d8:= ccs[2][1][9];
+    d9:= ccs[2][1][10];
+
+    //v := -V-h - ((-V-h - v) mod u);
+    t0 := u0*c3;
+    t1 := -u0*(c1 - u0*(c2 - t0));
+    vp0 := v0 - t1;
+
+    //d := (2*v + h) mod u;
+    vh0 := -vp0 - h0;
+    d   := v0 - vh0;
+
+    if IsZero(d) then
+        if DBL_DEBUG then "DBL00"; end if;
+        return 0,0,1,yn1,yn0,2;
+    end if;//d
+
+    
+    //k := ExactQuotient(f - v*(v + h), u);
+    //z := k/c3;
+    //s0p := k mod u;
+    z0  := vh0 - yn0;
+    z1  := d8 + z0*(d6 - u0);
+    sp0 := d0 - c1*vp0 - t0*(z1 + z1 - u0*z0);
+
+    if IsZero(sp0) then
+        if IsZero(z0) then
+
+            if DBL_DEBUG then "DBL01"; end if; 
+            return 0,0,1,yn1,yn0,0;
+            
+        end if;//z0
+
+        //upp := ExactQuotient(-k, u);
+        //up  := upp/LeadingCoefficient(upp);
+        w1   := z0^-1;
+        upp0 := z1*w1 - u0;
+        
+        //vp  := V  - (V - v) mod up;
+        //vpp0 :=vh0;
+
+        if DBL_DEBUG then "DBL02"; end if;
+        return 0,1,upp0,yn1,vh0,0;
+    end if;//sp0
+
+
+    
+    //M2 := ExactQuotient(s*(2*vp + h) - k, u);
+    //upp := -s^2 - M2;
+    //up  := upp/LeadingCoefficient(upp);
+    w1   := (d*sp0)^-1;
+    w2   := d^2*w1;
+    s0   := w1*sp0^2;
+    upp1 := d6 - z0*w2 - u0;
+    upp0 := d9 + s0*d5 - z1*w2 - u0*upp1;
+
+    //vpp  := V - (V + s*u + v + h) mod upp;
+    vpp1 := yn1 - s0;
+    vpp0 := vh0 - s0*u0;
+        
+    if DBL_DEBUG then "DBL03"; end if;
+    return 1,upp1,upp0,vpp1,vpp0,0;
+    
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg1DBLUP():         
+// Input: u0,v0,n : Mumford coordinates for divisor D=<x + u0,v0,0> in reduced
+//                  basis.
+//            ccs : Table of curve constants and precomputations, see 
+//                  Precompuation in arb_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dp ~ D + D.               
+// Description: Explicit computation for doubling a degree 1 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg1DBLUP:= function(u0,v0,ccs)  
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1][1];
+    h := R!ccs[1][2];
+    V := R!ccs[1][3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + v0;
+    
+
+    //v := -V-h - ((-V-h - v) mod u);
+    d := (v + v + h) mod u;
+    if IsZero(d) then
+        return 0,0,1,Coeff(V,1),Coeff(V,0),0;
+    end if;
+    b1 := FF!d^-1;
+    k := ExactQuotient(f - v*(v + h),u);
+    s  := b1*k mod u;
+    M2  := ExactQuotient(s*(v + v + h) - k, u);
+    upp := -s^2 - M2;
+    upp := upp/LeadingCoefficient(upp);
+    vpp := V - (u*s + v + h + V) mod upp;
+    npp := 2 - Degree(upp);
+
+    //return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),npp; 
+    */ //endIGNORE
+    
+    
+    h0:= ccs[1][2][1]; 
+    y1:= ccs[1][4][6];
+    yn0:= ccs[1][3][1]; 
+    yn1:= ccs[1][3][2]; 
+    c2:= ccs[1][4][3]; 
+    c3:= ccs[1][4][4]; 
+    c1:= ccs[1][4][2];
+    d0:= ccs[2][1][1]; 
+    d5:= ccs[2][1][6];
+    d6:= ccs[2][1][7];
+    d8:= ccs[2][1][9];
+    d9:= ccs[2][1][10];
+
+    //d := (v + v + h) mod u;
+    t0  := u0*c3;
+    vh0 := -v0 - h0;
+    d   := v0 - vh0 + u0*(c1 - u0*(c2 - t0));
+
+    if IsZero(d) then
+
+        if DBL_DEBUG then "DBL04"; end if;
+        return 0,0,1,yn1,yn0,0;
+    end if;//d
+
+    //k := ExactQuotient(f - v*(v + h), u);
+    //z := k/c3;
+    //s0p := k mod u;
+    z0  := v0 - yn0;
+    z1  := d8 + z0*(d6 - u0);
+    sp0 := d0 - c1*vh0 - t0*(z1 + z1 - u0*z0);
+ 
+    if IsZero(sp0) then
+        if IsZero(z0) then
+            
+            if DBL_DEBUG then "DBL05"; end if;
+            return 0,0,1,yn1,yn0,2;
+        end if;//z0
+
+        w1   := z0^-1;
+        upp0 := z1*w1 - u0;
+        //vpp  := V - (V + vp + h) mod upp;
+        vpp0 := -upp0*(c1 - upp0*(c2 - upp0*c3)) + vh0;
+
+        if DBL_DEBUG then "DBL06"; end if;
+        return 0,1,upp0,yn1,vpp0,1;
+    end if;//sp0
+
+    
+    //M2 := ExactQuotient(s*(2*v + h) - k, u);
+    //upp := -s^2 - M2;
+    //up  := upp/LeadingCoefficient(upp);
+    w1   := (d*sp0)^-1;
+    w2   := d^2*w1;
+    s0   := w1*sp0^2;
+    upp1 := d6 + z0*w2 - u0;
+    upp0 := d9 - s0*d5 + z1*w2 - u0*upp1;
+
+    //vpp  := V - (V + s*u + v + h) mod upp;
+    t0   := upp1*c3;
+    t1   := c2 - t0;
+    t2   := upp0*t1;
+    vpp1 := y1 - s0 - (upp0 + upp1)*(c3 + t1) + t0 + t2;
+    vpp0 := vh0 - s0*u0 -t2;
+
+    if DBL_DEBUG then "DBL07"; end if;
+    return 1,upp1,upp0,vpp1,vpp0,0;
+    
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg2DBL():         
+// Input: u1,u0,v1,v0 : Mumford coordinates for divisor D =
+//                      <x^2 + u1x + u0, v1x + v0,n> in reduced basis where n=0
+//                ccs : Table of curve constants and precomputations, see 
+//                      Precompuation in arb_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dp ~ D + D.               
+// Description: Explicit computation for doubling a degree 2 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg2DBL:= function(u1,u0,v1,v0,ccs) 
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1][1];
+    h := R!ccs[1][2];
+    V := R!ccs[1][3];
+    u := x^2 + u1*x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + v1*x + v0;
+    Q := quo<R | u>;
+    
+    d := Resultant(u,v+v+h); // computed with 2x2 system
+    if IsZero(d) then
+        dw1 := (v+v+h) mod u; // = (a1^-1)*S for S,a1,b1 = XGCD(u,up);
+        if IsZero(dw1) then 
+            return 0,0,1,Coeff(V,1),Coeff(V,0),1;
+        end if;
+        b1 := LeadingCoefficient(dw1)^-1;
+        k := ExactQuotient(f - v*(v + h),u);
+        u := ExactQuotient(u,dw1*b1);
+        s := b1*k mod u;
+        upp := u^2;
+        vpp := V - (V - v - u*s) mod upp;
+        return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0;
+    end if;
+    dw1 := (v+v+h) mod u;
+    b1 := R!(Q!dw1^-1);
+    k := ExactQuotient(f - v*(v + h),u);
+    s := b1*k mod u;   //2x2 system
+    M2  := ExactQuotient(s*(v + v + h) - k, u);
+    upp := -s^2 - M2;
+    upp := upp/LeadingCoefficient(upp);
+    //upp;
+    vpp := V - (V +u*s + v + h) mod upp;
+    npp := 1 - Degree(s); 
+    //return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),npp;
+    */ //endIGNORE
+    
+    
+    h0:= ccs[1][2][1]; 
+    h1:= ccs[1][2][2]; 
+    y1:= ccs[1][4][6]; 
+    d2:= ccs[2][1][3];
+    d5:= ccs[2][1][6];
+    d6:= ccs[2][1][7];
+    yn0:= ccs[1][3][1]; 
+    yn1:= ccs[1][3][2]; 
+    c2:= ccs[1][4][3]; 
+    c3:= ccs[1][4][4]; 
+    c4:= ccs[1][4][5];
+
+    //d := Resultant(u,v+v+h); // computed with setup of 2x2 system
+    t0 := v0 + h0;
+    t1 := v1 + h1;
+    t2 := u1^2;
+    t3 := c3*u1 - c2;
+    m3 := c3*(t2 - u0) - c2*u1 - t1 - v1; 
+    m4 := t0 + v0 - u0*t3;
+    m1 := m4 + m3*u1;
+    m2 := -m3*u0;
+    d  := m4*m1 - m2*m3;                            
+    
+    if IsZero(d) then
+        //dw1 := (v+v+h) mod u; // = (a1^-1)*S for S,a1,b1 = XGCD(u,up);
+        if IsZero(m3) then
+            
+            if DBL_DEBUG then "DBL08"; end if;
+            return 0,0,1,yn1,yn0,1;
+        end if;//m3
+
+        //b1 := LeadingCoefficient(dw1)^-1;
+        b1 := -m3^-1;
+
+        //k := ExactQuotient(f - v*(v + h),u);
+        t2 := v1 - yn1;
+        t3 := v0 - yn0;
+        t4 := c2*t3;
+        k2 := c3*t2;
+        k1 := c4*(t3 + t2) - k2 - t4 - u1*k2;
+        k0 := d2 + t4 - v1*t1 - u0*k2 - u1*k1;
+
+        //u := ExactQuotient(u,dw1*b1);
+        u0 := u1 - m4*b1;
+        
+        //s := b1*k mod u;
+        s0 := b1*(k0 - u0*(k1 - u0*k2));
+        
+        //upp := u^2;
+        upp1 := u0 + u0;
+        upp0 := u0^2;
+
+        //vpp := V - (V - v - u*s) mod upp;
+        vpp1 := v1 + s0;
+        vpp0 := v0 + u0*s0;
+
+        if DBL_DEBUG then "DBL09"; end if;
+        return 1,upp1,upp0,vpp1,vpp0,0;
+    end if;//d
+
+    //Compute s(d)/c3
+    z0  := v0 - yn0;
+    z1  := v1 - yn1;
+    r1  := z0 - z1*(u1 + u1 - d6);
+    r0  := d6*z0 + d5*(d2 - v1*t1) - u1*r1 - z1*(t2 + u0 + u0);
+    sp0 := r0*m1 + r1*m2;
+    sp1 := r0*m3 + r1*m4;
+    D   := d^2;
+
+    if IsZero(sp1) then
+        if IsZero(sp0) then
+            
+            if DBL_DEBUG then "DBL10"; end if;
+            return 0,0,1,yn1,yn0,2;
+        end if;//sp0
+  
+        w3 := (d*sp0)^-1;
+        s0 := sp0^2*w3;
+        w4 := D*w3;
+
+        upp0 := -s0 + d6 - u1 + w4*d5*z1;
+        vpp0 := c3*(upp0*(s0*u1 + d5*(v1 - y1) - upp0*(s0 - d6 + upp0)) - s0*u0) - t0;
+        if DBL_DEBUG then "DBL11"; end if;
+        return 0, 1, upp0, yn1, vpp0,1;
+    end if;//sp1
+
+    
+    w1 := sp1*(sp1 - d); // sp1^2  + sp1*d
+
+    if IsZero(w1) then
+        t1 := d6 - u1;
+        w0 := sp0 - sp1*t1;
+        
+        if IsZero(w0) then
+
+            if DBL_DEBUG then "DBL12"; end if;
+            return 0,0,1,yn1,yn0,0;
+        end if;//w0
+        
+        w2   := (d*w0)^-1;
+        s0   := sp0*w0*w2;
+        w3   := D*w2;
+        t2   := s0 - t1;
+        upp0 := w3*(t2*s0 - d5*(m3 + z1));
+        t1   := v1 - y1 + c3*(s0*u1 + u0 - upp0*t2);
+        vpp0 := upp0*t1 - t0 - s0*u0*c3; 
+
+        if DBL_DEBUG then "DBL13"; end if;
+        return 0, 1, upp0, yn1, vpp0,0;
+    end if;//w1
+
+    w2 := (d*w1)^-1;
+    w3 := w2*w1;
+    w4 := w2*d*D;
+    s0 := w3*sp0;
+    s1 := w3*sp1;
+
+    t4   := s0 - d6 + u1;
+    upp1 := w4*((s0 + t4)*s1 - s0);
+    upp0 := w4*(t4*s0 - d5*(m3*s1 + z1));
+
+    z0 := upp0 - u0;
+    z1 := upp1 - u1;
+    w0 := z0*s0;    
+    w1 := z1*s1;    
+    w2 := upp1 - d6 - w1;
+
+    vpp1 := c3*((s0 + s1)*(z0 + z1) - w0 - w1 - upp0 + w2*upp1) - t1;
+    vpp0 := c3*(w0 + w2*upp0) - t0;
+
+    if DBL_DEBUG then "DBL14"; end if;
+    return 1,upp1, upp0, vpp1, vpp0,0;
+    
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// DBL():
+// Input: u,v,n: Polynomials u,v and number n representing an arbirtrary
+//               divisor D over a split model HEC.
+//          ccs: Table of curve constants and precomputations, see 
+//               Precompuation in arb_splitG2_UTL.mag
+//
+// Output: Mumford coordinates upp2,upp1,upp0,vpp1,vpp0 for 2*D               
+// Description: Explicit computation for doubling any divisor in reduced basis.    
+//              Handles all cases explicitly.               
+///////////////////////////////////////////////////////////////////////////////
+DBL:= function(u,v,n,ccs)//startIGNORE
+    u0:= Coeff(u,0); 
+    u1:= Coeff(u,1); 
+    u2:= Coeff(u,2); 
+    v0:= Coeff(v,0); 
+    v1:= Coeff(v,1);
+
+    if IsOne(u2) then
+        return Deg2DBL(u1,u0,v1,v0,ccs);
+    elif IsOne(u1) then
+        if IsZero(n) then
+            return Deg1DBLUP(u0,v0,ccs);
+        else    
+            return Deg1DBLDWN(u0,v0,ccs);
+        end if;
+    else
+            if n eq 1 then
+                if DBL_DEBUG then "DBL15"; end if;
+                return 0,0,1,ccs[1][3][2],ccs[1][3][1],1;
+
+            elif IsZero(n) then
+                
+                if DBL_DEBUG then "DBL16"; end if;    
+                return ccs[2][2][3],ccs[2][2][2],ccs[2][2][1],ccs[2][2][6],ccs[2][2][5],2-ccs[2][2][4];
+
+            else
+                if DBL_DEBUG then "DBL17"; end if;
+                return ccs[2][2][3],ccs[2][2][2],ccs[2][2][1],ccs[1][3][2],ccs[1][3][1],0;
+            end if;
+    end if;
+end function;//endIGNORE
+

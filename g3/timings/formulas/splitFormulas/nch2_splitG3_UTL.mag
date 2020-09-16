@@ -1,0 +1,323 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner, 2019                                                        
+//                                                   
+// Description: Genus 3 divisor utility formulas for the 4 coordinate Mumford         
+//              representation in reduced basis over arbitrary fields where:                
+//              h(x) = h4x^4 + h3*x^3 + h2*x^2 + h1*x + h0 and             
+//              f(x) = f8x^8 + f7x^7 + f6*x^6 + f5*x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0           
+//                                                                      
+///////////////////////////////////////////////////////////////////////////////
+//Must keep next two lines in this format for latex conversion
+//Constant: f8,f7,f6,f5,f4,f3,f2,f1,f0,h4,h3,h2,h1,h0,y4,y3,y2,y1,y0,d4,d3,d2,d1,d0,c5,c4,c3,c2,c1,c0
+
+///////////////////////////////////////////////////////////////////////////////
+// Precompute():
+// Input: f,h: hyperelliptic polynomials describing a split mdoel genus 3 HEC.
+//          q: field parameter
+//
+// Output: Set of sets, where first two subsets have the coefficients of f and 
+//         h respectively, the third subset has coefficeints of the unique 
+//         monic V polynomial of degree 4 for which deg(f-h*V-V^2) <= 2, the 
+//         fourth and fifth subset have precompuations used by the other 
+//         operations, and the sixth subset carries precomputed values for
+//         adjusting degree 0 divisors.
+///////////////////////////////////////////////////////////////////////////////
+Precompute := function(f,q)
+    f0:= Coeff(f,0); 
+    f1:= Coeff(f,1); 
+    f2:= Coeff(f,2); 
+    f3:= Coeff(f,3); 
+    f4:= Coeff(f,4); 
+    f5:= Coeff(f,5); 
+    f6:= Coeff(f,6);
+    //f7:= 0;
+    //f8:= 1;
+    //h0:= 0; 
+    //h1:= 0; 
+    //h2:= 0; 
+    //h3:= 0;
+    //h4:= 0;
+
+    FF := GF(q);
+    R<x> := PolynomialRing(GF(q));
+    // y4 is a solution of quadratic equation x^2 - 1
+    // We pick the second solution from the factorization given by magma.
+    //y4 := -Coeff(Factorization(x^2 - 1)[2][1],0);
+    // Compute rest making ComputeVpl from poly_balanced_arithmetic explicit
+    
+    //y4 := FF!1;
+    //yn4 := FF!-1;
+    //c4  := FF!2;
+    //c6  := FF!1/2;
+
+    //y3  := 0;
+    //yn3 := 0;
+    //c3  := 0;
+
+    //y2  := f6/2;
+    yn2 := -f6/2;
+    //c2  := f6;
+
+    //y1  := f5/2;
+    yn1 := -f5/2;
+    //c1  := f5;
+
+    c10 := -yn2^2;
+    //y0  := (f4 + c10)/2;
+    yn0 := -(f4 + c10)/2;
+    
+
+    //c5 := 2;
+    //c7 := -yn1;
+    //c8 := -yn2;
+    //c9 := 0;
+    
+
+    //Positive Reduced
+    //k3
+    d5 := c10/2;
+    //d4 := f3;
+    d3 := f3 - f5*f6/2;
+    //k2
+    //d0 := f2;
+    d2 := f2 - yn1^2;
+    //k1
+    //d1 := f1;
+    //z
+    d6  := f1/2;
+    d7  := d2/2;   
+    d8  := d3/2;
+    d9  := f3/2;
+    d10 := f2/2;
+
+    //Negative Reduced
+    //k3
+    //dn5 := d5;
+    //dn4 := d4;
+    //dn3 := d3;
+    //k2
+    //dn0 := d0;
+    //dn2 := d2;
+    //k1
+    //dn1 := d1;
+    //z
+    //dn6  := d6;
+    //dn7  := d7;
+    //dn8  := d8;
+    //dn9  := d9;
+    //dn10 := d10;
+    
+
+
+
+    //Adjusting <1,0,-1>
+
+    // f - nV*h - nV^2
+    t0 := yn1*yn0;
+    t1 := yn2*yn0;
+    k3 := d3;
+    k2 := f2 - t1 - t1 - yn1^2;
+    k1 := f1 - t0 - t0;
+    k0 := f0 - yn0^2;    
+
+    if IsZero(k3) then
+        if IsZero(k2) then
+            if IsZero(k1) then
+                //u = f-nV*h - nV^2 made monic 
+                u3  := 0;
+                u2  := 0;
+                u1  := 0;
+                u0  := 1;
+                n := 3;
+
+                //v = v1x + v0 = -V -h +(2V+h) mod u
+                v2 := yn2;
+                v1 := yn1;
+                v0 := yn0;
+
+            else
+                //u = f-nV*h - nV^2 made monic 
+                w1  := k1^-1;
+                u3  := 0;
+                u2  := 0;
+                u1  := 1;
+                u0  := k0*w1;
+                n := 2;
+
+                //v = v1x + v0 = -V -h +(2V+h) mod u
+                v2 := yn2;
+                v1 := yn1;
+                t2 := u0^2;
+                v0 := -yn0 - u0*(f5 - u0*(f6 + t2 + t2));
+                
+                end if;
+        else 
+            w1  := k2^-1;
+            u3  := 0;
+            u2  := 1;
+            u1  := k1*w1;
+            u0  := k0*w1;
+            n := 1;
+
+            t0 := -u1 - u1;
+            t1 := f6 - u0 - u0 - u1*t0;
+            v2 := yn2;
+            v1 := -yn1 - u0*t0 - u1*t1;
+            v0 := -yn0 - u0*t1;
+            
+        end if;//k3
+    else
+        w1  := k3^-1;
+        u3 := 1;
+        u2 := k2*w1;
+        u1 := k1*w1;
+        u0 := k0*w1;
+        n := 0;
+
+        //v = v1x + v0 = -V -h +(2V+h) mod u
+        w2 := -u2 - u2;
+        v2 := -yn2 - u1 - u1 - u2*w2;
+        v1 := -yn1 - u0 - u0 - u1*w2;
+        v0 := -yn0 - u0*w2;
+        
+    end if;
+
+
+
+    //Adjust<1,0,-2>
+    if IsZero(n) then
+        // f - v*h - v^2
+        t2 := v2 - yn2;
+        t1 := v1 - yn1;
+        t0 := v0 - yn0;
+        t3 := v1*v2;
+        vn2 := -v2;
+        vn1 := -v1;
+        vn0 := -v0;
+
+        kp6 := t2 + t2;
+        kp5 := t1 + t1;
+        kp4 := t0 + t0 - v2^2 - c10;
+        kp3 := f3 - t3 - t3;    
+
+        if IsZero(kp6) then
+            if IsZero(kp5) then
+                if IsZero(kp4) then
+                    //up = ExactQuotient(f-v*h - v^2,u) made monic 
+                    up3  := 0;
+                    up2  := 0;
+                    up1  := 0;
+                    up0  := 1;
+                    np := 3;
+
+                    //v = -V -h +(V-v) mod up
+                    vp2 := yn2;
+                    vp1 := yn1;
+                    vp0 := yn0;
+                    
+                else
+                    //up = ExactQuotient(f-v*h - v^2,u) made monic  
+                    w1  := kp4^-1;
+                    up3  := 0;
+                    up2  := 0;
+                    up1  := 1;
+                    up0  := kp3*w1 - u2;
+                    np := 2;
+
+                    //v = -V -h +(V-v) mod up
+                    vp2 := yn2;
+                    vp1 := yn1;
+                    t0 := up0^2;
+                    vp0 := vn0 - up0*(-yn1 - v1 - up0*(-yn2 - v2 + t0 + t0));
+                    
+                end if;
+            else 
+                //up = ExactQuotient(f-v*h - v^2,u) made monic 
+                w1  := kp5^-1;
+                up3  := 0;
+                up2  := 1;
+                up1  := kp4*w1 - u2;
+                up0  := kp3*w1 - u1 - u2*up1;
+                np := 1;
+
+                //v = -V -h +(V-v) mod up
+                t0 := -up1 - up1;
+                t1 := -yn2 - v2 - up0 - up0 - up1*t0;
+                vp2 := yn2;
+                vp1 := vn1 - up0*t0 - up1*t1;
+                vp0 := vn0 - up0*t1;
+                
+            end if;
+        else
+            //up = ExactQuotient(f-v*h - v^2,u) made monic 
+            w1  := kp6^-1;
+            up3 := 1;
+            up2 := kp5*w1 - u2;
+            up1 := kp4*w1 - u1 - u2*up2;
+            up0 := kp3*w1 - u0 - u1*up2 - u2*up1;
+            np := 0;
+
+            //v = -V -h +(V-v) mod up
+            w2  := -up2 - up2;
+            vp2 := vn2 - up1 - up1 - up2*w2;
+            vp1 := vn1 - up0 - up0 - up1*w2;
+            vp0 := vn0 - up0*w2;
+            
+        end if;
+        
+    //Adjusting <1,0,4>
+    else
+        up0:= u0;
+        up1:= u1;
+        up2:= u2;
+        up3:= u3;
+        np:= n-1;
+        vp0:= v0;
+        vp1:= v1;
+        vp2:= v2;
+
+    end if;
+
+    //f, h, V,-V-h, 2V + h, Aux with V, Aux with -V-h, Adjusted <1,0,-1>, Adjusted <1.0,-2>, Adjusted <1,0,4> uses u, v= yn and n=0,
+    return <<<f0,f1,f2,f3,f4,f5,f6>,<yn0,yn1,yn2>,<d10,d9,d2,d3,c10,d5,d6,d7,d8>>,<<u0,u1,u2,u3,n,v0,v1,v2>,<up0,up1,up2,up3,np,vp0,vp1,vp2>>>;        
+end function;    
+    
+
+
+//-----------------------------------------------------------------------------
+// RandomNotCh2SpG3Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//              
+// Return: Random(ish) hyperelliptic polynomials of curve with two points at
+//         infinity f and h in GF(q)[x] where f is seperable of degree 8,  
+//         polynomial h = 0 and f8=y3=1, f7=y2=0.
+//-----------------------------------------------------------------------------
+RandomNotCh2SpG3Curve:= function(q)//startIGNORE
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f 
+        f:= x^8 + Random(F)*x^6 + Random(F)*x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 +
+             Random(F)*x + Random(F);
+
+        //Check if f is hyperelliptic polynomial
+        try
+            C:=HyperellipticCurve(f);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f is a hyperelliptic polynomial, check to see if
+        //the curve has two points at infinity and is genus is 2
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 2) and (Degree(f) eq 8) then
+                return f;
+            end if;
+        end if;
+        
+    end while;
+end function;//endIGNORE

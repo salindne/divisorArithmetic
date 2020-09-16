@@ -1,0 +1,230 @@
+SetAutoColumns(false);
+SetColumns(1000);
+
+
+
+load "reduced_basis_arithmetic.mag";
+load "formulas/previousBest/sutherland_2019.mag";
+load "formulas/previousBest/rad_2019.mag";
+load "formulas/splitFormulas/nch2_splitG3_ADD.mag";
+load "formulas/splitFormulas/nch2_splitG3_DBL.mag";
+load "formulas/splitFormulas/nch2_splitG3_UTL.mag";
+load "formulas/splitFormulas/nch2_splitG3_onlyFreq.mag";
+load "nch2_g3_timing_utilities.mag";
+load "../../1024bit_primes.mag";
+
+SetOutputFile("outg3_complete.raw");
+//SetNthreads(4);
+length := 500000;
+trials := 5;           //Max 3030  
+BIT_TABLE := [<2, 1.0>, <4, 0.76>,  <8, 0.72>, <16, 0.72>, <32, 0.42>, <64, 0.38>, <128, 0.333>, <256, 0.27>, <512, 0.18>, <1024, 0.09>];
+
+"# ------------------------------------------------------------------------------------------------------";
+"# Raw timings for genus 3 compared to previous best";
+"# Random generator seed and step: ", GetSeed();
+"# Average over: ", trials;
+"# Naming convention: first digit: O= ours, P= previous, M= Magma";
+"#                   second digit: X= complete, R= Rad, S= Sutherland, C= Cantor, G= Magma";
+"#                    third digit: A= addition, D= doubling";
+"# fld_bit/length\t  OXA\t  OSA\t  PSA\t  PRA\t  PCA\t  MGA\t  OXD\t  OSD\t  PSD\t  PRD\t  PCD\t MGD";
+"# --------------------------------------------------------------------------------------------------------------------";
+
+//Procedures
+run_tests := function (fq, length) 
+    
+    
+    //SPLIT
+    sf := RandomCurve_nch2_g3_SPLIT(fq);
+    Vn := -ComputeVpl(sf,3);
+    C := HyperellipticCurve(sf);
+    J := Jacobian(C);
+    ccs:= Precompute(sf,fq); 
+    ccs_onlyFreq := <sf,<ccs[1][2][1],ccs[1][2][2],ccs[1][2][3],ccs[1][3][5]>>;
+    ccs_Rad := <sf,Precompute_Rad(sf,fq)>;
+    R<x>:=PolynomialRing(GF(fq));
+
+
+    //Generate Random Divisors not the neutral element.
+    mD1 := Random(J);
+    while IsZero(mD1) do
+        mD1 := Random(J);
+    end while;
+    pD1 := Magma_to_poly_SPLIT(mD1,sf,Vn);
+    eD1 := <Coefficient(pD1[1],3), Coefficient(pD1[1],2), Coefficient(pD1[1],1),Coefficient(pD1[1],0), Coefficient(pD1[2],2), Coefficient(pD1[2],1), Coefficient(pD1[2],0), pD1[4]>;
+    va := pD1[2] mod pD1[1];
+    eD1a := <Coefficient(pD1[1],3), Coefficient(pD1[1],2), Coefficient(pD1[1],1),Coefficient(pD1[1],0), Coefficient(va,2), Coefficient(va,1), Coefficient(va,0), pD1[4]>;
+    vr := -Vn - (-Vn - va) mod pD1[1];
+    eD1r := <Coefficient(pD1[1],3), Coefficient(pD1[1],2), Coefficient(pD1[1],1),Coefficient(pD1[1],0), Coefficient(vr,2), Coefficient(vr,1), Coefficient(vr,0), pD1[4]>;
+
+    mD2 := Random(J);
+    while IsZero(mD2) do
+        mD2 := Random(J);
+    end while;
+    pD2 := Magma_to_poly_SPLIT(mD2,sf,Vn);
+    eD2 := <Coefficient(pD2[1],3), Coefficient(pD2[1],2), Coefficient(pD2[1],1),Coefficient(pD2[1],0), Coefficient(pD2[2],2), Coefficient(pD2[2],1), Coefficient(pD2[2],0), pD2[4]>;
+    va := pD2[2] mod pD2[1];
+    eD2a := <Coefficient(pD2[1],3), Coefficient(pD2[1],2), Coefficient(pD2[1],1),Coefficient(pD2[1],0), Coefficient(va,2), Coefficient(va,1), Coefficient(va,0), pD2[4]>;
+    vr := -Vn - (-Vn - va) mod pD2[1];
+    eD2r := <Coefficient(pD2[1],3), Coefficient(pD2[1],2), Coefficient(pD2[1],1),Coefficient(pD2[1],0), Coefficient(vr,2), Coefficient(vr,1), Coefficient(vr,0), pD2[4]>;
+
+    //ADD
+    //Time using fibonacci style addition chains
+    fex_SPLIT := Cputime();
+    exDs := Fibonacci_expl_SPLIT(eD1,eD2,ccs,length);
+    fex_SPLIT := Cputime(fex_SPLIT);
+
+    feo_SPLIT := Cputime();
+    eoDs := Fibonacci_onlyFreq_SPLIT(eD1,eD2,ccs_onlyFreq,length);
+    feo_SPLIT := Cputime(feo_SPLIT);
+
+    fes_SPLIT := Cputime();
+    esDs := Fibonacci_Sutherland_SPLIT(eD1a,eD2a,sf,length);
+    fes_SPLIT := Cputime(fes_SPLIT);
+
+    fer_SPLIT := Cputime();
+    erDs := Fibonacci_Rad_SPLIT(eD1r,eD2r,ccs_Rad,length);
+    fer_SPLIT := Cputime(fer_SPLIT);
+
+    fca_SPLIT := Cputime();
+    caDs := Fibonacci_polyCantor_SPLIT(pD1,pD2,sf,Vn,length);
+    fca_SPLIT := Cputime(fca_SPLIT);
+
+    fm_SPLIT := Cputime();
+    mDs := Fibonacci_magma_SPLIT(mD1,mD2,length);
+    fm_SPLIT := Cputime(fm_SPLIT);
+
+
+    //Confirm equality of results
+    exDs := Explicit_to_poly_SPLIT(exDs,sf,Vn);
+    eoDs := Explicit_to_poly_SPLIT(eoDs,sf,Vn);
+    esDs := ExplicitAdapted_to_poly_SPLIT(esDs,sf,Vn);
+    erDs := ExplicitPOS_to_poly_SPLIT(erDs,sf,Vn);
+    test := Fibonacci_polyCantor_SPLIT(pD1,pD2,sf,Vn,length);
+    assert exDs eq test and esDs eq test and eoDs eq test and erDs eq test;
+
+    //DBL
+    //Time using double chains
+    dex_SPLIT := Cputime();
+    exDs := DoubleChain_expl_SPLIT(eD1,ccs,length);
+    dex_SPLIT := Cputime(dex_SPLIT);
+
+    deo_SPLIT := Cputime();
+    eoDs := DoubleChain_onlyFreq_SPLIT(eD1,ccs_onlyFreq,length);
+    deo_SPLIT := Cputime(deo_SPLIT);
+
+    des_SPLIT := Cputime();
+    esDs := DoubleChain_Sutherland_SPLIT(eD1a,sf,length);
+    des_SPLIT := Cputime(des_SPLIT);
+
+    der_SPLIT := Cputime();
+    erDs := DoubleChain_Rad_SPLIT(eD1r,ccs_Rad,length);
+    der_SPLIT := Cputime(der_SPLIT);
+
+    dca_SPLIT := Cputime();
+    caDs := DoubleChain_polyCantor_SPLIT(pD1,sf,Vn,length);
+    dca_SPLIT := Cputime(dca_SPLIT);
+
+    dm_SPLIT := Cputime();
+    mDs := DoubleChain_magma_SPLIT(mD1,length);
+    dm_SPLIT := Cputime(dm_SPLIT);
+
+    //Confirm equality of results
+    exDs := Explicit_to_poly_SPLIT(exDs,sf,Vn);
+    eoDs := Explicit_to_poly_SPLIT(eoDs,sf,Vn);
+    esDs := ExplicitAdapted_to_poly_SPLIT(esDs,sf,Vn);
+    erDs := ExplicitPOS_to_poly_SPLIT(erDs,sf,Vn);
+    test := DoubleChain_polyCantor_SPLIT(pD1,sf,Vn,length);
+
+    assert exDs eq test and esDs eq test and eoDs eq test and erDs eq test;
+
+    return [fex_SPLIT, feo_SPLIT, fes_SPLIT, fer_SPLIT, fca_SPLIT, fm_SPLIT, dex_SPLIT, deo_SPLIT, des_SPLIT, der_SPLIT, dca_SPLIT, dm_SPLIT];
+end function;
+
+
+//MAIN
+for bit_tup in BIT_TABLE do
+    bit := bit_tup[1];
+    len := Ceiling(length*bit_tup[2]);
+    fq := 2^bit;
+ 
+    total_OXA_SPLIT := 0.0;
+    total_OSA_SPLIT := 0.0;
+    total_PSA_SPLIT := 0.0;
+    total_PRA_SPLIT := 0.0;
+    total_PCA_SPLIT := 0.0;
+    total_MGA_SPLIT := 0.0;
+
+    total_OXD_SPLIT := 0.0;
+    total_OSD_SPLIT := 0.0;
+    total_PSD_SPLIT := 0.0;
+    total_PRD_SPLIT := 0.0;
+    total_PCD_SPLIT := 0.0;
+    total_MGD_SPLIT := 0.0;
+
+
+    i := 0;
+    while i lt trials do
+        i := i+1;
+        if bit eq 2 then
+            fq := 3;
+        elif bit eq 4 then
+            fq := Random([11,13]);
+        elif bit eq 8 then
+            fq := Random([131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181,
+                        191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251]);
+        elif bit eq 1024 then
+            fq := Random(PRIMES_1024BIT);
+        else        //There are 3030 16 bit primes
+            fq := PreviousPrime(fq);
+        end if;
+
+        results := run_tests(fq,len);  
+
+
+        total_OXA_SPLIT := total_OXA_SPLIT + results[1];
+        total_OSA_SPLIT := total_OSA_SPLIT + results[2];
+        total_PSA_SPLIT := total_PSA_SPLIT + results[3];
+        total_PRA_SPLIT := total_PRA_SPLIT + results[4];
+        total_PCA_SPLIT := total_PCA_SPLIT + results[5];
+        total_MGA_SPLIT := total_MGA_SPLIT + results[6];
+
+
+        total_OXD_SPLIT := total_OXD_SPLIT + results[7];
+        total_OSD_SPLIT := total_OSD_SPLIT + results[8];
+        total_PSD_SPLIT := total_PSD_SPLIT + results[9];
+        total_PRD_SPLIT := total_PRD_SPLIT + results[10];
+        total_PCD_SPLIT := total_PCD_SPLIT + results[11];
+        total_MGD_SPLIT := total_MGD_SPLIT + results[12];
+
+        
+
+    end while;
+        
+    avg_OXA_SPLIT := total_OXA_SPLIT/trials;
+    avg_OXD_SPLIT := total_OXD_SPLIT/trials;
+
+    avg_OSA_SPLIT := total_OSA_SPLIT/trials;
+    avg_OSD_SPLIT := total_OSD_SPLIT/trials;
+
+    avg_PSA_SPLIT := total_PSA_SPLIT/trials;
+    avg_PSD_SPLIT := total_PSD_SPLIT/trials;
+
+    avg_PRD_SPLIT := total_PRD_SPLIT/trials;
+    avg_PRA_SPLIT := total_PRA_SPLIT/trials;
+
+    avg_PCA_SPLIT := total_PCA_SPLIT/trials;
+    avg_PCD_SPLIT := total_PCD_SPLIT/trials;
+
+    avg_MGA_SPLIT := total_MGA_SPLIT/trials;
+    avg_MGD_SPLIT := total_MGD_SPLIT/trials;
+    
+
+    if len gt 99999 then
+        tab := "\t";
+    else
+        tab := "\t\t";
+    end if;
+ 
+    "#",bit, "\t", len, tab, avg_OXA_SPLIT, "\t", avg_OSA_SPLIT, "\t", avg_PSA_SPLIT, "\t", avg_PRA_SPLIT, "\t",  avg_PCA_SPLIT, "\t",  avg_MGA_SPLIT, "\t", avg_OXD_SPLIT, "\t", avg_OSD_SPLIT, "\t", avg_PSD_SPLIT, "\t", avg_PRD_SPLIT, "\t", avg_PCD_SPLIT, "\t", avg_MGD_SPLIT;
+end for;
+exit;

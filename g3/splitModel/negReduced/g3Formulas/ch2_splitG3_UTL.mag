@@ -1,0 +1,324 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner, 2019                                                        
+//                                                   
+// Description: Genus 3 divisor utility formulas for the 4 coordinate Mumford         
+//              representation in reduced basis over arbitrary fields where:                
+//              h(x) = x^4 + + h2*x^2 + h1*x + h0 and             
+//              f(x) = f8x^8 + f3x^3 + f2x^2 + f1x + f0           
+//                                                                      
+///////////////////////////////////////////////////////////////////////////////
+//Must keep next two lines in this format for latex conversion
+//Constant: f8,f7,f6,f5,f4,f3,f2,f1,f0,h4,h3,h2,h1,h0,y4,y3,y2,y1,y0,d4,d3,d2,d1,d0,c5,c4,c3,c2,c1,c0
+
+///////////////////////////////////////////////////////////////////////////////
+// Precompute():
+// Input: f,h: hyperelliptic polynomials describing a split mdoel genus 3 HEC.
+//          q: field parameter
+//
+// Output: Set of sets, where first two subsets have the coefficients of f and 
+//         h respectively, the third subset has coefficeints of the unique 
+//         monic V polynomial of degree 4 for which deg(f-h*V-V^2) <= 2, the 
+//         fourth and fifth subset have precompuations used by the other 
+//         operations, and the sixth subset carries precomputed values for
+//         adjusting degree 0 divisors.
+///////////////////////////////////////////////////////////////////////////////
+Precompute := function(f,h,q)
+    f0:= Coeff(f,0); 
+    f1:= Coeff(f,1); 
+    f2:= Coeff(f,2); 
+    f3:= Coeff(f,3); 
+    //f4:= 0; 
+    //f5:= 0; 
+    //f6:= 0;
+    //f7:= 0;
+    f8:= Coeff(f,8);
+    h0:= Coeff(h,0); 
+    h1:= Coeff(h,1); 
+    h2:= Coeff(h,2); 
+    //h3:= 0;
+    //h4:= 1;
+
+    R<x> := PolynomialRing(GF(q));
+    // y4 is a solution of quadratic equation x^2 + h4*x - f8
+    // We pick the second solution from the factorization given by magma.
+    y4 := Coeff(Factorization(x^2 + x + f8)[2][1],0);
+    // Compute rest making ComputeVpl from poly_balanced_arithmetic explicit
+    
+    yn4 := y4 + 1;
+    //c4  := 1;
+    //c6  := 1;
+
+    //y3  := 0;
+    //yn3 := 0;
+    //c3  := 0;
+
+    y2  := h2*y4;
+    yn2 := y2 + h2;
+    //c2  := h2;
+
+    y1  := h1*y4;
+    yn1 := y1 + h1;
+    //c1  := h1;
+
+    yy2 := y2*yn2;
+    y0  := h0*y4 + yy2;
+    yn0 := y0 + h0;
+    //c0  := h0;
+
+    //c5 := 1;
+    //c7 := h1;
+    //c8 := h2;
+    //c9 := 0;
+    
+
+    //Negative Reduced
+    //k3
+    //dn5 := f3;
+    dn4 := f3 + h1*yn2;
+    dn3 := dn4 + yn1*h2;
+    //k2
+    dn0 := f2 + h0*yn2;
+    dn2 := dn0 + yn1*(yn1 + h1);
+    //k1
+    dn1 := f1 + h0*yn1;
+    //z
+    //dn6  := dn1;
+    //dn7  := dn2;
+    //dn8  := dn3;
+    //dn9  := dn4;
+    //dn10 := dn0;
+    
+
+    //Positive Reduced
+    //k3
+    //d5 := f3;
+    d4 := f3 + h1*y2;
+    d3 := d4 + y1*h2;
+    //k2
+    d0 := f2 + h0*y2;
+    d2 := d0 + y1*(y1 + h1);
+    //k1
+    d1 := f1 + h0*y1;
+    //z
+    //d6  := d1;
+    //d7  := d2;   
+    //d8  := d3;
+    //d9  := d4;
+    //d10 := d0;
+
+
+
+    //Adjusting <1,0,-1>
+
+    // f - nV*h - nV^2
+    t1 := yn1*y1;
+    t0 := yn0*y0;
+    k3 := f3 + yn2*y1 + yn1*y2;
+    k2 := f2 + yn2*y0 + t1 + yn0*y2;
+    k1 := f1 + (yn1 + yn0)*(y1 + y0) + t1 + t0;
+    k0 := f0 + t0;    
+
+    if IsZero(k3) then
+        if IsZero(k2) then
+            if IsZero(k1) then
+                //u = f-nV*h - nV^2 made monic 
+                u3  := 0;
+                u2  := 0;
+                u1  := 0;
+                u0  := 1;
+                n := 3;
+
+                //v = v1x + v0 = -V -h +(2V+h) mod u
+                v2 := yn2;
+                v1 := yn1;
+                v0 := yn0;
+
+                if UTL_DEBUG then "UTL0"; end if;
+            else
+                //u = f-nV*h - nV^2 made monic 
+                w1  := k1^-1;
+                u3  := 0;
+                u2  := 0;
+                u1  := 1;
+                u0  := k0*w1;
+                n := 2;
+
+                //v = v1x + v0 = -V -h +(2V+h) mod u
+                v2 := yn2;
+                v1 := yn1;
+                v0 := y0 + u0*(h1 + u0*(h2 + u0^2));
+                
+                if UTL_DEBUG then "UTL1"; end if;
+            end if;
+        else 
+            w1  := k2^-1;
+            u3  := 0;
+            u2  := 1;
+            u1  := k1*w1;
+            u0  := k0*w1;
+            n := 1;
+
+            t1 := h2 + u0 + u1^2;
+            v2 := yn2;
+            v1 := y1 + u1*(u0 + t1);
+            v0 := y0 + u0*t1;
+            
+            if UTL_DEBUG then "UTL2"; end if;
+        end if;//k3
+    else
+        w1 := k3^-1;
+        u3 := 1;
+        u2 := k2*w1;
+        u1 := k1*w1;
+        u0 := k0*w1;
+        n := 0;
+
+        //v = v1x + v0 = -V -h +(2V+h) mod u
+        v2 := y2 + u1 + u2^2;
+        v1 := y1 + u0 + u1*u2;
+        v0 := y0 + u0*u2;
+        
+        if UTL_DEBUG then "UTL3"; end if;
+    end if;
+
+
+
+    //Adjust<1,0,-2>
+    if IsZero(n) then
+        // f - v*h - v^2
+        vn2 := v2 + h2;
+        vn1 := v1 + h1;
+        vn0 := v0 + h0;
+
+        kp6 := v2 + yn2;
+        kp5 := v1 + yn1;
+        kp4 := v0 + yn0 + v2*(v2 + h2) + y2*yn2;
+        kp3 := f3 + v1*vn2 + v2*vn1;    
+
+        if IsZero(kp6) then
+            if IsZero(kp5) then
+                if IsZero(kp4) then
+                    //up = ExactQuotient(f-v*h - v^2,u) made monic 
+                    up3  := 0;
+                    up2  := 0;
+                    up1  := 0;
+                    up0  := 1;
+                    np := 3;
+
+                    //v = -V -h +(V-v) mod up
+                    vp2 := yn2;
+                    vp1 := yn1;
+                    vp0 := yn0;
+                    
+                    if UTL_DEBUG then "UTL4"; end if;
+                else
+                    //up = ExactQuotient(f-v*h - v^2,u) made monic  
+                    w1  := kp4^-1;
+                    up3  := 0;
+                    up2  := 0;
+                    up1  := 1;
+                    up0  := kp3*w1 + u2;
+                    np := 2;
+
+                    //v = -V -h +(V-v) mod up
+                    vp2 := yn2;
+                    vp1 := yn1;
+                    vp0 := vn0 + up0*(y1 + v1 + up0*(y2 + v2 + up0^2));
+                    
+                    if UTL_DEBUG then "UTL5"; end if;
+                end if;
+            else 
+                //up = ExactQuotient(f-v*h - v^2,u) made monic 
+                w1  := kp5^-1;
+                up3  := 0;
+                up2  := 1;
+                up1  := kp4*w1 + u2;
+                up0  := kp3*w1 + u1 + u2*up1;
+                np := 1;
+
+                //v = -V -h +(V-v) mod up
+                t1 := y2 + v2 + up0 + up1^2;
+                vp2 := yn2;
+                vp1 := vn1 + up1*(up0 + t1);
+                vp0 := vn0 + up0*t1;
+                
+                if UTL_DEBUG then "UTL6"; end if;
+            end if;
+        else
+            //up = ExactQuotient(f-v*h - v^2,u) made monic 
+            w1  := kp6^-1;
+            up3 := 1;
+            up2 := kp5*w1 + u2;
+            up1 := kp4*w1 + u1 + u2*up2;
+            up0 := kp3*w1 + u0 + u1*up2 + u2*up1;
+            np := 0;
+
+            //v = -V -h +(V-v) mod up
+            vp2 := vn2 + up1 + up2^2;
+            vp1 := vn1 + up0 + up1*up2;
+            vp0 := vn0 + up0*up2;
+            
+            if UTL_DEBUG then "UTL7"; end if;
+        end if;
+        
+    //Adjusting <1,0,4>
+    else
+        up0:= u0;
+        up1:= u1;
+        up2:= u2;
+        up3:= u3;
+        np:= n-1;
+        vp0:= v0;
+        vp1:= v1;
+        vp2:= v2;
+    end if;
+
+    return [[[f0,f1,f2,f3,f8,yy2],                                  //f4,f5,f6,f7 =0
+             [h0,h1,h2],                                            //h3= 0, h4= 1
+             [y0,y1,y2,y4],                                         //V y3 = 0
+             [yn0,yn1,yn2,yn4]],                                    //-V-h  yn3 = 0
+             [[d0,d1,d2,d3,d4],                                     //Aux with V
+             [dn0,dn1,dn2,dn3,dn4]],                                //Aux with -V-h
+             [[u0,u1,u2,u3,n,v0,v1,v2],                             //Adjusted <1,0,-1>, 
+             [up0,up1,up2,up3,np,vp0,vp1,vp2]]];                    //Adjusted <1.0,-2>
+end function;                                                       //Adjusted <1,0,4> uses u, v= yn and n=0
+    
+
+//-----------------------------------------------------------------------------
+// RandomChar2G2SplitCurve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//              
+// Return: Random(ish) hyperelliptic polynomials of curve with two points at
+//         infinity f and h in GF(q)[x] where f is seperable of degree 2g+2 and 
+//         polynomial h of degree <= g+1. h3=1 and h2=y2=f5=f4=f3=0.
+//-----------------------------------------------------------------------------
+RandomChar2G3SplitCurve := function(q)//startIGNORE
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h for genus g
+        beta:= Random(F);
+        f:= (beta^2 + beta)*x^8 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+        h:= x^4 + Random(F)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f and h are hyperelliptic polynomials
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h are hyperelliptic polynomials, check to see if
+        //the curve has two points at infinity and is genus g.
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 2) and (Degree(f) eq 8) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;//endIGNORE

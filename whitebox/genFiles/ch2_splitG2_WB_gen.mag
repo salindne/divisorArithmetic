@@ -1,0 +1,102 @@
+clear;
+///////////////////////////////////////////////////////////////////////////////
+/////// TESTING SPLIT MODEL DIVISOR ARITHMETIC OVER ARBITRARY FIELDS //////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Sebastian Lindner, 2019
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This script generates white box testsing cases over aribtrary fields.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
+//PRINT CASES FOR splitG2_tester.py SCRIPT
+///////////////////////////////////////////////////////////////////////////////
+Write("logs/ch2_splitG2_log.txt", "Loaded ..."); 
+
+///////////////////////////////////////////////////////////////////
+UTL_DEBUG := false;
+DBL_DEBUG := true;
+ADD_DEBUG := true;
+
+///////////////////////////////////////////////////////////////////////////////
+//LOAD FILES
+///////////////////////////////////////////////////////////////////////////////
+load "genFiles/reduced_basis_arithmetic.mag";
+load "../g2/splitModel/negReduced/g2Formulas/ch2_splitG2_UTL.mag";
+load "../g2/splitModel/negReduced/g2Formulas/ch2_splitG2_DBL.mag";
+load "../g2/splitModel/negReduced/g2Formulas/ch2_splitG2_ADD.mag";
+"     ";
+
+SetOutputFile("logs/ch2_splitG2_log.txt"); //Comment out if manually debugging
+SetAutoColumns(false);
+SetColumns(0);
+
+///////////////////////////////////////////////////////////////////////////////
+//GLOBAL TESTING VARIABLES
+///////////////////////////////////////////////////////////////////////////////
+//Field sizes below 10 for auto gen cases
+//Split curves do not exist for FF(2)
+FIELDS:= {4,8}; //,8,9,11};
+DIVISORS:= 1;
+H_ZERO := false;
+
+/////////////////////////////////////////////////////////
+///////////////////// TEST LOOPS ////////////////////////
+/////////////////////////////////////////////////////////
+while true do
+  // Random finite field FF and polynomial ring over FF
+  F:= Random(FIELDS);
+  FF:=GF(F);
+  R<x>:=PolynomialRing(FF);
+  f,h:= RandomChar2G2SplitCurve(F);
+  Vp:= ComputeVpl(f,h,2);
+  Vn := -Vp - h;
+  curveConst:= Precompute(f,h,F); 
+  
+  divisor:= 0;
+  while divisor le DIVISORS do
+    divisor+:=1;
+
+    /////////////////////////////////////////////////////
+    ///RANDOM DIVISORS
+    /////////////////////////////////////////////////////
+    D1:= RandomDivisor_SPLIT_NEG(f,h,Vn,2);
+    U1:= D1[1];
+    V1:= D1[2];
+    N1:= D1[4];
+
+    D2 := RandomDivisor_SPLIT_NEG(f,h,Vn,2);
+    U2:= D2[1];
+    V2:= D2[2];
+    N2:= D2[4];
+
+    "@B";
+    nU2,nU1,nU0,nV1,nV0,nN := DBL(U1,V1,N1,curveConst);
+    nU:= R ! nU2*x^2 + nU1*x + nU0;
+    nV:= R ! Coeff(Vn,3)*x^3 + Coeff(Vn,2)*x^2 + nV1*x + nV0;
+    cantor:= Double_SPLIT_NEG(D1,f,h,Vn,2);
+    if <nU, nV, ExactQuotient(f - nV*(nV + h),nU), nN> eq cantor then
+      F; f, h, Vp, Vn, D1, D2, <nU,nV,nN>;
+      "@E";
+    else
+      "failed";
+    end if;
+    if D1 ne D2 then
+      "@B";
+      nU2,nU1,nU0,nV1,nV0,nN := ADD(U1,V1,N1,U2,V2,N2,curveConst);
+      nU:= R ! nU2*x^2 + nU1*x + nU0;
+      nV:= R ! Coeff(Vn,3)*x^3 + Coeff(Vn,2)*x^2 + nV1*x + nV0;
+      cantor:= Add_SPLIT_NEG(D1,D2,f,h,Vn,2);
+      if <nU, nV, ExactQuotient(f - nV*(nV + h),nU), nN> eq cantor then
+        F; f, h, Vp, Vn, D1, D2, <nU,nV,nN>;
+        "@E";
+      else
+        "failed";
+      end if;
+    end if;
+  end while; 
+end while;

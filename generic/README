@@ -1,0 +1,37 @@
+This folder consists of Magma files related to testing our algorithms and 
+performing timing experiments for paper submission for CASC2020. These 
+scripts can be run using most versions of Magma as only polynomial arithmetic
+over finite fields is used.
+
+There are 10 timing scripts that produced the data used in Section 5 of the 
+paper submission. These scripts can be run with the following command:
+
+"magma timings_[xx]bit.mag"
+
+where [xx] is the field size in bits being timed.
+
+The file "reduced_basis_arithmetic.mag" provides all algorithms used in our 
+experiments and some supporting methods.
+
+The main algorithms are :   Ramified Cantor Add as Add_RAM
+                            Ramified Cantor Double as Double_RAM
+                            Ramified NUCOMP as Nucomp_RAM
+                            Ramified NUDUPL as Nuduple_RAM
+                            Negative Reduced Cantor Add as Add_SPLIT_NEG
+                            Negative Reduced Cantor Double as Double_SPLIT_NEG
+                            Negative Reduced NUCOMP as Nucomp_SPLIT_NEG
+                            Negative Reduced NUDUPL as Nuduple_SPLIT_NEG
+                            Positive Reduced Cantor Add as Add_SPLIT_POS
+                            Positive Reduced Cantor Double as Double_SPLIT_POS
+                            Positive Reduced NUCOMP as Nucomp_SPLIT_POS
+                            Positive Reduced NUDUPL as Nudple_SPLIT_POS.
+
+The file "reduced_basis_utilities.mag" includes timing methods for fibonacci and 
+double chain computations used in the timing scripts.
+
+The file "reduced_basis_tester.mag" compares results of fibonacci and double 
+chain methods between Cantor and Nucomp algorithms to check for correctness.
+
+Graphs for all timing experiments are included in the "graphs" folder and the raw
+data used to generate the graphs is located in "raw" folder.
+ 

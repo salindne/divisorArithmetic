@@ -1,0 +1,847 @@
+///////////////////////////////////////////////////////////////////////////////
+// Deg01ADDDWN():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,1> in  
+//                   reduced basis.
+// Implicitly 1,0,2: Mumford coordinates for divisor D=<1,0,2> in reduced 
+//                   basis.       
+//              ccs: Table of curve constants and precomputations, see 
+//                   Precompuation in nch23_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates up1,up0,vp1,vp0 and balance weight np for 
+//         for reduceed and balanced Dp ~ D.               
+// Description: Explicit computation for adding <1,0,2> and degree 1 divisor.          
+///////////////////////////////////////////////////////////////////////////////
+Deg01ADDDWN:= function(u0,v0,ccs)   
+    
+    y1:= ccs[2][2]; 
+
+    z0 := ccs[2][1] - v0;
+
+    if IsZero(z0) then  
+        d1:= ccs[2][3];
+        if IsZero(d1) then
+            return <0,0,1,y1,ccs[2][1],0>;
+        end if;
+        f4:= ccs[1][5];
+
+        w2  := d1^-1;
+        up0 := w2*(ccs[1][2] - v0*f4) - u0;
+        t1  := up0^2;
+        vp0 := up0*(f4 + t1 + t1) - v0;
+
+        return <0,1,up0,y1,vp0,0>;
+    end if;
+
+    w2  := z0^-1;
+    up1 := w2*ccs[2][4] - u0;
+    up0 := w2*(ccs[2][5] - v0*y1) - u0*up1;
+    t0  := up0 - up1^2;
+    t1  := up1 + up1;   
+    vp1 := t0 + t0 - y1;
+    vp0 := -up0*t1 - v0;
+
+    return <1,up1,up0,vp1,vp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg01ADDUP():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in  
+//                   reduced basis.
+// Implicitly 1,0,0: Mumford coordinates for divisor D=<1,0,0> in reduced 
+//                   basis.       
+//              ccs: Table of curve constants and precomputations, see 
+//                   Precompuation in nch23_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates up1,up0,vp1,vp0 and balance weight np for 
+//         for reduceed and balanced Dp ~ D.               
+// Description: Explicit computation for adding <1,0,0> and degree 1 divisor.       
+///////////////////////////////////////////////////////////////////////////////
+Deg01ADDUP:= function(u0,v0,ccs)
+    
+
+    t0  := u0^2;                            
+    vp0 := u0*(ccs[1][5] + t0 + t0) - v0;
+    z0 := ccs[2][1] - vp0;
+
+    if IsZero(z0) then 
+        d1:= ccs[2][3];
+        if IsZero(d1) then
+            return <0,0,1,ccs[2][2],ccs[2][1],2>;
+        end if;
+
+        w2  := d1^-1;
+        up0 := w2*(ccs[1][2] - vp0*ccs[1][5]) - u0;
+
+        return <0,1,up0,ccs[2][2],vp0,1>;
+    end if;
+
+    w2  := z0^-1;
+    up1 := w2*ccs[2][4] - u0;
+    up0 := w2*(ccs[2][5] - vp0*ccs[2][2]) - u0*up1;
+
+    return <1,up1,up0,ccs[2][2],vp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg02ADDDWN():         
+// Input: u1,u0,v1,v0: Mumford coordinates for divisor   
+//                     D=<x^2 + u1x + u0, v1x + v0, 0> in reduced basis.
+//   Implicitly 1,0,2: Mumford coordinates for divisor D=<1,0,2> in reduced 
+//                     basis.       
+//                ccs: Table of curve constants and precomputations, see 
+//                     Precompuation in nch23_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates up1,up0,vp1,vp0 and balance weight np for 
+//         for reduceed and balanced Dp ~ D.               
+// Description: Explicit computation for adding <1,0,2> and degree 2 divisor.          
+///////////////////////////////////////////////////////////////////////////////
+Deg02ADDDWN:= function(u0,u1,v0,v1,ccs)
+    
+    z0 := ccs[2][1] - v0;
+    z1 := ccs[2][2] - v1;
+    
+    if IsZero(z1) then  
+        if IsZero(z0) then
+            return <0,0,1,ccs[2][2],ccs[2][1],0>;
+        end if;
+
+        w2  := z0^-1;
+        up0 := w2*(ccs[2][6] - (v1^2)/2) - u1;
+        t0  := up0^2;
+        vp0 := up0*(ccs[1][5] + t0 + t0) - v0;
+
+        return <0,1,up0,ccs[2][2],vp0,0>;
+    end if;
+
+    w2  := z1^-1;
+    up1 := w2*z0 - u1;
+    up0 := w2*(ccs[2][6] - (v1^2)/2) - u0 - u1*up1;
+    t0  := up0 - up1^2;
+    t1  := up1 + up1;
+    vp1 := t0 + t0 - v1;
+    vp0 := -v0 - t1*up0;
+    
+    return <1,up1,up0,vp1,vp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg02ADDUP():         
+// Input: u1,u0,v1,v0: Mumford coordinates for divisor 
+//                     D=<x^2 + u1x + u0, v1x + v0, 0> in reduced basis.
+//   Implicitly 1,0,0: Mumford coordinates for divisor D=<1,0,0> in reduced 
+//                     basis.       
+//                ccs: Table of curve constants and precomputations, see 
+//                     Precompuation in arb_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates up1,up0,vp1,vp0 and balance weight np for 
+//         for reduceed and balanced Dp ~ D.               
+// Description: Explicit computation for adding <1,0,0> and degree 2 divisor.          
+///////////////////////////////////////////////////////////////////////////////
+Deg02ADDUP:= function(u0,u1,v0,v1,ccs)
+
+    t1 := u1 + u1;
+    t2 := u1^2 - u0;
+    v1 := v1 + t2 + t2;
+    v0 := v0 + u0*t1; 
+    z0 := v0 + ccs[2][1];
+    z1 := v1 + ccs[2][2];
+
+    if IsZero(z1) then  
+        if IsZero(z0) then
+            return <0,0,1,ccs[2][2],ccs[2][1],2>;
+        end if;
+
+        w2  := z0^-1;
+        up0 := w2*(ccs[2][6] - (v1^2)/2) - u1;
+
+        return <0,1,up0,ccs[2][2],-v0,1>;
+    end if;
+
+    w2  := z1^-1;
+    up1 := w2*z0 - u1;
+    up0 := w2*(ccs[2][6] - (v1^2)/2) - u0 - u1*up1;
+
+    return <1,up1,up0,-v1,-v0,0>;
+end function;
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg1ADD():         
+// Input:  u0,v0: Mumford coordinates for divisor D=<x + u0,v0,n> in reduced
+//                basis where 0<=n<=1 and n + np = 1
+//       up0,vp0: Mumford coordinates for divisor Dp=<x + up0,vp0,np> in reduced
+//                basis where 0<=n<=1 and n + np = 1
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in nch23_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding two degree 1 divisors.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg1ADD:= function(u0,v0,up0,vp0,ccs)
+
+    d1:= ccs[2][3];
+
+    d := u0 - up0;
+
+    if IsZero(d) then
+        f4:= ccs[1][5];
+
+        upp1 := u0 + u0;
+        upp0 := u0^2;
+
+        dw := v0 + vp0 - u0*f4 - upp0*upp1;
+        if IsZero(dw) then
+            return <0,0,1,ccs[2][2],ccs[2][1],1>;
+        end if;
+
+        t0 := ccs[2][1] - v0;
+        t2 := ccs[1][2] - f4*v0 - u0*(d1 + d1 - upp1*(t0 + t0 + t0));
+        s0:= t2*dw^-1;
+        vpp1 := ccs[2][2] + s0;
+        vpp0 := v0 + s0*u0;
+
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;
+
+    s0 := (vp0 - v0)*d^-1;
+    upp1 := u0 + up0;
+    upp0 := u0*up0;
+    vpp1 := ccs[2][2] + s0;
+    vpp0 := v0 + u0*s0;
+                                             
+    return <1, upp1, upp0, vpp1, vpp0, 0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg1ADDDWN():         
+// Input:  u0,v0: Mumford coordinates for divisor D=<x + u0,v0,1> in reduced
+//                basis.
+//       up0,vp0: Mumford coordinates for divisor Dp=<x + up0,vp0,1> in reduced
+//                basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in nch23_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit compuation for adding two degree 1 divisors.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg1ADDDWN:= function(u0,v0,up0,vp0,ccs)
+
+    y1:= ccs[2][2]; 
+
+    d := u0 - up0;
+    if IsZero(d) then
+        return <0,0,1,y1,ccs[2][1],2>;
+    end if;
+
+    sp0 := vp0 - v0;
+    z0 := ccs[2][1] - v0;
+
+    if IsZero(sp0) then
+        if IsZero(z0) then
+            return <0,0,1,y1,ccs[2][1],0>;
+        end if;
+
+        w1   := z0^-1;
+        upp0 := w1*(ccs[2][4] - u0*z0) - up0;
+        t1 := upp0^2;
+        vpp0 := upp0*(ccs[1][5] + t1 + t1) - v0;
+
+        return <0,1,upp0,y1,vpp0,0>;
+    end if;
+
+    w0 := (sp0*d)^-1; 
+    w1 := w0*d^2;   
+    s0 := w0*sp0^2; 
+    t1   := z0*w1; 
+    upp1 := -t1 - up0;
+    upp0 := y1 + s0/2 - w1*ccs[2][4] + u0*t1 - up0*upp1;
+    t0   := -upp1 - upp1;
+    vpp1 := -y1 - s0 + upp0 + upp0 + upp1*t0;
+    vpp0 := -v0 - s0*u0 + upp0*t0;
+    
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg1ADDUP():         
+// Input:  u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in reduced
+//                basis.
+//       up0,vp0: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in reduced
+//                basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in nch23_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit compuation for adding two degree 1 divisors.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg1ADDUP:= function(u0,v0,up0,vp0,ccs)
+    
+    f4:= ccs[1][5];
+    y1:= ccs[2][2]; 
+
+    d := u0 - up0;
+    if IsZero(d) then
+        return <0,0,1,y1,ccs[2][1],0>;
+    end if;
+
+    t0  := u0^2;
+    vt0 := v0 - u0*(t0 + t0 + f4);
+    t1  := up0^2;
+    sp0 := vp0 - vt0 - up0*(t1 + t1 + f4);
+    z0 := ccs[2][1] + vt0;
+
+    if IsZero(sp0) then  
+        if IsZero(z0) then
+            return <0,0,1,y1,ccs[2][1], 2>;
+        end if;
+
+        w1   := z0^-1;
+        upp0 := w1*(ccs[2][4] - u0*z0) - up0;
+
+        return <0,1,upp0,y1,-vt0,1>;
+    end if;
+
+    w0 := (sp0*d)^-1; 
+    w1 := w0*d^2;    
+    s0 := w0*sp0^2; 
+    t0   := z0*w1;
+    upp1 := t0 - up0;
+    upp0 := y1 - s0/2 + w1*ccs[2][4] - u0*t0 - up0*upp1;
+    vpp1 := y1 - s0;
+    vpp0 := -vt0 - s0*u0;
+ 
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg12ADD():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,1> in 
+//                     reduced basis.
+//  up0,up1,vp0,vp1: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in 
+//                     reduced basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in nch23_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding a degree 1 and degree 2 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg12ADD:= function(u0,v0,up0,up1,vp0,vp1,ccs)
+
+    y1:= ccs[2][2];
+
+    t0 := u0*up1;
+    t1 := u0^2;
+    d  := up0 - t0 + t1;
+    if IsZero(d) then
+        dw := v0 + vp0 - u0*(vp1 + y1 + u0*(u0 + u0));
+        if IsZero(dw) then
+            upp0 := up1 - u0;
+            vpp0 := vp0 + upp0*(y1 - vp1);
+
+            return <0,1,upp0,y1,vpp0,1>;
+        end if;
+
+        t2 := y1 - vp1;
+        t3 := ccs[2][1] - vp0;
+        k2 := t2 + t2;
+        k1 := t3 + t3 - up1*k2;
+        k0 := ccs[1][3] - vp1^2 - up0*k2 - up1*k1;
+        sp0 := (k0 - u0*(k1 - u0*k2));
+
+        if IsZero(sp0) then
+            if IsZero(t2) then
+                return <0,0,1,y1,ccs[2][1],0>;
+            end if;
+
+            w2 := t2^-1;
+            upp0 := w2*t3 - up1 - u0;
+            vpp0 := upp0*(y1 + vp1 + upp0*(upp0 + upp0)) - vp0;
+
+            return <0,1,upp0,y1,vpp0,0>;
+        end if;
+
+        w2 := (sp0*dw)^-1;  
+        w3 := w2*sp0;        
+        w4 := dw^2*w2;       
+        s0 := w3*sp0;
+        t0 := s0*up1 + vp1;
+        upp1 := s0/2 - w4*t2 - u0;
+        upp0 := (t0 + vp1)/2 - w4*(ccs[2][1] - vp0 - t2*up1) - u0*upp1;
+        t1   := s0 - upp1 - upp1;
+        vpp1 := upp1*t1 + upp0 + upp0 - t0;
+        vpp0 := upp0*t1 - s0*up0 - vp0;
+        
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;
+
+    z0 := y1 - vp1;
+    sp0 := v0 - vp0 - z0*u0;
+
+    if IsZero(sp0) then           
+        if IsZero(z0) then 
+            return <0,0,1,y1,ccs[2][1],0>;
+        end if;
+
+        w2   := z0^-1;
+        upp0 := w2*(ccs[2][1] - vp0) - up1 - u0;
+        t1   := upp0^2;
+        vpp0 := upp0*(y1 + vp1 + t1 + t1) - vp0;
+        
+        return <0, 1, upp0, y1, vpp0, 0>;
+    end if;
+
+    w2 := (sp0*d)^-1;  
+    w3 := w2*sp0;      
+    w4 := d^2*w2;      
+    s0 := w3*sp0;
+    vh1  := s0*up1 + vp1;
+    upp1 := s0/2 - w4*z0 - u0;
+    upp0 := (vh1 + vp1)/2 - w4*(ccs[2][1] - vp0 - z0*up1) - u0*upp1;
+    t1   := s0 - upp1 - upp1;
+    vpp1 := upp0 + upp0 + t1*upp1 - vh1;
+    vpp0 := upp0*t1 - s0*up0 - vp0;
+
+    return <1, upp1, upp0, vpp1, vpp0, 0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg12ADDUP():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in 
+//                     reduced basis.
+//  up0,up1,vp0,vp1: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in 
+//                     reduced basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in nch23_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding a degree 1 and degree 2 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg12ADDUP:= function(u0,v0,up0,up1,vp0,vp1,ccs)
+    
+    y1:= ccs[2][2];
+
+    t2  := up1 + up1;
+    vp1 := vp1 - up0 - up0 + t2*up1;
+    vp0 := vp0 + up0*t2;
+    t0 := u0*up1;
+    t1 := u0^2;
+    d  := up0 - t0 + t1;
+
+    if IsZero(d) then
+        dw := vp0 + v0 - u0*(y1 + vp1);
+        
+        if IsZero(dw) then
+            upp0 := up1 - u0;
+            t0 := upp0^2;
+            vpp0 := vp0 + upp0*(y1 - vp1 + t0 + t0);
+
+            return <0,1,upp0,y1,vpp0,0>; 
+        end if;
+
+        t2 := vp1 + y1;
+        t3 := vp0 + ccs[2][1];
+        k2 := t2 + t2;
+        k1 := t3 + t3 - up1*k2;
+        k0 := ccs[1][3] - vp1^2 - up0*k2 - up1*k1;
+        sp0 := (k0 - u0*(k1 - u0*k2));
+
+        if IsZero(sp0) then
+            if IsZero(t2) then
+                return <0,0,1,y1,ccs[2][1],2>;
+            end if;
+
+            w2   := t2^-1;
+            upp0 := w2*t3 - up1 - u0; 
+            vpp0 := upp0*t2 - vp0;
+
+            return <0, 1, upp0, y1, vpp0, 1>;
+        end if;
+
+        w2 := (sp0*dw)^-1;
+        w3 := w2*sp0; 
+        w4 := dw^2*w2;
+        s0 := w3*sp0;
+        t0  := s0*up1;
+        upp1 := w4*t2 - s0/2 - u0;
+        upp0 := w4*(t3 - t2*up1) - vp1 - t0/2 - u0*upp1;
+        vpp1 := upp1*s0 - t0 - vp1;
+        vpp0 := s0*(upp0 - up0) - vp0;
+
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;
+
+    k2 := y1 + vp1;
+    sp0 := v0 - vp0 - u0*(y1 - vp1 + t1 + t1);
+    
+    if IsZero(sp0) then  
+        if IsZero(k2) then 
+            return <0,0,1,y1,ccs[2][1],2>;
+        end if;
+
+        w2 := k2^-1;
+        upp0 := w2*(ccs[2][1] + vp0) - up1 - u0; 
+        vpp0 := upp0*k2 - vp0;
+
+        return <0, 1, upp0, y1, vpp0, 1>;
+    end if;
+
+    w2 := (sp0*d)^-1;  
+    w3 := w2*sp0;      
+    w4 := d^2*w2;      
+    s0 := w3*sp0;
+    vh1  := s0*up1 + vp1;
+    upp1 := w4*k2 - s0/2 - u0;
+    upp0 := w4*(ccs[2][1] + vp0 - k2*up1) - (vp1 + vh1)/2 - u0*upp1;
+    vpp1 := upp1*s0 - vh1;
+    vpp0 := s0*(upp0 - up0) - vp0;
+
+    return <1, upp1, upp0, vpp1, vpp0, 0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg2ADD():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in 
+//                   reduced basis.
+//  up0,up1,vp0,vp1: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in 
+//                   reduced basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in nch23_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding a degree 2 and degree 2 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg2ADD:= function(u0,u1,v0,v1,up0,up1,vp0,vp1,ccs)
+     
+    
+    m3 := up1 - u1;
+    m4 := u0 - up0;
+    m1 := m4 + up1*m3;
+    m2 := -up0*m3;
+    d  := m1*m4 - m2*m3;
+
+    if IsZero(d) then
+        f2:= ccs[1][3]; 
+        y0:= ccs[2][1]; 
+        y1:= ccs[2][2]; 
+        if IsZero(m3) then
+            t0 := u1 + u1;
+            dw21:= vp1 + v1 - u0 - u0 + u1*t0;
+            dw20:= vp0 + v0 + u0*t0;
+
+            if IsZero(dw20) and IsZero(dw21) then 
+                return <0,0,1,y1,y0,1>;
+            end if;
+
+            t2 := y1 - v1;
+            t3 := y0 - v0;
+            k2 := t2 + t2;
+            k1 := t3 + t3 - u1*k2;
+            k0 := f2 - v1^2 - u0*k2 - u1*k1;
+            b2 := dw21^-1;
+            u0 := u1 - dw20*b2;
+            s0 := b2*(k0 - u0*(k1 - u0*k2));
+            upp1 := u0 + u0;
+            upp0 := u0^2;
+            vpp1 := s0 + v1;
+            vpp0 := v0 + u0*s0;
+
+            return <1,upp1,upp0,vpp1,vpp0,0>;
+        end if;
+
+        M2 := m3^2;
+        M3 := -m3*M2;
+        t0 := m4^2;
+        t1 := vp1 + v1;
+        dw3 := M3*(vp0 + v0) - m4*(M2*t1 + t0 + t0);
+  
+        if IsZero(dw3) then
+            a1 := -m3^-1;
+            S1 := m4*a1;
+            u0 := u1 - S1;             
+            up0 := up1 - S1;
+            s0 := a1*(vp0 - v0 - up0*(vp1 - v1));
+            upp1 := u0 + up0;
+            upp0 := u0*up0;
+            vpp1 := v1 + s0;
+            vpp0 := v0 + s0*u0;
+
+            return <1,upp1,upp0,vpp1,vpp0,0>;
+        end if;
+
+        t2 := y1 - v1;
+        t3 := y0 - v0;
+        k2 := t2 + t2;
+        k1 := t3 + t3 - u1*k2;
+        k0 := f2 - v1^2 - u0*k2 - u1*k1;
+        t2 := up1^2 - up0;
+        a12 := -M2*(t1 + t2 + t2);       
+        sp1 := a12*(vp1 - v1) + M3*(k1 - up1*k2);
+        sp0 := a12*(vp0 - v0) + M3*(k0 - up0*k2);
+        D  := dw3^2;
+
+        if IsZero(sp1) then
+            if IsZero(sp0) then
+                return <0,0,1,y1,y0,0>;
+            end if;
+        
+            w2 := (dw3*sp0)^-1;
+            s0 := sp0^2*w2;
+            w3 := D*w2;
+            
+            t0:= s0*u1;
+            t1:= y1 - v1;
+            upp0:= w3*((s0^2)/2 - t1) - up1;
+            vpp0 := -v0 - s0*u0 + upp0*(t0 + y1 + v1 - upp0*(s0 - upp0 - upp0));
+
+            return <0, 1, upp0, y1, vpp0,0>;
+        end if;
+
+        w1 := D - (sp1 + dw3)^2;
+        
+        if IsZero(w1) then 
+
+            t1 := -u1 - u1;
+            t2 := sp0 + dw3*t1;
+            w0 := t2 + t2;
+        
+            if IsZero(w0) then
+                return <0,0,1,y1,y0,2>;
+            end if;
+
+            w2 := (dw3*w0)^-1;
+            s0 := sp0*w0*w2;
+            w3 := D*w2;
+            
+            t0:= s0*u1;
+            t2:= t0 - u0 - u0 + v1 + y1;
+            t3:= s0 + t1;
+            upp0:= w3*(t2 + t2 - s0*t3) - up1;
+            vpp0:= upp0*(t2 - upp0*t3) - v0 - s0*u0;
+
+            return <0,1,upp0,y1,vpp0,1>;
+        end if;
+
+        w2 := (dw3*w1)^-1; 
+        w3 := w2*w1;  
+        w4 := w2*D*dw3; 
+        s1 := sp1*w3;
+        s0 := sp0*w3;
+        
+        l0   :=s0*u0;
+        t1   :=s1*u1;
+        l2   := s0 + t1;
+        l1   := (s0 + s1)*(u0 + u1) - l0 - t1;
+        upp1 := -w4*(s1*(l2 + s0) + s0 + s0) - up1;
+        t0   := y1 - v1;
+        t4   := l1 + v1;
+        upp0 := w4*(t0 + t0 - s0*l2 - s1*(t4 + v1)) - up0 - up1*upp1;
+
+        t0   := 2 + s1;
+        t1   := upp1*t0;
+        t2   := l2 - t1;
+        t3   := upp0*t2;
+        vpp1 := (upp0 + upp1)*(t0 + t2) - t4 - t1 - t3;
+        vpp0 := t3 - v0 - l0;
+
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;
+
+    r0  := vp0 - v0;
+    r1  := vp1 - v1;
+    sp1 := r0*m3 + r1*m4;
+    sp0 := r0*m1 + r1*m2;
+
+    D  := d^2;
+    if IsZero(sp1) then
+        y0:= ccs[2][1]; 
+        y1:= ccs[2][2]; 
+        if IsZero(sp0) then
+            return <0,0,1,y1,y0,0>;
+        end if;
+      
+        w2 := (d*sp0)^-1;
+        s0 := sp0^2*w2;
+        w3 := D*w2;
+        t0:= s0*u1;
+        t1:= y1 - v1;
+        upp0:= w3*((s0^2)/2 - t1) - up1;
+        vpp0 := -v0 - s0*u0 + upp0*(t0 + y1 + v1 - upp0*(s0 - upp0 - upp0));
+
+        return <0, 1, upp0, y1, vpp0,0>;
+    end if;
+
+    w1 := D - (sp1 + d)^2;
+    
+    if IsZero(w1) then 
+        y0:= ccs[2][1]; 
+        y1:= ccs[2][2]; 
+        t1 := -u1 - u1;
+        t2 := sp0 + d*t1;
+        w0 := t2 + t2;
+        
+        if IsZero(w0) then
+            return <0,0,1,y1,y0,2>;
+        end if;
+
+        w2 := (d*w0)^-1;
+        s0 := sp0*w0*w2;
+        w3 := D*w2;
+        t0:= s0*u1;
+        t2:= t0 - u0 - u0 + v1 + y1;
+        t3:= s0 + t1;
+        upp0:= w3*(t2 + t2 - s0*t3) - up1;
+        vpp0:= upp0*(t2 - upp0*t3) - v0 - s0*u0;
+
+        return <0,1,upp0,y1,vpp0,1>;
+    end if;
+
+    w2 := (d*w1)^-1;
+    w3 := w2*w1;  
+    w4 := w2*D*d; 
+    s1 := sp1*w3;
+    s0 := sp0*w3;
+    
+    l0   := s0*u0;
+    t1   := s1*u1;
+    l2   := s0 + t1;
+    l1   := (s0 + s1)*(u0 + u1) - l0 - t1;
+    upp1 := -w4*(s1*(l2 + s0) + s0 + s0) - up1;
+    t0   := ccs[2][2] - v1;
+    t4   := l1 + v1;
+    upp0 := w4*(t0 + t0 - s0*l2 - s1*(t4 + v1)) - up0 - up1*upp1;
+
+    t0   := 2 + s1;
+    t1   := upp1*t0;
+    t2   := l2 - t1;
+    t3   := upp0*t2;
+    vpp1 := (upp0 + upp1)*(t0 + t2) - t4 - t1 - t3;
+    vpp0 := t3 - v0 - l0;
+
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ADD():
+// Input: u1,v1,n1: Polynomials u,v and number n representing an arbirtrary
+//                  divisor D1 over a split model HEC.
+//        u2,v2,n2: Polynomials u,v and number n representing an arbirtrary
+//                  divisor D2 over a split model HEC.
+//             ccs: Table of curve constants and precomputations, see 
+//                  Precompuation in splitG2UTL.mag.
+//
+// Output: Mumford coordinates upp2,upp1,upp0,vpp1,vpp0 for D1 + D2               
+// Description: Explicit computation for adding any two divisors in reduced    
+//              basis. Handles all cases explicitly.               
+///////////////////////////////////////////////////////////////////////////////
+ADD:= function(d1,d2,ccs)
+
+    if IsOne(d1[1]) then
+        if IsOne(d2[1]) then
+            return Deg2ADD(d1[3],d1[2],d1[5],d1[4],d2[3],d2[2],d2[5],d2[4],ccs); 
+
+        elif IsOne(d2[2]) then
+            if IsZero(d2[6]) then
+                return Deg12ADDUP(d2[3],d2[5],d1[3],d1[2],d1[5],d1[4],ccs); 
+            else
+                return Deg12ADD(d2[3],d2[5],d1[3],d1[2],d1[5],d1[4],ccs); 
+            end if;
+        else
+            if d2[6] eq 0 then
+                return Deg02ADDUP(d1[3],d1[2],d1[5],d1[4],ccs);
+            elif d2[6] eq 1 then
+                return <d1[1],d1[2],d1[3],d1[4],d1[5],0>;
+            else
+                return Deg02ADDDWN(d1[3],d1[2],d1[5],d1[4],ccs); 
+            end if;
+        end if;
+
+    elif IsOne(d1[2]) then
+        if IsOne(d2[1]) then
+            if IsZero(d1[6]) then
+                return Deg12ADDUP(d1[3],d1[5],d2[3],d2[2],d2[5],d2[4],ccs); 
+            else
+                return Deg12ADD(d1[3],d1[5],d2[3],d2[2],d2[5],d2[4],ccs); 
+            end if;
+
+        elif IsOne(d2[2]) then
+            n := d1[6] + d2[6] -1;
+            if n eq 1 then
+                return Deg1ADDDWN(d1[3],d1[5],d2[3],d2[5],ccs); 
+            elif n eq -1 then
+                return Deg1ADDUP(d1[3],d1[5],d2[3],d2[5],ccs); 
+            else
+                return Deg1ADD(d1[3],d1[5],d2[3],d2[5],ccs); 
+            end if;
+        else
+            if d2[6] eq 0 then
+                if d1[6] eq 0 then
+                    return Deg01ADDUP(d1[3],d1[5],ccs); 
+                else
+                    return <d1[1],d1[2],d1[3],d1[4],d1[5],0>; 
+                end if;
+            elif d2[6] eq 1 then
+                return <d1[1],d1[2],d1[3],d1[4],d1[5],d1[6]>; 
+            else
+                if d1[6] eq 0 then
+                    return <d1[1],d1[2],d1[3],d1[4],d1[5],1>;
+                else
+                    return Deg01ADDDWN(d1[3],d1[5],ccs); 
+                end if;
+            end if;
+        end if;
+
+    else 
+        if IsOne(d2[1]) then
+            if d1[6] eq 0 then
+                return Deg02ADDUP(d2[3],d2[2],d2[5],d2[4],ccs); 
+            elif d1[6] eq 1 then
+                return <d2[1],d2[2],d2[3],d2[4],d2[5],0>; 
+            else
+                return Deg02ADDDWN(d2[3],d2[2],d2[5],d2[4],ccs); 
+            end if;
+
+        elif IsOne(d2[2]) then
+            if d1[6] eq 0 then
+                if d2[6] eq 0 then
+                    return Deg01ADDUP(d2[3],d2[5],ccs); 
+                else
+                    return <d2[1],d2[2],d2[3],d2[4],d2[5],0>; 
+                end if;
+            elif d1[6] eq 1 then
+                return <d2[1],d2[2],d2[3],d2[4],d2[5],d2[6]>; 
+            else
+                if d2[6] eq 0 then
+                    return <d2[1],d2[2],d2[3],d2[4],d2[5],1>;
+                else
+                    return Deg01ADDDWN(d2[3],d2[5],ccs);
+                end if;
+            end if;
+
+        else 
+            if d1[6] eq 0 then 
+                return <0,0,1,ccs[2][2],ccs[2][1],d2[6]-1>;
+            elif d1[6] eq 1 then
+                return <0,0,1,ccs[2][2],ccs[2][1],d2[6]>;
+            else
+                return <0,0,1,ccs[2][2],ccs[2][1],d2[6]+1>;
+            end if;
+
+        end if;
+    end if;
+end function;

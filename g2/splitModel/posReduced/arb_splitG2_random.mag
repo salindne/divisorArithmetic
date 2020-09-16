@@ -1,0 +1,129 @@
+clear;
+///////////////////////////////////////////////////////////////////////////////
+/////// TESTING SPLIT MODEL DIVISOR ARITHMETIC OVER ARBITRARY FIELDS //////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Sebastian Lindner, 2019
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This script tests divisor arithmetic functions from arb_splitG2_UTL.mag,
+// arb_splitg2_DBL.mag, and arb_splitG2_ADD.mag.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//LOAD FILES
+///////////////////////////////////////////////////////////////////////////////
+UTL_DEBUG:= false;             
+DBL_DEBUG:= false;
+ADD_DEBUG:= false;
+load "reduced_basis_arithmetic.mag";
+load "g2Formulas/arb_splitG2_UTL.mag";
+load "g2Formulas/arb_splitG2_DBL.mag";
+load "g2Formulas/arb_splitG2_ADD.mag";
+"     ";
+
+///////////////////////////////////////////////////////////////////////////////
+//GLOBAL TESTING VARIABLES
+///////////////////////////////////////////////////////////////////////////////
+//Field sizes below 20 for random testing
+//Split curves do not exist for FF(2)
+FIELDS:= {3,4,5,7,8,9,11,13,16,17,19,23,25};
+DIVISORS:= 2500;
+TRIALS:= #FIELDS;
+DEBUG:= false;
+TEST_DBL:= true;
+TEST_ADD:= true;
+H_ZERO:= false;
+
+
+/////////////////////////////////////////////////////////
+///////////////////// TEST LOOPS ////////////////////////
+/////////////////////////////////////////////////////////
+
+printf "///////////////////////////////////////////////////////////////////////\n";
+printf "//\n";
+printf "// - Small finite field and curve picked at random for each trial. \n";
+printf "// - %o total trials.            \n", TRIALS;
+printf "// - %o divisor additions and doubles each per trial.            \n", DIVISORS;
+printf "//";
+trial:=1;
+errorFlag:= false;
+for F in FIELDS do
+  printf "\n//    Trail # %o over FF(%o).", trial, F;
+  trial+:=1;
+  // Random finite field FF and polynomial ring over FF
+  FF:=GF(F);
+  R<x>:=PolynomialRing(FF);
+
+  f,h:= RandomCurve_SPLIT(2,F,H_ZERO);
+  V:= ComputeVpl(f,h,2);
+  curveConst:= Precompute(f,h,F); 
+  
+
+  if DEBUG then
+    "\n";
+    FF, "f is: ", f, "h is: ", h, "V+ is: ", V, "V- is: ", -V-h;
+    " ";
+  end if;
+
+  divisor:= 0;
+  while divisor le DIVISORS do
+    divisor+:=1;
+
+    /////////////////////////////////////////////////////
+    ///RANDOM DIVISORS
+    /////////////////////////////////////////////////////
+    D1:= RandomDivisor_SPLIT_POS(f,h,V,2);
+    U1:= D1[1];
+    V1:= D1[2];
+    N1:= D1[4];
+
+
+    D2:= RandomDivisor_SPLIT_POS(f,h,V,2);
+    U2:= D2[1];
+    V2:= D2[2];
+    N2:= D2[4];
+
+
+    /////////////////////////////////////////////////////
+    ///TEST FORMULAS ON DIVISORS
+    /////////////////////////////////////////////////////
+    if DEBUG then "  "; end if;
+    if TEST_DBL then
+      nU2,nU1, nU0, nV1, nV0, nN := DBL(U1,V1,N1,curveConst);
+      nU:= R ! nU2*x^2 + nU1*x + nU0;
+      nV:= R ! Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + nV1*x + nV0;
+      result := <nU,nV,ExactQuotient(f - nV*(nV + h),nU), nN>;
+      cantor:= Double_SPLIT_POS(D1,f,h,V,2);
+      if result ne cantor then
+        printf "Doubling %o failed over finite field FF(%o) where f = %o and h = %o \n", D1, F, f, h;
+        errorFlag:= true;
+      end if;
+    end if;
+
+    if TEST_ADD then
+      if D1 ne D2 then
+        nU2,nU1, nU0, nV1, nV0, nN := ADD(U1,V1,N1,U2,V2,N2,curveConst);
+        nU:= R ! nU2*x^2 + nU1*x + nU0;
+        nV:= R ! Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + nV1*x + nV0;
+        result := <nU,nV,ExactQuotient(f - nV*(nV + h),nU), nN>;
+        cantor:= Add_SPLIT_POS(D1,D2,f,h,V,2);
+        if result ne cantor then
+          printf "Adding %o with %o failed over finite field FF(%o) where f = %o and h = %o \n", D1, D2, F, f, h;
+          errorFlag:= true;
+        end if; 
+      end if;
+    end if;
+  end while; 
+end for;
+printf "\n//";
+if errorFlag then
+  printf "\n// Errors occured.";
+else
+  printf "\n// No errors.";
+end if;
+printf "\n//";
+printf "\n///////////////////////////////////////////////////////////////////////\n";
+quit;

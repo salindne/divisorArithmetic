@@ -1,0 +1,100 @@
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{compute}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [f,h,q], $}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$c_3=y_3+y_3+h_3$;\hspace{4pt}
+$d_5=c_3{}^{-1}$;\hspace{4pt}
+$d_4=f_4-h_1 \cdot y_3$;\hspace{4pt}
+$d_3=f_3-h_0 \cdot y_3$;\hspace{4pt}
+} &  &  & 4 & 2\\
+\multicolumn{3}{|R{340pt}|}{ 
+$y_2=(f_5-y_3 \cdot h_2) \cdot d_5$;\hspace{4pt}
+$y_1=(d_4-y_2 \cdot (y_2+h_2)) \cdot d_5$;\hspace{4pt}
+} & 2 &  & 3 & 2\\
+\multicolumn{3}{|R{340pt}|}{ 
+$c_1=y_1+h_1$;\hspace{4pt}
+$c_5=c_1+y_1$;\hspace{4pt}
+$y_0=(d_3-y_2 \cdot c_5-y_1 \cdot h_2) \cdot d_5$;\hspace{4pt}
+} & 1 &  & 4 & 2\\
+\multicolumn{3}{|R{340pt}|}{ 
+$c_0=y_0+h_0$;\hspace{4pt}
+$c_2=y_2+y_2+h_2$;\hspace{4pt}
+$c_4=c_2+c_3$;\hspace{4pt}
+} &  &  & 4 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$d_2=f_2-h_0 \cdot y_2-y_0 \cdot c_2$;\hspace{4pt}
+$d_1=f_2-h_0 \cdot y_2-y_1 \cdot c_1$;\hspace{4pt}
+} &  &  & 4 & 4\\
+\multicolumn{3}{|R{340pt}|}{ 
+$d_0=f_1-h_0 \cdot y_1$;\hspace{4pt}
+$k_2=d_1-y_0 \cdot c_2$;\hspace{4pt}
+$k_1=d_0-y_0 \cdot c_5$;\hspace{4pt}
+} &  &  & 3 & 3\\
+\multicolumn{3}{|R{340pt}|}{ 
+$k_0=f_0-y_0 \cdot c_0$;\hspace{4pt}
+} &  &  & 1 & 1\\
+\multicolumn{3}{|l|}{ 
+ \bf{If $k_2 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=k_2{}^{-1}$;\hspace{4pt}
+$au_2=1$;\hspace{4pt}
+$au_1=k_1 \cdot w_1$;\hspace{4pt}
+$au_0=k_0 \cdot w_1$;\hspace{4pt}
+$audeg=2$;\hspace{4pt}
+} & 2 &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=c_2-au_1 \cdot c_3$;\hspace{4pt}
+$adv_1=au_0 \cdot c_3+au_1 \cdot w_2-c_1$;\hspace{4pt}
+} & 1 &  & 3 & 2\\
+\multicolumn{3}{|R{340pt}|}{ 
+$adv_0=au_0 \cdot w_2-c_0$;\hspace{4pt}
+} & 1 &  & 1 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $2D = D'' = [f_1,f_2,f_3,f_4,f_5,f_6,h_0,h_1,h_2,h_3,y_0,y_1,y_2,y_3,d_0,d_1,d_2,d_3,d_4,c_0,c_1,c_2,c_3,c_4,c_5,au_0,au_1,au_2,audeg,adv_0,adv_1]$
+\TS & Total: & 7 &  & 27 & 16 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $k_2 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $k_1 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=k_1{}^{-1}$;\hspace{4pt}
+$au_2=0$;\hspace{4pt}
+$au_1=1$;\hspace{4pt}
+$au_0=k_0 \cdot w_1$;\hspace{4pt}
+$audeg=1$;\hspace{4pt}
+} & 1 &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$adv_1=y_1$;\hspace{4pt}
+$adv_0=au_0 \cdot (y_1+c_1-au_0 \cdot (c_2-au_0 \cdot c_3))-c_0$;\hspace{4pt}
+} & 2 &  & 4 & 1\\
+\hline
+\bf{OUT:} & \hspace*{65pt} $2D = D'' = [f_1,f_2,f_3,f_4,f_5,f_6,h_0,h_1,h_2,h_3,y_0,y_1,y_2,y_3,d_0,d_1,d_2,d_3,d_4,c_0,c_1,c_2,c_3,c_4,c_5,au_0,au_1,au_2,audeg,adv_0,adv_1]$
+\TS & Total: & 6 &  & 27 & 15 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $k_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$au_2=0$;\hspace{4pt}
+$au_1=0$;\hspace{4pt}
+$au_0=1$;\hspace{4pt}
+$audeg=0$;\hspace{4pt}
+$adv_1=y_1$;\hspace{4pt}
+$adv_0=y_0$;\hspace{4pt}
+} &  &  &  & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $2D = D'' = [f_1,f_2,f_3,f_4,f_5,f_6,h_0,h_1,h_2,h_3,y_0,y_1,y_2,y_3,d_0,d_1,d_2,d_3,d_4,c_0,c_1,c_2,c_3,c_4,c_5,au_0,au_1,au_2,audeg,adv_0,adv_1]$
+\TS & Total: & 3 &  & 23 & 14 \\
+\hline
+\hline
+\end{tabular}
+
+

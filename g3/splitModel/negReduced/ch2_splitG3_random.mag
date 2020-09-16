@@ -1,0 +1,169 @@
+///////////////////////////////////////////////////////////////////////////////
+///////// TESTING SPLIT MODEL DIVISOR ARITHMETIC OVER CHAR TWO FIELDS /////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Sebastian Lindner, 2020
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This script tests divisor arithmetic functions from ch2_splitG3_UTL.mag,
+// ch2_splitG3_DBL.mag, and ch2_splitG3_ADD.mag.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//LOAD FILES
+///////////////////////////////////////////////////////////////////////////////
+UTL_DEBUG:= false;             
+DBL_DEBUG:= false;
+ADD_DEBUG:= false;
+load "poly_balanced_arithmetic.mag";
+load "g3Formulas/ch2_splitG3_UTL.mag";
+load "g3Formulas/ch2_splitG3_DBL.mag";
+load "g3Formulas/ch2_splitG3_ADD.mag";
+"     ";
+
+///////////////////////////////////////////////////////////////////////////////
+//GLOBAL TESTING VARIABLES
+///////////////////////////////////////////////////////////////////////////////
+//Field sizes below 20 for random testing
+//Split curves do not exist for FF(2)
+FIELDS:= {4,8,16,32};
+DIVISORS:= 1000;
+TRIALS:= #FIELDS;
+DEBUG:= false;
+TEST_DBL:= true;
+TEST_ADD:= true;
+H_ZERO:= false;
+CURVES := 5;
+
+/////////////////////////////////////////////////////////
+///////////////////// TEST LOOPS ////////////////////////
+/////////////////////////////////////////////////////////
+
+printf "///////////////////////////////////////////////////////////////////////\n";
+printf "//\n";
+printf "// - %o total finite field trials.                        \n", TRIALS;
+printf "// - %o curves picked at random for each trial.           \n", CURVES;
+printf "// - %o divisor additions and doubles each per curve.     \n", DIVISORS;
+printf "//";
+
+trial:=1;
+errorFlag:= false;
+for F in FIELDS do
+  printf "\n//    Trail # %o over FF(%o).", trial, F;
+  trial+:=1;
+  curveTrial := 0;
+  while  curveTrial lt CURVES do
+    curveTrial := curveTrial + 1;
+    // Random finite field FF and polynomial ring over FF
+    FF:=GF(F);
+    R<x>:=PolynomialRing(FF);
+
+    f,h:= RandomChar2G3SplitCurve(F);
+    V:= ComputeVpl(f,h);
+    NV := -V - h;
+    curveConst:= Precompute(f,h,F); 
+
+    
+    if DEBUG then
+      "\n";
+      FF, "f := ", f, "h := ", h, "V+ := ", V, "V- := ", -V-h;
+      " ";
+    end if;
+
+    divisor:= 0;
+    while divisor lt DIVISORS do
+      divisor+:=1;
+
+      /////////////////////////////////////////////////////
+      ///RANDOM DIVISORS
+      /////////////////////////////////////////////////////
+
+      D1:= RandomDivisorAB(f,h);
+      ND1:= NegativeReducedBasis(D1,f,h);
+      if DEBUG then
+        "D1 Adapted Basis: ", D1;
+        "D1 Reduced Basis: ", ND1;
+      end if;
+      U1:= ND1[1];
+      V1:= ND1[2];
+      N1:= ND1[3];
+
+      D2:= RandomDivisorAB(f,h);
+      ND2:= NegativeReducedBasis(D2,f,h);
+      if DEBUG then
+        "D2 Adapted Basis: ", D2;
+        "D2 Reduced Basis: ", ND2;
+      end if;
+      U2:= ND2[1];
+      V2:= ND2[2];
+      N2:= ND2[3];
+
+
+      /////////////////////////////////////////////////////
+      ///TEST FORMULAS ON DIVISORS
+      /////////////////////////////////////////////////////
+      if DEBUG then "  "; end if;
+      if TEST_DBL then
+        nU3,nU2,nU1,nU0,nV2,nV1,nV0,nN := DBL(U1,V1,N1,curveConst);
+        nU:= R ! nU3*x^3 + nU2*x^2 + nU1*x + nU0;
+        nV:= R ! Coeff(NV,4)*x^4 + Coeff(NV,3)*x^3 + nV2*x^2 + nV1*x + nV0;
+        cantor:= NegativeReducedBasis(Double(D1,f,h,V),f,h);
+        if <nU,nV,nN> ne cantor then
+          "\n";
+          FF, "f := ", f, "h := ", h, "V+ := ", V, "V- := ", -V-h;
+          "D1 Adapted Basis: ", D1;
+          "D1 Reduced Basis: ", ND1;
+          "D2 Adapted Basis: ", D2;
+          "D2 Reduced Basis: ", ND2;
+          "Cantor: ", cantor;
+          "Explicit: ", <nU,nV,nN>;
+          //printf "Doubling %o failed over finite field FF(%o) where f = %o and h = %o \n", ND1, F, f, h;
+          errorFlag:= true;
+        end if;
+      end if;
+      
+      if TEST_ADD then
+        if D1 ne D2 then
+          nU3,nU2,nU1,nU0,nV2,nV1,nV0,nN := ADD(U1,V1,N1,U2,V2,N2,curveConst);
+          nU:= R ! nU3*x^3 + nU2*x^2 + nU1*x + nU0;
+          nV:= R ! Coeff(NV,4)*x^4 + Coeff(NV,3)*x^3 + nV2*x^2 + nV1*x + nV0;
+          cantor:= NegativeReducedBasis(Add(D1,D2,f,h,V),f,h);
+          if <nU,nV,nN> ne cantor then
+            "\n";
+            FF, "f := ", f, "h := ", h, "V+ := ", V, "V- := ", -V-h;
+            "D1 Adapted Basis: ", D1;
+            "D1 Reduced Basis: ", ND1;
+            "D2 Adapted Basis: ", D2;
+            "D2 Reduced Basis: ", ND2;
+            "Cantor: ", cantor;
+            "Explicit: ", <nU,nV,nN>;
+            //printf "Adding %o with %o failed over finite field FF(%o) where f = %o and h = %o \n", RD1, RD2, F, f, h;
+            errorFlag:= true;
+          end if; 
+        end if;
+      end if;
+    
+      if errorFlag then
+        break;
+      end if;
+
+    end while;
+  end while; 
+  if errorFlag then
+    break;
+  end if;
+end for;
+
+printf "\n//";
+if errorFlag then
+  printf "\n// Errors occured.";
+else
+  printf "\n// No errors.";
+end if;
+printf "\n//";
+printf "\n///////////////////////////////////////////////////////////////////////\n";
+
+quit;
+

@@ -1,0 +1,98 @@
+clear;
+///////////////////////////////////////////////////////////////////////////////
+/////// TESTING SPLIT MODEL DIVISOR ARITHMETIC OVER ARBITRARY FIELDS //////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Sebastian Lindner, 2019
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This script generates white box testsing cases over aribtrary fields.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
+//PRINT CASES FOR splitG2_tester.py SCRIPT
+///////////////////////////////////////////////////////////////////////////////
+Write("logs/ch2_ramifiedG2_log.txt", "Loaded ..."); 
+
+///////////////////////////////////////////////////////////////////
+UTL_DEBUG := false;
+DBL_DEBUG := true;
+ADD_DEBUG := true;
+
+///////////////////////////////////////////////////////////////////////////////
+//LOAD FILES
+///////////////////////////////////////////////////////////////////////////////
+load "genFiles/ramifiedUtilities.mag";
+load "../g2/ramifiedModel/g2Formulas/ch2_ramifiedG2_DBL.mag";
+load "../g2/ramifiedModel/g2Formulas/ch2_ramifiedG2_ADD.mag";
+"     ";
+
+SetOutputFile("logs/ch2_ramifiedG2_log.txt"); //Comment out if manually debugging
+SetAutoColumns(false);
+SetColumns(0);
+
+///////////////////////////////////////////////////////////////////////////////
+//GLOBAL TESTING VARIABLES
+///////////////////////////////////////////////////////////////////////////////
+//Field sizes below 10 for auto gen cases
+//Split curves do not exist for FF(2)
+FIELDS:= {4,8}; //,8,9,11};
+DIVISORS:= 1;
+
+
+/////////////////////////////////////////////////////////
+///////////////////// TEST LOOPS ////////////////////////
+/////////////////////////////////////////////////////////
+while true do
+  // Random finite field FF and polynomial ring over FF
+  F:= Random(FIELDS);
+  FF:=GF(F);
+  R<x>:=PolynomialRing(FF);
+  f,h:= RandomG2Char2Curve(F);
+  C:= HyperellipticCurve(f,h);
+  Jac:= Jacobian(C); 
+  
+  divisor:= 0;
+  while divisor le DIVISORS do
+    divisor+:=1;
+
+    /////////////////////////////////////////////////////
+    ///RANDOM DIVISORS
+    /////////////////////////////////////////////////////
+    D1:= Random(Jac);
+    U1:= D1[1];
+    V1:= D1[2];
+  
+    D2 := Random(Jac);
+    U2:= D2[1];
+    V2:= D2[2];
+
+    "@B";
+    nU2,nU1,nU0,nV1,nV0 := DBL(U1,V1,f,h);
+    nU:= R ! nU2*x^2 + nU1*x + nU0;
+    nV:= R ! nV1*x + nV0;
+    cantor:= D1 + D1;
+    if nU eq cantor[1] and nV eq cantor[2] then
+      F; f, h, <D1[1], D1[2]>, <D2[1],D2[2]>, <nU,nV>;
+      "@E";
+    else
+      "failed";
+    end if;
+    if D1 ne D2 then
+      "@B";
+      nU2,nU1,nU0,nV1,nV0 := ADD(U1,V1,U2,V2,f,h);
+      nU:= R ! nU2*x^2 + nU1*x + nU0;
+      nV:= R ! nV1*x + nV0;
+      cantor:= D1 + D2;
+      if nU eq cantor[1] and nV eq cantor[2] then
+        F; f, h, <D1[1], D1[2]>, <D2[1],D2[2]>, <nU,nV>;
+        "@E";
+      else
+        "failed";
+      end if;
+    end if;
+  end while; 
+end while;

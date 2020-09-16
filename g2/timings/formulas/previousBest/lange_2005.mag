@@ -1,0 +1,198 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner,2019                                                          
+//                                                   
+// Description: Explicit divisor doubling formulas for the 4 coordinate         
+//              Mumford representation over not characteristic 2 fields 
+//              where: 
+//                             
+//              h(x) = 0 and             
+//              f(x) = x^5 + f3x^3 + f2x^2 + f1x + f0           
+//                                                                      
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// DBL():  
+
+Deg2DBL_lange_RAM:= function(u1,u0,v1,v0,f)
+    vt1 := 2*v1;
+    vt0 := 2*v0;
+    w0  := v1^2;
+    w1  := u1^2;
+    w2  := vt1^2;
+    w3  := u1*vt1;
+    r   := u0*w2 + vt0*(vt0 - w3);
+    if IsZero(r) then
+        R<x>:= Parent(f);
+        u := x^2 + u1*x + u0;
+        v := v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_RAM(<u,v,w>,f,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0)>;
+    end if;
+    i1 := -vt1;
+    i0 := vt0-w3;
+    w3 := Coefficient(f,3) + w1;
+    w4 := 2*u0;
+    k1 := 2*w1 + w3 - w4;
+    k0 := u1*(2*w4 - w3) + Coefficient(f,2) - w0;
+    w0 := k0*i0;
+    w1 := k1*i1;
+    sp1 := (i0 + i1)*(k0 + k1) - w0 - w1*(1 +u1);
+    sp0 := w0 - u0*w1;
+    if IsZero(sp1) then
+        w1 := r^-1;
+        s0 := sp0*w1;
+        w2 := u0*s0 + v0;
+        upp0 := -s0^2 - 2*u1;
+        w1   := s0*(u1 - upp0) + v1;
+        vpp0 := upp0*w1 - w2;
+        return <0, 1, upp0, 0, vpp0>;
+    end if;
+    w1   := (r*sp1)^-1;
+    w2   := w1*r;
+    w3   := sp1^2*w1;
+    w4   := r*w2; 
+    w5   := w4^2;
+    spp0 := sp0*w2;
+    l2 := u1 + spp0;
+    l1 := u1*spp0 + u0;
+    l0 := u0*spp0;
+    upp0 := spp0^2 + 2*(w4*v1 + w5*u1);
+    upp1 := 2*spp0 - w5;
+    w1 := l2 - upp1;
+    w2 := upp1*w1 + upp0 - l1;
+    vpp1 := w2*w3 - v1;
+    w2 := upp0*w1 - l0;
+    vpp0 := w2*w3 - v0;
+    return <1,upp1, upp0, vpp1, vpp0>;
+end function;
+
+
+DBL_lange_RAM:= function(d1,f)
+    if IsOne(d1[1]) then
+        return Deg2DBL_lange_RAM(d1[2],d1[3],d1[4],d1[5],f);
+    else
+        R<x>:=Parent(f);
+        u := d1[2]*x + d1[3];
+        v := R!d1[5];
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_RAM(<u,v,w>,f,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0)>;
+    end if;
+end function;
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ADD():         
+
+Deg12ADD_lange_RAM:= function(u0,v0,up1,up0,vp1,vp0,f)
+    r := up0 - u0*(up1 - u0);
+    if IsZero(r) then
+        R<x>:=Parent(f);
+        u := x + u0;
+        v := R!v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_RAM(<u,v,w>,<up,vp,wp>,f,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0)>;
+    end if;
+    i := r^-1;
+    s0 := i*(v0 - vp0 + vp1*u0);
+    l1 := s0*up1;
+    l0 := s0*up0;
+    k2 := -up1;
+    k1 := Coefficient(f,3) + up1^2 - up0;       //Typo in paper
+    upp1 := k2 - s0^2 - u0;
+    upp0 := k1 - s0*(l1 + 2*vp1) - upp1*u0;
+    vpp1 := upp1*s0 - (l1 + vp1);
+    vpp0 := upp0*s0 - (l0 + vp0);
+    return <1, upp1, upp0, vpp1, vpp0>;
+end function;
+
+
+
+Deg2ADD_lange_RAM:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f)
+    z1 := up1 - u1;
+    z2 := u0 - up0;
+    z3 := up1*z1 + z2;
+    r := z2*z3 + z1^2*up0;
+    if IsZero(r) then
+        R<x>:=Parent(f);
+        u := x^2 + u1*x + u0;
+        v := v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_RAM(<u,v,w>,<up,vp,wp>,f,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0)>;
+    end if;
+    i1 := z1;
+    i0 := z3;
+    w0 := vp0 - v0;
+    w1 := vp1 - v1;
+    w2 := i0*w0;
+    w3 := i1*w1;
+    sp1 := (i0 + i1)*(w0 + w1) - w2 - w3*(1 + up1);
+    sp0 := w2 - up0*w3;
+    if IsZero(sp1) then
+        i    := r^-1;
+        s0   := sp0*i;
+        upp0 := -u1 - up1 - s0^2;
+        w1 := s0*(u1 - upp0) + v1;
+        w2 := s0*u0 + v0;                   //typo, missing s0*u0, is s0 + v0
+        vpp0 := upp0*w1 - w2;
+        return <0,1,upp0,0,vpp0>;
+    end if;
+    w1 := (r*sp1)^-1;
+    w2 := w1*r;
+    w3 := sp1^2*w1;
+    w4 := r*w2;
+    w5 := w4^2;
+    spp0 := sp0*w2;
+    l2 := u1 + spp0;
+    l1 := u1*spp0 + u0;
+    l0 := u0*spp0;
+    upp0 := (spp0 - up1)*(spp0 - z1) - up0 + l1 + 2*w4*v1 + w5*(2*u1 + z1);
+    upp1 := 2*spp0 - z1 - w5;
+    w1 := l2 - upp1;
+    w2 := upp1*w1 + upp0 - l1;
+    vpp1 := w2*w3 - v1;
+    w2 := upp0*w1 - l0;
+    vpp0 := w2*w3 - v0;
+    return <1,upp1,upp0,vpp1,vpp0>;
+end function;
+
+
+ADD_lange_RAM:= function(d1,d2,f)
+    if IsOne(d1[1]) then
+        if IsOne(d2[1]) then
+            return Deg2ADD_lange_RAM(d1[2],d1[3],d1[4],d1[5],d2[2],d2[3],d2[4],d2[5],f);
+        elif IsOne(d2[2]) then
+            return Deg12ADD_lange_RAM(d2[3],d2[5],d1[2],d1[3],d1[4],d1[5],f);
+        else
+            return d1;
+        end if;
+    elif IsOne(d1[2]) then
+        if IsOne(d2[1]) then
+            return Deg12ADD_lange_RAM(d1[3],d1[5],d2[2],d2[3],d2[4],d2[5],f);
+        elif IsOne(d2[2]) then
+            R<x>:=Parent(f);
+            u := x + d1[3];
+            v := R!d1[5];
+            w := ExactQuotient(f-v^2,u);
+            up := x + d2[3];
+            vp := R!d2[5];
+            wp := ExactQuotient(f-vp^2,up);
+            gen := Add_RAM(<u,v,w>,<up,vp,wp>,f,2);
+            return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0)>;
+        else
+            return d1;            
+        end if;
+    else
+        return d2;
+    end if;
+end function;

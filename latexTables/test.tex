@@ -1,0 +1,1145 @@
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{01ADDDWN}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,v_0], D' = []$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=d_1$;\hspace{4pt}
+$w_1=y_0-v_0$;\hspace{4pt}
+} &  &  & 1 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_1 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_1+w_1){}^{-1}$;\hspace{4pt}
+$u^{\prime}_1=w_2 \cdot w_0-u_0$;\hspace{4pt}
+$u^{\prime}_0=w_2 \cdot (f_1-v_0 \cdot f_4)-u_0 \cdot u^{\prime}_1$;\hspace{4pt}
+$t_0=u^{\prime}_0-u^{\prime}_1{}^{2}$;\hspace{4pt}
+$t_1=u^{\prime}_1+u^{\prime}_1$;\hspace{4pt}
+} & 3 & 1 & 6 & 1\\
+\multicolumn{3}{|R{340pt}|}{ 
+$v^{\prime}_1=t_0+t_0-y_1$;\hspace{4pt}
+$v^{\prime}_0=u^{\prime}_0 \cdot t_1-v_0$;\hspace{4pt}
+} & 1 &  & 3 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime}_1,u^{\prime}_0,v^{\prime}_1,v^{\prime}_0,0]$
+\TS & Total: & 4 & 1 & 10 & 1 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $w_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_0 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=w_0{}^{-1}$;\hspace{4pt}
+$u^{\prime}_0=w_2 \cdot (f_1-v_0 \cdot f_4)-u_0$;\hspace{4pt}
+$u^{\prime}_0sq=u^{\prime}_0{}^{2}$;\hspace{4pt}
+$v^{\prime}_0=u^{\prime}_0 \cdot (f_4+u^{\prime}_0sq+u^{\prime}_0sq)-v_0$;\hspace{4pt}
+} & 2 & 1 & 5 & 1\\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime}_0,y_1,v^{\prime}_0,0]$
+\TS & Total: & 2 & 1 & 6 & 1 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $w_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,0]$
+\TS & Total: &  &  & 1 &  \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{01ADDUP}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,v_0], D' = []$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=u_0{}^{2}$;\hspace{4pt}
+$v^{\prime}_0=u_0 \cdot (f_4+t_0+t_0)-v_0$;\hspace{4pt}
+$w_0=d_1$;\hspace{4pt}
+$w_1=y_0-v^{\prime}_0$;\hspace{4pt}
+} & 1 & 1 & 4 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_1 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_1+w_1){}^{-1}$;\hspace{4pt}
+$u^{\prime}_1=w_2 \cdot w_0-u_0$;\hspace{4pt}
+$u^{\prime}_0=w_2 \cdot (f_1-v^{\prime}_0 \cdot f_4)-u_0 \cdot u^{\prime}_1$;\hspace{4pt}
+} & 3 &  & 4 & 1\\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime}_1,u^{\prime}_0,y_1,v^{\prime}_0,0]$
+\TS & Total: & 4 & 1 & 8 & 1 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $w_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_0 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime}_0=(w_0{}^{-1}) \cdot (f_1-v^{\prime}_0 \cdot f_4)-u_0$;\hspace{4pt}
+} & 1 &  & 2 & 1\\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime}_0,y_1,v^{\prime}_0,1]$
+\TS & Total: & 2 & 1 & 6 & 1 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $w_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,2]$
+\TS & Total: & 1 & 1 & 4 &  \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{02ADDDWN}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,u_1,v_0,v_1], D' = []$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=y_0-v_0$;\hspace{4pt}
+$w_1=y_1-v_1$;\hspace{4pt}
+} &  &  & 2 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_1 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_1+w_1){}^{-1}$;\hspace{4pt}
+$u^{\prime}_1=w_2 \cdot (w_0+w_0)-u_1$;\hspace{4pt}
+$u^{\prime}_0=w_2 \cdot (f_2-v_1{}^{2})-u_0-u_1 \cdot u^{\prime}_1$;\hspace{4pt}
+$t_0=u^{\prime}_0-u^{\prime}_1{}^{2}$;\hspace{4pt}
+$t_1=u^{\prime}_1+u^{\prime}_1$;\hspace{4pt}
+} & 3 & 2 & 8 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$v^{\prime}_1=t_0+t_0-v_1$;\hspace{4pt}
+$v^{\prime}_0=v_0-t_1 \cdot u^{\prime}_0$;\hspace{4pt}
+} & 1 &  & 3 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime}_1,u^{\prime}_0,v^{\prime}_1,v^{\prime}_0,0]$
+\TS & Total: & 4 & 2 & 13 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $w_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_0 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_0+w_0){}^{-1}$;\hspace{4pt}
+$u^{\prime}_0=w_2 \cdot (f_2-v_1{}^{2})-u_1$;\hspace{4pt}
+$t_0=u^{\prime}_0{}^{2}$;\hspace{4pt}
+$v^{\prime}_0=u^{\prime}_0 \cdot (f_4+t_0+t_0)-v_0$;\hspace{4pt}
+} & 2 & 2 & 6 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime}_0,y_1,v^{\prime}_0,0]$
+\TS & Total: & 2 & 2 & 8 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $w_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,0]$
+\TS & Total: &  &  & 2 &  \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{02ADDUP}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,u_1,v_0,v_1], D' = []$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$t_1=u_1+u_1$;\hspace{4pt}
+$t_2=u_0-u_1{}^{2}$;\hspace{4pt}
+$v^{\prime}_1=t_2+t_2-v_1$;\hspace{4pt}
+$v^{\prime}_0=v_0-t_1 \cdot u_0$;\hspace{4pt}
+$w_0=y_0-v^{\prime}_0$;\hspace{4pt}
+$w_1=y_1-v^{\prime}_1$;\hspace{4pt}
+} & 1 & 1 & 7 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_1 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_1+w_1){}^{-1}$;\hspace{4pt}
+$u^{\prime}_1=w_2 \cdot (w_0+w_0)-u_1$;\hspace{4pt}
+$u^{\prime}_0=w_2 \cdot (f_2-v^{\prime}_1{}^{2})-u_0-u_1 \cdot u^{\prime}_1$;\hspace{4pt}
+} & 3 & 1 & 6 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime}_1,u^{\prime}_0,v^{\prime}_1,v^{\prime}_0,0]$
+\TS & Total: & 4 & 2 & 13 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $w_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_0 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_0+w_0){}^{-1}$;\hspace{4pt}
+$u^{\prime}_0=w_2 \cdot (f_2-v^{\prime}_1{}^{2})-u_1$;\hspace{4pt}
+} & 1 & 1 & 3 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime}_0,y_1,v^{\prime}_0,1]$
+\TS & Total: & 2 & 2 & 10 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $w_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,v^{\prime}_1,v^{\prime}_0,2]$
+\TS & Total: & 1 & 1 & 7 &  \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{1ADD}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,v_0], D' = [u^{\prime}_0,v^{\prime}_0]$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$d=u_0-u^{\prime}_0$;\hspace{4pt}
+$dw_1=v^{\prime}_0-v_0$;\hspace{4pt}
+} &  &  & 2 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $d = 0$ go to Special GCD Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_1=u_0+u^{\prime}_0$;\hspace{4pt}
+$u^{\prime\prime}_0=u_0 \cdot u^{\prime}_0$;\hspace{4pt}
+$w_2=dw_1 \cdot d{}^{-1}$;\hspace{4pt}
+$v^{\prime\prime}_1=y_1+w_2$;\hspace{4pt}
+$v^{\prime\prime}_0=v_0+u_0 \cdot w_2$;\hspace{4pt}
+} & 3 &  & 3 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 3 &  & 5 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1: $d = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_1 = 0$ go to Special GCD Case 1.1, else:} } &  &  &  & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,_1nn^{\prime}_1]$
+\TS & Total: &  &  & 2 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.1: $dw_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_0=u_0{}^{2}$;\hspace{4pt}
+$t_0=u^{\prime\prime}_0 \cdot u_0$;\hspace{4pt}
+$dw_0=v_0+v_0-u_0 \cdot f_4-t_0-t_0$;\hspace{4pt}
+} & 1 & 1 & 4 & 1\\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_0 = 0$ go to Special GCD Case 1.1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_1=u_0+u_0$;\hspace{4pt}
+$t_0=y_0-v_0$;\hspace{4pt}
+$t_1=t_0+t_0$;\hspace{4pt}
+$t_2=d_1 \cdot u_0$;\hspace{4pt}
+$s_0=(f_1-f_4 \cdot v_0-t_2-t_2+u^{\prime\prime}_0 \cdot (t_1+t_1+t_1)) \cdot dw_0{}^{-1}$;\hspace{4pt}
+} & 2 &  & 9 & 2\\
+\multicolumn{3}{|R{340pt}|}{ 
+$v^{\prime\prime}_1=y_1+s_0$;\hspace{4pt}
+$v^{\prime\prime}_0=v_0+s_0 \cdot u_0$;\hspace{4pt}
+} & 1 &  & 2 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 4 & 1 & 17 & 3 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.1.1: $dw_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,1]$
+\TS & Total: & 1 & 1 & 6 & 1 \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{1ADDDWN}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,v_0], D' = [u^{\prime}_0,v^{\prime}_0]$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$d=u_0-u^{\prime}_0$;\hspace{4pt}
+} &  &  & 1 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $d = 0$ go to Special GCD Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$s^{\prime}_0=v^{\prime}_0-v_0$;\hspace{4pt}
+$t_0=y_0-v_0$;\hspace{4pt}
+$k_2=t_0+t_0$;\hspace{4pt}
+$k_1=d_1-u_0 \cdot k_2$;\hspace{4pt}
+} & 1 &  & 4 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $s^{\prime}_0 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=(s^{\prime}_0 \cdot d){}^{-1}$;\hspace{4pt}
+$w_1=w_0 \cdot d{}^{2}$;\hspace{4pt}
+$s_0=w_0 \cdot s^{\prime}_0{}^{2}$;\hspace{4pt}
+$u^{\prime\prime}_1=u^{\prime}_0-(k_2 \cdot w_1)/2$;\hspace{4pt}
+$u^{\prime\prime}_0=(f_4+s_0-k_1 \cdot w_1)/2-u^{\prime}_0 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+} & 6 & 2 & 5 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=u^{\prime\prime}_1-u^{\prime\prime}_1$;\hspace{4pt}
+$v^{\prime\prime}_1=y_1-s_0+u^{\prime\prime}_0+u^{\prime\prime}_0+u^{\prime\prime}_1 \cdot t_0$;\hspace{4pt}
+$v^{\prime\prime}_0=v_0-s_0 \cdot u_0+u^{\prime\prime}_0 \cdot t_0$;\hspace{4pt}
+} & 3 &  & 7 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 10 & 2 & 17 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $s^{\prime}_0 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $k_2 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=k_2{}^{-1}$;\hspace{4pt}
+$u^{\prime\prime}_0=k_1 \cdot w_1-u^{\prime}_0$;\hspace{4pt}
+$t_1=u^{\prime\prime}_0{}^{2}$;\hspace{4pt}
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot (f_4+t_1+t_1)-v_0$;\hspace{4pt}
+} & 2 & 1 & 4 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 3 & 1 & 9 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $k_2 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,0]$
+\TS & Total: & 1 &  & 5 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1: $d = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,2]$
+\TS & Total: &  &  & 1 &  \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{1ADDUP}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,v_0], D' = [u^{\prime}_0,v^{\prime}_0]$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$d=u_0-u^{\prime}_0$;\hspace{4pt}
+} &  &  & 1 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $d = 0$ go to Special GCD Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=u_0{}^{2}$;\hspace{4pt}
+$vt_0=v_0-u_0 \cdot (t_0+t_0+f_4)$;\hspace{4pt}
+$t_1=u^{\prime}_0{}^{2}$;\hspace{4pt}
+$s^{\prime}_0=v^{\prime}_0-vt_0-u^{\prime}_0 \cdot (t_1+t_1+f_4)$;\hspace{4pt}
+$t_2=y_0+vt_0$;\hspace{4pt}
+} & 2 & 2 & 8 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$k_2=t_2+t_2$;\hspace{4pt}
+$k_1=d_1-u_0 \cdot k_2$;\hspace{4pt}
+} & 1 &  & 2 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $s^{\prime}_0 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=(s^{\prime}_0 \cdot d){}^{-1}$;\hspace{4pt}
+$w_1=w_0 \cdot d{}^{2}$;\hspace{4pt}
+$s_0=w_0 \cdot s^{\prime}_0{}^{2}$;\hspace{4pt}
+$u^{\prime\prime}_1=(k_2 \cdot w_1)/2-u^{\prime}_0$;\hspace{4pt}
+$u^{\prime\prime}_0=(f_4-s_0+k_1 \cdot w_1)/2-u^{\prime}_0 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+} & 6 & 2 & 6 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$v^{\prime\prime}_1=y_1-s_0$;\hspace{4pt}
+$v^{\prime\prime}_0=vt_0-s_0 \cdot u_0$;\hspace{4pt}
+} & 1 &  & 2 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 10 & 4 & 19 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $s^{\prime}_0 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $k_2 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=k_2{}^{-1}$;\hspace{4pt}
+$u^{\prime\prime}_0=k_1 \cdot w_1-u^{\prime}_0$;\hspace{4pt}
+} & 1 &  & 1 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,vt_0,1]$
+\TS & Total: & 4 & 2 & 12 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $k_2 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,2]$
+\TS & Total: & 3 & 2 & 11 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1: $d = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,0]$
+\TS & Total: &  &  & 1 &  \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{12ADD}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,v_0], D' = [u^{\prime}_0,u^{\prime}_1,v^{\prime}_0,v^{\prime}_1]$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=u_0 \cdot u^{\prime}_1$;\hspace{4pt}
+$t_1=u_0{}^{2}$;\hspace{4pt}
+$d=u^{\prime}_0-t_0+t_1$;\hspace{4pt}
+} & 1 & 1 & 2 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $d = 0$ go to Special GCD Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=y_1-v^{\prime}_1$;\hspace{4pt}
+$w_1=v_0-v^{\prime}_0-w_0 \cdot u_0$;\hspace{4pt}
+} & 1 &  & 3 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_1 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_1 \cdot d){}^{-1}$;\hspace{4pt}
+$w_3=w_2 \cdot w_1$;\hspace{4pt}
+$w_4=d{}^{2} \cdot w_2$;\hspace{4pt}
+$s_0=w_3 \cdot w_1$;\hspace{4pt}
+$z_2=y_1-v^{\prime}_1$;\hspace{4pt}
+$z_1=y_0-v^{\prime}_0-z_2 \cdot u^{\prime}_1$;\hspace{4pt}
+$vh_1=s_0 \cdot u^{\prime}_1+v^{\prime}_1$;\hspace{4pt}
+} & 6 & 1 & 4 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_1=s_0/2-w_4 \cdot z_2-u_0$;\hspace{4pt}
+$u^{\prime\prime}_0=(vh_1+v^{\prime}_1)/2-w_4 \cdot z_1-u_0 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+$t_1=s_0-u^{\prime\prime}_1-u^{\prime\prime}_1$;\hspace{4pt}
+$v^{\prime\prime}_1=u^{\prime\prime}_0+u^{\prime\prime}_0+t_1 \cdot u^{\prime\prime}_1-vh_1$;\hspace{4pt}
+} & 4 &  & 12 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot t_1-s_0 \cdot u^{\prime}_0-v^{\prime}_0$;\hspace{4pt}
+} & 2 &  & 2 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 14 & 2 & 23 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $w_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_0 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_0+w_0){}^{-1}$;\hspace{4pt}
+$t_0=y_0-v^{\prime}_0$;\hspace{4pt}
+$u^{\prime\prime}_0=w_2 \cdot (t_0+t_0)-u^{\prime}_1-u_0$;\hspace{4pt}
+$t_1=u^{\prime\prime}_0{}^{2}$;\hspace{4pt}
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot (y_1+v^{\prime}_1+t_1+t_1)-v^{\prime}_0$;\hspace{4pt}
+} & 2 & 1 & 9 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 4 & 2 & 14 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $w_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,0]$
+\TS & Total: & 2 & 1 & 5 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1: $d = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$d^{\prime\prime}=v_0-u_0 \cdot (t_1+t_1+v^{\prime}_1+y_1)$;\hspace{4pt}
+$dw_2=d^{\prime\prime}+v^{\prime}_0$;\hspace{4pt}
+$dw_3=v^{\prime}_1-y_1$;\hspace{4pt}
+} & 1 &  & 6 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_2 = 0$ go to Special GCD Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$un_2=u^{\prime}_1+u_0$;\hspace{4pt}
+$un_1=u^{\prime}_0+t_0$;\hspace{4pt}
+$un_0=u_0 \cdot u^{\prime}_0$;\hspace{4pt}
+$t_0=y_0-v^{\prime}_0$;\hspace{4pt}
+$t_4=dw_3-dw_3$;\hspace{4pt}
+$t_6=v^{\prime}_1{}^{2}$;\hspace{4pt}
+$t_7=v^{\prime}_0 \cdot d^{\prime\prime}$;\hspace{4pt}
+} & 2 & 1 & 4 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_8=un_2 \cdot t_4-t_0-t_0$;\hspace{4pt}
+$t_9=un_1 \cdot t_4$;\hspace{4pt}
+$t_1_0=un_0 \cdot t_8$;\hspace{4pt}
+$vn_2=f_2-t_6+t_9+un_2 \cdot t_8$;\hspace{4pt}
+} & 4 &  & 5 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$vn_1=(v^{\prime}_1-v^{\prime}_0) \cdot (d^{\prime\prime}+v^{\prime}_1)-t_6+t_7+f_1+(un_0+un_1) \cdot (t_8-t_4)-t_9-t_1_0$;\hspace{4pt}
+$vn_0=t_7+f_0+t_1_0$;\hspace{4pt}
+} & 2 &  & 12 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $vn_2 = 0$ go to Special GCD Case 1.2, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=vn_2-vn_2$;\hspace{4pt}
+$w_1=(w_0 \cdot dw_2){}^{-1}$;\hspace{4pt}
+$w_2=w_1 \cdot dw_2{}^{2}$;\hspace{4pt}
+$w_3=w_1 \cdot w_0$;\hspace{4pt}
+$vn_2=vn_2 \cdot w_3$;\hspace{4pt}
+$vn_1=vn_1 \cdot w_3$;\hspace{4pt}
+$vn_0=vn_0 \cdot w_3$;\hspace{4pt}
+} & 6 & 1 & 1 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_1=w_2 \cdot (f_4-vn_1-vn_1-vn_2{}^{2})-un_2$;\hspace{4pt}
+$u^{\prime\prime}_0=w_2 \cdot (f_3-vn_1 \cdot (vn_2+vn_2)-vn_0-vn_0)-un_1-un_2 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+} & 4 & 1 & 10 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=vn_2-u^{\prime\prime}_1-u^{\prime\prime}_1$;\hspace{4pt}
+$v^{\prime\prime}_1=u^{\prime\prime}_0+u^{\prime\prime}_0+u^{\prime\prime}_1 \cdot t_0-vn_1$;\hspace{4pt}
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot t_0-vn_0$;\hspace{4pt}
+} & 2 &  & 6 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 22 & 4 & 46 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.1: $dw_2 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_0=u^{\prime}_1-u_0$;\hspace{4pt}
+$v^{\prime\prime}_0=v^{\prime}_0-u^{\prime\prime}_0 \cdot dw_3$;\hspace{4pt}
+} & 1 &  & 2 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,1]$
+\TS & Total: & 3 & 1 & 10 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2: $vn_2 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_3 = 0$ go to Special GCD Case 1.2.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=t_4{}^{-1}$;\hspace{4pt}
+$u^{\prime\prime}_0=w_0 \cdot (t_0+t_0)-u^{\prime}_1-u_0$;\hspace{4pt}
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot (y_1+v^{\prime}_1-u^{\prime\prime}_0 \cdot (-u^{\prime\prime}_0-u^{\prime\prime}_0))-v^{\prime}_0$;\hspace{4pt}
+} & 3 &  & 8 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 13 & 2 & 37 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2.1: $dw_3 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,0]$
+\TS & Total: & 10 & 2 & 29 &  \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{12ADDUP}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,v_0], D' = [u^{\prime}_0,u^{\prime}_1,v^{\prime}_0,v^{\prime}_1]$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=u_0 \cdot u^{\prime}_1$;\hspace{4pt}
+$t_1=u_0{}^{2}$;\hspace{4pt}
+$d=u^{\prime}_0-t_0+t_1$;\hspace{4pt}
+} & 1 & 1 & 2 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $d = 0$ go to Special GCD Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_2=u^{\prime}_1+u^{\prime}_1$;\hspace{4pt}
+$v^{\prime}_1=v^{\prime}_1-u^{\prime}_0-u^{\prime}_0+t_2 \cdot u^{\prime}_1$;\hspace{4pt}
+$v^{\prime}_0=v^{\prime}_0+u^{\prime}_0 \cdot t_2$;\hspace{4pt}
+$w_0=y_1-v^{\prime}_1+t_1+t_1$;\hspace{4pt}
+$w_1=v_0-v^{\prime}_0-w_0 \cdot u_0$;\hspace{4pt}
+} & 3 &  & 10 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_1 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_1 \cdot d){}^{-1}$;\hspace{4pt}
+$w_3=w_2 \cdot w_1$;\hspace{4pt}
+$w_4=d{}^{2} \cdot w_2$;\hspace{4pt}
+$s_0=w_3 \cdot w_1$;\hspace{4pt}
+$z_2=y_1+v^{\prime}_1$;\hspace{4pt}
+$z_1=y_0+v^{\prime}_0-z_2 \cdot u^{\prime}_1$;\hspace{4pt}
+$vh_1=s_0 \cdot u^{\prime}_1+v^{\prime}_1$;\hspace{4pt}
+} & 6 & 1 & 4 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_1=w_4 \cdot z_2-s_0/2-u_0$;\hspace{4pt}
+$u^{\prime\prime}_0=w_4 \cdot z_1-(v^{\prime}_1+vh_1)/2-u_0 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+$v^{\prime\prime}_1=u^{\prime\prime}_1 \cdot s_0-vh_1$;\hspace{4pt}
+$v^{\prime\prime}_0=s_0 \cdot (u^{\prime\prime}_0-u^{\prime}_0)-v^{\prime}_0$;\hspace{4pt}
+} & 5 &  & 9 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 15 & 2 & 25 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $w_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=v^{\prime}_1+y_1$;\hspace{4pt}
+} &  &  & 1 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_0 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(w_0+w_0){}^{-1}$;\hspace{4pt}
+$w_3=v^{\prime}_0+y_0$;\hspace{4pt}
+$u^{\prime\prime}_0=w_2 \cdot (w_3+w_3)-u^{\prime}_1-u_0$;\hspace{4pt}
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot w_0-v^{\prime}_0$;\hspace{4pt}
+} & 2 &  & 6 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,1]$
+\TS & Total: & 6 & 1 & 19 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $w_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,2]$
+\TS & Total: & 4 & 1 & 13 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1: $d = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$t_5=v^{\prime}_1+y_1$;\hspace{4pt}
+$dw_2=v_0-u_0 \cdot (t_1+t_1+t_5)+v^{\prime}_0$;\hspace{4pt}
+$t_1=v^{\prime}_1-y_1$;\hspace{4pt}
+} & 1 &  & 6 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_2 = 0$ go to Special GCD Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$un_2=u^{\prime}_1+u_0$;\hspace{4pt}
+$un_1=u^{\prime}_0+t_0$;\hspace{4pt}
+$un_0=u_0 \cdot u^{\prime}_0$;\hspace{4pt}
+$t_0=dw_2+y_0-v^{\prime}_0$;\hspace{4pt}
+$t_4=t_1-t_1$;\hspace{4pt}
+$a_2=f_2-v^{\prime}_1{}^{2}$;\hspace{4pt}
+} & 1 & 1 & 6 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$a_1=dw_2 \cdot t_5-v^{\prime}_1 \cdot (v^{\prime}_0+v^{\prime}_0)+f_1$;\hspace{4pt}
+$a_0=dw_2 \cdot (v^{\prime}_0+y_0)-v^{\prime}_0{}^{2}+f_0$;\hspace{4pt}
+$t_0=t_0+t_0-un_2 \cdot t_4$;\hspace{4pt}
+$t_1=un_1 \cdot t_4$;\hspace{4pt}
+} & 5 & 1 & 8 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$vn_2=un_2 \cdot t_0+t_1-a_2$;\hspace{4pt}
+$t_3=un_0 \cdot t_0$;\hspace{4pt}
+$vn_1=dw_2 \cdot y_1-a_1+(un_1+un_0) \cdot (t_0+t_4)-t_1-t_3$;\hspace{4pt}
+} & 3 &  & 8 & 1\\
+\multicolumn{3}{|R{340pt}|}{ 
+$vn_0=dw_2 \cdot y_0-a_0+t_3$;\hspace{4pt}
+} &  &  & 2 & 1\\
+\multicolumn{3}{|l|}{ 
+ \bf{If $vn_2 = 0$ go to Special GCD Case 1.2, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=vn_2-vn_2$;\hspace{4pt}
+$w_1=(w_0 \cdot dw_2){}^{-1}$;\hspace{4pt}
+$w_2=w_1 \cdot dw_2{}^{2}$;\hspace{4pt}
+$w_3=w_1 \cdot w_0$;\hspace{4pt}
+$vn_2=vn_2 \cdot w_3$;\hspace{4pt}
+$vn_1=vn_1 \cdot w_3$;\hspace{4pt}
+$vn_0=vn_0 \cdot w_3$;\hspace{4pt}
+} & 6 & 1 & 1 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_1=w_2 \cdot (f_4-vn_1-vn_1-vn_2{}^{2})-un_2$;\hspace{4pt}
+$u^{\prime\prime}_0=w_2 \cdot (f_3-vn_1 \cdot (vn_2+vn_2)-vn_0-vn_0)-un_1-un_2 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+} & 4 & 1 & 10 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$v^{\prime\prime}_1=vn_1-u^{\prime\prime}_1 \cdot vn_2$;\hspace{4pt}
+$v^{\prime\prime}_0=vn_0-u^{\prime\prime}_0 \cdot vn_2$;\hspace{4pt}
+} & 2 &  & 2 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 23 & 5 & 45 & 2 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.1: $dw_2 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_0=u^{\prime}_1-u_0$;\hspace{4pt}
+$v^{\prime\prime}_0=v^{\prime}_0-u^{\prime\prime}_0 \cdot t_1$;\hspace{4pt}
+} & 1 &  & 2 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 3 & 1 & 10 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2: $vn_2 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=u^{\prime}_1{}^{2}-u^{\prime}_0$;\hspace{4pt}
+$t_1=u^{\prime}_0 \cdot u^{\prime}_1$;\hspace{4pt}
+$V_1=v^{\prime}_1+t_0+t_0$;\hspace{4pt}
+$V_0=v^{\prime}_0+t_1+t_1$;\hspace{4pt}
+$dw_3=V_1+y_1$;\hspace{4pt}
+$w_0=dw_3+dw_3$;\hspace{4pt}
+} & 1 & 1 & 7 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_3 = 0$ go to Special GCD Case 1.2.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=w_0{}^{-1}$;\hspace{4pt}
+$t_1=V_0+y_0$;\hspace{4pt}
+$u^{\prime\prime}_0=w_1 \cdot (t_1+t_1)-u^{\prime}_1-u_0$;\hspace{4pt}
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot dw_3-V_0$;\hspace{4pt}
+} & 2 &  & 5 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,1]$
+\TS & Total: & 14 & 4 & 44 & 2 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2.1: $dw_3 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,2]$
+\TS & Total: & 12 & 4 & 39 & 2 \\
+\hline
+\hline
+\end{tabular}
+
+
+\begin{tabular}{|c|cr|c|c|c|c|}
+\hline
+\multicolumn{7}{|c|}{\bf{2ADD}} \TS \\
+\hline
+\bf{IN:} &\multicolumn{2}{|c|}{$D = [u_0,u_1,v_0,v_1], D' = [u^{\prime}_0,u^{\prime}_1,v^{\prime}_0,v^{\prime}_1]$}
+\TS & M & \hspace{1pt}S\hspace{1pt} & A & \hspace{1pt}C\hspace{1pt} \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$m_3=u^{\prime}_1-u_1$;\hspace{4pt}
+$m_4=u_0-u^{\prime}_0$;\hspace{4pt}
+$m_1=m_4+u^{\prime}_1 \cdot m_3$;\hspace{4pt}
+$m_2=u^{\prime}_0 \cdot m_3$;\hspace{4pt}
+$d=m_1 \cdot m_4-m_2 \cdot m_3$;\hspace{4pt}
+} & 4 &  & 4 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $d = 0$ go to Special GCD Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$r_0=v^{\prime}_0-v_0$;\hspace{4pt}
+$r_1=v^{\prime}_1-v_1$;\hspace{4pt}
+$s^{\prime}_1=r_0 \cdot m_3+r_1 \cdot m_4$;\hspace{4pt}
+$s^{\prime}_0=r_0 \cdot m_1+r_1 \cdot m_2$;\hspace{4pt}
+$D=d{}^{2}$;\hspace{4pt}
+} & 4 & 1 & 4 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $s^{\prime}_1 = 0$ go to Special Output Case 1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=s^{\prime}_1+d$;\hspace{4pt}
+$w_1=D-t_0{}^{2}$;\hspace{4pt}
+} &  & 1 & 2 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_1 = 0$ go to Special Output Case 2, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(d \cdot w_1){}^{-1}$;\hspace{4pt}
+$w_3=w_2 \cdot w_1$;\hspace{4pt}
+$w_4=w_2 \cdot D \cdot d$;\hspace{4pt}
+$s_1=s^{\prime}_1 \cdot w_3$;\hspace{4pt}
+$s_0=s^{\prime}_0 \cdot w_3$;\hspace{4pt}
+$l_0=s_0 \cdot u_0$;\hspace{4pt}
+$t_1=s_1 \cdot u_1$;\hspace{4pt}
+$l_2=s_0+t_1$;\hspace{4pt}
+} & 8 &  & 1 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$l_1=(s_0+s_1) \cdot (u_0+u_1)-l_0-t_1$;\hspace{4pt}
+$u^{\prime\prime}_1=w_4 \cdot (s_1 \cdot (l_2+s_0)+s_0+s_0)-u^{\prime}_1$;\hspace{4pt}
+$t_0=y_1-v_1$;\hspace{4pt}
+$t_4=l_1+v_1$;\hspace{4pt}
+} & 3 &  & 10 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_0=w_4 \cdot (t_0+t_0-s_0 \cdot l_2-s_1 \cdot (t_4+v_1))-u^{\prime}_0-u^{\prime}_1 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+$t_0=2+s_1$;\hspace{4pt}
+$t_1=u^{\prime\prime}_1 \cdot t_0$;\hspace{4pt}
+$t_2=l_2-t_1$;\hspace{4pt}
+$t_3=u^{\prime\prime}_0 \cdot t_2$;\hspace{4pt}
+} & 6 &  & 8 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$v^{\prime\prime}_1=(u^{\prime\prime}_0+u^{\prime\prime}_1) \cdot (t_0+t_2)-t_4-t_1-t_3$;\hspace{4pt}
+$v^{\prime\prime}_0=t_3-v_0-l_0$;\hspace{4pt}
+} & 1 &  & 7 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 26 & 2 & 36 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1: $s^{\prime}_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $s^{\prime}_0 = 0$ go to Special Output Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=s^{\prime}_0+s^{\prime}_0$;\hspace{4pt}
+$w_2=(d \cdot w_1){}^{-1}$;\hspace{4pt}
+$s_0=s^{\prime}_0 \cdot w_1 \cdot w_2$;\hspace{4pt}
+$w_3=D \cdot w_2$;\hspace{4pt}
+$t_0=s_0 \cdot u_1$;\hspace{4pt}
+$t_1=y_1-v_1$;\hspace{4pt}
+} & 5 &  & 2 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_0=w_3 \cdot (s_0{}^{2}-t_1-t_1)-u^{\prime}_1$;\hspace{4pt}
+$v^{\prime\prime}_0=v_0-s_0 \cdot u_0+u^{\prime\prime}_0 \cdot (t_0+y_1+v_1-u^{\prime\prime}_0 \cdot (s_0-u^{\prime\prime}_0-u^{\prime\prime}_0))$;\hspace{4pt}
+} & 4 & 1 & 10 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 17 & 2 & 20 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 1.1: $s^{\prime}_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,0]$
+\TS & Total: & 8 & 1 & 8 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 2: $w_1 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$t_1=u_1-u_1$;\hspace{4pt}
+$t_2=s^{\prime}_0+d \cdot t_1$;\hspace{4pt}
+$w_0=t_2+t_2$;\hspace{4pt}
+} & 1 &  & 3 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $w_0 = 0$ go to Special Output Case 2.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_2=(d \cdot w_0){}^{-1}$;\hspace{4pt}
+$s_0=s^{\prime}_0 \cdot w_0 \cdot w_2$;\hspace{4pt}
+$w_3=D \cdot w_2$;\hspace{4pt}
+$t_0=s_0 \cdot u_1$;\hspace{4pt}
+$t_2=t_0-u_0-u_0+v_1+y_1$;\hspace{4pt}
+$t_3=s_0+t_1$;\hspace{4pt}
+} & 5 &  & 5 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_0=w_3 \cdot (t_2+t_2-s_0 \cdot t_3)-u^{\prime}_1$;\hspace{4pt}
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot (t_2-u^{\prime\prime}_0 \cdot t_3)-v_0-s_0 \cdot u_0$;\hspace{4pt}
+} & 5 &  & 6 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,1]$
+\TS & Total: & 19 & 2 & 24 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special Output Case 2.1: $w_0 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,2]$
+\TS & Total: & 9 & 2 & 13 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1: $d = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+} &  &  &  & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $m_3m_4 = 0$ go to Special GCD Case 1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_1=y_1-v_1$;\hspace{4pt}
+$^{\prime}_1v_0=v_0 \cdot m_3-m_4 \cdot t_1$;\hspace{4pt}
+$^{\prime}_2u_0=u_1 \cdot m_3+m_4$;\hspace{4pt}
+$^{\prime}_2v_0=^{\prime}_2u_0 \cdot t_1+v_0 \cdot m_3$;\hspace{4pt}
+$^{\prime}_4u_0=u^{\prime}_1 \cdot m_3+m_4$;\hspace{4pt}
+} & 6 &  & 5 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$^{\prime}_4v_0=^{\prime}_4u_0 \cdot (y_1-v^{\prime}_1)+v^{\prime}_0 \cdot m_3$;\hspace{4pt}
+$t_1=v_1-v^{\prime}_1$;\hspace{4pt}
+$t_0=v_0-v^{\prime}_0$;\hspace{4pt}
+$dw_2=m_4 \cdot t_1+m_3 \cdot t_0$;\hspace{4pt}
+} & 4 &  & 5 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_2 = 0$ go to Special GCD Case 1.2, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$d=^{\prime}_2u_0-^{\prime}_4u_0$;\hspace{4pt}
+$t_0=^{\prime}_4v_0-^{\prime}_2v_0$;\hspace{4pt}
+$w_0=(d \cdot m_3){}^{-1}$;\hspace{4pt}
+$w_2=w_0 \cdot m_3$;\hspace{4pt}
+$w_3=w_0 \cdot d$;\hspace{4pt}
+$w_1=t_0 \cdot w_2$;\hspace{4pt}
+$u_0=^{\prime}_2u_0 \cdot w_3$;\hspace{4pt}
+$u^{\prime}_0=^{\prime}_4u_0 \cdot w_3$;\hspace{4pt}
+} & 6 &  & 2 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_1=u_0+u^{\prime}_0$;\hspace{4pt}
+$u^{\prime\prime}_0=u_0 \cdot u^{\prime}_0$;\hspace{4pt}
+$v^{\prime\prime}_1=y_1+w_1$;\hspace{4pt}
+$v^{\prime\prime}_0=^{\prime}_2v_0 \cdot w_3+u_0 \cdot w_1$;\hspace{4pt}
+} & 3 &  & 3 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 23 &  & 19 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.1: $m_3m_4 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$u_0u_1=u_0 \cdot u_1$;\hspace{4pt}
+$u_1sq=u_1{}^{2}$;\hspace{4pt}
+$v_1mu=v_1-u_0+u_1sq$;\hspace{4pt}
+$v_0mu=v_0+u_0u_1$;\hspace{4pt}
+$dw_0=u_0-u_1sq-v^{\prime}_1-v_1mu$;\hspace{4pt}
+} & 1 & 1 & 6 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$dw_1=v^{\prime}_0-u_0u_1-v_0mu$;\hspace{4pt}
+} &  &  & 2 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_0dw_1 = 0$ go to Special GCD Case 1.1.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$m_3=v^{\prime}_1-v_1$;\hspace{4pt}
+$m_1=v^{\prime}_0-v_0$;\hspace{4pt}
+$v^{\prime}_0=m_1 \cdot (y_1-v_1)+v_0 \cdot m_3$;\hspace{4pt}
+$t_0=m_3{}^{2}$;\hspace{4pt}
+$t_1=m_1{}^{2} \cdot m_1$;\hspace{4pt}
+} & 3 & 2 & 4 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_0=t_0 \cdot (v^{\prime}_0+v^{\prime}_0-m_1 \cdot f_4)-t_1-t_1$;\hspace{4pt}
+$w_1=(w_0 \cdot m_3){}^{-1}$;\hspace{4pt}
+$w_2=w_1 \cdot t_0{}^{2}$;\hspace{4pt}
+$w_3=w_0 \cdot w_1$;\hspace{4pt}
+$u^{\prime}_0=m_1 \cdot w_3$;\hspace{4pt}
+$v^{\prime}_0=v^{\prime}_0 \cdot w_3$;\hspace{4pt}
+} & 6 & 1 & 4 & 1\\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_1=u^{\prime}_0+u^{\prime}_0$;\hspace{4pt}
+$u^{\prime\prime}_0=u^{\prime}_0{}^{2}$;\hspace{4pt}
+$t_0=y_0-v^{\prime}_0$;\hspace{4pt}
+$t_1=t_0+t_0$;\hspace{4pt}
+$t_2=u^{\prime}_0 \cdot d_1$;\hspace{4pt}
+} &  & 1 & 3 & 1\\
+\multicolumn{3}{|R{340pt}|}{ 
+$s_0=w_2 \cdot (f_1-f_4 \cdot v^{\prime}_0-t_2-t_2+u^{\prime\prime}_0 \cdot (t_1+t_1+t_1))$;\hspace{4pt}
+$v^{\prime\prime}_1=y_1+s_0$;\hspace{4pt}
+$v^{\prime\prime}_0=v^{\prime}_0+s_0 \cdot u^{\prime}_0$;\hspace{4pt}
+} & 3 &  & 8 & 1\\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 17 & 5 & 31 & 3 \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.1.1: $dw_0dw_1 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,1]$
+\TS & Total: & 5 & 1 & 12 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2: $dw_2 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$m_3sq=m_3{}^{2}$;\hspace{4pt}
+$m_3cu=m_3sq \cdot m_3$;\hspace{4pt}
+$m_4sq=m_4{}^{2}$;\hspace{4pt}
+$q_0=m_3sq \cdot (v_1+v^{\prime}_1)+m_4sq+m_4sq$;\hspace{4pt}
+$dw_3=m_3cu \cdot (v_0+v^{\prime}_0)+m_4 \cdot q_0$;\hspace{4pt}
+} & 4 & 2 & 5 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_3 = 0$ go to Special GCD Case 1.2.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$s_2=m_3sq+m_3sq$;\hspace{4pt}
+$s_1=(m_4+m_4) \cdot m_3$;\hspace{4pt}
+$s_0=q_0$;\hspace{4pt}
+$un_0=u^{\prime}_0 \cdot u_0$;\hspace{4pt}
+$t_1=u^{\prime}_1 \cdot u_1$;\hspace{4pt}
+$t_3=u^{\prime}_0+u^{\prime}_1$;\hspace{4pt}
+$t_2=u_0+u_1$;\hspace{4pt}
+} & 3 &  & 4 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$un_1=t_2 \cdot t_3-t_1-un_0$;\hspace{4pt}
+$un_2=u^{\prime}_0+u_0+t_1$;\hspace{4pt}
+$un_3=u^{\prime}_1+u_1$;\hspace{4pt}
+$l_3=v^{\prime}_1-v_1+m_4$;\hspace{4pt}
+$t_1=u_1 \cdot v^{\prime}_1$;\hspace{4pt}
+$t_2=u_0 \cdot v^{\prime}_0$;\hspace{4pt}
+} & 3 &  & 7 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_3=u^{\prime}_1 \cdot v_1$;\hspace{4pt}
+$t_4=u^{\prime}_0 \cdot v_0$;\hspace{4pt}
+$l_2=v^{\prime}_0-v_0+t_1-t_3$;\hspace{4pt}
+} & 2 &  & 3 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$l_1=(u_1+u_0) \cdot (v^{\prime}_0+v^{\prime}_1)-t_1-t_2-(u^{\prime}_1+u^{\prime}_0) \cdot (v_0+v_1)+t_3+t_4$;\hspace{4pt}
+$l_0=t_2-t_4$;\hspace{4pt}
+$t_0=v^{\prime}_0+v_0$;\hspace{4pt}
+$t_1=v^{\prime}_1+v_1$;\hspace{4pt}
+} & 2 &  & 11 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_2=s_0 \cdot l_0$;\hspace{4pt}
+$t_3=s_1 \cdot l_1$;\hspace{4pt}
+$t_4=s_2 \cdot l_2$;\hspace{4pt}
+$t_7=v^{\prime}_0 \cdot v_0$;\hspace{4pt}
+$t_8=v^{\prime}_1 \cdot v_1$;\hspace{4pt}
+$b_5=s_2 \cdot (v^{\prime}_1-v_1)$;\hspace{4pt}
+} & 6 &  & 1 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$b_4=t_4+s_1 \cdot l_3-s_0 \cdot m_3+m_3cu \cdot (f_4+t_1)$;\hspace{4pt}
+$b_3=(s_1+s_2) \cdot (l_1+l_2)-t_3-t_4+s_0 \cdot l_3+m_3cu \cdot (f_3+t_0)$;\hspace{4pt}
+} & 6 &  & 11 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$b_2=(s_0+s_2) \cdot (l_0+l_2)-t_2-t_4+t_3+m_3cu \cdot (f_2+t_8)$;\hspace{4pt}
+} & 2 &  & 7 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$b_1=(s_0+s_1) \cdot (l_0+l_1)-t_2-t_3+m_3cu \cdot (f_1+(v^{\prime}_0+v^{\prime}_1) \cdot (v_0+v_1)-t_7-t_8)$;\hspace{4pt}
+$b_0=t_2+m_3cu \cdot (f_0+t_7)$;\hspace{4pt}
+} & 4 &  & 12 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=un_3 \cdot b_5$;\hspace{4pt}
+$r=b_4-t_0$;\hspace{4pt}
+$t_1=un_2 \cdot r$;\hspace{4pt}
+$t_2=un_1 \cdot b_5$;\hspace{4pt}
+$t_3=un_0 \cdot r$;\hspace{4pt}
+$t_4=b_5+r$;\hspace{4pt}
+} & 4 &  & 2 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$vn^{\prime}_3=b_3-(un_2+un_3) \cdot t_4+t_0+t_1$;\hspace{4pt}
+$vn^{\prime}_2=b_2-t_2-t_1$;\hspace{4pt}
+$vn^{\prime}_1=b_1-(un_0+un_1) \cdot t_4+t_2+t_3$;\hspace{4pt}
+$vn^{\prime}_0=b_0-t_3$;\hspace{4pt}
+} & 2 &  & 9 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$D=dw_3{}^{2}$;\hspace{4pt}
+$dw_4=D-vn^{\prime}_3{}^{2}$;\hspace{4pt}
+} &  & 2 & 1 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_4 = 0$ go to Special GCD Case 1.2.2, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=(dw_4 \cdot dw_3){}^{-1}$;\hspace{4pt}
+$w_2=w_1 \cdot dw_4$;\hspace{4pt}
+$w_3=w_1 \cdot D \cdot dw_3$;\hspace{4pt}
+$vn_3=vn^{\prime}_3 \cdot w_2$;\hspace{4pt}
+$vn_2=vn^{\prime}_2 \cdot w_2$;\hspace{4pt}
+$vn_1=vn^{\prime}_1 \cdot w_2$;\hspace{4pt}
+$vn_0=vn^{\prime}_0 \cdot w_2$;\hspace{4pt}
+} & 8 &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_0=vn_3 \cdot vn_1$;\hspace{4pt}
+$u^{\prime\prime}_1=w_3 \cdot vn_2 \cdot (vn_3+vn_3)-un_3$;\hspace{4pt}
+$u^{\prime\prime}_0=w_3 \cdot (f_4-t_0-t_0-vn_2{}^{2})-un_2-un_3 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+$t_0=1+vn_3$;\hspace{4pt}
+} & 5 & 1 & 8 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$t_1=u^{\prime\prime}_1 \cdot t_0$;\hspace{4pt}
+$t_2=vn_2-t_1$;\hspace{4pt}
+$t_3=u^{\prime\prime}_0 \cdot t_2$;\hspace{4pt}
+$v^{\prime\prime}_1=(u^{\prime\prime}_0+u^{\prime\prime}_1) \cdot (t_0+t_2)-vn_1-t_1-t_3$;\hspace{4pt}
+$v^{\prime\prime}_0=t_3-vn_0$;\hspace{4pt}
+} & 3 &  & 7 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 68 & 5 & 102 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2.1: $dw_3 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=m_3{}^{-1}$;\hspace{4pt}
+$x^{\prime}_1=m_4 \cdot w_1$;\hspace{4pt}
+$t_2=^{\prime}_2u_0 \cdot w_1$;\hspace{4pt}
+$t_3=^{\prime}_4u_0 \cdot w_1$;\hspace{4pt}
+$u^{\prime\prime}_1=t_2+t_3$;\hspace{4pt}
+$u^{\prime\prime}_0=t_2 \cdot t_3$;\hspace{4pt}
+$l_3=w_1 \cdot t_1$;\hspace{4pt}
+} & 5 &  & 1 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$l_2=w_1 \cdot (t_0-u_1 \cdot v^{\prime}_1+u^{\prime}_1 \cdot v_1)$;\hspace{4pt}
+$l_1=w_1 \cdot (u^{\prime}_0 \cdot v_1-u_0 \cdot v^{\prime}_1-u_1 \cdot v^{\prime}_0+u^{\prime}_1 \cdot v_0)$;\hspace{4pt}
+$t_0=l_2+x^{\prime}_1 \cdot l_3$;\hspace{4pt}
+$v^{\prime\prime}_1=t_0-l_3 \cdot u^{\prime\prime}_1$;\hspace{4pt}
+} & 10 &  & 7 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$v^{\prime\prime}_0=l_1+x^{\prime}_1 \cdot t_0-u^{\prime\prime}_0 \cdot l_3$;\hspace{4pt}
+} & 2 &  & 2 & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [u^{\prime\prime}_1,u^{\prime\prime}_0,v^{\prime\prime}_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 35 & 2 & 29 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2.2: $dw_4 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$dw_5=vn^{\prime}_2 \cdot (vn^{\prime}_3+vn^{\prime}_3)$;\hspace{4pt}
+} & 1 &  & 1 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_5 = 0$ go to Special GCD Case 1.2.2.1, else:} } &  &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$w_1=(dw_3 \cdot dw_5){}^{-1}$;\hspace{4pt}
+$w_2=w_1 \cdot dw_5$;\hspace{4pt}
+$w_3=w_1 \cdot D \cdot dw_3$;\hspace{4pt}
+$vn_3=vn^{\prime}_3 \cdot w_2$;\hspace{4pt}
+$vn_2=vn^{\prime}_2 \cdot w_2$;\hspace{4pt}
+$vn_1=vn^{\prime}_1 \cdot w_2$;\hspace{4pt}
+$vn_0=vn^{\prime}_0 \cdot w_2$;\hspace{4pt}
+} & 8 &  &  & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$u^{\prime\prime}_0=w_3 \cdot (f_4-vn_1 \cdot (vn_3+vn_3)-vn_2{}^{2})-un_3$;\hspace{4pt}
+$v^{\prime\prime}_0=u^{\prime\prime}_0 \cdot (vn_1+y_1-u^{\prime\prime}_0 \cdot (vn_2-u^{\prime\prime}_0 \cdot vn_3-u^{\prime\prime}_0))-vn_0$;\hspace{4pt}
+} & 5 & 1 & 9 & \\
+\multicolumn{3}{|R{340pt}|}{ 
+$dw_7=vn_3-1$;\hspace{4pt}
+} &  &  & 1 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_7 = 0$ go to Special GCD Case 1.2.2.2, else:} } &  &  &  & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,1]$
+\TS & Total: & 66 & 5 & 98 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2.2.1: $dw_5 = 0$} \TS \\
+\hline
+\multicolumn{3}{|R{340pt}|}{ 
+$dw_6=dw_3-vn^{\prime}_3$;\hspace{4pt}
+} &  &  & 1 & \\
+\multicolumn{3}{|l|}{ 
+ \bf{If $dw_6 = 0$ go to Special GCD Case 1.2.2.1.1, else:} } &  &  &  & \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,2]$
+\TS & Total: & 53 & 4 & 89 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2.2.1.1: $dw_6 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [0,1,y_1,y_0,0]$
+\TS & Total: & 53 & 4 & 89 &  \\
+\hline
+\hline
+\multicolumn{7}{|c|}{Special GCD Case 1.2.2.2: $dw_7 = 0$} \TS \\
+\hline
+\bf{OUT:} & \hspace*{65pt} $D + D' = D'' = [1,u^{\prime\prime}_0,y_1,v^{\prime\prime}_0,0]$
+\TS & Total: & 66 & 5 & 98 &  \\
+\hline
+\hline
+\end{tabular}
+
+

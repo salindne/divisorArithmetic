@@ -1,0 +1,110 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner, 2019                                                        
+//                                                   
+// Description: Genus 2 divisor utility formulas for the 4 coordinate Mumford         
+//              representation in reduced basis over arbitrary fields where:                
+//              h(x) = h3*x^2 + h2*x^2 + h1*x + h0 and             
+//              f(x) = f6*x^6 + f5*x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0           
+//                                                                      
+///////////////////////////////////////////////////////////////////////////////
+
+//Must keep next two lines in this format for latex conversion
+//Constant: f6,f5,f4,f3,f2,f1,f0,h3,h2,h1,h0,y3,y2,y1,y0,d4,d3,d2,d1,d0,c5,c4,c3,c2,c1,c0,i2
+
+///////////////////////////////////////////////////////////////////////////////
+// Precompute():
+// Input: f,h: hyperelliptic polynomials describing a split mdoel genus 2 HEC.
+//          q: field parameter
+//
+// Output: Set of sets, where first two subsets have the coefficients of f and 
+//         h respectively, the third subset has coefficeints of the unique 
+//         monic V polynomial of degree 3 for which deg(f-h*V-V^2) <= 2, the 
+//         fourth and fifth subset have precompuations used by the other 
+//         operations, and the sixth subset carreis precomputed values for
+//         adjusting degree 0 divisors.
+///////////////////////////////////////////////////////////////////////////////
+Precompute := function(f,q)
+    f0:= Coefficient(f,0); 
+    f1:= Coefficient(f,1); 
+    f2:= Coefficient(f,2); 
+    f3:= Coefficient(f,3); 
+    f4:= Coefficient(f,4); 
+    f5:= Coefficient(f,5); 
+    f6:= Coefficient(f,6);
+
+
+
+    // V3 is a solution of quadratic equation x^2 + h3*x - f6
+    // We pick the second solution from the factorization.
+    // y3:= -Coeff(Factorization(x^2 + h3*x - f6)[2][1],0);
+    // Compute rest following page 8 of "Explicit formulas for real 
+    // hyperelliptic curves of genus 2 in affine representation" by Erickson, 
+    // Jacobson, Stein.
+
+    //y3:= 1;
+    //y2:= 0;
+    //d5 := 1/2;
+    y1 := f4/2; //f4/2
+    y0 := f3/2; //f3/2
+
+    //c3:= 2;                                                     
+    //c2:= 0;
+    //c1:= y1;                                               
+    //c0:= y0;                                               
+    //c4:= 2;                                               
+    //c5:= f4;                                              
+     
+    //d4:= f4;                                            
+    //d3:= f3;                                            
+    //d2:= f2;                                            
+    d1 := f2 - y1^2;        
+    d2 := d1/2;
+    d3 := f1/2; 
+    d4 := f2/2;                       
+    //d0:= f1;         
+    //d6 := 0;                                   
+
+
+    //Used for Adding and doubling when Deg(D) = 0
+    // f - V*h - V^2
+    k1 := f1 - y0*f4; // f1 - y0*c5
+    k0 := f0 - y0^2;   
+    //adv1x + adv0 = V - (2V+h) mod adu2x^2+adu1x+adu0
+    if IsZero(d1) then
+        if IsZero(k1) then
+            au2   := 0;
+            au1   := 0;
+            au0   := 1;
+            audeg := 0;
+            adv1  := y1;
+            adv0  := y0;
+
+            return <<f0,f1,f2,f3,f4,f5,f6>,<y0,y1,d1,d2,d3,d4>,<au0,au1,au2,audeg,adv0,adv1>>;
+        end if;//k1
+        w1    := k1^-1;
+        au2   := 0;
+        au1   := 1;
+        au0   := k0*w1;
+        audeg := 1;
+
+        adv1  := y1;
+        au0sq := au0^2;
+        adv0  := -y0 + au0*(y1 + y1 + au0sq + au0sq);
+
+        return <<f0,f1,f2,f3,f4,f5,f6>,<y0,y1,d1,d2,d3,d4>,<au0,au1,au2,audeg,adv0,adv1>>;
+    end if;//d1
+    w1    := d1^-1;
+    au2   := 1;
+    au1   := k1*w1;
+    au0   := k0*w1;
+    audeg := 2;
+
+    w2   := -au1 - au1;
+    adv1 := au0 + au0 + au1*w2 - y1;
+    adv0 := au0*w2 - y0;
+
+    return <<f0,f1,f2,f3,f4,f5,f6>,<y0,y1,d1,d2,d3,d4>,<au0,au1,au2,audeg,adv0,adv1>>;
+end function;
+    
+
+

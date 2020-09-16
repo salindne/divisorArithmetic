@@ -1,0 +1,550 @@
+Precompute_inf_SPLIT := function(f,q)
+    f1:= Coefficient(f,1); 
+    f2:= Coefficient(f,2); 
+    f3:= Coefficient(f,3); 
+    f4:= Coefficient(f,4); 
+
+    y1 := f4/2;
+    y0 := f3/2;
+    c1:= y1;                                               
+    c0:= y0;                                               
+    d2 := f2;
+    d1 := f2 - y1^2;
+    d0 := f1;
+    FF := GF(q);                                    
+    d3 := FF!1/2;
+
+    return <f,[y0,y1,d0,d1,d2,d3,c0,c1]>;
+end function;
+    
+
+
+//BABY
+Deg2BABY := function(u0,u1,v0,v1,n,ccs)
+     
+    vp1 := -2*(u1^2 - u0) - v1;
+    vp0 := -2*u0*u1 - v0;
+    w0 := ccs[2][7] - vp0;
+    w1 := ccs[2][8] - vp1;
+
+    if IsZero(w1) then  
+        if IsZero(w0) then
+            return <0,0,1,ccs[2][2],ccs[2][1],n+3>;
+        end if;
+        I  := (2*w0)^-1;
+        up0 := I*(ccs[2][5] - vp1^2) - u1;
+        return <0,1,up0,ccs[2][2],vp0,n+2>;
+    end if;
+
+    
+    w3 := Coefficient(ccs[1],4) - 2*vp1;
+    I := w3^-1;
+    up1 := I*(Coefficient(ccs[1],3) - 2*vp0) - u1;
+    up0 := I*(Coefficient(ccs[1],2) - vp1^2) - u0 - u1*up1;
+
+    return <1,up1,up0,vp1,vp0,n+1>;
+end function;
+
+
+Deg1BABY := function(u0,v0,n,ccs)
+    y1:= ccs[2][2]; 
+    d1 := ccs[2][4];
+    
+    vp1 := y1;
+    vp0 := 2*(y1 + u0^2)*u0 - v0;
+    w0 := d1;
+    w1 := ccs[2][7] - vp0;
+
+    if IsZero(w1) then  
+        if IsZero(w0) then
+
+            return <0,0,1,y1,ccs[2][1],n+3>;
+        end if;
+        I  := w0^-1;
+        up0 := I*(ccs[2][3] - (ccs[2][8] + y1)*vp0) - u0;
+        return <0,1,up0,y1,vp0,n+2>;
+    end if;
+
+    w3 := Coefficient(ccs[1],3) - 2*vp0;
+    I := w3^-1;
+    up1 := I*d1 - u0;
+    up0 := I*(Coefficient(ccs[1],1) - 2*y1*vp0) - u0*up1;
+
+    return <1,up1,up0,vp1,vp0,n+1>;
+end function;
+
+Deg2INVBABY := function(u0,u1,v0,v1,n,ccs)
+ 
+    w0 := ccs[2][7] - v0;
+    w1 := ccs[2][8] - v1;
+
+    if IsZero(w1) then  
+        if IsZero(w0) then
+            return <0,0,1,ccs[2][2],ccs[2][1],n-1>;
+        end if;
+        w3 := 2*w0;
+        I  := w3^-1;
+        up0 := I*(Coefficient(ccs[1],2) - v1^2) - u1;
+        vp0 := -v0 + 2*up0*(ccs[2][2] + up0^2);
+        return <0,1,up0,ccs[2][2],vp0,n-1>;
+    end if;
+
+    w3 := Coefficient(ccs[1],4) - 2*v1;
+    I := w3^-1;
+    up1 := I*(Coefficient(ccs[1],3) - 2*v0) - u1;
+    up0 := I*(Coefficient(ccs[1],2) - v1^2) - u0 - u1*up1;
+    vp1 := -v1 + 2*(up0 - up1^2);
+    vp0 := -v0 - 2*up0*up1;
+    
+    return <1,up1,up0,vp1,vp0,n-1>;
+end function;
+
+
+Deg1INVBABY := function(u0,v0,n,ccs)
+    y1:= ccs[2][2]; 
+    d1 := ccs[2][4];
+
+    w1 := ccs[2][7] - v0;
+    w0 := d1;
+
+    if IsZero(w1) then  
+        if IsZero(w0) then
+            return <0,0,1,y1,ccs[2][1],n-2>;
+        end if;
+        I  := d1^-1;
+        up0 := I*(ccs[2][3] - 2*y1*v0) - u0;
+        vp0 := -v0 + 2*up0*(y1 + up0^2);
+        return <0,1,up0,y1,vp0,n-2>;
+    end if;
+
+    w3 := Coefficient(ccs[1],3) - 2*v0;
+    I := w3^-1;
+    up1 := I*d1 - u0;
+    up0 := I*(Coefficient(ccs[1],1) - 2*y1*v0) - u0*up1;
+    vp1 := -y1 + 2*(up0 - up1^2);
+    vp0 := -v0 - 2*up0*up1;
+
+    return <1,up1,up0,vp1,vp0,n-2>;
+end function;
+
+
+Deg1ADD_inf_SPLIT:= function(u0,v0,n,up0,vp0,np,ccs)
+
+    if u0 eq up0 then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,n>,<up,vp,wp,np>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    upp1 := u0 + up0;
+    upp0 := u0*up0;
+    w0 := (vp0 - v0)*(u0 - up0)^-1;
+    vpp1 := ccs[2][8] + w0;
+    vpp0 := v0 + u0*w0;
+    return <1, upp1, upp0, vpp1, vpp0, n + np - 1>;
+end function;
+
+
+Deg12ADD_inf_SPLIT:= function(u0,v0,n,up0,up1,vp0,vp1,np,ccs)
+
+    /*FF:=Parent(u0);
+    R<x>:=Parent(FF);
+    f := ccs[1][7]*x^6 + ccs[1][6]*x^5 + ccs[1][5]*x^4 + ccs[1][4]*x^3 + ccs[1][3]*x^2 + ccs[1][2]*x + ccs[1][1]; 
+    V := ComputeVpl(f,2);
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + v0;
+    up := x^2 + up1*x + up0;
+    vp := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + vp1*x + vp0;
+    Q := quo<R | u>;
+    r := up mod u;
+    
+
+    if IsZero(r) then
+        R<x>:=Parent(Parent(u0));
+        f := ccs[1][7]*x^6 + ccs[1][6]*x^5 + ccs[1][5]*x^4 + ccs[1][4]*x^3 + ccs[1][3]*x^2 + ccs[1][2]*x + ccs[1][1]; 
+        V := ComputeVpl(f,2);
+        u := x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,n>,<up,vp,wp,np>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    s := R!(Q!r^-1)*(v - vp) mod u;
+    z := u*up;
+    wp := vp + s*up;
+    w := V - (V - wp) mod z;
+    upp := ExactQuotient(f - w^2,z);
+    upp := upp/LeadingCoefficient(upp);
+    vpp := V - (V + w) mod upp;*/
+
+
+    //r := up mod u;
+    t0 := u0*up1;
+    r  := up0 - t0 + u0^2;
+    if IsZero(r) then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,n>,<up,vp,wp,np>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+    //z := u*up;
+    z2 := u0 + up1;
+    z1 := t0 + up0;
+    z0 := u0*up0;
+    //s := R!(Q!r^-1)*(v - vp) mod u;
+    sp0 := v0 - vp0 - u0*(ccs[2][8] - vp1);
+
+    
+    //w1 := sp0 - 2*r*z2; 
+    w1 := sp0;
+    if IsZero(w1) then           
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,n>,<up,vp,wp,np>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+
+
+    //V1 = h-V0 + FLoor(V0 + h(y)/U0)*U0 ???
+    //V1 = V - (V -V0) mod u instead
+    w2 := (sp0*r)^-1;  
+    w3 := -w2*r^2/2;
+    s0 := w2*sp0^2;
+    wp2 := -2*s0;
+    wp1 := s0*up1 + vp1;
+    wp0 := s0*up0 + vp0;
+    upp1 := w3*(Coefficient(ccs[1],4) - 2*wp1) + s0/2 - z2;
+    upp0 := w3*(Coefficient(ccs[1],3) - 2*(wp0 + wp1*s0)) - z1 - z2*upp1;
+    vpp1 := -wp1 + 2*(upp0 - upp1^2) + upp1*s0;
+    vpp0 := -wp0 - 2*upp0*upp1 + upp0*s0;
+    return <1,upp1,upp0,vpp1,vpp0,n + np -1>;
+end function;
+
+
+Deg2ADD_inf_SPLIT:= function(u0,u1,v0,v1,up0,up1,vp0,vp1,ccs)
+    
+    z0 := up0 - u0;
+    z1 := up1 - u1;
+    z2 := up1*z1 - z0;
+    z3 := up0*z1;
+    r  := z1*z3 - z0*z2;
+   
+    //Test for special case
+    if IsZero(r) then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    w0  := vp0 - v0;
+    w1  := vp1 - v1;
+    sp1 := w0*z1 - w1*z0;
+    sp0 := w0*z2 - w1*z3;
+
+    k2 := Coefficient(ccs[1],4) - 2*v1;
+    r2 := r^2;
+    w0 := r2 - (sp1 + r)^2;
+
+    
+    if IsZero(w0) then  // Either s1 = 0 or s1 = -2
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    w1 := (r*w0)^-1; 
+    w2 := w1*w0;  
+    w3 := w1*r2*r; 
+    s1 := sp1*w2;
+    s0 := sp0*w2;
+
+    
+    l0 := s0*u0;
+    t1 := s1*u1;
+    l2 := s0 + t1;
+    l1 := (s0 + s1)*(u0 + u1) - l0 - t1;
+
+    upp1 := -w3*(s1*(l2 + s0) + 2*s0) - up1;
+    upp0 := -w3*(s1*(2*v1 + l1) + l2*s0 - k2) - up0 - up1*upp1;    
+
+    t0   := 2 + s1;
+    t1   := upp1*t0;
+    t2   := l2 - t1;
+    t3   := upp0*t2;
+    vpp1 := -v1 - l1 + (upp0 + upp1)*(t0 + t2) - t1 - t3;
+    vpp0 := -v0 - l0 + t3;
+
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+
+
+
+ADD_inf_SPLIT:= function(d1,d2,ccs)
+    
+    if IsOne(d1[1]) then
+        if IsOne(d2[1]) then
+            return Deg2ADD_inf_SPLIT(d2[3],d2[2],d2[5],d2[4],d1[3],d1[2],d1[5],d1[4],ccs);
+        elif IsOne(d2[2]) then
+            d3 := Deg12ADD_inf_SPLIT(d2[3],d2[5],d2[6],d1[3],d1[2],d1[5],d1[4],d1[6],ccs);
+            if d3[6] lt 0 then
+                if IsOne(d3[1]) then
+                    return Deg2BABY(d3[3],d3[2],d3[5],d3[4],d3[6],ccs); 
+                elif IsOne(d3[1]) then
+                    return Deg1BABY(d3[3],d3[5],d3[6],ccs);
+                else
+                    f := ccs[1];
+                    R<x>:=Parent(f);
+                    V := ComputeVpl(f,2);
+                    gen := Add_SPLIT_POS(<R!1,V,f-V^2,d3[6]>,<R!1,V,f-V^2,2>,f,V,2);
+                    return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+                end if;
+            else
+                return d3;
+            end if;
+        else
+            n := d1[6] + d2[6] -1;
+            if n lt 0 then
+                return Deg2BABY(d1[3],d1[2],d1[5],d1[4],n,ccs); 
+            elif n gt 0 then
+                return Deg2INVBABY(d1[3],d1[2],d1[5],d1[4],n,ccs); 
+            else 
+                return <d1[1],d1[2],d1[3],d1[4],d1[5],0>; 
+            end if;
+        end if;
+
+    elif IsOne(d1[2]) then
+        if IsOne(d2[1]) then
+            d3 := Deg12ADD_inf_SPLIT(d1[3],d1[5],d1[6],d2[3],d2[2],d2[5],d2[4],d2[6],ccs);
+            if d3[6] lt 0 then
+                if IsOne(d3[1]) then
+                    return Deg2BABY(d3[3],d3[2],d3[5],d3[4],d3[6],ccs); 
+                elif IsOne(d3[1]) then
+                    return Deg1BABY(d3[3],d3[5],d3[6],ccs);
+                else
+                    f := ccs[1];
+                    R<x>:=Parent(f);
+                    V := ComputeVpl(f,2);
+                    gen := Add_SPLIT_POS(<R!1,V,f-V^2,d3[6]>,<R!1,V,f-V^2,2>,f,V,2);
+                    return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+                end if;
+            else
+                return d3;
+            end if;
+        elif IsOne(d2[2]) then
+            n := d1[6] + d2[6] -1;
+            d3 := Deg1ADD_inf_SPLIT(d1[3],d1[5],d1[6],d2[3],d2[5],d2[6],ccs);
+            if IsOne(d3[1]) then
+                
+                if n lt 0 then
+                    return Deg2BABY(d3[3],d3[2],d3[5],d3[4],d3[6],ccs); 
+                elif n gt 0 then
+                    return Deg2INVBABY(d3[3],d3[2],d3[5],d3[4],d3[6],ccs); 
+                else
+                    return d3;
+                end if;
+            elif IsOne(d3[2]) then
+                if n lt 0 then
+                    return Deg1BABY(d3[3],d3[5],d3[6],ccs); 
+                elif n gt 1 then
+                    return Deg1INVBABY(d3[3],d3[5],d3[6],ccs); 
+                else
+                    return d3;
+                end if;
+            else
+                return d3;
+            end if;    
+        else
+            n := d1[6] + d2[6] -1;
+            if n lt 0 then
+                return Deg1BABY(d1[3],d1[5],n,ccs);
+            elif n gt 1 then
+                return Deg1INVBABY(d1[3],d1[5],n,ccs); 
+            else
+                return <d1[1],d1[2],d1[3],d1[4],d1[5],n>;
+            end if;
+        end if;
+
+    else 
+        n := d1[6] + d2[6] -1;
+        if IsOne(d2[1]) then
+            if n lt 0 then
+                return Deg2BABY(d2[3],d2[2],d2[5],d2[4],n,ccs); //Deg02ADD with UP Adjust
+            elif n gt 0 then
+                return Deg2INVBABY(d2[3],d2[2],d2[5],d2[4],n,ccs); //Deg02ADD with DWN Adjust
+            else
+                return <d2[1],d2[2],d2[3],d2[4],d2[5],0>; //NEUTRAL
+
+            end if;
+
+        elif IsOne(d2[2]) then
+            if n lt 0 then
+                return Deg1BABY(d2[3],d2[5],n,ccs); //Deg01ADD with UP Adjust
+            elif n gt 1 then
+                return Deg1INVBABY(d2[3],d2[5],n,ccs); //Deg01ADD with DWN Adjust
+            else
+                return <d2[1],d2[2],d2[3],d2[4],d2[5],n>;
+            end if;
+
+        else // Degree 0 with 0 additions, all precomputed
+            f := ccs[1];
+            R<x>:=Parent(f);
+            V := ComputeVpl(f,2);
+            gen := Add_SPLIT_POS(<R!1,V,f-V^2,d1[6]>,<R!1,V,f-V^2,d2[6]>,f,V,2);
+            return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+        end if;
+    end if;
+
+end function;
+
+
+Deg1DBL_inf_SPLIT := function(u0,v0,n,ccs)
+    y1:= ccs[2][2]; 
+    c1:= ccs[2][8];
+
+    upp1 := u0 + u0;
+    upp0 := u0^2;
+
+    d := v0 + v0 - u0*(c1 + y1 + u0*upp1);
+    if IsZero(d) then
+        return <0,0,1,y1,ccs[2][1],2*n>;
+    end if;
+    t2 := Coefficient(ccs[1],1) - (c1 + y1)*v0 - u0*(2*ccs[2][4] - 3*upp1*(ccs[2][1] - v0));
+    s0:= t2*d^-1;
+    vpp1 := y1 + s0;
+    vpp0 := v0 + s0*u0;
+
+    return <1,upp1,upp0,vpp1,vpp0,2*n - 1>;
+
+end function;
+
+
+
+Deg2DBL_inf_SPLIT := function(u0,u1,v0,v1,n,ccs)
+  
+    f4 := Coefficient(ccs[1],4);   
+
+    t2 := u1^2;
+    vt1 := 2*(v1 + t2 - u0);
+    vt0 := 2*(v0 + u0*u1);
+    z2 := u1*vt1 - vt0;
+    z3 := u0*vt1;
+    r := -vt0*z2 + vt1*z3;
+    
+    if IsZero(r) then
+        
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := x^3 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,n>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    //Compute r= k/c3 , and therefor s(d)/c3
+    k2 := f4 - 2*v1;
+    k1 := Coefficient(ccs[1],3) - 2*v0 - 2*k2*u1;
+    k0 := Coefficient(ccs[1],2) - v1^2 - k1*u1 - k2*(t2 + 2*u0);
+    sp0 := -z2*k0 + z3*k1;
+    sp1 := -vt1*k0 + vt0*k1;
+    r2 := r^2;
+    w0 := sp1*(sp1 + 2*r);
+    
+    //Deg(up) = 1 or 0#
+    if IsZero(w0) then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := x^3 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,n>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    w1 := (r*w0)^-1;
+    w2 := w0*w1;
+    w3 := w1*r*r2;
+    s0 := w2*sp0;
+    s1 := w2*sp1;
+    upp1 := 2*w3*((s0 - u1)*s1 + s0);
+    upp0 := w3*(-f4 + 2*v1 + (s0 - 2*u1)*s0 + vt1*s1);
+    z0 := upp0 - u0;
+    z1 := upp1 - u1;
+    w0 := z0*s0;    
+    w1 := z1*s1;    
+    vpp1 := 2*upp0 - v1 + (s0 + s1)*(z0 + z1) - w0 - w1 - upp1*(2*upp1 + w1);
+    vpp0 := w0 - v0 - upp0*(2*upp1 + w1);
+   
+    return <1,upp1, upp0, vpp1, vpp0,0>;
+end function;
+
+
+DBL_inf_SPLIT:= function(d,ccs)
+
+    if IsOne(d[1]) then
+        return Deg2DBL_inf_SPLIT(d[3],d[2],d[5],d[4],d[6],ccs);
+    elif IsOne(d[2]) then
+        d3 := Deg1DBL_inf_SPLIT(d[3],d[5],d[6],ccs);
+        if IsOne(d3[1]) then
+            if d3[6] lt 0 then
+                return Deg2BABY(d3[3],d3[2],d3[5],d3[4],d3[6],ccs); 
+            else 
+                return Deg2INVBABY(d3[3],d3[2],d3[5],d3[4],d3[6],ccs); 
+            end if;
+        else
+            return d3;
+        end if;    
+    else
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        gen := Double_SPLIT_POS(<R!1,V,f-V^2,d[6]>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+end function;

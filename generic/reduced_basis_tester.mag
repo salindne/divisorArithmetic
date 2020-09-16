@@ -1,0 +1,113 @@
+
+load "reduced_basis_utilities.mag";
+//SetOutputFile("timing.txt")
+//SetNthreads(4);
+
+
+run_tests := procedure (fq,g) 
+    //RAMIFIED
+    rf := RandomCurve_RAM(g,fq);
+    rD1 := RandomDivisor_RAM(rf,g);
+    rD2 := RandomDivisor_RAM(rf,g);
+
+    a := Fibonacci_Add_RAM(rD1,rD2,rf,g,1);
+    b := Fibonacci_Nucomp_RAM(rD1,rD2,rf,g,1);
+    if a ne b then     
+        "Fq    ", fq;
+        "Genus ", g;
+        "ADD RAM";
+        a;
+        b;
+        exit;
+    end if;
+    
+    
+    a := DoubleChain_Dbl_RAM(rD1,rf,g,1);
+    b := DoubleChain_Nuduple_RAM(rD1,rf,g,1);
+    if a ne b then
+        "Fq    ", fq;
+        "Genus ", g;
+        "DBL RAM";    
+        a;
+        b;
+        exit;
+    end if;
+
+    
+    //SPLIT NEG
+    sf := RandomCurve_SPLIT(g,fq);
+    sV := -ComputeVpl(sf,g);
+    sD1 := RandomDivisor_SPLIT_NEG(sf,sV,g);
+    sD2 := RandomDivisor_SPLIT_NEG(sf,sV,g);
+
+    
+    a := Fibonacci_Add_SPLIT_NEG(sD1,sD2,sf,sV,g,1);
+    b := Fibonacci_Nucomp_SPLIT_NEG(sD1,sD2,sf,sV,g,1);
+    if a ne b then
+        "Fq    ", fq;
+        "Genus ", g;
+        "ADD SPLIT NEG";   
+        a;
+        b;
+        exit;
+    end if;
+    
+    a := DoubleChain_Dbl_SPLIT_NEG(sD1,sf,sV,g,1);
+    b := DoubleChain_Nuduple_SPLIT_NEG(sD1,sf,sV,g,1);
+    if a ne b then
+        "Fq    ", fq;
+        "Genus ", g;
+        "DBL SPLIT NEG";  
+        a;
+        b;
+        exit;
+    end if;
+
+    //SPLIT POS
+    sf := RandomCurve_SPLIT(g,fq);
+    sV := ComputeVpl(sf,g);
+    sD1 := RandomDivisor_SPLIT_POS(sf,sV,g);
+    sD2 := RandomDivisor_SPLIT_POS(sf,sV,g);
+    
+    a := Fibonacci_Add_SPLIT_POS(sD1,sD2,sf,sV,g,1);
+    b := Fibonacci_Nucomp_SPLIT_POS(sD1,sD2,sf,sV,g,1);
+    if a ne b then
+        "Fq    ", fq;
+        "Genus ", g;
+        "ADD SPLIT POS";   
+        a;
+        b;
+        exit;
+    end if;
+    
+    a := DoubleChain_Dbl_SPLIT_POS(sD1,sf,sV,g,1);
+    b := DoubleChain_Nuduple_SPLIT_POS(sD1,sf,sV,g,1);
+    if a ne b then
+        "Fq    ", fq;
+        "Genus ", g;
+        "DBL SPLIT POS";  
+        a;
+        b;
+        exit;
+    end if;
+    
+end procedure;
+
+iter := 25;
+i := 0;
+while i lt iter do
+    i := i + 1;
+    for g in [2..30] do
+        for exp in [2,4,8,16] do
+            fq := 2^exp;
+            //fq;
+            //run_tests(fq,g);
+            fq := NextPrime(fq);
+            run_tests(fq,g);
+        end for;
+    end for;
+end while;
+
+    "SUCCESS.";
+
+exit;

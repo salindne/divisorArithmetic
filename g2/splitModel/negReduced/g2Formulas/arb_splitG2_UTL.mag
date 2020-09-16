@@ -1,0 +1,128 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner, 2019                                                        
+//                                                   
+// Description: Genus 2 divisor utility formulas for the 4 coordinate Mumford         
+//              representation in reduced basis over arbitrary fields where:                
+//              h(x) = h3*x^2 + h2*x^2 + h1*x + h0 and             
+//              f(x) = f6*x^6 + f5*x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0           
+//                                                                      
+///////////////////////////////////////////////////////////////////////////////
+
+//Must keep next two lines in this format for latex conversion
+//Constant: f6,f5,f4,f3,f2,f1,f0,h3,h2,h1,h0,y3,y2,y1,y0,d5,d6,d4,d3,d2,d1,d0,c5,c4,c3,c2,c1,c0
+
+///////////////////////////////////////////////////////////////////////////////
+// Precompute():
+// Input: f,h: hyperelliptic polynomials describing a split mdoel genus 2 HEC.
+//          q: field parameter
+//
+// Output: Set of sets, where first two subsets have the coefficients of f and 
+//         h respectively, the third subset has coefficeints of the unique 
+//         monic V polynomial of degree 3 for which deg(f-h*V-V^2) <= 2, the 
+//         fourth and fifth subset have precompuations used by the other 
+//         operations, and the sixth subset carreis precomputed values for
+//         adjusting degree 0 divisors.
+///////////////////////////////////////////////////////////////////////////////
+Precompute := function(f,h,q)
+    f0:= Coeff(f,0); 
+    f1:= Coeff(f,1); 
+    f2:= Coeff(f,2); 
+    f3:= Coeff(f,3); 
+    f4:= Coeff(f,4); 
+    f5:= Coeff(f,5); 
+    f6:= Coeff(f,6);
+    h0:= Coeff(h,0); 
+    h1:= Coeff(h,1); 
+    h2:= Coeff(h,2); 
+    h3:= Coeff(h,3);
+
+    R<x> := PolynomialRing(GF(q));
+    // y3 is a solution of quadratic equation x^2 + h3*x - f6
+    // We pick the second solution from the factorization given by magma.
+    y3 := -Coeff(Factorization(x^2 + h3*x - f6)[2][1],0);
+    yn3 := -y3 - h3;
+    // Compute rest following work on page 8 of "Explicit formulas for real 
+    // hyperellipticcurves of genus 2 in affine representation" by Erickson, 
+    // Jacobson, Stein.
+    
+    c3 := y3 - yn3;                                             
+    d5 := c3^-1;
+
+    d4 := f4 - h1*y3;                                            
+    d3 := f3 - h0*y3;                                            
+    
+    y2 := (f5 - y3*h2)*d5;
+    yn2 := -y2 - h2;
+    c2 := y2 - yn2; 
+
+    y1 := (d4 + y2*yn2)*d5;
+    yn1 := -y1 - h1;                                       
+    c1 := y1 - yn1;
+
+
+
+    y0 := (d3 - y2*c1 - y1*h2)*d5;
+    yn0 := -y0 - h0;
+    c0 := y0 - yn0; 
+    c4 := c2 + c3;                                                                                          
+                                                
+    
+    d2 := f2 + yn2*y0 + yn0*y2;                                    
+    d1 := d2 + y1*yn1;                                    
+    d0 := f1 - h0*y1;
+    d6 := d5*c2;
+    d7 := d5*d0;
+    d8 := d5*d1;
+    d9 := d5*c1;
+                                            
+
+
+
+    //Used for adding and doubling degree 0 divisors
+    // f - V*(V + h)
+    //V := yn3*x^3 + yn2*x^2 + yn1*x +yn0;
+    k2 := d1;
+    k1 := f1 + yn1*y0 + yn0*y1;
+    k0 := f0 + y0*yn0;
+
+    //adu = f-V*h - V^2 made monic 
+    //adv = adv1x + adv0 = V - (2V+h) mod adu
+    if IsZero(k2) then
+        if IsZero(k1) then
+            au2   := 0;
+            au1   := 0;
+            au0   := 1;
+            audeg := 0;
+            adv1  := yn1;
+            adv0  := yn0;
+
+            if UTL_DEBUG then "UTL0"; end if;
+                return [[[f0,f1,f2,f3,f4,f5,f6],[h0,h1,h2,h3],[yn0,yn1,yn2,yn3],[c0,c1,c2,c3,c4,y1]],[[d0,d1,d2,d3,d4,d5,d6,d7,d8,d9],[au0,au1,au2,audeg,adv0,adv1]]];
+        end if;//k1
+
+        w1    := k1^-1;
+        au2   := 0;
+        au1   := 1;
+        au0   := k0*w1;
+        audeg := 1;
+
+        adv1 := yn1;
+        adv0 := y0 - au0*(c1 - au0*(c2 - au0*c3));
+
+        if UTL_DEBUG then "UTL1"; end if;
+            return [[[f0,f1,f2,f3,f4,f5,f6],[h0,h1,h2,h3],[yn0,yn1,yn2,yn3],[c0,c1,c2,c3,c4,y1]],[[d0,d1,d2,d3,d4,d5,d6,d7,d8,d9],[au0,au1,au2,audeg,adv0,adv1]]];
+        end if;//k2
+    w1    := k2^-1;
+    au2   := 1;
+    au1   := k1*w1;
+    au0   := k0*w1;
+    audeg := 2;
+
+    w2   := c2 - au1*c3;
+    adv1 := y1 - au0*c3 - au1*w2;
+    adv0 := y0 - au0*w2;
+
+    if UTL_DEBUG then "UTL2"; end if;
+    return [[[f0,f1,f2,f3,f4,f5,f6],[h0,h1,h2,h3],[yn0,yn1,yn2,yn3],[c0,c1,c2,c3,c4,y1]],[[d0,d1,d2,d3,d4,d5,d6,d7,d8,d9],[au0,au1,au2,audeg,adv0,adv1]]];
+end function;
+    

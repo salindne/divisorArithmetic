@@ -1,0 +1,122 @@
+clear;
+///////////////////////////////////////////////////////////////////////
+//TESTING RAMIFIED MODEL DIVISOR ARITHMETIC OVER NOT CHAR TWO FIELDS //
+///////////////////////////////////////////////////////////////////////
+//
+// Sebastian Lindner, 2019
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This script tests divisor arithmetic functions from nch2_ramifiedG2_DBL.mag, 
+// and nch2_ramifiedG2_ADD.mag.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//LOAD FILES
+///////////////////////////////////////////////////////////////////////////////
+DBL_DEBUG:= false;
+ADD_DEBUG:= false;
+load "ramifiedUtilities.mag";
+load "g2Formulas/nch2_ramifiedG2_DBL.mag";
+load "g2Formulas/nch2_ramifiedG2_ADD.mag";
+"     ";
+
+
+///////////////////////////////////////////////////////////////////////////////
+//GLOBAL TESTING VARIABLES
+///////////////////////////////////////////////////////////////////////////////
+//Field sizes below 25 for random testing
+FIELDS:= {3,5,7,9,11,13,17,19,23,25};
+DIVISORS:= 2500; //Number of divisor additions and doubling to test per curve
+TRIALS:= #FIELDS;
+DEBUG:= false;
+TEST_DBL:= true;
+TEST_ADD:= true;
+
+
+/////////////////////////////////////////////////////////
+///////////////////// TEST LOOPS ////////////////////////
+/////////////////////////////////////////////////////////
+
+printf "///////////////////////////////////////////////////////////////////////\n";
+printf "//\n";
+printf "// - Small finite field and curve picked at random for each trial. \n";
+printf "// - %o total trials.            \n", TRIALS;
+printf "// - %o divisor additions and doubles each per trial.            \n", DIVISORS;
+printf "//";
+trial:=1;
+errorFlag:= false;
+for F in FIELDS do
+  printf "\n//    Trail # %o over FF(%o).", trial, F;
+  trial+:=1;
+  // Random finite field FF and polynomial ring over FF
+  FF:=GF(F);
+  R<x>:=PolynomialRing(FF);
+
+  f:= RandomG2NotChar2Curve(F);
+  C:= HyperellipticCurve(f);
+  Jac:= Jacobian(C);
+
+  if DEBUG then
+    "\n";
+    FF, "f is: ", f, "h is: 0";
+    " ";
+  end if;
+
+  divisor:= 0;
+  while divisor le DIVISORS do
+    divisor+:=1;
+
+    /////////////////////////////////////////////////////
+    ///RANDOM DIVISORS
+    /////////////////////////////////////////////////////
+    D1:= Random(Jac);
+    if DEBUG then
+      "Divisor D1 is: ", D1;
+    end if;
+    u1:= D1[1];
+    v1:= D1[2];
+
+    D2:= Random(Jac);
+    if DEBUG then
+      "Divisor D2 is: ", D2;
+    end if;
+    u2:= D2[1];
+    v2:= D2[2];
+
+
+    /////////////////////////////////////////////////////
+    ///TEST FORMULAS ON DIVISORS
+    /////////////////////////////////////////////////////
+    if DEBUG then "  "; end if;
+    if TEST_DBL then
+      un2,un1,un0,vn1,vn0 := DBL(u1,v1,f);
+      cantor:= D1 + D1;
+      if (un2*x^2 + un1*x + un0) ne cantor[1] or (vn1*x + vn0) ne cantor[2] then
+        printf "//     Doubling %o failed over finite field FF(%o) where f = %o and h = 0 \n", D1, F, f;
+        errorFlag:= true;
+      end if;
+    end if;
+
+    if TEST_ADD then
+      if D1 ne D2 then
+        un2,un1,un0,vn1,vn0 := ADD(u1,v1,u2,v2,f);
+        cantor:= D1 + D2;
+        if (un2*x^2 + un1*x + un0) ne cantor[1] or (vn1*x + vn0) ne cantor[2] then
+          printf "//     Adding %o with %o failed over finite field FF(%o) where f = %o and h = 0 \n", D1, D2, F, f;
+          errorFlag:= true;
+        end if; 
+      end if;
+    end if;     
+  end while; 
+end for;
+printf "\n//";
+if errorFlag then
+  printf "\n// Errors occured.";
+else
+  printf "\n// No errors.";
+end if;
+printf "\n//";
+printf "\n///////////////////////////////////////////////////////////////////////\n";
+quit;

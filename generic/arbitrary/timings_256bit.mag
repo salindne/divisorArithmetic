@@ -1,0 +1,186 @@
+
+SetAutoColumns(false);
+SetColumns(1000);
+load "reduced_basis_utilities.mag";
+SetOutputFile("out256.raw");
+//SetNthreads(4);
+length := 1000;
+trials := 5;
+exp := 256;
+"# ------------------------------------------------------------------------------";
+"# Raw timings for 256-bit fields";
+"# genus ADD_ram, NUC_ram, MGA_ram, DBL_ram, NUD_ram, MGD_ram, ADD_pspl, NUC_pspl, MGA_pspl, DBL_pspl, NUD_pspl, MGD_pspl, ADD_nspl, NUC_nspl, DBL_nspl, NUD_nspl";
+"# Random generator seed and step: ", GetSeed();
+"# Length: ", length; 
+"# Average over: ", trials;
+"# ------------------------------------------------------------------------------";
+
+//Procedures
+run_tests := function (fq, g, length) 
+    //RAMIFIED
+    rf,rh := RandomCurve_RAM(g,fq,true);
+    C := HyperellipticCurve(rf,rh);
+    J := Jacobian(C);
+    rD1 := RandomDivisor_RAM(rf,rh,g);
+    mD1 := J![rD1[1],rD1[2]];
+    rD2 := RandomDivisor_RAM(rf,rh,g);
+    mD2 := J![rD2[1],rD2[2]];
+    
+    fa_RAM := Cputime();
+    rDA := Fibonacci_Add_RAM(rD1,rD2,rf,rh,g,length);
+    fa_RAM := Cputime(fa_RAM);
+
+    fn_RAM := Cputime();
+    rDN := Fibonacci_Nucomp_RAM(rD1,rD2,rf,rh,g,length);
+    fn_RAM := Cputime(fn_RAM);
+
+    fm_RAM := Cputime();
+    rDM := Fibonacci_Magma_RAM(mD1,mD2,length);
+    fm_RAM := Cputime(fm_RAM);
+
+    da_RAM := Cputime();
+    rDA := DoubleChain_Dbl_RAM(rD1,rf,rh,g,length);
+    da_RAM := Cputime(da_RAM);
+
+    dn_RAM := Cputime();
+    rDN := DoubleChain_Nuduple_RAM(rD1,rf,rh,g,length);
+    dn_RAM := Cputime(dn_RAM);
+
+    dm_RAM := Cputime();
+    rDM := DoubleChain_Magma_RAM(mD1,length);
+    dm_RAM := Cputime(dm_RAM);
+    
+
+    //SPLIT
+    sf,sh := RandomCurve_SPLIT(g,fq,true);
+    spV := ComputeVpl(sf,sh,g);
+    snV := -spV - sh;
+    C := HyperellipticCurve(sf,sh);
+    J := Jacobian(C);
+    smD1 := Random(J);
+    smD2 := Random(J);
+    spD1 := Convert_From_Magma(smD1,sf,sh,spV,g);
+    spD2 := Convert_From_Magma(smD2,sf,sh,spV,g);
+    snD1 := Reduced_Basis(spD1,sf,sh,snV);
+    snD2 := Reduced_Basis(spD1,sf,sh,snV);
+
+    fa_nSPLIT := Cputime();
+    nrDA := Fibonacci_Add_SPLIT_NEG(snD1,snD2,sf,sh,snV,g,length);
+    fa_nSPLIT := Cputime(fa_nSPLIT);
+
+    fn_nSPLIT := Cputime();
+    nrDN := Fibonacci_Nucomp_SPLIT_NEG(snD1,snD2,sf,sh,snV,g,length);
+    fn_nSPLIT := Cputime(fn_nSPLIT);
+    
+    da_nSPLIT := Cputime();
+    nrDA := DoubleChain_Dbl_SPLIT_NEG(snD1,sf,sh,snV,g,length);
+    da_nSPLIT := Cputime(da_nSPLIT);
+
+    dn_nSPLIT := Cputime();
+    nrDN := DoubleChain_Nuduple_SPLIT_NEG(snD1,sf,sh,snV,g,length);
+    dn_nSPLIT := Cputime(dn_nSPLIT);
+
+    fa_pSPLIT := Cputime();
+    prDA := Fibonacci_Add_SPLIT_POS(spD1,spD2,sf,sh,spV,g,length);
+    fa_pSPLIT := Cputime(fa_pSPLIT);
+
+    fn_pSPLIT := Cputime();
+    prDN := Fibonacci_Nucomp_SPLIT_POS(spD1,spD2,sf,sh,spV,g,length);
+    fn_pSPLIT := Cputime(fn_pSPLIT);
+    
+    da_pSPLIT := Cputime();
+    prDA := DoubleChain_Dbl_SPLIT_POS(spD1,sf,sh,spV,g,length);
+    da_pSPLIT := Cputime(da_pSPLIT);
+
+    dn_pSPLIT := Cputime();
+    prDN := DoubleChain_Nuduple_SPLIT_POS(spD1,sf,sh,spV,g,length);
+    dn_pSPLIT := Cputime(dn_pSPLIT);
+
+    fm_pSPLIT := Cputime();
+    prDM := Fibonacci_Magma_SPLIT_POS(smD1,smD2,length);
+    fm_pSPLIT := Cputime(fm_pSPLIT);
+
+    dm_pSPLIT := Cputime();
+    prDM := DoubleChain_Magma_SPLIT_POS(smD1,length);
+    dm_pSPLIT := Cputime(dm_pSPLIT);
+
+
+    return [fa_RAM, fn_RAM, da_RAM, dn_RAM, fa_nSPLIT, fn_nSPLIT, da_nSPLIT, dn_nSPLIT, fa_pSPLIT, fn_pSPLIT, da_pSPLIT, dn_pSPLIT, fm_RAM, dm_RAM, fm_pSPLIT, dm_pSPLIT];    
+end function;
+
+
+//MAIN
+g := 1;
+while g lt 50 do
+    g := g + 1;
+    fq := 2^exp;
+    
+    total_ADD_RAM := 0.0;
+    total_NUC_RAM := 0.0;
+    total_MGA_RAM := 0.0;
+    total_DBL_RAM := 0.0;
+    total_NUD_RAM := 0.0;
+    total_MGD_RAM := 0.0;
+    total_ADD_nSPLIT := 0.0;
+    total_NUC_nSPLIT := 0.0;
+    total_DBL_nSPLIT := 0.0;
+    total_NUD_nSPLIT := 0.0;
+    total_ADD_pSPLIT := 0.0;
+    total_NUC_pSPLIT := 0.0;
+    total_DBL_pSPLIT := 0.0;
+    total_NUD_pSPLIT := 0.0;
+    total_MGA_pSPLIT := 0.0;
+    total_MGD_pSPLIT := 0.0;
+
+    i := 0;
+    while i lt trials do
+        i := i+1;
+        fq := NextPrime(fq);
+        results := run_tests(fq,g,length);        
+        total_ADD_RAM := total_ADD_RAM + results[1];
+        total_NUC_RAM := total_NUC_RAM + results[2];
+        total_DBL_RAM := total_DBL_RAM + results[3];
+        total_NUD_RAM := total_NUD_RAM + results[4];
+
+        total_ADD_nSPLIT := total_ADD_nSPLIT + results[5];
+        total_NUC_nSPLIT := total_NUC_nSPLIT + results[6];
+        total_DBL_nSPLIT := total_DBL_nSPLIT + results[7];
+        total_NUD_nSPLIT := total_NUD_nSPLIT + results[8];
+
+        total_ADD_pSPLIT := total_ADD_pSPLIT + results[9];
+        total_NUC_pSPLIT := total_NUC_pSPLIT + results[10];
+        total_DBL_pSPLIT := total_DBL_pSPLIT + results[11];
+        total_NUD_pSPLIT := total_NUD_pSPLIT + results[12];
+
+        total_MGA_RAM := total_MGA_RAM + results[13];
+        total_MGD_RAM := total_MGD_RAM + results[14];
+        total_MGA_pSPLIT := total_MGA_pSPLIT + results[15];
+        total_MGD_pSPLIT := total_MGD_pSPLIT + results[16];
+    end while;
+        
+    avg_ADD_RAM := total_ADD_RAM/trials;
+    avg_NUC_RAM := total_NUC_RAM/trials;
+    avg_MGA_RAM := total_MGA_RAM/trials;
+    avg_DBL_RAM := total_DBL_RAM/trials;
+    avg_NUD_RAM := total_NUD_RAM/trials;
+    avg_MGD_RAM := total_MGD_RAM/trials;
+    
+    avg_ADD_nSPLIT := total_ADD_nSPLIT/trials;
+    avg_NUC_nSPLIT := total_NUC_nSPLIT/trials;
+    avg_DBL_nSPLIT := total_DBL_nSPLIT/trials;
+    avg_NUD_nSPLIT := total_NUD_nSPLIT/trials;
+
+    avg_ADD_pSPLIT := total_ADD_pSPLIT/trials;
+    avg_NUC_pSPLIT := total_NUC_pSPLIT/trials;
+    avg_DBL_pSPLIT := total_DBL_pSPLIT/trials;
+    avg_NUD_pSPLIT := total_NUD_pSPLIT/trials;
+    avg_MGA_pSPLIT := total_MGA_pSPLIT/trials;
+    avg_MGD_pSPLIT := total_MGD_pSPLIT/trials;
+
+
+    g, avg_ADD_RAM, avg_NUC_RAM, avg_MGA_RAM, avg_DBL_RAM, avg_NUD_RAM, avg_MGD_RAM, avg_ADD_pSPLIT, avg_NUC_pSPLIT, avg_MGA_pSPLIT, avg_DBL_pSPLIT, avg_NUD_pSPLIT, avg_MGD_pSPLIT, avg_ADD_nSPLIT, avg_NUC_nSPLIT, avg_DBL_nSPLIT, avg_NUD_nSPLIT;
+
+end while;
+
+
+exit;

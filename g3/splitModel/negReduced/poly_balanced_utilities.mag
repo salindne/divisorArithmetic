@@ -1,0 +1,112 @@
+///////////////////////////////////////////////////////////////////////////////
+//////// POLYNOMIAL BALANCED DIVISOR ARITHMETIC OVER ARBIRTRARY FIELDS. ///////
+///////////////////////////////////////////////////////////////////////////////
+//  
+// For more detials see XXXXXXXXXXXXXXXX, Sebastian Lindner, 2019.
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This file contains functions for testing polynomial balanced divisor 
+// arithmetic from poly_balanced_arithmetic.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////FUNCTIONS///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+// RegulatorGroupGenerator(f,h,Vpl)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to genus g curve.
+//        Vpl: Unique polynomial of degree g+1 for which 
+//             deg(f - Vpl*h - Vpl^2) <= g.          
+// 
+// Return: Regulator for HEC(f,h), and the list of all divisors in the
+//         regulator group.
+//-----------------------------------------------------------------------------
+RegulatorGroupGenerator := function(f,h,Vpl)
+    g:= ValidateSplitCurve(f,h);
+    FF:= BaseRing(f);
+    R<x>:= PolynomialRing(FF);
+    C:=HyperellipticCurve(f,h);
+    J:=Jacobian(C);
+    JacobianSize:= # J;
+    D0:= <R!1,R!0, Ceiling(g/2) - 1>;
+    list:=[*D0*];
+
+    Dt:=D0;
+    regulator:=1;
+    while Dt ne Neutral(f,h) do
+        Dt:=Add(Dt,D0,f,h,Vpl);
+        list:= Append(list,Dt);
+        regulator:= regulator + 1;
+    end while; 
+    assert IsDivisibleBy(JacobianSize,regulator);
+    return regulator, list;
+end function;
+
+//-----------------------------------------------------------------------------
+// SubgroupGenerator(f,h,Vpl,D0)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to genus g curve.
+//        Vpl: Unique polynomial of degree g+1 for which 
+//             deg(f - Vpl*h - Vpl^2) <= g.  
+//          D0: Primitive divisor.        
+// 
+// Return: Pick random primitive divisor and generate subgroup of Jacobian.
+//         Returns size of subgroup generated and the list of all divisors in
+//         the subgroup.
+//-----------------------------------------------------------------------------
+SubgroupGenerator := function(f,h,Vpl,D0)
+    ValidateReducedDivisorAB(D0,f,h);
+    assert Deg(D0,f,h) eq 1;
+    FF:= BaseRing(f);
+    R<x>:= PolynomialRing(FF);
+    C:=HyperellipticCurve(f,h);
+    J:=Jacobian(C);
+    JacobianSize:= # J;
+    list:=[*D0*];
+
+    Dt:=D0;
+    subgroupSize:=1;
+    while Dt ne Neutral(f,h) do
+        Dt:=Add(Dt,D0,f,h,Vpl);
+        list:= Append(list,Dt);
+        subgroupSize:= subgroupSize + 1;
+    end while; 
+    assert IsDivisibleBy(JacobianSize,subgroupSize);
+    return subgroupSize, list;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// SubGroupCompositionTester(f,h,Vpl,count,list)
+//-----------------------------------------------------------------------------
+// Input:    f,h: Hyperelliptic polynomials corresponding to genus g curve.
+//           Vpl: Unique polynomial of degree g+1 for which 
+//                deg(f - Vpl*h - Vpl^2) <= g.          
+//         count: Size of indexed subgroup of Jacobian corresponding to f,h.
+//         list : Indexed list of all elements in subgroup.
+// Return: Nothing. Adds each element of subgroup with every other 
+//         element in the group. With each addition, the index of the added 
+//         divisor is checked against the list of elements in the indexed sub 
+//         group.
+//-----------------------------------------------------------------------------
+SubGroupCompositionTester:= procedure(f,h,Vpl,count,list)
+    g:= ValidateSplitCurve(f,h);
+
+    for x1 in [1..count] do
+        for x2 in [1..count] do
+            D:= Add(list[x1],list[x2],f,h,Vpl);
+            x:= (x1+x2) mod count;
+            if x eq 0 then  
+                x:= count;
+            end if;
+            assert D eq list[x];
+        end for;
+    end for;
+end procedure;
+

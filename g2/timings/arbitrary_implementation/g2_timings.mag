@@ -1,0 +1,181 @@
+SetAutoColumns(false);
+SetColumns(1000);
+
+load "splitFormulas/arb_splitG2_UTL.mag";
+load "splitFormulas/arb_splitG2_ADD.mag";
+load "splitFormulas/arb_splitG2_DBL.mag";
+
+load "ramFormulas/arb_ramifiedG2_ADD.mag";
+load "ramFormulas/arb_ramifiedG2_DBL.mag";
+
+load "g2_utilities.mag";
+
+//SetOutputFile("out2g2.raw");
+//SetNthreads(4);
+length := 100000;
+trials := 10;
+
+"# ------------------------------------------------------------------------------";
+"# Raw timings for genus 2 using arbitrary formulas";
+"# field_size, length, ADD_ram, MGA_ram, DBL_ram, MGD_ram, ADD_spl, MGA_spl, DBL_spl, MGD_spl";
+"# ------------------------------------------------------------------------------";
+
+//Procedures
+run_tests := function (fq, length) 
+    //RAMIFIED
+    FF:=GF(fq);
+    R<x>:=PolynomialRing(FF);
+    rf,rh := RandomG2Curve_RAM(FF,false);
+    erf := Reverse(Coefficients(rf));
+    erh := [Coefficient(rh,2), Coefficient(rh,1), Coefficient(rh,0)];
+    C := HyperellipticCurve(rf,rh);
+    J := Jacobian(C);
+    
+    mD1 := Random(J);
+    rD1 := <Coefficient(mD1[1],2), Coefficient(mD1[1],1),Coefficient(mD1[1],0), Coefficient(mD1[2],1), Coefficient(mD1[2],0)>;
+
+    mD2 := Random(J);
+    rD2 := <Coefficient(mD2[1],2), Coefficient(mD2[1],1),Coefficient(mD2[1],0), Coefficient(mD2[2],1), Coefficient(mD2[2],0)>;
+    
+    fa_RAM := Cputime();
+    rDA := Fibonacci_Add_RAM(rD1,rD2,erf,erh,length);
+    fa_RAM := Cputime(fa_RAM);
+
+    fm_RAM := Cputime();
+    rDM := Fibonacci_Magma_RAM(mD1,mD2,length);
+    fm_RAM := Cputime(fm_RAM);
+
+
+    rDA := J![R![rDA[3],rDA[2],rDA[1]], R![rDA[5],rDA[4]]];
+    assert rDA eq rDM; 
+
+    da_RAM := Cputime();
+    rDA := DoubleChain_Dbl_RAM(rD1,erf,erh,length);
+    da_RAM := Cputime(da_RAM);
+
+    dm_RAM := Cputime();
+    rDM := DoubleChain_Magma_RAM(mD1,length);
+    dm_RAM := Cputime(dm_RAM);
+
+    rDA := J![R![rDA[3],rDA[2],rDA[1]], R![rDA[5],rDA[4]]];
+    assert rDA eq rDM;
+    
+    
+    //SPLIT
+    sf,sh := RandomG2Curve_SPLIT(fq,false);
+    Vp := ComputeVpl(sf,sh,2);
+    Vn := -Vp-sh;
+    C := HyperellipticCurve(sf,sh);
+    J := Jacobian(C);
+    ccs:= Precompute(sf,sh,fq); 
+
+
+    mD1 := Random(J);
+    vt1 := mD1[2] mod mD1[1];
+    vt1 := Vp - ((Vp - vt1) mod mD1[1]);
+    if Coefficient(mD1[2],3) eq LeadingCoefficient(Vn) then
+            n1 := 0;
+    else
+        n1 := 2-Degree(mD1[1]);
+    end if;
+    sD1 := <Coefficient(mD1[1],2), Coefficient(mD1[1],1),Coefficient(mD1[1],0), Coefficient(vt1,1), Coefficient(vt1,0), n1>;
+    
+    mD2 := Random(J);
+    vt2 := mD2[2] mod mD2[1];
+    vt2 := Vp - ((Vp - vt2) mod mD2[1]);
+    if Coefficient(mD2[2],3) eq LeadingCoefficient(Vn) then
+        n2 := 0;
+    else
+        n2 := 2-Degree(mD2[1]);
+    end if;
+    sD2 := <Coefficient(mD2[1],2), Coefficient(mD2[1],1),Coefficient(mD2[1],0), Coefficient(vt2,1), Coefficient(vt2,0), n2>;
+
+
+  
+
+    fa_SPLIT := Cputime();
+    sDA := Fibonacci_Add_SPLIT_POS(sD1,sD2,ccs,length);
+    fa_SPLIT := Cputime(fa_SPLIT);
+
+    fm_SPLIT := Cputime();
+    sDM := Fibonacci_Magma_SPLIT_POS(mD1,mD2,length);
+    fm_SPLIT := Cputime(fm_SPLIT);
+    
+    vt3 := sDM[2] mod sDM[1];
+    vt3 := Vp - ((Vp - vt3) mod sDM[1]);
+    sDM := <Coefficient(sDM[1],2), Coefficient(sDM[1],1),Coefficient(sDM[1],0), Coefficient(vt3,1), Coefficient(vt3,0), sDA[6]>;
+    assert sDA eq sDM;
+
+
+
+    da_SPLIT := Cputime();
+    sDA := DoubleChain_Dbl_SPLIT_POS(sD1,ccs,length);
+    da_SPLIT := Cputime(da_SPLIT);
+
+    dm_SPLIT := Cputime();
+    sDM := DoubleChain_Magma_SPLIT_POS(mD1,length);
+    dm_SPLIT := Cputime(dm_SPLIT);
+
+    vt3 := sDM[2] mod sDM[1];
+    vt3 := Vp - ((Vp - vt3) mod sDM[1]);
+    sDM := <Coefficient(sDM[1],2), Coefficient(sDM[1],1),Coefficient(sDM[1],0), Coefficient(vt3,1), Coefficient(vt3,0), sDA[6]>;
+    assert sDA eq sDM;
+
+
+    return [fa_RAM, fm_RAM, da_RAM, dm_RAM, fa_SPLIT, fm_SPLIT, da_SPLIT, dm_SPLIT];    
+end function;
+
+
+//MAIN
+exp := 1;
+trial_factor := 1;
+while exp lt 1024 do
+    exp := 2*exp;
+    fq := 2^exp;
+    trial_factor +:= 1;
+    len := Floor(length/trial_factor);
+
+    total_ADD_RAM := 0.0;
+    total_MGA_RAM := 0.0;
+    total_DBL_RAM := 0.0;
+    total_MGD_RAM := 0.0;
+
+    total_ADD_SPLIT := 0.0;
+    total_DBL_SPLIT := 0.0;
+    total_MGA_SPLIT := 0.0;
+    total_MGD_SPLIT := 0.0;
+
+    i := 0;
+    while i lt trials do
+        i := i+1;
+        fq := NextPrime(fq);
+
+        results := run_tests(fq,len);      
+        total_ADD_RAM := total_ADD_RAM + results[1];
+        total_DBL_RAM := total_DBL_RAM + results[2];
+        total_MGA_RAM := total_MGA_RAM + results[3];
+        total_MGD_RAM := total_MGD_RAM + results[4];
+        
+        total_ADD_SPLIT := total_ADD_SPLIT + results[5];
+        total_MGA_SPLIT := total_MGA_SPLIT + results[6];
+        total_DBL_SPLIT := total_DBL_SPLIT + results[7];
+        total_MGD_SPLIT := total_MGD_SPLIT + results[8];
+        
+    end while;
+        
+    avg_ADD_RAM := total_ADD_RAM/trials;
+    avg_MGA_RAM := total_MGA_RAM/trials;
+    avg_DBL_RAM := total_DBL_RAM/trials;
+    avg_MGD_RAM := total_MGD_RAM/trials;
+
+    avg_ADD_SPLIT := total_ADD_SPLIT/trials;
+    avg_MGA_SPLIT := total_MGA_SPLIT/trials;
+    avg_DBL_SPLIT := total_DBL_SPLIT/trials;
+    avg_MGD_SPLIT := total_MGD_SPLIT/trials;
+ 
+    exp, len, "\t", avg_ADD_RAM, avg_MGA_RAM, avg_DBL_RAM, avg_MGD_RAM, avg_ADD_SPLIT, avg_MGA_SPLIT, avg_DBL_SPLIT, avg_MGD_SPLIT;
+
+end while;
+
+
+exit;

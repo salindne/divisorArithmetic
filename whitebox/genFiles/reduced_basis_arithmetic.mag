@@ -1,0 +1,2001 @@
+///////////////////////////////////////////////////////////////////////////////
+///////////// POLYNOMIAL DIVISOR ARITHMETIC OVER ARBIRTRARY FIELDS. ///////////
+///////////////////////////////////////////////////////////////////////////////
+//  
+//
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This source file contains arbitrary field implementations of the following 
+// alogirthms: Precompute, Compose, Reduce, Adjust, Addition, Negation.
+// Also given are functions for generating random split hyperelliptic curves 
+// over arbitrary finite fields and for generating random divisor classes on 
+// them, as well as functions for testing the code and converting between
+// adapted and reduced basis.
+
+//-----------------------------------------------------------------------------
+// SPLIT HYPERELLIPTIC CURVES
+//-----------------------------------------------------------------------------
+// Split Hyperelliptic curves are of the form  y^2 + y*h(x) = f(x) where f  
+// degree 2g + 2, h degree <= g+1. The points at infinity are P_infpl:=(1:1:0)
+// and P_infmin:=(1:-1:0). Hyperelliptic conjugate of affine point P=(x,y) is
+// -P=(x,-y-h). The genus 2 infinity divisor is D_inf = P_infpl + P_infmin.
+
+//-----------------------------------------------------------------------------
+// MUMFORD REPRESENTATION
+//-----------------------------------------------------------------------------
+// For polynomials u,v with u monic, deg(v) < deg(u) and u dividing f-h*v-v^2
+// we use (u,v) to denote the Mumford representations of the affine semi-
+// reduced divisor with points (a,v(a)) where a ranges over the roots of u, and
+// v interpolates the roots.
+
+//-----------------------------------------------------------------------------
+// BALANCED REPRESENTATION
+//-----------------------------------------------------------------------------
+// For u,v as above with deg(u) <= g and 0 <= n <= g-deg(u) we take
+// (u,v,n) = (u,v) + n*P_infpl + (g-deg(u)-n)P_infmin - D_inf as the unique 
+// representation of its divisor class.
+
+//-----------------------------------------------------------------------------
+// EXTENDED MUMFORD REPRESENTATION
+//-----------------------------------------------------------------------------
+// For polynomials u,v, and third polynomial w = (f-v(v + h))/u is added to the
+// Mumforded and Balanced representations, (u,v,w) and (u,v,w,n).
+
+//-----------------------------------------------------------------------------
+// Vpl POLYNOMIAL
+//-----------------------------------------------------------------------------
+// The auxiliary polynomial Vpl is the unique monic poly of deg g + 1 for which 
+// deg(f + V*h(x) - V^2) <= g. For (u,v,w,n) as above, adjusting with Vpl is 
+// tantatmount to adding P_infpl to divisor (u,v,w,n). Adjusting with -Vpl-h is 
+// tantatmount to adding P_infmin to divisor (u,v,w,n). 
+
+//-----------------------------------------------------------------------------
+// REDUCED BASIS
+//-----------------------------------------------------------------------------
+// Given a divisor D=(u,v,w,n) in extended Mumford represenation as above, the
+// reduced basis of D is (u,vr,wr,n) where vr:= Vpl-((Vpl-v) mod u). vr has
+// degree g+1 and Vpl_{g+1} = vr_{g+1}, Vpl2 = vr_{g}, ..., where Vpl is given
+// as above. wr = (f-vr(vr + h))/u.  To convert from reduced to adapted basis,
+// take v = vr (mod u) and w = (f-v(v + h))/u. Either Vpl or Vn = -Vpl - h can
+// be used. Due to cancelations during explicit computation, reduced basis of a
+// divisor is faster when computing divisor arithmetic over split models.
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////FUNCTIONS///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+// Coeff(poly,n)
+//-----------------------------------------------------------------------------
+// Input: poly: Polynomial over a field.
+//           n: natural number.
+//
+// Return: The n-monomial's coefficient.
+//-----------------------------------------------------------------------------
+Coeff := function(poly,n)
+    c:=Coefficients(poly); return n+1 le #c select c[n+1] else 0;
+end function;
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////RAMIFIED////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+// RandomCurve_RAM(g,q,hIsZero)
+//-----------------------------------------------------------------------------
+// Input:       g: genus.
+//              q: field parameter.
+//        hIsZero: Boolean, if true then h polynomial is 0.
+//
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f and h in GF(q)[x] where f is seperable of degree 2g+1 and 
+//         polynomial h of degree <= g.
+//-----------------------------------------------------------------------------
+RandomCurve_RAM := function(g,q,hIsZero)
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+
+    while true do
+        //Randomly generate f and h for genus g
+        f:= R ! [Random(F): i in [0..2*g+1]];
+        if hIsZero then
+            h:= R ! 0;
+        else
+            h:= R ! [Random(F): i in [0..g]];
+        end if;
+
+        //Check if f and h are hyperelliptic polynomials
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h are hyperelliptic polynomials, check to see if
+        //the curve has one point at infinity and is genus g.
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 2*g+1) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Add_RAM(D1,D2,f,h,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1) and D2=(u2,v2,w2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2 using specialized Cantor.
+//-----------------------------------------------------------------------------
+Add_RAM := function(D1,D2,f,h,g)
+    u1 :=D1[1]; v1:=D1[2]; w1:=D1[3];
+    u2 :=D2[1]; v2:=D2[2]; w2:=D2[3];
+
+    t1 := v1 + h;
+    S,a1,b1 := XGCD(u1,u2);
+    K := a1*(v2 - v1) mod u2;
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2 + t1);
+        K  := (a2*K + b2*w1) mod u2;
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+            w1 :=  w1*S;
+        end if;
+    end if;
+    T  := u1*K;
+    u := u1*u2;
+    v := v1 + T;
+    w := ExactQuotient(w1 - K*(t1 + v),u2);
+
+    //Normalize or Reduce
+    if Degree(u) le g then
+        if Degree(v) ge Degree(u) then
+            q,r := Quotrem(v,u);
+            w := w + q*(v + r + h);
+            v := r;
+        end if;
+    else
+        while Degree(u) gt g do
+            tu := w;
+            q,tv := Quotrem(-v - h,w);
+            w := u + q*(tv - v);
+            v := tv;
+            u := tu; 
+        end while;
+        w := LeadingCoefficient(u)*w;
+        u := u/LeadingCoefficient(u);
+    end if;
+    return <u,v,w>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Double_RAM(D,f,h,g)
+//-----------------------------------------------------------------------------
+// Input:     D: D=(u,v,w) reduced divisor over HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D is    
+//               doubled over.
+//            g: genus
+// 
+// Return: Unique reduced divisor Dp ~ D + D, (invokes Add function).
+//-----------------------------------------------------------------------------
+Double_RAM := function (D1,f,h,g) 
+    u1 :=D1[1]; v1:=D1[2]; w1:=D1[3];
+
+    //Compose
+    t1 := 2*v1 + h;
+    S,a1,b1 := XGCD(u1,t1);
+    K  := b1*w1 mod u1;
+    if not IsOne(S) then
+        u1 := ExactQuotient(u1,S);
+        w1 :=  w1*S;
+    end if;
+    T  := u1*K;
+    u := u1^2;
+    v := v1 + T;
+    w := ExactQuotient(w1 - K*(t1 + T),u1);
+
+    //Normalize or Reduce
+    if Degree(u) le g then
+        if Degree(v) ge Degree(u) then
+            q,r := Quotrem(v,u);
+            w := w + q*(v + r + h);
+            v := r;
+        end if;
+    else
+        while Degree(u) gt g do
+            tu := w;
+            q,tv := Quotrem(-v - h,w);
+            w := u + q*(tv - v);
+            v := tv;
+            u := tu; 
+        end while;
+        w := LeadingCoefficient(u)*w;
+        u := u/LeadingCoefficient(u);
+    end if;
+    return <u,v,w>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Nucomp_RAM(D1,D2,f,h,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1) and D2=(u2,v2,w2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp_RAM := function(D1,D2,f,h,g)
+    
+    if Degree(D1[1]) lt Degree(D2[1]) then
+        u2 := D1[1]; v2 := D1[2]; w2 := D1[3];
+        u1 := D2[1]; v1 := D2[2]; w1 := D2[3];
+    else
+        u1 := D1[1]; v1 := D1[2]; w1 := D1[3];
+        u2 := D2[1]; v2 := D2[2]; w2 := D2[3];
+    end if;
+
+    t1 := v1 + h;
+    t2 := v2 - v1;
+    S,a1,b1 := XGCD(u1,u2);
+    K := a1*t2 mod u2;
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2+t1);
+        K  := (a2*K + b2*w1) mod u2;
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+            w1 :=  w1*S;
+        end if;
+    end if;
+
+    if Degree(u2) + Degree(u1) le g then
+        T  := u1*K;
+        u := u1*u2;
+        v := v1 + T;
+        w := ExactQuotient(w1 - K*(t1 + v),u2);
+        if Degree(v) ge Degree(u) then
+            q,r := Quotrem(v,u);
+            w := w + q*(v + r + h);
+            v := r;
+        end if;
+    else
+        rp := u2; r := K; cp := Parent(f)!0; c := Parent(f)!-1; l := -1;
+
+        bound := (Degree(u2) - Degree(u1) + g)/2;
+        while Degree(r) gt bound do
+            q,rn := Quotrem(rp,r);
+            rp := r; r := rn; cn := cp - q*c; cp := c; c := cn; l := -l;
+        end while;
+        t3 := u1*r;
+        M1    := ExactQuotient(t3 + t2*c, u2);
+        M2    := ExactQuotient(r*(v2 + t1) + w1*c, u2);
+        u   := l*(r*M1 - c*M2);
+        v   := (ExactQuotient(t3 + cp*u, c) - t1) mod u;
+        u   := u/LeadingCoefficient(u);
+        w   := ExactQuotient(f - v*(v + h),u);
+    end if;
+    return <u,v,w>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Nuduple_RAM(D1,f,h,g)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,w1) reduced divisor over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 is  
+//               doubled over.
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nuduple_RAM := function(D1,f,h,g)
+    u1 := D1[1]; v1 := D1[2]; w1 := D1[3];
+
+    t1 := v1 + h;
+    t2 := v1 + t1;
+    S,a1,b1 := XGCD(u1,t2);
+    K  := b1*w1 mod u1;
+    if not IsOne(S) then
+        u1 := ExactQuotient(u1,S);
+        w1 :=  w1*S;
+    end if;
+
+    if 2*Degree(u1) le g then
+        T  := u1*K;
+        u := u1^2;
+        v := v1 + T;
+        w := ExactQuotient(w1 - K*(t1 + v),u1);
+        if Degree(v) ge Degree(u) then
+            q,r := Quotrem(v,u);
+            w := w + q*(v + r + h);
+            v := r;
+        end if;
+    else
+        rp := u1; r := K; cp := Parent(f)!0; c := Parent(f)!-1; l := -1;
+
+        bound := g/2;
+        while Degree(r) gt bound do
+            q,rn := Quotrem(rp,r);
+            rp := r; r := rn; cn := cp - q*c; cp := c; c := cn; l := -l;
+        end while;
+        
+        M2    := ExactQuotient(r*t2 + w1*c, u1);
+        u   := l*(r^2 - c*M2);
+        v   := (ExactQuotient(u1*r + cp*u, c) - t1) mod u;
+        u   := u/LeadingCoefficient(u);
+        w  := ExactQuotient(f - v*(v + h),u);
+    end if;
+    return <u,v,w>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Neutral_RAM(f,h)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to genus g curve that N     
+//             is defined over.
+//          
+// Return: Unique neutral divisor N = <1,0>.
+//-----------------------------------------------------------------------------
+Neutral_RAM := function(f,h)
+    return <Parent(f)!1,Parent(f)!0,f>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// RandomDivisor_RAM(f,h,g)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to curve that divisor is 
+//             is being created for.
+//
+// Return: Fairly random divisor D = (u,v,w), over HyperellipticCurve(f,h).
+//-----------------------------------------------------------------------------
+RandomDivisor_RAM := function(f,h,g)
+    FF := BaseRing(f);
+    R<x> := Parent(f);  
+    
+    i := 0;
+    rDivisor := Neutral_RAM(f,h);
+    while i lt g do
+        u := 0;
+        while u eq 0 do
+            u := R![Random(FF) : i in [1,2]];
+        end while;
+        u := u/LeadingCoefficient(u);
+
+        //Check if degree 0 or 1
+        if IsOne(u) then 
+            i := i + 1;    
+        else
+            //Create quotient field with  u 
+            S,projmap:=quo<R|u>;
+            vChoices:= [a[1] : a in Factorization(x^2 + R!projmap(h)*x - R!projmap(f))];
+
+            //Make sure linear factorization exists
+            //If not then retry
+            if IsOne(Degree(vChoices[1])) then
+                //Randomize choice of factor
+                v := R!-Coeff(vChoices[Random([1,#vChoices])],0);
+                w := ExactQuotient(f - v*h - v^2, u);
+                rDivisor := Add_RAM(rDivisor,<u,v,w>,f,h,g);
+                i := i + 1;    
+            end if;
+        end if;
+    end while;
+    return rDivisor;             
+end function;
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////SPLIT/////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+
+//-----------------------------------------------------------------------------
+// RandomCurve_SPLIT(g,q,hIsZero)
+//-----------------------------------------------------------------------------
+// Input:       g: genus.
+//              q: field parameter.
+//        hIsZero: Boolean, if true then h polynomial is 0.
+//
+// Return: Random(ish) hyperelliptic polynomials of curve with two points at
+//         infinity f and h in GF(q)[x] where f is seperable of degree 2g+2 and 
+//         polynomial h of degree <= g+1.
+//-----------------------------------------------------------------------------
+RandomCurve_SPLIT := function(g,q,hIsZero)
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h for genus g
+        f:= R ! [Random(F): i in [0..2*g+2]];
+        if hIsZero then
+            h:= R ! 0;
+        else
+            h:= R ! [Random(F): i in [0..g+1]];
+        end if;
+
+        //Check if f and h are hyperelliptic polynomials
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h are hyperelliptic polynomials, check to see if
+        //the curve has two points at infinity and is genus g.
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 2) and (Degree(f) eq 2*g+2) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+//-----------------------------------------------------------------------------
+// RandomChar2G2SplitCurve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//              
+// Return: Random(ish) hyperelliptic polynomials of curve with two points at
+//         infinity f and h in GF(q)[x] where f is seperable of degree 2g+2 and 
+//         polynomial h of degree <= g+1. h3=1 and h2=y2=f5=f4=f3=0.
+//-----------------------------------------------------------------------------
+RandomChar2G2SplitCurve := function(q)//startIGNORE
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h for genus g
+        beta:= Random(F);
+        f:= (beta^2 + beta)*x^6 + Random(F)*x^2 + Random(F)*x + Random(F);
+        h:= x^3 + Random(F)*x + Random(F);
+
+        //Check if f and h are hyperelliptic polynomials
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h are hyperelliptic polynomials, check to see if
+        //the curve has two points at infinity and is genus g.
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 2) and (Degree(f) eq 6) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;//endIGNORE
+
+//-----------------------------------------------------------------------------
+// RandomNotCh23SpG2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//              
+// Return: Random(ish) hyperelliptic polynomials of curve with two points at
+//         infinity f and h in GF(q)[x] where f is seperable of degree 2g+2,  
+//         polynomial h = 0 and f6=y3=1.
+//-----------------------------------------------------------------------------
+RandomNotCh23SpG2Curve:= function(q)//startIGNORE
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f 
+        beta:= Random(F);
+        f:= x^6 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 +
+             Random(F)*x + Random(F);
+
+        //Check if f is hyperelliptic polynomial
+        try
+            C:=HyperellipticCurve(f);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f is a hyperelliptic polynomial, check to see if
+        //the curve has two points at infinity and is genus is 2
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 2) and (Degree(f) eq 6) then
+                return f;
+            end if;
+        end if;
+        
+    end while;
+end function;//endIGNORE
+
+//-----------------------------------------------------------------------------
+// ComputeVpl(f,h)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials of a split curve.
+//
+// Return: Unique Vpl polynomial of degree g+1 for which 
+//         deg(f-h*Vpl-Vpl^2) <= g.
+//-----------------------------------------------------------------------------
+ComputeVpl := function(f,h,g)
+    R<x>:=PolynomialRing(BaseRing(f));
+
+    //g+1 coefficient of h, can be 0
+    hl:= Coeff(h,g+1);
+    //Leading coefficient of f, has to have degree 2g+2
+    fl:= Coeff(f,2*g+2);
+    //Leading term of Vpl is set to be a solution of the quadratic equation fl - hl*x - x^2
+    Vl:= -Coeff(Factorization(fl - x*(x + hl))[2][1],0);
+    Vpl := Vl*x^(g+1);
+    //Derivative of fl - hl*yl - yl^2, denominator in discovery of Vpl.
+    dinv:= (2*Vl + hl)^-1;
+    //Work down one term at a time, using first g+1 terms of f, and all of h
+    i:=g;    
+    while i ge 0 do
+        Vpl +:= dinv*Coeff(f - Vpl*(Vpl + h), g+1+i)*x^i;
+        i-:=1;
+    end while;
+    return Vpl;
+end function;
+
+//-----------------------------------------------------------------------------
+// Neutral_SPLIT(f,h)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to genus g curve that N     
+//             is defined over.
+//       V: V is unique polynomial of degree g+1 for which 
+//            deg(f - V*h- V^2) <= g.
+//          
+// Return: Unique neutral divisor N = (1,0,f - V*(V + h),Ceiling(g/2)).
+//-----------------------------------------------------------------------------
+Neutral_SPLIT := function(f,h,V)
+    return <Parent(f)!1,V,f - V*(V + h),Ceiling(ExactQuotient(Degree(f)-2,2)/2)>;
+end function;
+
+//-----------------------------------------------------------------------------
+// Adjust_SPLIT_NEG(D,f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input:  D: D=(u,v,w,n) semi-reduced divisor over HyperellipticCurve(f,h) with
+//            deg(u) <= g+1.
+//       f,h: hyperelliptic polynomials corresponding to curve that D is  
+//            adjusted over.
+//       V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//            deg(f - Vpl*h- Vpl^2) <= g.
+//        g: genus
+// 
+// Return: Unique reduced divisor Dp = (up,vp,np) ~ D with deg(u) < g+1 and 
+//         0 <= np <= deg(u)- g, using algorithm from Section 10.4 Galbraith 
+//         book.
+//-----------------------------------------------------------------------------
+Adjust_SPLIT_NEG := function(D,f,h,V,g)
+    u:=D[1]; v:=D[2]; w:= D[3]; n:=D[4];
+
+    if (n lt 0) then
+        //UP Adjust
+        while (n lt 0) do
+            //Adjustment
+            ou := u; u := w;
+            q,r := Quotrem(V + v + h,u);            
+            tv  := V - r;
+            w := ou - q*(tv - v);
+            v := tv;
+            n := n + g + 1 - Degree(u);
+        end while;
+        w := w*LeadingCoefficient(u);
+        u := u/LeadingCoefficient(u);
+    
+    elif (n gt g-Degree(u)) then
+        //DWN Adjust
+        //Basis Conversion
+        Vp := -V -h;
+        t := Vp - V;        
+        q,r := Quotrem(t,u);
+        tv := v + t - r;
+        w := w - q*(v + h + tv);
+        v := tv;
+        while (n gt g-Degree(u) + 1) do
+            //Adjustment kept in positive reduced
+            n := n + Degree(u)-(g+1);
+            ou := u; u := w;
+            q,r := Quotrem(Vp + v + h,u);            
+            tv  := Vp - r;
+            w := ou - q*(tv - v);
+            v := tv;
+        end while;
+        //Adjustment into negative reduced
+        n := n + Degree(u)-(g+1);
+        ou := u; u := w;
+        q,r := Quotrem(V + v + h,u);            
+        tv  := V - r;
+        w := ou - q*(tv - v);
+        v := tv;
+
+        w := w*LeadingCoefficient(u);
+        u := u/LeadingCoefficient(u);
+    end if;
+    //If neither if clause is triggered, already adjusted.
+    return <u,v,w,n>;    
+    //end if;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Add_SPLIT_NEG(D1,D2,f,h,Vp,V,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) and D2=(u2,v2,w2,n2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Add_SPLIT_NEG := function(D1,D2,f,h,V,g)
+    u1 :=D1[1]; v1:=D1[2]; w1:=D1[3]; n1:=D1[4];
+    u2 :=D2[1]; v2:=D2[2]; w2:=D2[3]; n2:=D2[4];
+
+    //Compose
+    t1 := v1 + h;
+    S,a1,b1 := XGCD(u1,u2);
+    K := a1*(v2 - v1) mod u2;
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2+t1);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+            K  := (a2*K + b2*w1) mod u2;
+            w1 := w1*S;
+        else
+            K  := (a2*K + b2*w1) mod u2;
+        end if;
+    end if;
+    T  := u1*K;
+    u := u1*u2;
+    v := v1 + T;
+    w := ExactQuotient(w1 - K*(t1 + v),u2);
+    n := n1+n2+Degree(S)-Ceiling(g/2);
+    
+    //Normalize
+    if Degree(v) ge Degree(u) then
+            q,r := Quotrem(V - v,u);
+            tv:= V - r;
+            w  := w - q*(v + h + tv);
+            v := tv;
+    end if;
+
+    //Reduce
+    while Degree(u) gt g+1 do
+        if Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(-V - h) then
+            n := n + Degree(u) - (g + 1);
+        elif Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(V) then
+            n := n + g + 1 - Degree(w);
+        else
+            n:= n + (Degree(u) - Degree(w))/2;
+        end if; 
+
+        ou := u; u := w;
+        q,r := Quotrem(V + v + h,u);            
+        tv  := V - r;
+        w := ou - q*(tv - v);
+        v := tv;
+    end while;
+
+    w := w*LeadingCoefficient(u);
+    u := u/LeadingCoefficient(u);
+    return Adjust_SPLIT_NEG(<u,v,w,n>,f,h,V,g);
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Double_SPLIT_NEG(D,f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input:     D: D=(u,v,w,n) reduced divisor over HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D is    
+//               doubled over.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor Dp ~ D + D, (invokes Add function).
+//-----------------------------------------------------------------------------
+Double_SPLIT_NEG := function (D1,f,h,V,g) 
+    u1 :=D1[1]; v1:=D1[2]; w1:=D1[3]; n1:=D1[4];
+
+    //Compose
+    t1 := 2*v1 + h;
+    S,a1,b1 := XGCD(u1,t1);
+    
+    if not IsOne(S) then
+        u1 := ExactQuotient(u1,S);
+        K  := b1*w1 mod u1;
+        w1 :=  w1*S;
+    else
+        K  := b1*w1 mod u1;
+    end if;
+
+    T  := u1*K;
+    u := u1^2;
+    v := v1 + T;
+    w := ExactQuotient(w1 - K*(t1 + T),u1);
+    n := 2*n1 + Degree(S) - Ceiling(g/2);
+
+    //Normalize
+    if Degree(v) ge Degree(u) then
+            q,r := Quotrem(V - v,u);
+            tv:= V - r;
+            w  := w - q*(v + h + tv);
+            v := tv;
+    end if;
+
+    //Reduce
+    while Degree(u) gt g+1 do
+        if Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(-V - h) then
+            n := n + Degree(u) - (g + 1);
+        elif Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(V) then
+            n := n + g + 1 - Degree(w);
+        else
+            n:= n + (Degree(u) - Degree(w))/2;
+        end if; 
+
+        ou := u; u := w;
+        q,r := Quotrem(V + v + h,u);            
+        tv  := V - r;
+        w := ou - q*(tv - v);
+        v := tv;
+    end while;
+
+    w := w*LeadingCoefficient(u);
+    u := u/LeadingCoefficient(u);
+    return Adjust_SPLIT_NEG(<u,v,w,n>,f,h,V,g);
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Nucomp_SPLIT_NEG(D1,D2,f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) and D2=(u2,v2,w2,n2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp_SPLIT_NEG := function(D1,D2,f,h,V,g)
+    if Degree(D1[1]) lt Degree(D2[1]) then
+        u2 := D1[1]; v2 := D1[2]; w2 := D1[3]; n2 := D1[4];
+        u1 := D2[1]; v1 := D2[2]; w1 := D2[3]; n1 := D2[4];
+    else
+        u1 := D1[1]; v1 := D1[2]; w1 := D1[3]; n1 := D2[4];
+        u2 := D2[1]; v2 := D2[2]; w2 := D2[3]; n2 := D1[4];
+    end if;
+
+    t1 := v1 + h;
+    t2 := v2 - v1;
+    S,a1,b1 := XGCD(u1,u2);
+    K := a1*(v2 - v1) mod u2;
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2+t1);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+            K  := (a2*K + b2*w1) mod u2;
+            w1 := w1*S;
+        else
+            K  := (a2*K + b2*w1) mod u2;
+        end if;
+    end if;
+    deg := Degree(u2) + Degree(u1);
+    n := n1 + n2 + Degree(S) - Ceiling(g/2);
+    
+    //No NUCOMP
+    if deg le g  and ((n ge 0 and n le g-deg) or (Degree(w1) - Degree(u2) gt g)) then
+        //Cantor Compose as is
+        T  := u1*K;
+        u := u1*u2;
+        v := v1 + T;
+        w := ExactQuotient(w1 - K*(t1 + v),u2);
+        q,r := Quotrem(V - v,u);
+        tv:= V - r;
+        w  := w - q*(v + h + tv);
+        v := tv;
+
+    //NUCOMP
+    else 
+        r := K; rp := u2; cp:= Parent(f)!0; c:= Parent(f)!-1; l:= -1;
+
+        //Reduction Portion of NUCOMP
+        bound := (Degree(u2) - Degree(u1) + g + 1)/2;
+        while Degree(r) ge bound do
+            q,rn := Quotrem(rp,r);
+            cn := cp - q*c; 
+            rp := r; r := rn; cp := c; c := cn; l := -l;
+        end while;
+
+        //Reconsturct  divisor from continued fraction
+        t3 := u1*r;
+        M1  := ExactQuotient(t3 + t2*c, u2);
+        M2  := ExactQuotient(r*(v2 + t1) + w1*c, u2);
+        u := l*(r*M1 - c*M2);
+        z := ExactQuotient(t3 + cp*u, c);
+        v := V + (z - t1 - V) mod u;
+        u := u/LeadingCoefficient(u);
+        w := ExactQuotient(f-v*(v + h),u);
+
+        //Check if last step was adjustment/special reduction.
+        if Degree(r) + Degree(u1) - Degree(c) lt g + 1 then
+            //if LeadingCoefficient(v1) eq LeadingCoefficient(V) then                     
+                n := n + Degree(u2) - Degree(rp) + g + 1 - Degree(u);
+            //else                                
+            //    nd := Degree(u1) + Degree(rp) - g - 1;
+            //end if;
+        else //No special reduction or adjust at end
+            //if LeadingCoefficient(v1) eq LeadingCoefficient(V) then                 
+                n := n + Degree(u2) - Degree(r);
+            //else                          
+            //    nd := Degree(u1) + Degree(r) - Degree(u);
+            //end if;
+        end if;
+
+    end if;
+    return Adjust_SPLIT_NEG(<u,v,w,n>,f,h,V,g); //Extra adjusts required if g ge 3
+end function;
+
+
+
+//-----------------------------------------------------------------------------
+// Nuduple_SPLIT_NEG(D1,f,h,Vpl,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) reduced divisor over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 is  
+//               doubleover.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nuduple_SPLIT_NEG := function(D1,f,h,V,g)
+    u1 := D1[1]; v1 := D1[2]; w1 := D1[3]; n1 := D1[4];
+    
+    t1 := v1 + h;
+    t2 := t1 + v1;
+    S,a1,b1 := XGCD(u1,t2);
+    if not IsOne(S) then
+        u1 := ExactQuotient(u1,S);
+        K  := b1*w1 mod u1;
+        w1 :=  w1*S;
+    else
+        K  := b1*w1 mod u1;
+    end if;
+
+    deg := 2*Degree(u1);
+    n := 2*n1 + Degree(S) - Ceiling(g/2);
+
+    //No NUCOMP
+    if deg le g  and ((n ge 0 and n le g-deg) or (Degree(w1) - Degree(u1) gt g)) then
+        //Cantor Compose as is
+        T  := u1*K;
+        u := u1^2;
+        v := v1 + T;
+        w := ExactQuotient(w1 - K*(t2 + T),u1);
+        q,r := Quotrem(V - v,u);
+        tv:= V - r;
+        w  := w - q*(v + h + tv);
+        v := tv;
+        
+    //NUCOMP
+    else 
+        //Composition Portion of NUCOMP        
+        r:= K; rp := u1; cp:= Parent(f)!0; c:= Parent(f)!-1; l:= -1;
+
+        //Reduction Portion of NUCOMP
+        bound := (g + 1)/2;
+        while Degree(r) ge bound do
+            q,rn := Quotrem(rp,r);
+            cn := cp - q*c; 
+            rp := r; r := rn; cp := c; c := cn; l := -l;
+            //c;
+        end while;
+
+        //Reconstruct divisor from continued fraction
+        M2  := ExactQuotient(r*t2 + w1*c, u1);
+        u := l*(r^2 - c*M2);
+        v := V + (ExactQuotient(u1*r + cp*u, c) - t1 - V) mod u;
+        u := u/LeadingCoefficient(u);
+        w := ExactQuotient(f - v*(v + h),u);
+        //Check if last step was adjustment/special reduction.
+        if Degree(r) + Degree(u1) - Degree(c) lt g + 1 then
+            //if LeadingCoefficient(v1) eq LeadingCoefficient(V) then                     
+                nd := Degree(u1) - Degree(rp) + g + 1 - Degree(u);
+            //else                                    
+            //    nd := Degree(u1) + Degree(rp) - g - 1;
+            //end if;
+        else //No special reduction or adjust at end
+            //if LeadingCoefficient(v1) eq LeadingCoefficient(V) then                 
+                nd := Degree(u1) - Degree(r);
+            //else             
+            //    nd := Degree(u1) + Degree(r) - Degree(u);                  
+            //end if;
+        end if;
+        n := n + nd;
+    end if;
+    return Adjust_SPLIT_NEG(<u,v,w,n>,f,h,V,g); //Extra adjusts required if g ge 3
+end function;
+
+
+//-----------------------------------------------------------------------------
+// RandomDivisor_SPLIT(f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to curve that divisor is 
+//             is being created for.
+//         V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//             deg(f - Vpl*h- Vpl^2) <= g.
+//          g: genus
+//
+// Return: Fairly random divisor D = (u,v,n), in negative or positive reduced 
+//         basis over HyperellipticCurve(f,h).
+//-----------------------------------------------------------------------------
+RandomDivisor_SPLIT_NEG := function(f,h,V,g)
+    FF := BaseRing(f);
+    R<x> := Parent(f);  
+
+    i := 0;
+    rDivisor := Neutral_SPLIT(f,h,V);
+    while i lt g  do
+        u := R!0;
+        while IsZero(u) do
+            u := R![Random(FF) : i in [1,2]]; //..g+1]];
+        end while;
+        u := u/LeadingCoefficient(u);
+
+        //Check if degree 0 or 1
+        if IsOne(u) then 
+            rDivisor := Add_SPLIT_NEG(rDivisor,<1,V,f - V*(V + h),Random([0..g])>,f,h,V,g);
+            i := i + 1;    
+        else
+            //Create quotient field with  u 
+            S,projmap:=quo<R|u>;
+            vChoices:= [a[1] : a in Factorization(x^2 + R!projmap(h)*x - R!projmap(f))];
+
+            //Make sure linear factorization exists
+            //If not then retry
+            if IsOne(Degree(vChoices[1])) then
+                //Randomize choice of factor
+                v := R!-Coeff(vChoices[Random([1,#vChoices])],0);
+                v := v + V - (V mod u);
+                w := ExactQuotient(f - v*(v + h), u);
+                rDivisor := Add_SPLIT_NEG(rDivisor,<u,v,w,Random([0..g-1])>,f,h,V,g);
+                i := i + 1;    
+            end if;
+        end if;
+    end while;
+    return rDivisor;               
+
+end function;
+
+
+//POS
+
+//-----------------------------------------------------------------------------
+// Reduced_Basis(D,f,h,Vpl)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,v,n) where u,v are Mumford polynomials and n is 
+//             balancing weight.
+//        f,h: hyperelliptic polynomials corresponding to curve that D is 
+//             is validated for.
+//
+// Return: Unique divisor Dhat = (u,vr,n) ~ D, in reduced basis where 
+//         vr = Vpl - ((Vpl - v) mod u).
+//-----------------------------------------------------------------------------
+Reduced_Basis := function(D,f,h,V)
+    v:= D[2] mod D[1];
+    vhat := V - ((V - v) mod D[1]);
+    what := ExactQuotient(f - vhat*(vhat + h),D[1]);
+    Dhat := <D[1],vhat,what,D[4]>;
+    return Dhat;
+end function;
+
+//-----------------------------------------------------------------------------
+// Convert_From_Magma(D,f,h,Vpl)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,v,n) where u,v are Mumford polynomials and n is 
+//             balancing weight.
+//        f,h: hyperelliptic polynomials corresponding to curve that D is 
+//             is validated for.
+//
+// Return: Unique divisor Dhat = (u,vr,n) ~ D, in reduced basis where 
+//         vr = Vpl - ((Vpl - v) mod u).
+//-----------------------------------------------------------------------------
+Convert_From_Magma := function(D,f,h,V,g)
+    v:= D[2] mod D[1];
+    vhat := V - ((V - v) mod D[1]);
+    what := ExactQuotient(f - vhat*(vhat + h),D[1]);
+    Dhat := <D[1],vhat,what,Random([0..g-Degree(D[1])])>;
+    return Dhat;
+end function;
+
+//-----------------------------------------------------------------------------
+// Adjust_SPLIT_POS(D,f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input:  D: D=(u,v,w,n) semi-reduced divisor over HyperellipticCurve(f,h) with
+//            deg(u) <= g+1.
+//       f,h: hyperelliptic polynomials corresponding to curve that D is  
+//            adjusted over.
+//       V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//            deg(f - Vpl*h- Vpl^2) <= g.
+//        g: genus
+// 
+// Return: Unique reduced divisor Dp = (up,vp,np) ~ D with deg(u) < g+1 and 
+//         0 <= np <= deg(u)- g, using algorithm from Section 10.4 Galbraith 
+//         book.
+//-----------------------------------------------------------------------------
+Adjust_SPLIT_POS := function(D,f,h,V,g)
+    u:=D[1]; v:=D[2]; w:= D[3]; n:=D[4];
+   
+    if (n gt g-Degree(u)) then
+        //DWN Adjust
+        while (n gt g-Degree(u)) do
+            //Adjustment
+            n := n + Degree(u)-(g+1);
+            ou := u; u := w;
+            q,r := Quotrem(V + v + h,u);            
+            tv  := V - r;
+            w := ou - q*(tv - v);
+            v := tv;
+        end while;
+        w := w*LeadingCoefficient(u);
+        u := u/LeadingCoefficient(u);
+
+    elif (n lt 0) then
+        //Basis Conversion to negative reduced
+        Vp := -V-h;
+        t := Vp - V;        
+        q,r := Quotrem(t,u);
+        tv := v + t - r;
+        w := w - q*(v + h + tv);
+        v := tv;
+        while (n lt -1) do
+            //Adjustment kept in negative reduced
+            ou := u;  u := w;
+            q,r := Quotrem(Vp + v + h,u);            
+            tv  := Vp - r;
+            w := ou - q*(tv - v);
+            v := tv;
+            n := n + g + 1 - Degree(u);
+        end while;
+        //UP Adjust back into positive reduced
+        ou := u;  u := w;
+        q,r := Quotrem(V + v + h,u);            
+        tv  := V - r;
+        w := ou - q*(tv - v);
+        v := tv;
+        n := n + g + 1 - Degree(u);
+
+        w := w*LeadingCoefficient(u);
+        u := u/LeadingCoefficient(u);
+    end if;
+    //If neither if clause is triggered, already adjusted.
+    return <u,v,w,n>;    
+    //end if;
+end function;
+
+//-----------------------------------------------------------------------------
+// Add_SPLIT_POS(D1,D2,f,h,Vp,V,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) and D2=(u2,v2,w2,n2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Add_SPLIT_POS := function(D1,D2,f,h,V,g)
+    u1 :=D1[1]; v1:=D1[2]; w1:=D1[3]; n1:=D1[4];
+    u2 :=D2[1]; v2:=D2[2]; w2:=D2[3]; n2:=D2[4];
+
+    //Compose
+    t1 := v1 + h;
+    S,a1,b1 := XGCD(u1,u2);
+    K := a1*(v2 - v1) mod u2;
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2+t1);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+            K  := (a2*K + b2*w1) mod u2;
+            w1 := w1*S;
+        else
+            K  := (a2*K + b2*w1) mod u2;
+        end if;
+    end if;
+    T  := u1*K;
+    u := u1*u2;
+    v := v1 + T;
+    w := ExactQuotient(w1 - K*(t1 + v),u2);
+    n := n1+n2+Degree(S)-Ceiling(g/2);
+    
+    //Normalize
+    if Degree(v) ge Degree(u) then
+            q,r := Quotrem(V - v,u);
+            tv:= V - r;
+            w  := w - q*(v + h + tv);
+            v := tv;
+    end if;
+
+    //Reduce
+    while Degree(u) gt g+1 do
+        if Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(V) then
+            n := n + Degree(u) - (g + 1);
+        elif Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(-V-h) then
+            n := n + g + 1 - Degree(w);
+        else
+            n:= n + (Degree(u) - Degree(w))/2;
+        end if; 
+
+        ou := u; u := w;
+        q,r := Quotrem(V + v + h,u);            
+        tv  := V - r;
+        w := ou - q*(tv - v);
+        v := tv;
+    end while;
+
+    w := w*LeadingCoefficient(u);
+    u := u/LeadingCoefficient(u);
+    return Adjust_SPLIT_POS(<u,v,w,n>,f,h,V,g);
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Double_SPLIT_POS(D,f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input:     D: D=(u,v,w,n) reduced divisor over HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D is    
+//               doubled over.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor Dp ~ D + D, (invokes Add function).
+//-----------------------------------------------------------------------------
+Double_SPLIT_POS := function (D1,f,h,V,g) 
+    u1 :=D1[1]; v1:=D1[2]; w1:=D1[3]; n1:=D1[4];
+
+    //Compose
+    t1 := 2*v1 + h;
+    S,a1,b1 := XGCD(u1,t1);
+    
+    if not IsOne(S) then
+        u1 := ExactQuotient(u1,S);
+        K  := b1*w1 mod u1;
+        w1 :=  w1*S;
+    else
+        K  := b1*w1 mod u1;
+    end if;
+
+    T  := u1*K;
+    u := u1^2;
+    v := v1 + T;
+    w := ExactQuotient(w1 - K*(t1 + T),u1);
+    n := 2*n1 + Degree(S) - Ceiling(g/2);
+
+    //Normalize
+    if Degree(v) ge Degree(u) then
+            q,r := Quotrem(V - v,u);
+            tv:= V - r;
+            w  := w - q*(v + h + tv);
+            v := tv;
+    end if;
+
+    //Reduce
+    while Degree(u) gt g+1 do
+        if Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(V) then
+            n := n + Degree(u) - (g + 1);
+        elif Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(-V - h) then
+            n := n + g + 1 - Degree(w);
+        else
+            n:= n + (Degree(u) - Degree(w))/2;
+        end if; 
+
+        ou := u; u := w;
+        q,r := Quotrem(V + v + h,u);            
+        tv  := V - r;
+        w := ou - q*(tv - v);
+        v := tv;
+    end while;
+
+    w := w*LeadingCoefficient(u);
+    u := u/LeadingCoefficient(u);
+    return Adjust_SPLIT_POS(<u,v,w,n>,f,h,V,g);
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Nucomp_SPLIT_POS(D1,D2,f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) and D2=(u2,v2,w2,n2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp_SPLIT_POS := function(D1,D2,f,h,V,g)
+    if Degree(D1[1]) lt Degree(D2[1]) then
+        u2 := D1[1]; v2 := D1[2]; w2 := D1[3]; n2 := D1[4];
+        u1 := D2[1]; v1 := D2[2]; w1 := D2[3]; n1 := D2[4];
+    else
+        u1 := D1[1]; v1 := D1[2]; w1 := D1[3]; n1 := D2[4];
+        u2 := D2[1]; v2 := D2[2]; w2 := D2[3]; n2 := D1[4];
+    end if;
+
+    t1 := v1 + h;
+    t2 := v2 - v1;
+    S,a1,b1 := XGCD(u1,u2);
+    K := a1*(v2 - v1) mod u2;
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2+t1);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+            K  := (a2*K + b2*w1) mod u2;
+            w1 := w1*S;
+        else
+            K  := (a2*K + b2*w1) mod u2;
+        end if;
+    end if;
+    deg := Degree(u2) + Degree(u1);
+    n := n1 + n2 + Degree(S) - Ceiling(g/2);
+
+    //No NUCOMP
+    if deg le g  and ((n ge 0 and n le g-deg) or (Degree(w1) - Degree(u2) gt g)) then
+        //Cantor Compose as is
+        T  := u1*K;
+        u := u1*u2;
+        v := v1 + T;
+        w := ExactQuotient(w1 - K*(t1 + v),u2);
+        q,r := Quotrem(V - v,u);
+        tv:= V - r;
+        w  := w - q*(v + h + tv);
+        v := tv;
+
+    //NUCOMP
+    else 
+        r := K; rp := u2; cp:= Parent(f)!0; c:= Parent(f)!-1; l:= -1;
+
+        //Reduction Portion of NUCOMP
+        bound := (Degree(u2) - Degree(u1) + g + 2)/2;
+        while Degree(r) ge bound do
+            q,rn := Quotrem(rp,r);
+            cn := cp - q*c; 
+            rp := r; r := rn; cp := c; c := cn; l := -l;
+        end while;
+
+        //Reconsturct  divisor from continued fraction
+        t3 := u1*r;
+        M1  := ExactQuotient(t3 + t2*c, u2);
+        M2  := ExactQuotient(r*(v2 + t1) + w1*c, u2);
+        u := l*(r*M1 - c*M2);
+        v := V + (ExactQuotient(t3 + cp*u, c) - t1 - V) mod u;
+        u := u/LeadingCoefficient(u);
+        w := ExactQuotient(f-v*(v + h),u);
+
+        //Check if last step was adjustment/special reduction.
+        if Degree(r) + Degree(u1) - Degree(c) lt g + 1 then
+            //if LeadingCoefficient(v1) eq LeadingCoefficient(V) then                     
+            //    n := n + Degree(u2) - Degree(rp) + g + 1 - Degree(u);
+            //else                                
+                n := n + Degree(u1) + Degree(rp) - g - 1;
+            //end if;
+        else //No special reduction or adjust at end
+            //if LeadingCoefficient(v1) eq LeadingCoefficient(V) then                 
+            //    n := n + Degree(u2) - Degree(r);
+            //else                          
+                n := n + Degree(u1) + Degree(r) - Degree(u);
+            //end if;
+        end if;
+    end if;
+    return Adjust_SPLIT_POS(<u,v,w,n>,f,h,V,g); //Extra adjusts required if g ge 3
+end function;
+
+
+
+//-----------------------------------------------------------------------------
+// Nuduple_SPLIT_POS(D1,f,h,Vpl,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) reduced divisor over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 is  
+//               doubleover.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nuduple_SPLIT_POS := function(D1,f,h,V,g)
+    u1 := D1[1]; v1 := D1[2]; w1 := D1[3]; n1 := D1[4];
+    
+    t1 := v1 + h;
+    t2 := t1 + v1;
+    S,a1,b1 := XGCD(u1,t2);
+    if not IsOne(S) then
+        u1 := ExactQuotient(u1,S);
+        K  := b1*w1 mod u1;
+        w1 :=  w1*S;
+    else
+        K  := b1*w1 mod u1;
+    end if;
+
+    deg := 2*Degree(u1);
+    n := 2*n1 + Degree(S) - Ceiling(g/2);
+
+    //No NUCOMP
+    if deg le g  and ((n ge 0 and n le g-deg) or (Degree(w1) - Degree(u1) gt g)) then
+        //Cantor Compose as is
+        T  := u1*K;
+        u := u1^2;
+        v := v1 + T;
+        w := ExactQuotient(w1 - K*(t2 + T),u1);
+        q,r := Quotrem(V - v,u);
+        tv:= V - r;
+        w  := w - q*(v + h + tv);
+        v := tv;
+        
+    //NUCOMP
+    else 
+        //Composition Portion of NUCOMP        
+        r:= K; rp := u1; cp:= Parent(f)!0; c:= Parent(f)!-1; l:= -1;
+
+        //Reduction Portion of NUCOMP
+        bound := (g + 1)/2;
+        while Degree(r) ge bound do
+            q,rn := Quotrem(rp,r);
+            cn := cp - q*c; 
+            rp := r; r := rn; cp := c; c := cn; l := -l;
+            //c;
+        end while;
+
+        //Reconstruct divisor from continued fraction
+        M2  := ExactQuotient(r*t2 + w1*c, u1);
+        u := l*(r^2 - c*M2);
+        v := V + (ExactQuotient(u1*r + cp*u, c) - t1 - V) mod u;
+        u := u/LeadingCoefficient(u);
+        w := ExactQuotient(f - v*(v + h),u);
+        //Check if last step was adjustment/special reduction.
+        if Degree(r) + Degree(u1) - Degree(c) lt g + 1 then
+            //if LeadingCoefficient(v1) eq LeadingCoefficient(V) then                     
+            //    nd := Degree(u1) - Degree(rp) + g + 1 - Degree(u);
+            //else                                    
+                n := n + Degree(u1) + Degree(rp) - g - 1;
+            //end if;
+        else //No special reduction or adjust at end
+            //if LeadingCoefficient(v1) eq LeadingCoefficient(V) then                 
+            //    nd := Degree(u1) - Degree(r);
+            //else             
+                n := n + Degree(u1) + Degree(r) - Degree(u);                  
+            //end if;
+        end if;
+    end if;
+    return Adjust_SPLIT_POS(<u,v,w,n>,f,h,V,g); //Extra adjusts required if g ge 3
+end function;
+
+
+//-----------------------------------------------------------------------------
+// RandomDivisor_SPLIT(f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to curve that divisor is 
+//             is being created for.
+//         V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//             deg(f - Vpl*h- Vpl^2) <= g.
+//          g: genus
+//
+// Return: Fairly random divisor D = (u,v,n), in negative or positive reduced 
+//         basis over HyperellipticCurve(f,h).
+//-----------------------------------------------------------------------------
+RandomDivisor_SPLIT_POS := function(f,h,V,g)
+    FF := BaseRing(f);
+    R<x> := Parent(f);  
+
+    i := 0;
+    rDivisor := Neutral_SPLIT(f,h,V);
+    while i lt g do
+        u := 0;
+        while u eq 0 do
+            u := R![Random(FF) : i in [1,2]]; //..g+1]];
+        end while;
+        u := u/LeadingCoefficient(u);
+
+        //Check if degree 0 or 1
+        if IsOne(u) then 
+            rDivisor := Add_SPLIT_POS(rDivisor,<1,V,f - V*(V + h),Random([0..g])>,f,h,V,g);
+            i := i + 1;    
+        else
+            //Create quotient field with  u 
+            S,projmap:=quo<R|u>;
+            vChoices:= [a[1] : a in Factorization(x^2 + R!projmap(h)*x - R!projmap(f))];
+
+            //Make sure linear factorization exists
+            //If not then retry
+            if IsOne(Degree(vChoices[1])) then
+                //Randomize choice of factor
+                v := R!-Coeff(vChoices[Random([1,#vChoices])],0);
+                v := v + V - (V mod u);
+                w := ExactQuotient(f - v*(v + h), u);
+                rDivisor := Add_SPLIT_POS(rDivisor,<u,v,w,Random([0..g-1])>,f,h,V,g);
+                i := i + 1;    
+            end if;
+        end if;
+    end while;
+    return rDivisor;               
+
+end function;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//LOW GENUS
+
+//-----------------------------------------------------------------------------
+// Nuduple_g2_RAM(D1,f,h)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,w1) reduced divisor over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 is  
+//               doubled over.
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nuduple_g2_RAM := function(D1,f,h)
+    u1 := D1[1]; v1 := D1[2];
+
+    k := ExactQuotient(f-v1*(v1 + h),u1);
+    S,a1,b1 := XGCD(u1,2*v1 + h);
+    if not IsOne(S) then //cancellation
+        u1 := ExactQuotient(u1,S);
+    end if;
+    s  := b1*k mod u1;
+    if Degree(u1) le 1 then
+        u := u1^2;
+        v := (v1 + u1*s) mod u;
+    else    
+        M2 := ExactQuotient(s*(2*v1 + h) - k, u1);
+        u  := s^2 + M2;
+        u  := u/LeadingCoefficient(u);
+        v  := (-u1*s - v1 - h) mod u;
+    end if;
+    w  := ExactQuotient(f - v*(v + h),u);
+    return <u,v,w>;
+end function;
+
+//-----------------------------------------------------------------------------
+// Nucomp_g2_RAM(D1,D2,f,h)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1) and D2=(u2,v2,w2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp_g2_RAM := function(D1,D2,f,h)
+
+    if D1 eq D2 then
+        return Nuduple_g2_RAM(D1,f,h);
+    end if;
+
+    if Degree(D1[1]) lt Degree(D2[1]) then
+        u2 := D1[1]; v2 := D1[2]; w2 := D1[3];
+        u1 := D2[1]; v1 := D2[2]; w1 := D2[3];
+    else
+        u1 := D1[1]; v1 := D1[2]; w1 := D1[3];
+        u2 := D2[1]; v2 := D2[2]; w2 := D2[3];
+    end if;
+
+    S,a1,b1 := XGCD(u1,u2); //dont need b1;    
+    if not IsOne(S) then
+        k := ExactQuotient(f-v1*(v1 + h),u1);
+        S,a2,b2 := XGCD(S,v2 + v1 + h);
+        if not IsOne(S) then //opposite point(s)
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+            s  := (a2*a1*(v2 - v1) + b2*k) mod u2;
+        else  //common point
+            s  := (a2*a1*(v2 - v1) + b2*k) mod u2;
+        end if;
+    else 
+        s := a1*(v2 - v1) mod u2;
+    end if; 
+    if Degree(u2) + Degree(u1) le 2 then
+        u := u1*u2;
+        v := (v1 + u1*s) mod u;
+    else
+        k := ExactQuotient(f-v1*(v1 + h),u1);
+        vt := -u1*s - v1 - h;
+        u  := ExactQuotient(s*(vt - v1) + k,u2);
+        u  := u/LeadingCoefficient(u);
+        v  := vt mod u;
+    end if;
+    w := ExactQuotient(f-v*(v+h),u);
+    return <u,v,w>;
+end function;
+
+
+
+
+//-----------------------------------------------------------------------------
+// Nuduple_g2_SPLIT_POS(D1,f,h,Vpl,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) reduced divisor over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 is  
+//               doubleover.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nuduple_g2_SPLIT_POS := function(D1,f,h,V)
+    u1 := D1[1]; v1 := D1[2]; n1 := D1[4];
+    
+    neg := false;
+    if Degree(u1) le 1 and IsZero(n1) then
+        v1 := -V-h - ((-V-h - v1) mod u1);
+        neg := true;
+    end if;
+    
+    k := ExactQuotient(f - v1*(v1 + h),u1);
+    S,a1,b1 := XGCD(u1,2*v1 + h);
+    n := 2*n1 + Degree(S) - 1;
+    if not IsOne(S) then 
+        u1 := ExactQuotient(u1,S);
+    end if;
+    s  := b1*k mod u1;
+    deg := 2*Degree(u1);
+    if Degree(u1) le 1  and ((0 le n and n le 2-deg)) then
+        u := u1^2;
+        v := V - ((V - v1 - u1*s) mod u);
+    else 
+        M2  := ExactQuotient(s*(2*v1 + h) - k, u1);
+        u := -(s^2 + M2);
+        u := u/LeadingCoefficient(u);
+        z := -u1*s;
+        v := V - (V - z + v1 + h) mod u;
+        if Degree(z) lt 3 then 
+            if neg then n := n + 3 - Degree(u); // only neg if Degree(z) lt 3
+            else        n := n + deg - 3; 
+            end if;
+        else            n := n + Degree(u1) + Degree(s) - Degree(u);
+        end if;
+    end if;
+    w := ExactQuotient(f - v*(v + h),u);
+    return <u,v,w,n>;
+end function;
+
+
+
+
+//-----------------------------------------------------------------------------
+// Nucomp_g2_SPLIT_POS(D1,D2,f,h,V,g)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) and D2=(u2,v2,w2,n2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp_g2_SPLIT_POS := function(D1,D2,f,h,V)
+    if D1 eq D2 then
+        return Nuduple_g2_SPLIT_POS(D1,f,h,V);
+    end if;
+    if Degree(D1[1]) lt Degree(D2[1]) then
+        u2 := D1[1]; v2 := D1[2]; n2 := D1[4];
+        u1 := D2[1]; v1 := D2[2]; n1 := D2[4];
+    else
+        u1 := D1[1]; v1 := D1[2]; n1 := D2[4];
+        u2 := D2[1]; v2 := D2[2]; n2 := D1[4];
+    end if;
+
+    neg := false;
+    if Degree(u2) le 1 and IsZero(n1) and IsZero(n2) then
+        v1 := -V-h - ((-V-h - v1) mod u1);
+        neg := true;
+    end if;
+
+    S,a1,b1 := XGCD(u1,u2);    
+    if not IsOne(S) then
+        k := ExactQuotient(f-v1*(v1 + h),u1);
+        S,a2,b2 := XGCD(S,v2 + v1 + h);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+            s  := (a2*a1*(v2 - v1) + b2*k) mod u2;
+        end if;
+        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+    else
+        s := a1*(v2 - v1) mod u2;    
+    end if;
+    deg := Degree(u2) + Degree(u1);
+    n := n1 + n2 + Degree(S) - 1;
+    if deg le 2  and (n ge 0 and n le 2-deg) then
+        u := u1*u2;
+        v := V - ((V - v1 - u1*s) mod u);
+    else
+        z := -u1*s;
+        vt := z - v1 - h;
+        k := ExactQuotient(f-v1*(v1 + h),u1);
+        u  := ExactQuotient(s*(vt - v1) + k,u2);
+        u  := u/LeadingCoefficient(u);
+        v  := V - ((V - vt) mod u);
+        if Degree(z) lt 3 then 
+            if neg then n := n + 3 - Degree(u); //neg only if Degree(z) lt 3 
+            else        n := n + deg - 3; 
+            end if;
+        else            n := n + Degree(u1) + Degree(s) - Degree(u);
+        end if;            
+    end if;
+    w := ExactQuotient(f-v*(v + h),u);
+    return <u,v,w,n>;
+end function;
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+// Nuduple_g3_SPLIT_NEG(D1,f,h,Vpl)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) reduced divisor over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 is  
+//               doubleover.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nuduple_g3_SPLIT_NEG := function(D1,f,h,V)
+    u1 := D1[1]; v1 := D1[2]; n1 := D1[4];
+    
+    pos := false;
+    if Degree(u1) le 2 and n1 eq 3-Degree(u1) then
+        v1 := -V-h - ((-V-h - v1) mod u1);
+        pos := true;
+    end if;
+    
+    k := ExactQuotient(f - v1*(v1 + h),u1);
+    S,a1,b1 := XGCD(u1,2*v1 + h);
+    if not IsOne(S) then
+        u1 := ExactQuotient(u1,S);
+    end if;
+    s  := b1*k mod u1;
+    deg := 2*Degree(u1);
+    n := 2*n1 + Degree(S) - 2;
+    if deg le 3  and ( 0 le n and n le 3-deg) then
+        u := u1^2;
+        v := V - ((V - v1 - u1*s) mod u);       
+    elif Degree(s) lt 2 then 
+        M2 := ExactQuotient(s*(2*v1 + h) - k*S, u1);
+        u  := s^2 + M2;
+        u  := u/LeadingCoefficient(u);
+        z := -u1*s;
+        v  := V - (V - z + v1 + h) mod u;
+                
+        if pos then n := n + deg - 4; //if pos if Degree(z) lt 4 only
+        else
+            if Degree(z) lt 4 then n := n + 4 - Degree(u);          
+            else                   n := n + Degree(u1) - Degree(s);
+            end if;
+            if n lt 0 then
+                u := ExactQuotient(f - v*(v+h),u);
+                u := u/LeadingCoefficient(u);
+                v := V - ((V + v + h) mod u);
+                n := n + 4 - Degree(u);
+            end if;
+        end if;
+    else 
+        q,r := Quotrem(u1,s);
+        M2  := ExactQuotient(r*(2*v1 + h) + k*q, u1);
+        u := r^2 - q*M2;
+        z := ExactQuotient(u1*r - u, q);
+        u := u/LeadingCoefficient(u);
+        v := V - (V - z + v1 + h) mod u;
+        if Degree(z) lt 4 then n := n + Degree(u1) - Degree(s) + 4 - Degree(u);
+        else                   n := n + Degree(u1) - Degree(r); 
+        end if;
+    end if;
+    w := ExactQuotient(f - v*(v + h),u);
+    return <u,v,w,n>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Nucomp_g3_SPLIT_NEG(D1,D2,f,h,V)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1,n1) and D2=(u2,v2,w2,n2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//           V: -Vpl - h  where Vpl is unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h- Vpl^2) <= g.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp_g3_SPLIT_NEG := function(D1,D2,f,h,V)
+    if D1 eq D2 then
+        return Nuduple_g3_SPLIT_NEG(D1,f,h,V);
+    end if;
+
+    if Degree(D1[1]) lt Degree(D2[1]) then
+        u2 := D1[1]; v2 := D1[2]; w2 := D1[3]; n2 := D1[4];
+        u1 := D2[1]; v1 := D2[2]; w1 := D2[3]; n1 := D2[4];
+    else
+        u1 := D1[1]; v1 := D1[2]; w1 := D1[3]; n1 := D1[4];
+        u2 := D2[1]; v2 := D2[2]; w2 := D2[3]; n2 := D2[4];
+    end if;
+
+    pos := false;
+    if (Degree(u2) + Degree(u1) le 4) and (n1 eq 3 - Degree(u1) and n2 eq 3 - Degree(u2)) then
+        v1 := -V-h - ((-V-h - v1) mod u1);
+        pos := true;
+    end if;
+    
+
+    k := ExactQuotient(f-v1*(v1 + h),u1);
+    S,a1,b1 := XGCD(u1,u2);    
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2+v1 + h);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+        end if;
+        s  := (a2*a1*(v2 - v1) + b2*k) mod u2;
+    else
+        s := a1*(v2 - v1) mod u2;
+    end if;
+    deg := Degree(u2) + Degree(u1);
+    n := n1 + n2 + Degree(S) - 2;
+    if deg le 3  and (n ge 0 and n le 3-deg) then
+        u := u1*u2;
+        v := V - ((V - v1 - u1*s) mod u);
+    elif Degree(s) lt 2 then
+        z := -u1*s;
+        vt := z - v1 - h;
+        u  := ExactQuotient(s*(vt - v1) + k*S,u2);
+        u  := u/LeadingCoefficient(u);
+        v  := V - ((V - vt) mod u);
+        if pos then n := n + deg - 4; //if pos if Degree(z) lt 4 only 
+        else
+            if Degree(z) lt 4 then n := n + 4 - Degree(u);          
+            else                   n := n + Degree(u2) - Degree(s);
+            end if;
+            if n lt 0 then
+                u := ExactQuotient(f - v*(v+h),u);
+                u := u/LeadingCoefficient(u);
+                v := V - ((V + v + h) mod u);
+                n := n + 4 - Degree(u);
+            end if;
+        end if;
+    else 
+        q,r := Quotrem(u2,s);
+        M1 := ExactQuotient((v2 - v1)*q + u1*r, u2);
+        M2  := ExactQuotient(r*(v2 + v1 + h) + q*k, u2);
+        u := r*M1 - q*M2; 
+        z := ExactQuotient(u1*r - u, q);
+        u := u/LeadingCoefficient(u);
+        v := V - (V - z + v1 + h) mod u;
+        if Degree(z) lt 4 then n := n + Degree(u2) - Degree(s) + 4 - Degree(u);
+        else                   n := n + Degree(u2) - Degree(r); 
+        end if;
+    end if;
+    w := ExactQuotient(f-v*(v + h),u);
+    return <u,v,w,n>;
+end function;
+
+
+
+
+
+//-----------------------------------------------------------------------------
+// Nuduple_g3_RAM(D1,f,h)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,w1) reduced divisor over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 is  
+//               doubled over.
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D1.
+//-----------------------------------------------------------------------------
+Nuduple_g3_RAM := function(D1,f,h)
+    u1 := D1[1]; v1 := D1[2];
+
+    //k should be pushed forward depending on case, 
+    //Should only compute k right before needed
+    k := ExactQuotient(f - v1*(v1 + h),u1);     
+
+    //Check for GCD cases, covers all ways to get s polynomial    
+    S,a1,b1 := XGCD(u1,v1 + v1 + h);
+    if not IsOne(S) then
+        u1 := ExactQuotient(u1,S);
+    end if;
+    s  := b1*k mod u1;
+    // End of check for gcd cases, stay with in these cases and go forward with
+    // the following output cases within in each GCD case.
+
+
+    //Output Cases
+    //No Reduction
+    if 2*Degree(u1) le 3 then
+        u := u1^2;
+        v := (v1 + u1*s) mod u;
+    //One Reduction step - No Continued Fraction Step
+    elif Degree(s) lt 2 then 
+        M2 := ExactQuotient(s*(2*v1 + h) - k*S, u1);
+        u  := s^2 + M2;
+        u  := u/LeadingCoefficient(u);
+        z := -u1*s;
+        v  := (z - v1 - h) mod u;
+    //Two Reduction steps, this is the Typical case - One Continued Fraction Step
+    else 
+        q,r := Quotrem(u1,s);
+        M2  := ExactQuotient(r*(2*v1 + h) + k*S*q, u1);
+        u := r^2 - q*M2;
+        z := ExactQuotient(u1*r - u, q);
+        u := u/LeadingCoefficient(u);
+        v := (z - v1 - h) mod u;
+    end if;
+    //Ignore w, just need to work in my polynomial algorithms
+    w  := ExactQuotient(f - v*(v + h),u);              
+    return <u,v,w>;                                    
+end function;
+
+
+
+
+//-----------------------------------------------------------------------------
+// Nucomp_g3_RAM(D1,D2,f,h)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,w1) and D2=(u2,v2,w2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp_g3_RAM := function(D1,D2,f,h)
+    
+    if D1 eq D2 then
+        return Nuduple_g3_RAM(D1,f,h);
+    end if;
+
+    //Make sure lower degree u is used
+    if Degree(D1[1]) lt Degree(D2[1]) then
+        u2 := D1[1]; v2 := D1[2]; 
+        u1 := D2[1]; v1 := D2[2]; 
+    else
+        u1 := D1[1]; v1 := D1[2]; 
+        u2 := D2[1]; v2 := D2[2];
+    end if;
+
+    //k should be pushed forward depending on case, 
+    //Should only compute k right before needed
+    k := ExactQuotient(f-v1*(v1 + h),u1);
+
+    //Check for GCD cases, covers all ways to get s polynomial
+    S,a1,b1 := XGCD(u1,u2);    
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2 + v1 + h);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1,S);
+            u2 := ExactQuotient(u2,S);
+        end if;
+        s  := (a2*a1*(v2 - v1) + b2*k) mod u2;
+    //Typical
+    else
+        s := a1*(v2 - v1) mod u2;
+    end if;
+    // End of check for gcd cases, stay with in these cases and go forward with
+    // the following output cases within in each GCD case.
+
+
+    //Output Cases
+    //No Reduction
+    if Degree(u2) + Degree(u1) le 3 then
+        u := u1*u2;
+        v := (v1 + u1*s) mod u;
+    //One Reduction step - No Continued Fraction Step
+    elif Degree(s) lt 2 then
+        z := -u1*s;
+        vt:= z - v1 - h;
+        u := ExactQuotient(s*(vt - v1) + k*S,u2);
+        u := u/LeadingCoefficient(u);
+        v := vt mod u;
+    //Two Reduction steps, this is the Typical case - One Continued Fraction Step
+    else
+        q,r := Quotrem(u2,s);
+        M1 := ExactQuotient((v2 - v1)*q + u1*r, u2);
+        M2  := ExactQuotient(r*(v2 + v1 + h) + q*k, u2);
+        u := r*M1 - q*M2; 
+        z := ExactQuotient(u1*r - u, q);
+        u := u/LeadingCoefficient(u);
+        v := (z - v1 - h) mod u;
+    end if;
+    //Ignore w, just need to work in my polynomial algorithms
+    w := ExactQuotient(f-v*(v + h),u);
+    return <u,v,w>;
+end function;

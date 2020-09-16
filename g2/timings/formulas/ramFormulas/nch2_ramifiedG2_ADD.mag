@@ -1,0 +1,224 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner,2019                                                          
+//                                                   
+// Description: Explicit divisor addition formulas for the 4 coordinate
+//              Mumford representation over not characteristic 2 fields 
+//              where: 
+//                                
+//              h(x) = 0 and             
+//              f(x) = x^5 + f3x^3 + f2x^2 + f1x + f0           
+//                                                                      
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+// deg1ADD():         
+// Input: u0, v0:   Mumford cooridnates for degree 1 divisor D1
+//        up0, vp0: Mumford coordinates for degree 1 divisor D2
+//
+// Output: Mumford coordinates upp2, upp1, upp0, vpp1, vpp0 for D3 = D1 + D2            
+//   
+// Description: Computes explicit formula for the addition of two degree one
+//              divisors.                  
+///////////////////////////////////////////////////////////////////////////////
+Deg1ADD_RAM:= function(u0,v0,up0,vp0)
+    d := u0 - up0;
+    if IsZero(d) then
+        return <0,0,1,0,0>;
+    end if;
+    w1 := d^-1;
+    s0 := w1*(vp0 - v0);
+    upp1 := u0 + up0;
+    upp0 := u0*up0;
+    vpp0 := s0*u0 + v0;
+    return <1, upp1, upp0, s0, vpp0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// deg1w2ADD():         
+// Input: u0, v0:             Mumford cooridnates for degree 1 divisor D1
+//        up1, up0, vp1, vp0: Mumford coordinates for degree 2 divisor D2
+//        f3,f2,f1,f0:        Curve constants of hyperelliptic polynomials f,h.
+//
+// Output: Mumford coordinates upp2, upp1, upp0, vpp1, vpp0 for D3 = D1 + D2
+//   
+// Description: Computes explicit formula for the addition of a degree one
+//              and degree 2 divisor.                     
+///////////////////////////////////////////////////////////////////////////////
+Deg12ADD_RAM:= function(u0,v0,up1,up0,vp1,vp0,f)
+    d := up0 - u0*(up1 - u0);
+    if IsZero(d) then
+        dw := v0 + vp0 - u0*vp1;
+        if IsZero(dw) then
+            upp0 := up1 - u0;
+            vpp0 := vp0 - vp1*upp0;
+            return <0,1,upp0,0,vpp0>;
+        end if;
+        k1 := Coefficient(f,3) - up0 + up1^2;
+        k0 := Coefficient(f,2) - vp1^2 + up1*(up0 - k1);
+        w1 := dw^-1;
+        s0 := w1*(k0 - u0*(k1 + u0*(up1 + u0)));
+        t0   := s0*up1 + vp1;
+        upp1 := -up1 - u0 - s0^2;
+        upp0 := k1 - s0*(t0 + vp1) - u0*upp1;
+        vpp1 := s0*upp1 - t0;
+        vpp0 := s0*(upp0 - up0) - vp0;
+        return <1, upp1, upp0,vpp1, vpp0>;
+    end if;
+    w1 := d^-1;
+    s0 := w1*(v0 - vp0 + vp1*u0);
+    t0   := s0*up1 + vp1;
+    upp1 := -s0^2 - u0 - up1;
+    upp0 := Coefficient(f,3) + up1^2 - up0 - s0*(t0 + vp1) - upp1*u0;
+    vpp1 := upp1*s0 - t0;
+    vpp0 := s0*(upp0 - up0) - vp0;
+    return <1, upp1, upp0, vpp1, vpp0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// deg2ADD():         
+// Input: u1, u0, v1, v0:     Mumford cooridnates for degree 1 divisor D1
+//        up1, up0, vp1, vp0: Mumford coordinates for degree 2 divisor D2
+//        f3,f2,f1,f0:        Curve constants of hyperelliptic polynomials f,h.
+//
+// Output: Mumford coordinates upp2, upp1, upp0, vpp1, vpp0 for D3 = D1 + D2
+//   
+// Description: Computes explicit formula for the addition of two degree two
+//              divisors.                     
+///////////////////////////////////////////////////////////////////////////////
+Deg2ADD_RAM:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f)
+    m3 := up1 - u1;
+    m4 := u0 - up0;
+    m1 := m4 + up1*m3;
+    m2 := -up0*m3;
+    d  := m1*m4 - m2*m3;
+    if IsZero(d) then
+        if IsZero(m3) then
+            dw21:= vp1 + v1;
+            if IsZero(dw21) then
+                return <0,0,1,0,0>;
+            end if;
+            dw20:= vp0 + v0;
+            b2 := dw21^-1;                   
+            k1 := Coefficient(f,3) - u0 + u1^2;
+            k0 := Coefficient(f,2) - v1^2 + u1*(u0 - k1);
+            u0 := u1 - dw20*b2;
+            s0 := b2*(k0 - u0*(k1 + u0*(u1 + u0)));           
+            upp1 := u0 + u0;
+            upp0 := u0^2;
+            vpp1 := s0 + v1;
+            vpp0 := v0 + u0*s0;
+            return <1, upp1, upp0, vpp1, vpp0>;
+        end if;
+        t1 := v1 + vp1;
+        M3 := m3^2;
+        dw3 := M3*(vp0 + v0) + m4*m3*t1;
+        if IsZero(dw3) then
+            a1 := -m3^-1;
+            S1 := m4*a1;
+            u0 := u1 - S1;             
+            up0 := up1 - S1;
+            s0 := a1*(vp0 - v0 - up0*(vp1 - v1));
+            upp1 := u0 + up0;
+            upp0 := u0*up0;
+            vpp1 := v1 + s0;
+            vpp0 := v0 + s0*u0;
+            return <1,upp1,upp0,vpp1,vpp0>;
+        end if;
+        k1 := Coefficient(f,3) - u0 + u1^2;
+        k0 := Coefficient(f,2) - v1^2 + u1*(u0 - k1);
+        a12 := -M3*t1;
+        t0 := u1 + up1;
+        t2 := m3*M3;
+        sp1 := t2*(k1 - up0 + up1*t0) - a12*(vp1 - v1);
+        sp0 := t2*(k0 + up0*t0) - a12*(vp0 - v0);
+        d := m3*dw3;
+        if IsZero(sp1) then
+            w1   := d^-1;
+            s0   := sp0*w1;
+            upp0 := -u1 - up1 - s0^2;
+            t1   := s0*(u1 - upp0) + v1;
+            vpp0 := upp0*t1 - s0*u0 - v0;
+            return <0,1,upp0,0,vpp0>;
+        end if;
+        w1   := (d*sp1)^-1;
+        w2   := w1*d;
+        w3   := w2*d;
+        w4   := w3^2;
+        s1   := w1*(sp1^2);
+        spp0 := sp0*w2;
+        t1   := spp0 - m3;
+        t2   := t1 - w4;
+        t3   := w3*v1;
+        upp1 := spp0 + t2;
+        upp0 := spp0*(t1 - m3) + m1 + t3 + t3 + w4*t0;
+        t0   := upp0 - u0;
+        t1   := u1 - upp1;
+        vpp1 := s1*(t1*t2 + t0) - v1;
+        vpp0 := s1*(spp0*t0 + upp0*t1) - v0;
+        return <1,upp1,upp0,vpp1,vpp0>;
+    end if;
+    r0  := vp0 - v0;
+    r1  := vp1 - v1;
+    sp1 := r0*m3 + r1*m4;
+    sp0 := r0*m1 + r1*m2;
+    if IsZero(sp1) then
+        w1    := d^-1;
+        s0   := sp0*w1;
+        upp0 := -u1 - up1 - s0^2;
+        t1   := s0*(u1 - upp0) + v1;
+        vpp0 := upp0*t1 - s0*u0 - v0;
+        return <0,1,upp0,0,vpp0>;
+    end if;
+    w1   := (d*sp1)^-1;
+    w2   := w1*d;
+    w3   := w2*d;
+    w4   := w3^2;
+    s1   := w1*(sp1^2);
+    spp0 := sp0*w2;
+    t1   := spp0 - m3;
+    t2   := t1 - w4;
+    t3   := w3*v1;
+    upp1 := spp0 + t2;
+    upp0 := spp0*(t1 - m3) + m1 + t3 + t3 + w4*(u1 + up1);
+    t0   := upp0 - u0;
+    t1   := u1 - upp1;
+    vpp1 := s1*(t1*t2 + t0) - v1;
+    vpp0 := s1*(spp0*t0 + upp0*t1) - v0;
+    return <1,upp1,upp0,vpp1,vpp0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ADD():         
+// Input: u, v :  Polynomial Mumford cooridnates for any divisor D1 
+//        up, vp: Polynomial Mumford cooridnates for any divisor D2 
+//        f,h:    Hyperelliptic polynomials f,h.
+//
+// Output: Mumford coordinates upp2, upp1, upp0, vpp1, vpp0 for D3 = D1 + D2
+//   
+// Description: Computes explicit formula for the addition of divisors D1
+//              and D2.                    
+///////////////////////////////////////////////////////////////////////////////
+ADD_expl_RAM := function(d1,d2,f)
+    if IsOne(d1[1]) then
+        if IsOne(d2[1]) then
+            return Deg2ADD_RAM(d1[2],d1[3],d1[4],d1[5],d2[2],d2[3],d2[4],d2[5],f);
+        elif IsOne(d2[2]) then
+            return Deg12ADD_RAM(d2[3],d2[5],d1[2],d1[3],d1[4],d1[5],f);
+        else
+            return d1;
+        end if;
+    elif IsOne(d1[2]) then
+        if IsOne(d2[1]) then
+            return Deg12ADD_RAM(d1[3],d1[5],d2[2],d2[3],d2[4],d2[5],f);
+        elif IsOne(d2[2]) then
+            return Deg1ADD_RAM(d1[3],d1[5],d2[3],d2[5]);
+        else
+            return d1;            
+        end if;
+    else
+        return d2;
+    end if;
+end function;

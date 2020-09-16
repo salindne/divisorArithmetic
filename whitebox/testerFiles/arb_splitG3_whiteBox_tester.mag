@@ -1,0 +1,55 @@
+ADD_DEBUG := true;
+DBL_DEBUG := true;
+UTL_DEBUG := false;
+load "poly_balanced_arithmetic.mag";
+load "g3Formulas/arb_splitG3_UTL.mag";
+load "g3Formulas/arb_splitG3_DBL.mag";
+load "g3Formulas/arb_splitG3_ADD.mag";
+"";
+
+FF := GF(7);
+R<x>:=PolynomialRing(FF);
+f:= R! x^8 + 3*x^7 + 5*x^6 + 2*x^5 + 3*x^4 + 6*x^3 + 6*x^2 + 3*x + 1;
+h:= R! 5*x^4 + 4*x^3 + x^2 + 5*x + 6;
+V:= R! 4*x^4 + 6*x^3 + 3*x^2 + 2*x + 4;
+Vn:= -V - h;
+ccs:= Precompute(f,h,7);
+
+U1 := R! x+6;
+V1 := R! 5*x^4+4*x^3+3*x^2+6;
+N1 := 1;
+D1 := <U1, V1, N1>;
+AD1 := AdaptedBasis(D1,f,h);
+un3,un2,un1,un0,vn2,vn1,vn0,nN := DBL(U1,V1,N1,ccs);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! Coeff(Vn,4)*x^4 + Coeff(Vn,3)*x^3 + vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= NegativeReducedBasis(Double(AD1,f,h,V),f,h);
+assert <nU,nV,nN> eq Cantor;
+
+FF := GF(7);
+R<x>:=PolynomialRing(FF);
+f:= R! 6*x^8 + 2*x^7 + 5*x^6 + 2*x^5 + 5*x^4 + 5*x^2 + 6*x + 2;
+h:= R! x^4 + x^3 + 6*x^2 + 2*x + 3;
+V:= R! 2*x^4 + x + 1;
+Vn:= -V - h;
+ccs:= Precompute(f,h,7);
+
+U1 := R! x+3;
+V1 := R! 4*x^4+6*x^3+x^2+4*x+1;
+N1 := 2;
+U2 := R! 1;
+V2 := R! 4*x^4+6*x^3+x^2+4*x+3;
+N2 := 3;
+D1 := <U1, V1, N1>;
+AD1 := AdaptedBasis(D1,f,h);
+D2 := <U2, V2, N2>;
+AD2 := AdaptedBasis(D2,f,h);
+un3,un2,un1,un0,vn2,vn1,vn0, nN := ADD(U1,V1,N1,U2,V2,N2,ccs);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! Coeff(Vn,4)*x^4 + Coeff(Vn,3)*x^3 + vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= NegativeReducedBasis(Add(AD1,AD2,f,h,V),f,h);
+assert <nU,nV,nN> eq Cantor;
+
+"
+Total Cases: 2";
+quit;

@@ -1,0 +1,843 @@
+///////////////////////////////////////////////////////////////////////////////
+////////////////////// Char neq 2 g2 TIMING UTILITIES. ////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//  
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This file contains functions for timing ramified and split model divisor 
+// arithmetic in genus 2 over fields with characteristic not 2.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+//-----------------------------------------------------------------------------
+// RandomCurve_nch2_g2_RAM(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//        
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f in GF(q)[x] where f is monic seperable of degree 
+//         5 and 4th power term is 0.
+//-----------------------------------------------------------------------------
+RandomCurve_nch2_g2_RAM := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f 
+        f:= x^5 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f is hyperelliptic polynomial for a curve 
+        try
+            C:=HyperellipticCurve(f);
+            isHC:= true;
+
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f corresponds to a genus 2 hyperelliptic curve, check to see 
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
+                return f;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+//-----------------------------------------------------------------------------
+// RandomCurve_nch2_g2_SPL(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//              
+// Return: Random(ish) hyperelliptic polynomials of curve with two points at
+//         infinity f in GF(q)[x] where f is seperable of degree 2g+2,  
+//         polynomial and f6=y3=1.
+//-----------------------------------------------------------------------------
+RandomCurve_nch2_g2_SPLIT:= function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f 
+        beta:= Random(F);
+        f:= x^6 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 +
+             Random(F)*x + Random(F);
+
+        //Check if f is hyperelliptic polynomial
+        try
+            C:=HyperellipticCurve(f);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f is a hyperelliptic polynomial, check to see if
+        //the curve has two points at infinity and is genus is 2
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 2) and (Degree(f) eq 6) then
+                return f;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+
+
+//-----------------------------------------------------------------------------
+// Explicit_to_poly_RAM(D,f)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u2,u1,u0,v1,v0) where u,v are Mumford polynomials.
+//        f: hyperelliptic polynomial corresponding for computing extended 
+//           Mumford representation.
+//
+// Return: Divisor D' = (u,v,w) using polynomials in extended Mumford.
+//-----------------------------------------------------------------------------
+Explicit_to_poly_RAM := function(D,f)
+    R<x>:= Parent(f);
+    u := R![D[3],D[2],D[1]];
+    v := R![D[5],D[4]];
+    w := ExactQuotient(f - v^2,u);
+    return <u,v,w>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Magma_to_poly_RAM(D,f)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,v) where u,v are Mumford polynomials.
+//        f: hyperelliptic polynomial corresponding for computing extended 
+//           Mumford representation.
+//
+// Return: Divisor D' = (u,v,w) using polynomials in extended Mumford.
+//-----------------------------------------------------------------------------
+    Magma_to_poly_RAM := function(D,f)
+    R<x>:= Parent(f);
+    u := D[1];
+    v := D[2];
+    w := ExactQuotient(f - v^2,u);
+    return <u,v,w>;
+end function;
+
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_expl_RAM(D1,D2,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using 
+//         explicit formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_expl_RAM := function(D1,D2,f,len)
+    if D1 eq D2 then
+        D := DBL_expl_RAM(D1,f);
+    else
+        D := ADD_expl_RAM(D1,D2,f);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL_expl_RAM(D1,f);
+        else
+            D := ADD_expl_RAM(D1,D2,f);
+        end if;
+    end while;
+    return D; 
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_genLange_RAM(D1,D2,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using 
+//         explicit formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_genLange_RAM := function(D1,D2,f,len)
+    if D1 eq D2 then
+        D := DBL_genLange_RAM(D1,f);
+    else
+        D := ADD_genLange_RAM(D1,D2,f);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL_genLange_RAM(D1,f);
+        else
+            D := ADD_genLange_RAM(D1,D2,f);
+        end if;
+    end while;
+    return D; 
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_lange_RAM(D1,D2,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using 
+//         explicit formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_lange_RAM := function(D1,D2,f,len)
+    if D1 eq D2 then
+        D := DBL_lange_RAM(D1,f);
+    else
+        D := ADD_lange_RAM(D1,D2,f);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL_lange_RAM(D1,f);
+        else
+            D := ADD_lange_RAM(D1,D2,f);
+        end if;
+    end while;
+    return D; 
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_onlyFreq_RAM(D1,D2,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using 
+//         explicit formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_onlyFreq_RAM := function(D1,D2,f,len)
+    if D1 eq D2 then
+        D := DBL_onlyFreq_RAM(D1,f);
+    else
+        D := ADD_onlyFreq_RAM(D1,D2,f);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL_onlyFreq_RAM(D1,f);
+        else
+            D := ADD_onlyFreq_RAM(D1,D2,f);
+        end if;
+    end while;
+    return D; 
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_coslau_RAM(D1,D2,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using 
+//         explicit formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_coslau_RAM := function(D1,D2,f,len)
+    if D1 eq D2 then
+        D := DBL_GEO(D1,f);
+    else
+        D := ADD_GEO(D1,D2,f);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL_GEO(D1,f);
+        else
+            D := ADD_GEO(D1,D2,f);
+        end if;
+    end while;
+    return D; 
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_coslau_nt_RAM(D1,D2,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using 
+//         explicit formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_coslau_nt_RAM := function(D1,D2,f,len)
+    if D1 eq D2 then
+        D := DBL_noTrade_GEO(D1,f);
+    else
+        D := ADD_noTrade_GEO(D1,D2,f);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL_noTrade_GEO(D1,f);
+        else
+            D := ADD_noTrade_GEO(D1,D2,f);
+        end if;
+    end while;
+    return D; 
+end function;
+
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_poly_RAM(D1,D2,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f), to be composed together.
+//          f: hyperelliptic polynomials corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of fibonacci style addition sequence using Cantor 
+//         addition.
+//-----------------------------------------------------------------------------
+Fibonacci_polyCantor_RAM := function(D1,D2,f,len)
+    if D1 eq D2 then
+        D := Double_RAM(D1,f,2);
+    else
+        D := Add_RAM(D1,D2,f,2);
+    end if;
+    i := 1;
+    while i lt len do
+        i  := i + 1;
+        D1 := D2;
+        D2 := D;
+        if D1 eq D2 then
+            D := Double_RAM(D1,f,2);;
+        else
+            D := Add_RAM(D1,D2,f,2);
+        end if;
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_magma_RAM(D1,D2,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f), to be composed together.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using Magma
+//         built in.
+//-----------------------------------------------------------------------------
+Fibonacci_magma_RAM := function(D1,D2,len)
+    D := D1 + D2;
+    if D1 eq D2 then
+        D := D1 + D1;
+    else
+        D := D1 + D2;
+    end if;
+    i := 1;
+    while i lt len do
+        i  := i + 1;
+        D1 := D2;
+        D2 := D;
+        if D1 eq D2 then
+            D := D1 + D1;
+        else
+            D := D1 + D2;
+        end if;
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_expl_RAM(D,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f), to be doubled.
+//          f: hyperelliptic polynomial corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_expl_RAM := function(D,f,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL_expl_RAM(D,f);
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_genLange_RAM(D,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f), to be doubled.
+//          f: hyperelliptic polynomial corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_genLange_RAM := function(D,f,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL_genLange_RAM(D,f);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_lange_RAM(D,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f), to be doubled.
+//          f: hyperelliptic polynomial corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_lange_RAM := function(D,f,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL_lange_RAM(D,f);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_onlyFreq_RAM(D,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f), to be doubled.
+//          f: hyperelliptic polynomial corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_onlyFreq_RAM := function(D,f,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL_onlyFreq_RAM(D,f);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_coslau_GEO(D,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f), to be doubled.
+//          f: hyperelliptic polynomial corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_coslau_RAM := function(D,f,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL_GEO(D,f);
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_coslau_nt_GEO(D,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f), to be doubled.
+//          f: hyperelliptic polynomial corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_coslau_nt_RAM := function(D,f,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL_noTrade_GEO(D,f);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_polyCantor_RAM(D,f,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f), to be doubled.
+//          f: hyperelliptic polynomial corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Cantor.
+//-----------------------------------------------------------------------------
+DoubleChain_polyCantor_RAM := function(D,f,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := Double_RAM(D,f,2);
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_magma_RAM(D,len)
+//-----------------------------------------------------------------------------
+// Input: D: D=(u,v) divisor over 
+//               HyperellipticCurve(f), to be doubled.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using magma built in.
+//-----------------------------------------------------------------------------
+DoubleChain_magma_RAM := function(D, len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := D + D;
+    end while;
+    return D;
+end function;
+
+
+
+
+//SPLIT
+
+//-----------------------------------------------------------------------------
+// Explicit_to_poly_SPLIT(D,f,Vpl)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u2,u1,u0,v1,v0,n) where u,v are Mumford polynomials and n is 
+//             balancing weight.
+//        f,Vpl: hyperelliptic polynomials corresponding to curve.
+//
+// Return: Divisor D'hat' = (u,v,w,n) using polynomials in extended Mumford.
+//-----------------------------------------------------------------------------
+Explicit_to_poly_SPLIT := function(D,f,V)
+    R<x>:= Parent(f);
+    u := R![D[3],D[2],D[1]];
+    v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + R![D[5],D[4]];
+    w := ExactQuotient(f - v^2,u);
+    return <u,v,w,D[6]>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Magma_to_poly_SPLIT(D,f)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,v,d) where u,v are Mumford polynomials.
+//        f: hyperelliptic polynomial corresponding for computing extended 
+//           Mumford representation.
+//
+// Return: Divisor D' = (u,v,w,n) using polynomials in extended Mumford.
+//-----------------------------------------------------------------------------
+Magma_to_poly_SPLIT := function(D,f,Vp)
+    u := D[1];
+    if IsZero(D) then
+        return <u,Vp,ExactQuotient(f - Vp^2,u),1>;
+    end if;
+    
+    vt := D[2];
+    v := Vp - ((Vp - vt) mod u);
+
+    if Coefficient(vt,3) eq LeadingCoefficient(-Vp) then
+        n := 0;
+    else
+        n := 2 - Degree(u);
+    end if;
+    w := ExactQuotient(f - v^2,u);
+    return <u,v,w,n>;
+end function;
+
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_expl_SPLIT(D1,D2,ccs,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u12,u11,u10,v11,v10,n1) and D2=(u22,u21,u20,v21,v20,n2)  
+//               divisors over HyperellipticCurve(f), to be composed together.
+//          ccs: Precomputed values corresponding to C genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of fibonacci style addition sequence using explicit
+//         formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_expl_SPLIT := function(D1,D2,ccs,len)
+    if D1 eq D2 then
+        D := DBL(D1,ccs);
+    else
+        D := ADD(D1,D2,ccs);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL(D1,ccs);
+        else
+            D := ADD(D1,D2,ccs);
+        end if;
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_inf_SPLIT(D1,D2,ccs,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u12,u11,u10,v11,v10,n1) and D2=(u22,u21,u20,v21,v20,n2)  
+//               divisors over HyperellipticCurve(f), to be composed together.
+//          ccs: Precomputed values corresponding to C genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of fibonacci style addition sequence using explicit
+//         formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_inf_SPLIT := function(D1,D2,ccs,len)
+    if D1 eq D2 then
+        D := DBL_inf_SPLIT(D1,ccs);
+    else
+        D := ADD_inf_SPLIT(D1,D2,ccs);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL_inf_SPLIT(D1,ccs);
+        else
+            D := ADD_inf_SPLIT(D1,D2,ccs);
+        end if;
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_ourInf_SPLIT(D1,D2,ccs,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u12,u11,u10,v11,v10,n1) and D2=(u22,u21,u20,v21,v20,n2)  
+//               divisors over HyperellipticCurve(f), to be composed together.
+//          ccs: Precomputed values corresponding to C genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of fibonacci style addition sequence using explicit
+//         formulas.
+//-----------------------------------------------------------------------------
+Fibonacci_ourInf_SPLIT := function(D1,D2,ccs,len)
+    if D1 eq D2 then
+        D := DBL_ourInf(D1,ccs);
+    else
+        D := ADD_ourInf(D1,D2,ccs);
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := DBL_ourInf(D1,ccs);
+        else
+            D := ADD_ourInf(D1,D2,ccs);
+        end if;
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_Add_SPLIT_POS(D1,D2,f,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f), to be composed together.
+//          f,V: hyperelliptic polynomials corresponding to genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of fibonacci style addition sequence using Cantor.
+//-----------------------------------------------------------------------------
+Fibonacci_polyCantor_SPLIT := function(D1,D2,f,V,len)
+    if D1 eq D2 then
+        D := Double_SPLIT_POS(D1,f,V,2);
+    else
+        D := Add_SPLIT_POS(D1,D2,f,V,2);
+    end if;
+    i := 1;
+    while i lt len do
+        i  := i + 1;
+        D1 := D2;
+        D2 := D;
+        if D1 eq D2 then
+            D := Double_SPLIT_POS(D1,f,V,2);
+        else
+            D := Add_SPLIT_POS(D1,D2,f,V,2);
+        end if;
+    end while;
+    return D;
+end function;
+
+
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_magma_SPLIT(D1,D2,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,d) and D2=(u2,v2,d) divisors over 
+//               HyperellipticCurve(f), to be composed together.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of fibonacci style addition sequence using magma
+//         built in.
+//-----------------------------------------------------------------------------
+Fibonacci_magma_SPLIT := function(D1,D2,len)
+    if D1 eq D2 then
+        D := D1 + D1;
+    else
+        D := D1 + D2;
+    end if;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D1  := D2;
+        D2  := D;
+        if D1 eq D2 then
+            D := D1 + D1;
+        else
+            D := D1 + D2;
+        end if;
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_expl_SPLIT(D,ccs,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u2, u1, u0, v1, v0, n) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          ccs: Precomputed values corresponding to C genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of douobling chain using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_expl_SPLIT := function(D,ccs,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL(D,ccs);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_ourInf_SPLIT(D,ccs,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u2, u1, u0, v1, v0, n) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          ccs: Precomputed values corresponding to C genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of douobling chain using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_ourInf_SPLIT := function(D,ccs,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL_ourInf(D,ccs);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_inf_SPLIT(D,ccs,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u2, u1, u0, v1, v0, n) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          ccs: Precomputed values corresponding to C genus 2 curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of douobling chain using explicit formulas.
+//-----------------------------------------------------------------------------
+DoubleChain_inf_SPLIT := function(D,ccs,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := DBL_inf_SPLIT(D,ccs);
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_polyCantor_SPLIT(D1,f,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f), to be composed together.
+//          f,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Cantor.
+//-----------------------------------------------------------------------------
+DoubleChain_polyCantor_SPLIT := function(D,f,V,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D  := Double_SPLIT_POS(D,f,V,2);
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Magma_SPLIT_POS(D1,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Cantor.
+//-----------------------------------------------------------------------------
+DoubleChain_magma_SPLIT := function(D,len)
+    i := 0;
+    while i le len do
+        i := i + 1;
+        D := D + D;
+    end while;
+    return D;
+end function;

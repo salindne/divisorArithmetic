@@ -1,0 +1,559 @@
+///////////////////////////////////////////////////////////////////////////////
+//////////////////////// POLYNOMIAL TIMING UTILITIES. /////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//  
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This file contains functions for timing ramified and split model divisor 
+// arithmetic from reduced_basis_arithmetic.mag
+//
+///////////////////////////////////////////////////////////////////////////////
+
+load "reduced_basis_arithmetic.mag";
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////FUNCTIONS///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+//RAM
+
+//-----------------------------------------------------------------------------
+// Fibonacci_Add_RAM(D1,D2,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using Cantor.
+//-----------------------------------------------------------------------------
+Fibonacci_Add_RAM := function(D1,D2,f,h,g,len)
+
+    D   := D1;
+    Dp  := D2;
+    Dpp := Add_RAM(D,Dp,f,h,g);
+
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Add_RAM(D,Dp,f,h,g);
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_NUCOMP_RAM(D1,D2,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using NUCOMP.
+//-----------------------------------------------------------------------------
+Fibonacci_Nucomp_RAM := function(D1,D2,f,h,g,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := Nucomp_RAM(D,Dp,f,h,g);
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Nucomp_RAM(D,Dp,f,h,g);
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_g2_NUCOMP_RAM(D1,D2,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using NUCOMP.
+//-----------------------------------------------------------------------------
+Fibonacci_g2_Nucomp_RAM := function(D1,D2,f,h,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := Nucomp_g2_RAM(D,Dp,f,h);
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Nucomp_g2_RAM(D,Dp,f,h);
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_g2_NUCOMP_RAM(D1,D2,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using NUCOMP.
+//-----------------------------------------------------------------------------
+Fibonacci_g3_Nucomp_RAM := function(D1,D2,f,h,len)
+
+    D   := D1;
+    Dp  := D2;
+    Dpp := Nucomp_g3_RAM(D,Dp,f,h);
+
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Nucomp_g3_RAM(D,Dp,f,h);
+    end while;
+    return Dpp;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Fibonacci_Magma_RAM(D1,D2,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1) and D2=(u2,v2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using NUCOMP.
+//-----------------------------------------------------------------------------
+Fibonacci_Magma_RAM := function(D1,D2, len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := D + Dp;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := D + Dp;
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Dbl_RAM(D1,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Cantor.
+//-----------------------------------------------------------------------------
+DoubleChain_Dbl_RAM := function(D1,f,h,g,len)
+    i := 0;
+    D := Double_RAM(D1,f,h,g);
+    while i lt len do
+        i := i + 1;
+        D  := Double_RAM(D,f,h,g);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Nuduple_RAM(D1,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Nuduple.
+//-----------------------------------------------------------------------------
+DoubleChain_Nuduple_RAM := function(D1,f,h,g,len)
+    i := 0;
+    D := Nuduple_RAM(D1,f,h,g);
+    while i lt len do
+        i := i + 1;
+        D  := Nuduple_RAM(D,f,h,g);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_g2_Nuduple_RAM(D1,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Nuduple.
+//-----------------------------------------------------------------------------
+DoubleChain_g2_Nuduple_RAM := function(D1,f,h,len)
+    i := 0;
+    D := Nuduple_g2_RAM(D1,f,h);
+    while i lt len do
+        i := i + 1;
+        D  := Nuduple_g2_RAM(D,f,h);
+    end while;
+    return D;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_g3_Nuduple_RAM(D1,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Nuduple.
+//-----------------------------------------------------------------------------
+DoubleChain_g3_Nuduple_RAM := function(D1,f,h,len)
+    i := 0;
+    D := Nuduple_g3_RAM(D1,f,h);
+    while i lt len do
+        i := i + 1;
+        D  := Nuduple_g3_RAM(D,f,h);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Magma_RAM(D1,f,h,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Nuduple.
+//-----------------------------------------------------------------------------
+DoubleChain_Magma_RAM := function(D1, len)
+    i := 0;
+    D := D1 + D1;
+    while i lt len do
+        i := i + 1;
+        D  := D + D;
+    end while;
+    return D;
+end function;
+
+
+//NEG
+
+//-----------------------------------------------------------------------------
+// Fibonacci_Add_SPLIT_NEG(D1,D2,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using Cantor.
+//-----------------------------------------------------------------------------
+Fibonacci_Add_SPLIT_NEG := function(D1,D2,f,h,V,g,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := Add_SPLIT_NEG(D,Dp,f,h,V,g);
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Add_SPLIT_NEG(D,Dp,f,h,V,g);
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_NUCOMP_SPLIT(D1,D2,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using NUCOMP.
+//-----------------------------------------------------------------------------
+Fibonacci_Nucomp_SPLIT_NEG := function(D1,D2,f,h,V,g,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := Nucomp_SPLIT_NEG(D,Dp,f,h,V,g);
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Nucomp_SPLIT_NEG(D,Dp,f,h,V,g);
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_g3_NUCOMP_SPLIT(D1,D2,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using NUCOMP.
+//-----------------------------------------------------------------------------
+Fibonacci_g3_Nucomp_SPLIT_NEG := function(D1,D2,f,h,V,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := Nucomp_g3_SPLIT_NEG(D,Dp,f,h,V);
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Nucomp_g3_SPLIT_NEG(D,Dp,f,h,V);
+    end while;
+    return Dpp;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Dbl_SPLIT_NEG(D1,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Cantor.
+//-----------------------------------------------------------------------------
+DoubleChain_Dbl_SPLIT_NEG := function(D1,f,h,V,g,len)
+    i := 0;
+    D := Double_SPLIT_NEG(D1,f,h,V,g);
+    while i lt len do
+        i := i + 1;
+        D  := Double_SPLIT_NEG(D,f,h,V,g);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Nuduple_SPLIT_NEG(D1,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Nuduple.
+//-----------------------------------------------------------------------------
+DoubleChain_Nuduple_SPLIT_NEG := function(D1,f,h,V,g,len)
+    i := 0;
+    D := Nuduple_SPLIT_NEG(D1,f,h,V,g);
+    while i lt len do
+        i := i + 1;
+        D  := Nuduple_SPLIT_NEG(D,f,h,V,g);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_g3_Nuduple_SPLIT_NEG(D1,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Nuduple.
+//-----------------------------------------------------------------------------
+DoubleChain_g3_Nuduple_SPLIT_NEG := function(D1,f,h,V,len)
+    i := 0;
+    D := Nuduple_g3_SPLIT_NEG(D1,f,h,V);
+    while i lt len do
+        i := i + 1;
+        D  := Nuduple_g3_SPLIT_NEG(D,f,h,V);
+    end while;
+    return D;
+end function;
+
+
+
+//POS 
+
+//-----------------------------------------------------------------------------
+// Fibonacci_Add_SPLIT_POS(D1,D2,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using Cantor.
+//-----------------------------------------------------------------------------
+Fibonacci_Add_SPLIT_POS := function(D1,D2,f,h,V,g,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := Add_SPLIT_POS(D,Dp,f,h,V,g);
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Add_SPLIT_POS(D,Dp,f,h,V,g);
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_Magma_SPLIT_POS(D1,D2,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using Cantor.
+//-----------------------------------------------------------------------------
+Fibonacci_Magma_SPLIT_POS := function(D1,D2,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := D + Dp;
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := D + Dp;
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_NUCOMP_SPLIT(D1,D2,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using NUCOMP.
+//-----------------------------------------------------------------------------
+Fibonacci_Nucomp_SPLIT_POS := function(D1,D2,f,h,V,g,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := Nucomp_SPLIT_POS(D,Dp,f,h,V,g);
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Nucomp_SPLIT_POS(D,Dp,f,h,V,g);
+    end while;
+    return Dpp;
+end function;
+
+//-----------------------------------------------------------------------------
+// Fibonacci_g2_NUCOMP_SPLIT(D1,D2,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor Dpp at end of fibonacci style addition sequence using NUCOMP.
+//-----------------------------------------------------------------------------
+Fibonacci_g2_Nucomp_SPLIT_POS := function(D1,D2,f,h,V,len)
+    D   := D1;
+    Dp  := D2;
+    Dpp := Nucomp_g2_SPLIT_POS(D,Dp,f,h,V);
+    i := 1;
+    while i lt len do
+        i   := i + 1;
+        D   := Dp;
+        Dp  := Dpp;
+        Dpp := Nucomp_g2_SPLIT_POS(D,Dp,f,h,V);
+    end while;
+    return Dpp;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Dbl_SPLIT_POS(D1,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Cantor.
+//-----------------------------------------------------------------------------
+DoubleChain_Dbl_SPLIT_POS := function(D1,f,h,V,g,len)
+    i := 0;
+    D := Double_SPLIT_POS(D1,f,h,V,g);
+    while i lt len do
+        i := i + 1;
+        D  := Double_SPLIT_POS(D,f,h,V,g);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Magma_SPLIT_POS(D1,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Cantor.
+//-----------------------------------------------------------------------------
+DoubleChain_Magma_SPLIT_POS := function(D1,len)
+    i := 0;
+    D := D1 + D1;
+    while i lt len do
+        i := i + 1;
+        D  := D + D;
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_Nuduple_SPLIT_POS(D1,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Nuduple.
+//-----------------------------------------------------------------------------
+DoubleChain_Nuduple_SPLIT_POS := function(D1,f,h,V,g,len)
+    i := 0;
+    D := Nuduple_SPLIT_POS(D1,f,h,V,g);
+    while i lt len do
+        i := i + 1;
+        D  := Nuduple_SPLIT_POS(D,f,h,V,g);
+    end while;
+    return D;
+end function;
+
+//-----------------------------------------------------------------------------
+// DoubleChain_g2_Nuduple_SPLIT_POS(D1,f,h,V,len)
+//-----------------------------------------------------------------------------
+// Input: D1: D1=(u1,v1,n1) divisor over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h,V: hyperelliptic polynomials corresponding to genus g curve.
+//          len: Chain length.        
+// 
+// Return: Divisor D at end of doubling chain using Nuduple.
+//-----------------------------------------------------------------------------
+DoubleChain_g2_Nuduple_SPLIT_POS := function(D1,f,h,V,len)
+    i := 0;
+    D := Nuduple_g2_SPLIT_POS(D1,f,h,V);
+    while i lt len do
+        i := i + 1;
+        D  := Nuduple_g2_SPLIT_POS(D,f,h,V);
+    end while;
+    return D;
+end function;
+

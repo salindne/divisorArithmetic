@@ -1,0 +1,708 @@
+
+Precompute_ourInf := function(f,q)
+    f1:= Coefficient(f,1); 
+    f2:= Coefficient(f,2); 
+    f3:= Coefficient(f,3); 
+    f4:= Coefficient(f,4); 
+
+    y1 := f4/2; 
+    y0 := f3/2;                                         
+    d1 := f2 - y1^2;        
+    d2 := d1/2;
+    d3 := f1/2; 
+    d4 := f2/2;                       
+                                 
+    return <f,[y0,y1,d1,d2,d3,d4]>;
+end function;
+
+Deg1DBLDWN_ourInf:= function(u0,v0,ccs)  
+    
+    f4:= Coefficient(ccs[1],4);
+    y1:= ccs[2][2]; 
+
+    u2 := u0^2;
+    d  := v0 + v0 - u0*(f4 + u2 + u2);
+
+    if IsZero(d) then
+        return <0,0,1,y1,ccs[2][1],2>;
+    end if;
+
+    z0  := ccs[2][1] - v0;
+    t1  := u0*z0;
+    z1  := ccs[2][4] - t1;
+    t2  := u0*(z1 + z1 - t1);
+    sp0 := Coefficient(ccs[1],1) - f4*v0 - t2 - t2;
+
+    if IsZero(sp0) then
+        if IsZero(z0) then
+            return <0,0,1,y1,ccs[2][1],0>;
+        end if;
+
+        w1   := z0^-1;
+        upp0 := z1*w1 - u0;
+        upp2 := upp0^2;
+        vpp0 := upp0*(f4 + upp2 + upp2) - v0;
+
+        return <0,1,upp0,y1,vpp0,0>;
+    end if;
+    
+    w1   := (d*sp0)^-1;
+    w2   := d^2*w1;
+    s0   := w1*sp0^2;
+    upp1 := -z0*w2 - u0;
+    upp0 := y1 + s0/2 - z1*w2 - u0*upp1;
+    t0   := upp1 + upp1;
+    vpp1 := upp0 + upp0 - upp1*t0 - y1 - s0;
+    vpp0 := -v0 - s0*u0 - upp0*t0;
+        
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+Deg1DBLUP_ourInf:= function(u0,v0,ccs)
+
+    f4:= Coefficient(ccs[1],4);
+    y1:= ccs[2][2];  
+
+    u2 := u0^2;
+    t0 := u0*(f4 + u2 + u2);
+    v0 := v0 - t0;
+    d := v0 + v0 + t0;
+
+    if IsZero(d) then
+        return <0,0,1,y1,ccs[2][1],0>;
+    end if;
+
+    z0  := ccs[2][1] + v0;
+    t1  := u0*z0;
+    z1  := ccs[2][4] - t1;
+    t2  := u0*(z1 + z1 - t1);
+    sp0 := Coefficient(ccs[1],1) + f4*v0 - t2 - t2;
+
+    if IsZero(sp0) then
+        if IsZero(z0) then
+            
+            return <0,0,1,y1,ccs[2][1],2>;
+        end if;
+
+        w1   := z0^-1;
+        upp0 := z1*w1 - u0;
+        
+        return <0,1,upp0,y1,-v0,1>;
+    end if;
+
+    w1   := (d*sp0)^-1;
+    w2   := d^2*w1;
+    s0   := w1*sp0^2;
+    upp1 := z0*w2 - u0;
+    upp0 := y1 + z1*w2 - s0/2 - u0*upp1;
+    vpp1 := y1 - s0;
+    vpp0 := -v0 - s0*u0;
+
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+Deg2DBL_ourInf:= function(u1,u0,v1,v0,ccs)
+    
+       
+    t0  := u1^2;
+    u12 := u1 + u1;
+    t1  := u0 - t0;
+    t2  := t1 - v1;
+    m3  := t2 + t2; 
+    m4  := v0 + v0 + u0*u12;
+    m1  := m4 + m3*u1;
+    m2  := -m3*u0;
+    d   := m4*m1 - m2*m3;                            
+
+
+    if IsZero(d) then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := x^3 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    z0  := ccs[2][1] - v0;
+    z1  := ccs[2][2] - v1;
+    r1  := z0 - z1*u12;
+    r0  := ccs[2][6] - (v1^2)/2 - u1*z0 - z1*(t1 + u0);
+    sp0 := r0*m1 + r1*m2;
+    sp1 := r0*m3 + r1*m4;
+    D   := d^2;
+    w1  := sp1*(sp1 + d); 
+    
+    if IsZero(w1) then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := x^3 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        gen := Double_SPLIT_POS(<u,v,w,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    w2 := (d*w1)^-1;
+    w3 := w2*w1;
+    w4 := w2*d*D;
+    s0 := w3*sp0;
+    s1 := w3*sp1;
+    t3 := s0 - u1;
+
+    upp1 := w4*((s0 + t3)*s1 + s0);
+    upp0 := w4*(t3*s0 - t2*s1 - z1/2);
+
+    z0 := upp0 - u0;
+    z1 := upp1 - u1;
+    w0 := z0*s0;    
+    w1 := z1*s1;    
+    w2 := w1 + upp1;
+    t1 := (s0 + s1)*(z0 + z1) - w0 - w1 + upp0 - w2*upp1;
+    t0 := w0 - w2*upp0;
+
+    vpp1 := t1 + t1 - v1;
+    vpp0 := t0 + t0 - v0;
+
+    return <1,upp1, upp0, vpp1, vpp0,0>;
+end function;
+
+DBL_ourInf:= function(d,ccs)
+    if IsOne(d[1]) then
+        return Deg2DBL_ourInf(d[2],d[3],d[4],d[5],ccs);
+    elif IsOne(d[2]) then
+        if IsZero(d[6]) then
+            return Deg1DBLUP_ourInf(d[3],d[5],ccs);
+        else    
+            return Deg1DBLDWN_ourInf(d[3],d[5],ccs);
+        end if;
+    else
+        f := ccs[1];
+        R<x>:=Parent(f);        
+        V := ComputeVpl(f,2);
+        gen := Double_SPLIT_POS(<R!1,V,f-V^2,d[6]>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+end function;
+
+
+
+
+Deg01ADDDWN_ourInf:= function(u0,v0,ccs)
+
+    y1:= ccs[2][2]; 
+
+    z0 := ccs[2][1] - v0;
+
+    if IsZero(z0) then  
+        if IsZero(ccs[2][3]) then
+            return <0,0,1,y1,ccs[2][1],0>;
+        end if;
+        f4:= Coefficient(ccs[1],4);  
+
+        w2  := ccs[2][3]^-1;
+        up0 := w2*(Coefficient(ccs[1],1) - v0*f4) - u0;
+        t1  := up0^2;
+        vp0 := up0*(f4 + t1 + t1) - v0;
+
+        return <0,1,up0,y1,vp0,0>;
+    end if;
+
+    w2  := z0^-1;
+    up1 := w2*ccs[2][4] - u0;
+    up0 := w2*(ccs[2][5] - v0*y1) - u0*up1;
+    t0  := up0 - up1^2;
+    t1  := up1 + up1;   
+    vp1 := t0 + t0 - y1;
+    vp0 := -up0*t1 - v0;
+
+    return <1,up1,up0,vp1,vp0,0>;
+end function;
+
+Deg01ADDUP_ourInf:= function(u0,v0,ccs)
+
+    y1:= ccs[2][2];  
+
+    t0  := u0^2;                            
+    vp0 := u0*(Coefficient(ccs[1],4) + t0 + t0) - v0;
+    z0 := ccs[2][1] - vp0;
+
+    if IsZero(z0) then 
+        if IsZero(ccs[2][3]) then
+            return <0,0,1,y1,ccs[2][1],2>;
+        end if;
+
+        w2  := ccs[2][3]^-1;
+        up0 := w2*(Coefficient(ccs[1],1) - vp0*Coefficient(ccs[1],4)) - u0;
+
+        return <0,1,up0,y1,vp0,1>;
+    end if;
+
+    w2  := z0^-1;
+    up1 := w2*ccs[2][4] - u0;
+    up0 := w2*(ccs[2][5] - vp0*y1) - u0*up1;
+
+    return <1,up1,up0,y1,vp0,0>;
+end function;
+
+Deg02ADDDWN_ourInf:= function(u0,u1,v0,v1,ccs)
+
+    z0 := ccs[2][1] - v0;
+    z1 := ccs[2][2] - v1;
+    
+    if IsZero(z1) then  
+        if IsZero(z0) then
+            return <0,0,1,ccs[2][2],ccs[2][1],0>;
+        end if;
+
+        w2  := z0^-1;
+        up0 := w2*(ccs[2][6] - (v1^2)/2) - u1;
+        t0  := up0^2;
+        vp0 := up0*(Coefficient(ccs[1],4) + t0 + t0) - v0;
+
+        return <0,1,up0,ccs[2][2],vp0,0>;
+    end if;
+
+    w2  := z1^-1;
+    up1 := w2*z0 - u1;
+    up0 := w2*(ccs[2][6] - (v1^2)/2) - u0 - u1*up1;
+    t0  := up0 - up1^2;
+    t1  := up1 + up1;
+    vp1 := t0 + t0 - v1;
+    vp0 := -v0 - t1*up0;
+
+    return <1,up1,up0,vp1,vp0,0>;
+end function;
+
+Deg02ADDUP_ourInf:= function(u0,u1,v0,v1,ccs)
+
+    t1 := u1 + u1;
+    t2 := u1^2 - u0;
+    v1 := v1 + t2 + t2;
+    v0 := v0 + u0*t1; 
+
+    z0 := v0 + ccs[2][1];
+    z1 := v1 + ccs[2][2];
+
+    if IsZero(z1) then  
+        if IsZero(z0) then
+            return <0,0,1,ccs[2][2],ccs[2][1],2>;
+        end if;
+
+        w2  := z0^-1;
+        up0 := w2*(ccs[2][6] - (v1^2)/2) - u1;
+
+        return <0,1,up0,ccs[2][2],-v0,1>;
+    end if;
+
+    w2  := z1^-1;
+    up1 := w2*z0 - u1;
+    up0 := w2*(ccs[2][6] - (v1^2)/2) - u0 - u1*up1;
+
+    return <1,up1,up0,-v1,-v0,0>;
+end function;
+
+Deg1ADD_ourInf:= function(u0,v0,up0,vp0,ccs)
+
+    y0:= ccs[2][1]; 
+    y1:= ccs[2][2];
+    d1:= ccs[2][3];
+
+    d := u0 - up0;
+
+    if IsZero(d) then
+
+        upp1 := u0 + u0;
+        upp0 := u0^2;
+
+        dw := v0 + vp0 - u0*Coefficient(ccs[1],4) - upp0*upp1;
+        if IsZero(dw) then
+            return <0,0,1,y1,y0,1>;
+        end if;
+
+        t0 := y0 - v0;
+        t2 := Coefficient(ccs[1],1) - Coefficient(ccs[1],4)*v0 - u0*(d1 + d1 - upp1*(t0 + t0 + t0));
+        s0:= t2*dw^-1;
+
+        vpp1 := y1 + s0;
+        vpp0 := v0 + s0*u0;
+
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;
+
+
+    s0 := (vp0 - v0)*d^-1;
+
+    upp1 := u0 + up0;
+    upp0 := u0*up0;
+
+    vpp1 := y1 + s0;
+    vpp0 := v0 + u0*s0;
+                                           
+    return <1, upp1, upp0, vpp1, vpp0, 0>;
+end function;
+
+Deg1ADDDWN_ourInf:= function(u0,v0,up0,vp0,ccs)
+
+    y1:= ccs[2][2]; 
+
+    d := u0 - up0;
+    if IsZero(d) then
+        return <0,0,1,y1,ccs[2][1],2>;
+    end if;
+
+    sp0 := vp0 - v0;
+    z0 := ccs[2][1] - v0;
+
+    if IsZero(sp0) then
+        if IsZero(z0) then
+            return <0,0,1,y1,ccs[2][1],0>;
+        end if;
+
+        w1   := z0^-1;
+        upp0 := w1*(ccs[2][4] - u0*z0) - up0;
+        t1 := upp0^2;
+        vpp0 := upp0*(Coefficient(ccs[1],4) + t1 + t1) - v0;
+
+        return <0,1,upp0,y1,vpp0,0>;
+    end if;
+
+    w0 := (sp0*d)^-1; 
+    w1 := w0*d^2;     
+    s0 := w0*sp0^2; 
+    t1   := z0*w1; 
+    upp1 := -t1 - up0;
+    upp0 := y1 + s0/2 - w1*ccs[2][4] + u0*t1 - up0*upp1;
+    t0   := -upp1 - upp1;
+    vpp1 := -y1 - s0 + upp0 + upp0 + upp1*t0;
+    vpp0 := -v0 - s0*u0 + upp0*t0;
+    
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+Deg1ADDUP_ourInf:= function(u0,v0,up0,vp0,ccs)
+
+    f4:= Coefficient(ccs[1],4);
+    y1:= ccs[2][2]; 
+
+    d := u0 - up0;
+    if IsZero(d) then
+        return <0,0,1,y1,ccs[2][1],0>;
+    end if;
+
+    t0  := u0^2;
+    vt0 := v0 - u0*(t0 + t0 + f4);
+    t1  := up0^2;
+    sp0 := vp0 - vt0 - up0*(t1 + t1 + f4);
+    z0 := ccs[2][1] + vt0;  
+
+    if IsZero(sp0) then  
+        if IsZero(z0) then
+            return <0,0,1,y1,ccs[2][1], 2>;
+        end if;
+
+        w1   := z0^-1;
+        upp0 := w1*(ccs[2][4] - u0*z0) - up0;
+        
+        return <0,1,upp0,y1,-vt0,1>;
+    end if;
+
+    w0 := (sp0*d)^-1; 
+    w1 := w0*d^2;  
+    s0 := w0*sp0^2; 
+    t0   := z0*w1;
+    upp1 := t0 - up0;
+    upp0 := y1 - s0/2 + w1*ccs[2][4] - u0*t0 - up0*upp1;
+    vpp1 := y1 - s0;
+    vpp0 := -vt0 - s0*u0;
+
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+Deg12ADD_ourInf:= function(u0,v0,up0,up1,vp0,vp1,ccs)
+
+    y1:= ccs[2][2];
+
+    d  := up0 + u0*(u0 - up1);
+
+    if IsZero(d) then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,1>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    z0 := y1 - vp1;
+    sp0 := v0 - vp0 - z0*u0;
+
+    if IsZero(sp0) then           
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,1>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    w2 := (sp0*d)^-1;    
+    w3 := w2*sp0;       
+    w4 := d^2*w2;      
+    s0 := w3*sp0;
+
+    vh1  := s0*up1 + vp1;
+    upp1 := s0/2 - w4*z0 - u0;
+    upp0 := (vh1 + vp1)/2 - w4*(ccs[2][1] - vp0 - z0*up1) - u0*upp1;
+
+    t1   := s0 - upp1 - upp1;
+    vpp1 := upp0 + upp0 + t1*upp1 - vh1;
+    vpp0 := upp0*t1 - s0*up0 - vp0;
+
+    return <1, upp1, upp0, vpp1, vpp0, 0>;
+end function;
+
+Deg12ADDUP_ourInf:= function(u0,v0,up0,up1,vp0,vp1,ccs)
+
+    y1:= ccs[2][2];
+
+    t2  := up1 + up1;
+    vt1 := vp1 - up0 - up0 + t2*up1;
+    vt0 := vp0 + up0*t2;
+    t1 := u0^2;
+    d  := up0 - u0*up1 + t1;
+
+    if IsZero(d) then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    k2 := y1 + vt1;
+    sp0 := v0 - vt0 - u0*(y1 - vt1 + t1 + t1);
+
+    if IsZero(sp0) then     
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + Coefficient(V,1)*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    w2 := (sp0*d)^-1;    
+    w3 := w2*sp0;      
+    w4 := d^2*w2;      
+    s0 := w3*sp0;
+    vh1  := s0*up1 + vt1;
+    upp1 := w4*k2 - s0/2 - u0;
+    upp0 := w4*(ccs[2][1] + vt0 - k2*up1) - (vt1 + vh1)/2 - u0*upp1;
+    vpp1 := upp1*s0 - vh1;
+    vpp0 := s0*(upp0 - up0) - vt0;
+
+    return <1, upp1, upp0, vpp1, vpp0, 0>;
+end function;
+
+Deg2ADD_ourInf:= function(u0,u1,v0,v1,up0,up1,vp0,vp1,ccs)
+
+    m3 := up1 - u1;
+    m4 := u0 - up0;
+    m1 := m4 + up1*m3;
+    m2 := -up0*m3;
+    d  := m1*m4 - m2*m3;
+
+    if IsZero(d) then
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    r0  := vp0 - v0;
+    r1  := vp1 - v1;
+    sp1 := r0*m3 + r1*m4;
+    sp0 := r0*m1 + r1*m2;
+
+    if IsZero(sp1) then 
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    D  := d^2;
+    w1 := D - (sp1 + d)^2;
+    
+    if IsZero(w1) then 
+        f := ccs[1];
+        R<x>:=Parent(f);
+        V := ComputeVpl(f,2);
+        u := x^2 + u1*x + u0;
+        v := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + v1*x + v0;
+        w := ExactQuotient(f-v^2,u);
+        up := x^2 + up1*x + up0;
+        vp := Coefficient(V,3)*x^3 + Coefficient(V,2)*x^2 + vp1*x + vp0;
+        wp := ExactQuotient(f-vp^2,up);
+        gen := Add_SPLIT_POS(<u,v,w,0>,<up,vp,wp,0>,f,V,2);
+        return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+    end if;
+
+    w2 := (d*w1)^-1;
+    w3 := w2*w1; 
+    w4 := w2*D*d; 
+    s1 := sp1*w3;
+    s0 := sp0*w3;
+
+    l0   := s0*u0;
+    t1   := s1*u1;
+    l2   := s0 + t1;
+    l1   := (s0 + s1)*(u0 + u1) - l0 - t1;
+    upp1 := -w4*(s1*(l2 + s0) + s0 + s0) - up1;
+    t0   := ccs[2][2] - v1;
+    t4   := l1 + v1;
+    upp0 := w4*(t0 + t0 - s0*l2 - s1*(t4 + v1)) - up0 - up1*upp1;
+
+    t0   := 2 + s1;
+    t1   := upp1*t0;
+    t2   := l2 - t1;
+    t3   := upp0*t2;
+    vpp1 := (upp0 + upp1)*(t0 + t2) - t4 - t1 - t3;
+    vpp0 := t3 - v0 - l0;
+
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+ADD_ourInf:= function(d1,d2,ccs)
+    if IsOne(d1[1]) then
+        if IsOne(d2[1]) then
+            return Deg2ADD_ourInf(d1[3],d1[2],d1[5],d1[4],d2[3],d2[2],d2[5],d2[4],ccs); //Deg2Add(0)
+
+        elif IsOne(d2[2]) then
+            if IsZero(d2[6]) then
+                return Deg12ADDUP_ourInf(d2[3],d2[5],d1[3],d1[2],d1[5],d1[4],ccs); //Deg12ADDUP
+            else
+                return Deg12ADD_ourInf(d2[3],d2[5],d1[3],d1[2],d1[5],d1[4],ccs); //Deg12ADD
+            end if;
+        else
+            if d2[6] eq 0 then
+                return Deg02ADDUP_ourInf(d1[3],d1[2],d1[5],d1[4],ccs); //Deg02ADD with UP Adjust
+            elif d2[6] eq 1 then
+                return <d1[1],d1[2],d1[3],d1[4],d1[5],0>; //NEUTRAL
+            else
+                return Deg02ADDDWN_ourInf(d1[3],d1[2],d1[5],d1[4],ccs); //Deg02ADD with DWN Adjust
+            end if;
+        end if;
+
+    elif IsOne(d1[2]) then
+        
+        if IsOne(d2[1]) then
+          
+            if IsZero(d1[6]) then
+                return Deg12ADDUP_ourInf(d1[3],d1[5],d2[3],d2[2],d2[5],d2[4],ccs); //Deg12ADDUP
+            else
+                return Deg12ADD_ourInf(d1[3],d1[5],d2[3],d2[2],d2[5],d2[4],ccs); //Deg12ADD
+            end if;
+
+        elif IsOne(d2[2]) then
+            n := d1[6] + d2[6] -1;
+            if n eq 1 then
+                return Deg1ADDDWN_ourInf(d1[3],d1[5],d2[3],d2[5],ccs); //Deg1ADD with DWN Adjust
+            elif n eq -1 then
+                return Deg1ADDUP_ourInf(d1[3],d1[5],d2[3],d2[5],ccs); //Deg1ADD with DWN Adjust
+            else
+                return Deg1ADD_ourInf(d1[3],d1[5],d2[3],d2[5],ccs); //Deg1ADD with DWN Adjust
+            end if;
+        else
+            if d2[6] eq 0 then
+                if d1[6] eq 0 then
+                    return Deg01ADDUP_ourInf(d1[3],d1[5],ccs); //Deg01ADD with UP Adjust
+                else
+                    return <d1[1],d1[2],d1[3],d1[4],d1[5],0>; 
+                end if;
+            elif d2[6] eq 1 then
+                return <d1[1],d1[2],d1[3],d1[4],d1[5],d1[6]>; //NEUTRAL
+            else
+                if d1[6] eq 0 then
+                    return <d1[1],d1[2],d1[3],d1[4],d1[5],1>;
+                else
+                    return Deg01ADDDWN_ourInf(d1[3],d1[5],ccs); //Deg01ADD with DWN Adjust
+                end if;
+            end if;
+        end if;
+
+    else 
+        if IsOne(d2[1]) then
+            if d1[6] eq 0 then
+                return Deg02ADDUP_ourInf(d2[3],d2[2],d2[5],d2[4],ccs); //Deg02ADD with UP Adjust
+            elif d1[6] eq 1 then
+                return <d2[1],d2[2],d2[3],d2[4],d2[5],0>; //NEUTRAL
+            else
+                return Deg02ADDDWN_ourInf(d2[3],d2[2],d2[5],d2[4],ccs); //Deg02ADD with DWN Adjust
+            end if;
+
+        elif IsOne(d2[2]) then
+            if d1[6] eq 0 then
+                if d2[6] eq 0 then
+                    return Deg01ADDUP_ourInf(d2[3],d2[5],ccs); //Deg01ADD with UP Adjust
+                else
+                    return <d2[1],d2[2],d2[3],d2[4],d2[5],0>; 
+                end if;
+            elif d1[6] eq 1 then
+                return <d2[1],d2[2],d2[3],d2[4],d2[5],d2[6]>; //NEUTRAL
+            else
+                if d2[6] eq 0 then
+                    return <d2[1],d2[2],d2[3],d2[4],d2[5],1>;
+                else
+                    return Deg01ADDDWN_ourInf(d2[3],d2[5],ccs); //Deg01ADD with DWN Adjust
+                end if;
+            end if;
+
+        else 
+            f := ccs[1];
+            R<x>:=Parent(f);
+            V := ComputeVpl(f,2);
+            gen := Add_SPLIT_POS(<R!1,V,f-V^2,d1[6]>,<R!1,V,f-V^2,d2[6]>,f,V,2);
+            return <Coefficient(gen[1],2), Coefficient(gen[1],1), Coefficient(gen[1],0), Coefficient(gen[2],1),Coefficient(gen[2],0), gen[4]>;
+        end if;
+    end if;
+end function;

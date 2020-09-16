@@ -1,0 +1,147 @@
+///////////////////////////////////////////////////////////////////////////////
+/////////////// RAMIFIED HEC EXPLICIT FORMULA TESTING UTILITIES. //////////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Utility functions for testing suit of explicit formulas for ramified 
+// HEC's over arbitrary, characteristic 2 and non characteristic 2 fields.
+//  
+// For more detials see XXXXXXXXXXXXXXXX, Sebastian Lindner, 2019.
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////FUNCTIONS///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+// Coeff(poly,n)
+//-----------------------------------------------------------------------------
+// Input: poly: Polynomial over a field.
+//           n: natural number.
+//
+// Return: The n-monomial's coefficient.
+//-----------------------------------------------------------------------------
+Coeff := function(f,n)
+    c:=Coefficients(f); return n+1 le #c select c[n+1] else 0;
+end function;
+
+
+
+//-----------------------------------------------------------------------------
+// RandomG2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//     
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f and h in GF(q)[x] where f is monic seperable of degree 
+//         5 and polynomial h of degree <= 2.
+//-----------------------------------------------------------------------------
+RandomG2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h 
+        f:= x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+        h:= Random(0,1)*x^2 + Random(F)*x + Random(F);
+
+
+        //Check if f and h are hyperelliptic polynomials for a curve of genus g
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h correspond to a genus g hyperelliptic curve, check to see 
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+
+
+
+//-----------------------------------------------------------------------------
+// RandomG2NotChar2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//        
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f in GF(q)[x] where f is monic seperable of degree 
+//         5 and 4th power term is 0.
+//-----------------------------------------------------------------------------
+RandomG2NotChar2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f 
+        f:= x^5 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f is hyperelliptic polynomial for a curve 
+        try
+            C:=HyperellipticCurve(f);
+            isHC:= true;
+
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f corresponds to a genus 2 hyperelliptic curve, check to see 
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
+                return f;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+//-----------------------------------------------------------------------------
+// RandomG2Char2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//        
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f and h in GF(q)[x] where f is monic seperable of degree 
+//         5 and 4th, and 3rd power terms are 0, h has degree 2 with the 2nd
+//         power coefficient in {0,1}.
+//-----------------------------------------------------------------------------
+RandomG2Char2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h 
+        f:= x^5 + Random(F)*x^2 + Random(F)*x + Random(F);
+        h:= Random(0,1)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f and h are hyperelliptic polynomials for a curve of genus g
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h correspond to a genus g hyperelliptic curve, check to see 
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;

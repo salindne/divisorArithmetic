@@ -1,0 +1,1668 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner, 2019                                                        
+//                                                   
+// Description: Genus 2 divisor addition formulas for the 4 coordinate Mumford         
+//              representation in reduced basis over arbitrary fields where:              
+//              h(x) = h3*x^2 + h2*x^2 + h1*x + h0 and             
+//              f(x) = f6*x^6 + f5*x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0           
+//
+//                                                                      
+///////////////////////////////////////////////////////////////////////////////
+
+//Must keep next two lines in this format for latex conversion
+//Constant: f6,f5,f4,f3,f2,f1,f0,h3,h2,h1,h0,y3,y2,y1,y0,d9,d8,d7,d6,d5,d4,d3,d2,d1,d0,c5,c4,c3,c2,c1,c0
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg01ADDDWN():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,1> in  
+//                   reduced basis.
+// Implicitly 1,0,2: Mumford coordinates for divisor D=<1,0,2> in reduced 
+//                   basis.       
+//              ccs: Table of curve constants and precomputations, see 
+//                   Precompuation in arb_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates up1,up0,vp1,vp0 and balance weight np for 
+//         for reduceed and balanced Dp ~ D.               
+// Description: Explicit computation for adding <1,0,2> and degree 1 divisor.          
+///////////////////////////////////////////////////////////////////////////////
+Deg01ADDDWN:= function(u0,v0,ccs)  
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + v0;
+
+    //Formulation
+    upp := ExactQuotient(f - v*(v +  h),u);
+    upp := upp/LeadingCoefficient(upp);                 
+    vpp := V - (v + h + V) mod upp;
+    
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0; 
+    */ //endIGNORE
+    
+    
+    h0:= ccs[2][1];   
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2];
+    d0:= ccs[4][1];
+    d1:= ccs[4][2]; 
+    d6:= ccs[4][7]; 
+    d7:= ccs[4][8];
+    d8:= ccs[4][9];
+    d9:= ccs[4][10];
+    c1:= ccs[5][2]; 
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4]; 
+    c5:= ccs[5][6];
+
+   //z = (f - h*v - v^2)/c3   
+   z0 := y0 - v0;
+   //z1 := d1 + z0*d6;
+    
+    if IsZero(z0) then  
+        z1 := d8 + z0*d6;
+        if IsZero(z1) then
+            //if ADD_DEBUG then //Degree of output divisor is 0
+            //    "01ADDDWN0";
+            //end if;
+            return <0,0,1,y1,y0,0>; 
+        end if;//z1
+
+        w2  := z1^-1;
+        up0 := w2*(d7 - v0*d9) - u0;
+        vp0 := up0*(c5 + up0*(c3*up0 - c2)) - h0 - v0;
+
+        //if ADD_DEBUG then //Degree of output divisor is 1
+        //    "01ADDDWN1";
+        //end if;
+        return <0,1,up0,y1,vp0,0>; 
+    end if;//z0
+  
+    //up := ExactQuotient (z,u);
+    //up := up / LeadingCoefficient(up);   
+    w2  := z0^-1;
+    up1 := w2*d8 + d6 - u0;
+    up0 := w2*(d7 - v0*d9) - u0*up1;
+
+    //vp := Vpl - (Vpl + v + h) mod up;
+    t1  := up1*c3;
+    t2  := c2 - t1;
+    t3  := up0*t2;          
+    vp1 := (up1 + up0)*(c3 + t2) - t1 - t3 - c1;
+    vp0 := t3 - v0 - h0;
+
+    //if ADD_DEBUG then //Degree of output divisor is 2
+    //    "01ADDDWN2";
+    //end if;
+    return <1,up1,up0,vp1,vp0,0>; 
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg01ADDUP():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in  
+//                   reduced basis.
+// Implicitly 1,0,0: Mumford coordinates for divisor D=<1,0,0> in reduced 
+//                   basis.       
+//              ccs: Table of curve constants and precomputations, see 
+//                   Precompuation in arb_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates up1,up0,vp1,vp0 and balance weight np for 
+//         for reduceed and balanced Dp ~ D.               
+// Description: Explicit computation for adding <1,0,0> and degree 1 divisor.       
+///////////////////////////////////////////////////////////////////////////////
+Deg01ADDUP:= function(u0,v0,ccs)
+    /*//startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + v0;
+
+    //Formulation
+    v := -V-h - ((-V-h - v) mod u);
+    upp := ExactQuotient(f - v*(v +  h),u);
+    upp := upp/LeadingCoefficient(upp);                 
+    vpp := V - (v + h + V) mod upp;
+    npp := 2- Degree(upp);
+    
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),npp; 
+    */ //endIGNORE
+    
+    h0:= ccs[2][1];
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2];
+    d0:= ccs[4][1];
+    d1:= ccs[4][2]; 
+    d6:= ccs[4][7]; 
+    d7:= ccs[4][8];
+    d8:= ccs[4][9];
+    d9:= ccs[4][10];
+    c0:= ccs[5][1];
+    c1:= ccs[5][2];
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4]; 
+    c5:= ccs[5][6];
+
+
+    //v:= -V-h - ((-V-h - v) mod u);                                
+    v0 := v0 - u0*(c5 + u0*(c3*u0 - c2));
+
+    //vp := Vpl - (Vpl + v + h) mod up;
+    vp0 := -v0 - h0;
+
+    //z = (f - h*v - v^2)/c3   
+    z0  := c0 + v0;
+    //z1  := d1 + w1*c2;
+
+    if IsZero(z0) then
+        z1 := d8 + z0*d6;
+        if IsZero(z1) then
+            //if ADD_DEBUG then //Degree of output divisor is 0
+            //    "01ADDUP0";
+            //end if;
+            return <0,0,1,y1,y0,2>;
+        end if;//z1
+
+        w2  := z1^-1;
+        up0 := w2*(d7 - vp0*d9) - u0;
+        
+        //if ADD_DEBUG then //Degree of output divisor is 1
+        //    "01ADDUP1";
+        //end if;
+        return <0,1,up0,y1,vp0,1>;
+    end if;//z0
+
+    //up := ExactQuotient (z,u);
+    //up := up / LeadingCoefficient(up);
+    w2  := z0^-1;
+    up1 := w2*d8 + d6 - u0;
+    up0 := w2*(d7 - vp0*d9) - u0*up1;
+
+    //if ADD_DEBUG then //Degree of output divisor is 2
+    //    "01ADDUP2";
+    //end if;
+    return <1,up1,up0,y1,vp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg02ADDDWN():         
+// Input: u1,u0,v1,v0: Mumford coordinates for divisor   
+//                     D=<x^2 + u1x + u0, v1x + v0, 0> in reduced basis.
+//   Implicitly 1,0,2: Mumford coordinates for divisor D=<1,0,2> in reduced 
+//                     basis.       
+//                ccs: Table of curve constants and precomputations, see 
+//                     Precompuation in arb_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates up1,up0,vp1,vp0 and balance weight np for 
+//         for reduceed and balanced Dp ~ D.               
+// Description: Explicit computation for adding <1,0,2> and degree 2 divisor.          
+///////////////////////////////////////////////////////////////////////////////
+Deg02ADDDWN:= function(u0,u1,v0,v1,ccs)
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x^2 + u1*x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + v1*x + v0;
+
+    //Formulation
+    upp := ExactQuotient(f - v*(v +  h),u);
+    upp := upp/LeadingCoefficient(upp);                 
+    vpp := V - (v + h + V) mod upp;
+    
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0; 
+    */ //endIGNORE
+
+    h0:= ccs[2][1]; 
+    h1:= ccs[2][2];
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2];
+    d2:= ccs[4][3];
+    d5:= ccs[4][6];
+    d6:= ccs[4][7];
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4]; 
+    c4:= ccs[5][5];
+    c5:= ccs[5][6];
+
+
+    //z = (f - h*v - v^2)/c3
+    z0 := y0 - v0;
+    z1 := y1 - v1;
+    
+    if IsZero(z1) then  
+        if IsZero(z0) then
+            //if ADD_DEBUG then //Degree of output divisor is 0
+            //    "02ADDDWN0";
+            //end if;
+            return <0,0,1,y1,y0,0>; 
+        end if;//z0
+
+        w2:= z0^-1;
+        up0:= w2*d5*(d2 - v1*(h1 + v1)) + d6 - u1;
+        vp0:= up0*(c5 - up0*(c2 - c3*up0)) - v0 - h0;
+
+        //if ADD_DEBUG then //Degree of output divisor is 1
+        //    "02ADDDWN1";
+        //end if;
+        return <0,1,up0,y1,vp0,0>; 
+    end if;//z1
+
+    //up := ExactQuotient (z,u);
+    //up := up / LeadingCoefficient(up);
+    w2  := z1^-1;
+    t1  := h1 + v1;
+    t2  := w2*z0;
+    up1 := t2 + d6 - u1;
+    up0 := w2*d5*(d2 - v1*t1) + d6*t2 - u0 - u1*up1;
+
+    //vp := Vpl - (Vpl + v + h) mod up;
+    t2  := c3*up1;
+    t3  := (c2 - t2)*up0;
+    vp1 := (c4 - t2)*(up0 + up1) - t1 - t2 - t3;
+    vp0 := t3 - h0 - v0;
+
+    //if ADD_DEBUG then //Degree of output divisor is 2
+    //    "02ADDDWN2";
+    //end if;
+    return <1,up1,up0,vp1,vp0,0>; 
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg02ADDUP():         
+// Input: u1,u0,v1,v0: Mumford coordinates for divisor 
+//                     D=<x^2 + u1x + u0, v1x + v0, 0> in reduced basis.
+//   Implicitly 1,0,0: Mumford coordinates for divisor D=<1,0,0> in reduced 
+//                     basis.       
+//                ccs: Table of curve constants and precomputations, see 
+//                     Precompuation in arb_splitG2_UTL.mag 
+//      
+// Output: Mumford coordinates up1,up0,vp1,vp0 and balance weight np for 
+//         for reduceed and balanced Dp ~ D.               
+// Description: Explicit computation for adding <1,0,0> and degree 2 divisor.          
+///////////////////////////////////////////////////////////////////////////////
+Deg02ADDUP:= function(u0,u1,v0,v1,ccs)
+    /*//startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x^2 + u1*x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + v1*x + v0;
+
+    //Formulation
+    v := -V-h - ((-V-h - v) mod u);
+    upp := ExactQuotient(f - v*(v +  h),u);
+    upp := upp/LeadingCoefficient(upp);                 
+    vpp := V - (v + h + V) mod upp;
+    npp := 2- Degree(upp);
+    
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),npp; 
+    */ //endIGNORE
+
+    h0:= ccs[2][1]; 
+    h1:= ccs[2][2];
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2]; 
+    d2:= ccs[4][3];
+    d5:= ccs[4][6]; 
+    d6:= ccs[4][7];
+    c0:= ccs[5][1]; 
+    c1:= ccs[5][2]; 
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4]; 
+
+    //v1 := -V-h - (-V-h - v1) mod u1;
+    t0 := u1*c3;
+    t1 := c2 - t0;
+    t2 := u0*t1;
+    v1 := v1 - (u0 + u1)*(c3 + t1) + t2 + t0;
+    v0 := v0 - t2; 
+
+    //z = (f - h*v - v^2)/c3
+    z0 := v0 + c0;
+    z1 := v1 + c1;
+    
+    if IsZero(z1) then  
+        if IsZero(z0) then
+            //if ADD_DEBUG then //Degree of output divisor is 0
+            //    "02ADDUP0";
+            //end if;
+            return <0,0,1,y1,y0,2>; 
+        end if;//z0
+
+        w2  := z0^-1;
+        up0 := w2*d5*(d2 - v1*(v1 + h1)) + d6 - u1;
+        vp0 := -v0 - h0;
+
+        //if ADD_DEBUG then //Degree of output divisor is 1
+        //    "02ADDUP1";
+        //end if;
+        return <0,1,up0,y1,vp0,1>; 
+    end if;//z1
+    
+    //u := ExactQuotient(z,u1);
+    //u := u/LeadingCoefficient(u);
+    w2  := z1^-1;
+    t1  := -v1 - h1;
+    t2  := w2*z0;
+    up1 := t2 + d6 - u1;
+    up0 := w2*d5*(d2 + v1*t1) + d6*t2 - u0 - up1*u1;
+
+    //v := V - (v1 + h + V) mod u;
+    //vp1 := t1;
+    vp0 := -v0 - h0;
+
+    //if ADD_DEBUG then //Degree of output divisor is 2
+    //    "02ADDUP2";
+    //end if;
+    return <1,up1,up0,t1,vp0,0>; 
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg1ADD():         
+// Input:  u0,v0: Mumford coordinates for divisor D=<x + u0,v0,n> in reduced
+//                basis where 0<=n<=1 and n + np = 1
+//       up0,vp0: Mumford coordinates for divisor Dp=<x + up0,vp0,np> in reduced
+//                basis where 0<=n<=1 and n + np = 1
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in arb_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding two degree 1 divisors.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg1ADD:= function(u0,v0,up0,vp0,ccs)
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + R!v0;
+    up := x + up0;
+    vp := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + R!vp0;
+    Q := quo<R | up>;
+    
+    //Formulation
+    d := u mod up;
+    if IsZero(d) then
+        dw := (vp + v + h) mod up; 
+        if IsZero(dw) then
+            return 0,0,1,Coeff(V,1),Coeff(V,0),1;
+        end if;
+        k := ExactQuotient(f-v*(v + h),u);
+        s := k*R!(Q!dw^-1) mod up;
+        upp := u^2;
+        vpp := V - (V - v - u*s) mod upp;
+        return 1,Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0;
+    end if;
+    s := (vp - v)*R!(Q!d^-1) mod up;
+    upp := u*up;
+    vpp := V - (V - v - u*s) mod upp;
+
+    return 1,Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0;
+    */ //endIGNORE
+    
+    h0:= ccs[2][1];  
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2];
+    c1:= ccs[5][2];
+    c2:= ccs[5][3];
+    c3:= ccs[5][4];
+    c5:= ccs[5][6];
+    d0:= ccs[4][1];
+    d1:= ccs[4][2];
+
+    //d = u mod up
+    d := u0 - up0;
+
+    if IsZero(d) then
+        //dw := ((v+ vp + h) mod u);
+        upp0 := u0^2;
+        t3 := c3*u0;
+        dw := v0 + vp0 + h0 - u0*c5 + upp0*(c2 - t3);
+        if IsZero(dw) then
+            //if ADD_DEBUG then 
+            //    "1ADDDBL0";
+            //end if;
+            return <0,0,1,y1,y0,1>;
+        end if;//dw
+
+        //upp := u^2;
+        upp1 := u0 + u0;
+
+        //k := ExactQuotient(f - v(v - h), u);
+        //s0 := k/dw mod u;
+        t0 := y0 - v0;
+        t1 := d1 + c2*t0;
+        t2 := d0 - c5*v0 - u0*(t1 + t1 - t3*(t0 + t0 + t0));
+        s0:= t2*dw^-1;
+        
+        //vpp := V - ((V - s*u - v) mod upp);
+        vpp1 := y1 + s0;
+        vpp0 := v0 + s0*u0;
+
+        //if ADD_DEBUG then 
+        //    "1ADDDBL2";
+        //end if;
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;//d
+
+    //s0 = (vp - v)/d
+    s0 := (vp0 - v0)*d^-1;
+
+    //upp = u*up
+    upp1 := u0 + up0;
+    upp0 := u0*up0;
+    
+    //vpp = V - (V - vp - up*s) mod upp
+    vpp1 := y1 + s0;
+    vpp0 := v0 + u0*s0;
+                                                        
+    //if ADD_DEBUG then 
+    //    "1ADD2";
+    //end if;
+    return <1, upp1, upp0, vpp1, vpp0, 0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg1ADDDWN():         
+// Input:  u0,v0: Mumford coordinates for divisor D=<x + u0,v0,1> in reduced
+//                basis.
+//       up0,vp0: Mumford coordinates for divisor Dp=<x + up0,vp0,1> in reduced
+//                basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in arb_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding two degree 1 divisors.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg1ADDDWN:= function(u0,v0,up0,vp0,ccs)
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + R!v0;
+    up := x + up0;
+    vp := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + R!vp0;
+    Q := quo<R | up>;
+    
+    //Formulation
+    d := u mod up;
+    if IsZero(d) then
+        return 0,0,1,Coeff(V,1),Coeff(V,0),2;
+    end if;
+    s := R!(Q!d^-1)*(vp - v) mod up;
+    k := ExactQuotient(f-v*(v + h),u);
+    upp := ExactQuotient(-s*(u*s + 2*v + h) + k, up); //M1:=ExactQuotient(u1*s-v2+v1,u2); M2:=ExactQuotient(s*(v2+v1+h)-k,u2); u:=-s*M1-M2;
+    upp := upp/LeadingCoefficient(upp);
+    vpp := V - (V + u*s + v + h) mod upp;
+
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0;
+    */ //endIGNORE
+    
+    
+    h0:= ccs[2][1]; 
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2];
+    d5:= ccs[4][6]; 
+    d6:= ccs[4][7]; 
+    d8:= ccs[4][9];
+    d9:= ccs[4][10]; 
+    c1:= ccs[5][2]; 
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4]; 
+    c5:= ccs[5][6];
+
+
+    //d := u mod up;
+    d := u0 - up0;
+    if IsZero(d) then
+        //if ADD_DEBUG then 
+        //    "1ADDDWNINV";
+        //end if;
+        return <0,0,1,y1,y0,2>;
+    end if;//d
+
+    //sp := vp - v
+    sp0 := vp0 - v0;
+
+    //k := ExactQuotient(f-v*(v + h),u);
+    //z := k/c3
+    z0 := y0 - v0;
+    //z1 := d8 + z0*(d6 - u0);
+
+    if IsZero(sp0) then
+        if IsZero(z0) then
+            //if ADD_DEBUG then 
+            //    "1ADDDWN0";
+            //end if; 
+            return <0,0,1,y1,y0,0>;
+        end if;//z0
+
+        //upp := ExactQuotient(-k, u);
+        //upp  := upp/LeadingCoefficient(upp);
+        w1   := z0^-1;
+        upp0 := w1*(d8 + z0*(d6 - u0)) - up0;
+        
+        //vp  := V  - (V + v + h) mod upp;
+        vpp0 := -v0 - h0 + upp0*(c5 - upp0*(c2 - upp0*c3));
+
+        //if ADD_DEBUG then 
+        //    "1ADDDWN1";
+        //end if;
+        return <0,1,upp0,y1,vpp0,0>;
+    end if;//sp0
+
+
+    //s0 := ((vp - vp)/u) mod up and 1/s0;
+    w0 := (sp0*d)^-1; //1/s0*d^2
+    w1 := w0*d^2;      //1/s0
+    s0 := w0*sp0^2; 
+
+    //upp  := ExactQuotient(s*(u1*s + 2*v1 + h) - k, u2);
+    //up  := upp/LeadingCoefficient(upp);
+    t1   := z0*w1;
+    upp1 := d6 - t1 - up0;
+    upp0 := d9 - w1*d8 - t1*(d6 - u0) + s0*d5 - up0*upp1;
+
+    //vp  := V - ((V - (-s*u1 - v1 - h)) mod up);
+    t0   := upp1*c3;
+    t1   := c2 - t0;
+    t2   := upp0*t1;
+    vpp1 := -c1 - s0 + (upp0 + upp1)*(c3 + t1) - t0 - t2;
+    vpp0 := -v0 - h0 - s0*u0 + t2;
+    
+    //if ADD_DEBUG then 
+    //    "1ADDDWN2";
+    //end if;
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg1ADDUP():         
+// Input:  u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in reduced
+//                basis.
+//       up0,vp0: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in reduced
+//                basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in arb_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding two degree 1 divisors.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg1ADDUP:= function(u0,v0,up0,vp0,ccs)
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + R!v0;
+    up := x + up0;
+    vp := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + R!vp0;
+    Q := quo<R | up>;
+    
+    //Formulation
+    d := u mod up;
+    if IsZero(d) then
+        return 0,0,1,Coeff(V,1),Coeff(V,0),0;
+    end if;
+    v := -V-h - (-V-h - v) mod u;
+    s := R!(Q!d^-1)*(vp - v) mod up;
+    k := ExactQuotient(f-v*(v + h),u);
+    upp := ExactQuotient(-s*(u*s + 2*v + h) + k, up); //M1:=ExactQuotient(u1*s-v2+v1,u2); M2:=ExactQuotient(s*(v2+v1+h)-k,u2); u:=-s*M1-M2;
+    upp := upp/LeadingCoefficient(upp);
+    vpp := V - (V + u*s + v + h) mod upp;
+    npp := 2- Degree(upp);
+
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),npp;
+    */ //endIGNORE
+    
+    h0:= ccs[2][1]; 
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2]; 
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4]; 
+    c5:= ccs[5][6];
+    d5:= ccs[4][6]; 
+    d6:= ccs[4][7]; 
+    d8:= ccs[4][9];
+    d9:= ccs[4][10];
+
+    //d := u1 mod u2;
+    d := u0 - up0;
+    if IsZero(d) then
+        //if ADD_DEBUG then 
+        //    "1ADDUPINV";
+        //end if;
+        return <0,0,1,y1,y0,0>;
+    end if;//d
+
+    //vt := -V - h + ((V + h + v1) mod u1);
+    vt0 := v0 + u0*(u0*(c2 - u0*c3) - c5);
+
+    //sp := (vp - vt) mod up
+    sp0 := vp0 - vt0 + up0*(up0*(c2 - up0*c3) - c5);
+
+    //k := ExactQuotient(f - v1*h - v1^2, u1);
+    //z := k/c3
+    vn0 := -vt0 - h0;
+    z0  := y0 - vn0;
+    //z1 := d8 + z0*(d6 - u0);
+       
+    if IsZero(sp0) then  
+        if IsZero(z0) then
+            //if ADD_DEBUG then 
+            //    "1ADDUP0";
+            //end if;
+            return <0,0,1,y1,y0, 2>;
+        end if;//z0
+
+        //upp := ExactQuotient(-k, up);
+        //upp  := upp/LeadingCoefficient(upp);
+        w1   := z0^-1;
+        upp0 := w1*(d8 + z0*(d6 - u0)) - up0;
+        
+        //vp  := V - ((V - (-s*u1 - vt - h)) mod up);
+        //vpp0 := vn0;
+
+        //if ADD_DEBUG then 
+        //    "1ADDUP1";
+        //end if;
+        return <0,1,upp0,y1,vn0,1>;
+    end if;//sp0
+
+    //s0 := ((v2 - vt)/u1) mod u2 and 1/s0;
+    w0 := (sp0*d)^-1; //1/s0*d^2
+    w1 := w0*d^2;      //1/s0
+    s0 := w0*sp0^2; 
+
+    //upp  := ExactQuotient(s*(u1*s + 2*vt + h) - k, u2);
+    //up  := upp/LeadingCoefficient(upp);
+    t0 := z0*w1;
+    upp1 := d6 + t0 - up0;
+    upp0 := d9 - s0*d5 + w1*d8 + t0*(d6 - u0) - up0*upp1;
+
+    //vp  := V - ((V - (-s*u1 - vt - h)) mod up);
+    vpp1 := y1 - s0;
+    vpp0 := vn0 - s0*u0;
+ 
+    //if ADD_DEBUG then 
+    //    "1ADDUP2";
+    //end if;
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg12ADD():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,1> in 
+//                     reduced basis.
+//  up0,up1,vp0,vp1: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in 
+//                     reduced basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in arb_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding a degree 1 and degree 2 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg12ADD:= function(u0,v0,up0,up1,vp0,vp1,ccs)
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + v0;
+    up := x^2 + up1*x + up0;
+    vp := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + vp1*x + vp0;
+    Q := quo<R | u>;
+    
+    //Formulation
+    d := up mod u;
+    if IsZero(d) then
+        dw := (v + vp + h) mod u; 
+        if IsZero(dw) then
+            upp := ExactQuotient(up,u);
+            vpp  := V - (V - vp) mod upp;
+            return 0,1,Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),1;
+        end if;
+        k := ExactQuotient(f - vp*(vp + h),up);
+        s  := R!(Q!dw^-1)*k mod u;
+        //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(v+vp+h)-k,u); u:=-s*M1-M2;
+        upp  := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
+        upp  := upp/LeadingCoefficient(upp);
+        vpp  := V - (V + s*up + vp + h) mod upp;
+        return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0;
+    end if;
+    k := ExactQuotient(f - vp*(vp + h),up);
+    s := R!(Q!d^-1)*(v - vp) mod u;
+    //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(v+vp+h)-k,u); u:=-s*M1-M2;
+    upp  := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
+    upp  := upp/LeadingCoefficient(upp);
+    vpp  := V - (V + s*up + vp + h) mod upp;
+
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0;
+    */ //endIGNORE
+    
+    
+    f0:= ccs[1][1]; 
+    f1:= ccs[1][2];  
+    h0:= ccs[2][1]; 
+    h1:= ccs[2][2]; 
+    h2:= ccs[2][3];
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2]; 
+    y2:= ccs[3][3];
+    d2:= ccs[4][3]; 
+    d3:= ccs[4][4]; 
+    d4:= ccs[4][5];
+    d5:= ccs[4][6];
+    d6:= ccs[4][7];
+    c1:= ccs[5][2]; 
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4]; 
+    c4:= ccs[5][5];
+    
+    //d := up mod u;
+    t0 := u0*up1;
+    d  := up0 - t0 + u0^2;
+    if IsZero(d) then
+        //dw := (v + vp + h) mod u; 
+        dw := v0 + vp0 + h0 - u0*(vp1 + c1 - u0*(c2 - c3*u0));
+        if IsZero(dw) then
+            //upp := ExactQuotient(up,u);
+            upp0 := up1 - u0;
+            //vpp  := V - (V - vp) mod upp;
+            vpp0 := vp0 + upp0*(y1 - vp1);
+
+            //if ADD_DEBUG then
+            //    "12ADD-P1inD2";
+            //end if;
+            return <0,1,upp0,y1,vpp0,1>; // 1 = n + np
+        end if;//dw
+
+        //k := ExactQuotient(f - vp*(vp + h),up);
+        t2 := y1 - vp1;
+        t3 := y0 - vp0;
+        t4 := c2*t3;
+        k2 := c3*t2;
+        k1 := c4*(t3 + t2) - k2 - t4 - up1*k2;
+        k0 := d2 + t4 - vp1*(vp1 + h1) - up0*k2 - up1*k1;
+
+        //s  := R!(Q!dw^-1)*k mod u;
+        sp0 := (k0 - u0*(k1 - u0*k2));
+
+        if IsZero(sp0) then
+            if IsZero(t2) then
+                //if ADD_DEBUG then
+                //    "12ADD0P1inD2";
+                //end if;
+                return <0,0,1,y1,y0,0>;
+            end if;//t2
+
+            //upp  := ExactQuotient(k, u);
+            //upp  := upp/LeadingCoefficient(upp);
+            w2 := t2^-1;
+            upp0 := w2*t3 + d6 - up1 - u0;
+
+            //vpp  := V - (V + vp + h) mod upp;
+            vpp0 := upp0*(c1 + vp1 - upp0*(c2 - upp0*c3)) - vp0 - h0;
+
+            //if ADD_DEBUG then
+            //    "12ADD1P1inD2";
+            //end if;
+            return <0,1,upp0,y1,vpp0,0>;
+        end if;//sp0
+
+        //s0 = sp0/d
+        w2 := (sp0*dw)^-1;    //1/s*d^2
+        w3 := w2*sp0;        //1/d
+        w4 := dw^2*w2;       //1/s
+        s0 := w3*sp0;
+
+        //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(v+vp+h)-k,u); u:=-s*M1-M2;
+        //upp  := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
+        //upp  := upp/LeadingCoefficient(upp);
+        vh1 := s0*up1 + vp1 + h1;
+        upp1 := d5*s0 + d6 - w4*t2 - u0;
+        upp0 := d5*(vh1 + vp1) - w4*(y0 - vp0 + t2*(d6 - up1)) - u0*upp1;
+
+        //vpp  := V - (V + s*up + vp + h) mod upp;
+        t0   := upp1*c3;
+        t1   := c2 + s0 - t0;
+        t2   := upp0*t1;
+        vpp1 := (upp1 + upp0)*(c3 + t1) - t0 - t2 - vh1;
+        vpp0 := t2 - s0*up0 - vp0 - h0;
+        
+        //if ADD_DEBUG then
+        //    "12ADD2P1inD2";
+        //end if;
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;//d
+        
+    //k := ExactQuotient(f - vp*(h + vp), up);
+    //z := -k/c3
+    z0 := y1 - vp1;
+    //z1 := y0 - vp0 + z0*(d6 - up1);
+
+    //sp0 := (v - vp) mod u;
+    sp0 := v0 - vp0 - z0*u0;
+
+    if IsZero(sp0) then           
+        if IsZero(z0) then //vp1 == y1, so (f - h*vn - vn^2) is deg 2
+
+            //if ADD_DEBUG then
+            //    "12ADD0";
+            //end if; 
+            return <0,0,1,y1,y0,0>;
+        end if;//z0
+
+        w2   := z0^-1;
+        upp0 := w2*(y0 - vp0) + d6 - up1 - u0;
+        vpp0 := upp0*(c1 + vp1 - upp0*(c2 - upp0*c3)) - vp0 - h0;
+        
+        //if ADD_DEBUG then
+        //    "12ADD1";
+        //end if; 
+        return <0, 1, upp0, y1, vpp0, 0>;
+    end if;//sp0
+
+    //s0 = sp0/d
+    w2 := (sp0*d)^-1;    //1/s*d^2
+    w3 := w2*sp0;        //1/d
+    w4 := d^2*w2;       //1/s
+    s0 := w3*sp0;
+
+    //uppp  := ExactQuotient(s*(-s*up - 2*vp - h) - k, u);
+    //upp := uppp/(s*c3);
+    vh1 := s0*up1 + vp1 + h1;
+    upp1 := d5*s0 + d6 - w4*z0 - u0;
+    upp0 := d5*(vh1 + vp1) - w4*(y0 - vp0 + z0*(d6 - up1)) - u0*upp1;
+
+    //vpp := Vpl - (s*up + vp + h + Vpl) mod upp;
+    t0   := upp1*c3;
+    t1   := c2 + s0 - t0;
+    t2   := upp0*t1;
+    vpp1 := (upp1 + upp0)*(c3 + t1) - t0 - t2 - vh1;
+    vpp0 := t2 - s0*up0 - vp0 - h0;
+    //14M 2S 3C
+
+    //if ADD_DEBUG then
+    //    "12ADD2";
+    //end if; 
+    return <1, upp1, upp0, vpp1, vpp0, 0>;   
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg12ADDUP():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in 
+//                     reduced basis.
+//  up0,up1,vp0,vp1: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in 
+//                     reduced basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in arb_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding a degree 1 and degree 2 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg12ADDUP:= function(u0,v0,up0,up1,vp0,vp1,ccs)
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + Coeff(V,1)*x + v0;
+    up := x^2 + up1*x + up0;
+    vp := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + vp1*x + vp0;
+    Q := quo<R | u>;
+    
+    //Formulation
+    vp := -V-h - ((-V-h -vp) mod up);
+    d := up mod u;
+    if IsZero(d) then
+        dw := (v + vp + h) mod u; 
+        if IsZero(dw) then
+            upp := ExactQuotient(up,u);
+            vpp  := V - (V - vp) mod upp;
+            return 0,1,Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0;
+        end if;
+        k := ExactQuotient(f - vp*(vp + h),up);
+        s  := R!(Q!dw^-1)*k mod u;
+        //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(v+vp+h)-k,u); u:=-s*M1-M2;
+        upp  := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
+        upp  := upp/LeadingCoefficient(upp);
+        vpp  := V - (V + s*up + vp + h) mod upp;
+        return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),2-Degree(upp);
+    end if;
+    k := ExactQuotient(f - vp*(vp + h),up);
+    s := R!(Q!d^-1)*(v - vp) mod u;
+    //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(v+vp+h)-k,u); u:=-s*M1-M2;
+    upp  := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
+    upp  := upp/LeadingCoefficient(upp);
+    vpp  := V - (V + s*up + vp + h) mod upp;
+
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),2-Degree(upp);
+    */ //endIGNORE
+
+    f0:= ccs[1][1]; 
+    f1:= ccs[1][2];  
+    h0:= ccs[2][1]; 
+    h1:= ccs[2][2]; 
+    h2:= ccs[2][3];
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2]; 
+    y2:= ccs[3][3];
+    d2:= ccs[4][3]; 
+    d3:= ccs[4][4]; 
+    d4:= ccs[4][5];
+    d5:= ccs[4][6];
+    d6:= ccs[4][7];
+    c0:= ccs[5][1]; 
+    c1:= ccs[5][2]; 
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4]; 
+    c4:= ccs[5][5];
+
+    //vp := -V-h - ((-V-h -vp) mod up);
+    t2 := up1*c3;
+    t3 := c2 - t2;
+    t4 := up0*t3;
+    vp1 := vp1 - (up0 + up1)*(c3 + t3) + t2 + t4;
+    vp0 := vp0 - t4;
+
+    //d := up mod u;
+    t0 := u0*up1;
+    t1 := u0^2;
+    d  := up0 - t0 + t1;
+
+    if IsZero(d) then
+        //dw := (v + vp + h) mod u; 
+        dw := vp0 + v0 + h0 - u0*(c1 + vp1);
+        
+        if IsZero(dw) then
+            //upp := ExactQuotient(up,u);
+            upp0 := up1 - u0;
+            //vpp  := V - (V - vp) mod upp;
+            vpp0 := vp0 + upp0*(y1 - vp1 - upp0*(c2 - c3*upp0));
+
+            //if ADD_DEBUG then
+            //    "12ADDUP-P1inD2";
+            //end if;
+            return <0,1,upp0,y1,vpp0,0>; //n+np = 0
+        end if;//dw
+
+        //k := ExactQuotient(f - vp*(vp + h),up);
+        t2 := vp1 + c1;
+        t3 := vp0 + c0;
+        t4 := c2*t3;
+        k2 := c3*t2;
+        k1 := c4*(t3 + t2) - k2 - t4 - up1*k2;
+        k0 := d2 + t4 - vp1*(vp1 + h1) - up0*k2 - up1*k1;
+
+        //s  := R!(Q!dw^-1)*k mod u;
+        sp0 := (k0 - u0*(k1 - u0*k2));
+
+        if IsZero(sp0) then
+            if IsZero(t2) then
+                //if ADD_DEBUG then
+                //    "12ADDUP0";
+                //end if;                
+                return <0,0,1,y1,y0,2>;
+            end if;//t2
+
+            w2   := t2^-1;
+            upp0 := w2*t3  + d6 - up1 - u0; 
+            vpp0 := upp0*t2 - vp0 - h0;
+
+            //if ADD_DEBUG then
+            //    "12ADDUP1";
+            //end if;              
+            return <0, 1, upp0, y1, vpp0, 1>;
+        end if;//sp0
+
+        //s0 = sp0/d
+        w2 := (sp0*dw)^-1;    //1/s*d^2
+        w3 := w2*sp0;        //1/d
+        w4 := dw^2*w2;       //1/s
+        s0 := w3*sp0;
+
+        //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(v+vp+h)-k,u); u:=-s*M1-M2;
+        //upp  := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
+        //upp  := upp/LeadingCoefficient(upp);
+        vh1  := s0*up1 + vp1 + h1;
+        upp1 := w4*t2 - d5*s0 + d6  - u0;
+        upp0 := w4*(c0 + vp0 + t2*(d6 - up1)) - d5*(vp1 + vh1) - u0*upp1;
+
+        //vpp  := V - (V + s*up + vp + h) mod upp;
+        vpp1 := upp1*s0 - vh1;
+        vpp0 := s0*(upp0 - up0) - h0 - vp0;
+
+        //if ADD_DEBUG then
+        //    "12ADDUPP1inD2";
+        //end if;
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;//d
+
+    //z = k/c3
+    z0 := c1 + vp1;
+    //z1 := c0 + vp0 + z0*(d6 - up1);
+        
+    //sp0 := (v - vp) mod u;
+    sp0 := v0 - vp0 - u0*(y1 - vp1 - u0*c2 + t1*c3);
+    
+    if IsZero(sp0) then     
+        if IsZero(z0) then //vp1 == -y1-h1, so (f - h*vn - vn^2) is deg 3
+            //if ADD_DEBUG then
+            //    "12ADDUP0";
+            //end if;                
+            return <0,0,1,y1,y0,2>;
+        end if;//z0
+
+        w2   := z0^-1;
+        upp0 := w2*(vp0 + c0)  + d6 - up1 - u0; 
+        vpp0 := upp0*z0 - vp0 - h0;
+
+        //if ADD_DEBUG then
+        //    "12ADDUP1";
+        //end if;              
+        return <0, 1, upp0, y1, vpp0, 1>;
+    end if;//sp0
+
+    //s0 = sp0/d
+    w2 := (sp0*d)^-1;    //1/s*d^2
+    w3 := w2*sp0;        //1/d
+    w4 := d^2*w2;       //1/s
+    s0 := w3*sp0;
+
+    //u  := ExactQuotient(s*(-s*u1 - 2*v1 - h) + z, u2);
+    //u := u/LeadingCoefficient(u);
+    vh1  := s0*up1 + vp1 + h1;
+    upp1 := w4*z0 - d5*s0 + d6  - u0;
+    upp0 := w4*(c0 + vp0 + z0*(d6 - up1)) - d5*(vp1 + vh1) - u0*upp1;
+
+    //v := V + (-u1*s - v1 - h - V) mod u;
+    vpp1 := upp1*s0 - vh1;
+    vpp0 := s0*(upp0 - up0) - h0 - vp0;
+
+    //if ADD_DEBUG then
+    //    "12ADDUP2";
+    //end if;  
+    return <1, upp1, upp0, vpp1, vpp0, 0>;
+
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg2ADD():         
+// Input:     u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in 
+//                   reduced basis.
+//  up0,up1,vp0,vp1: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in 
+//                   reduced basis.
+//           ccs: Table of curve constants and precomputations, see 
+//                Precompuation in arb_splitG2_UTL.mag
+//      
+// Output: Mumford coordinates upp1,upp0,vpp1,vpp0 and balance weight npp for 
+//         for reduceed and balanced Dpp ~ D + Dp.               
+// Description: Explicit computation for adding a degree 2 and degree 2 divisor.                 
+///////////////////////////////////////////////////////////////////////////////
+Deg2ADD:= function(u0,u1,v0,v1,up0,up1,vp0,vp1,ccs)
+    /* //startIGNORE
+    //Poly Dev Testing
+    FF:=Parent(u0);
+    R<x>:=PolynomialRing(FF);
+    f := R!ccs[1];
+    h := R!ccs[2];
+    V := R!ccs[3];
+    u := x^2 + u1*x + u0;
+    v := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + v1*x + v0;
+    up := x^2 + up1*x + up0;
+    vp := Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + vp1*x + vp0;
+    Q := quo<R | up>;
+    
+    //Formulation
+    d := Resultant(u,up); // computed with 2x2 system
+    if IsZero(d) then
+        dw1 := u mod up; // = (a1^-1)*S for S,a1,b1 = XGCD(u,up);
+        if IsZero(dw1) then //u = up
+            dw2 := (vp+v+h) mod u;// = (b2^-1)*S for S,a2,b2 = XGCD(u,v + vp + h);
+            if IsZero(dw2) then //vp = -v-h
+                return 0,0,1,Coeff(V,1),Coeff(V,0),1;
+            end if;
+            k := ExactQuotient(f - v*(v + h),u);
+            b2 := LeadingCoefficient(dw2)^-1;
+            u := ExactQuotient(u,dw2*b2);
+            s := b2*k mod u;
+            upp := u^2;
+            vpp := V - (V - v - u*s) mod upp;
+            return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),0;
+        end if;
+        
+        a1 := LeadingCoefficient(dw1)^-1;
+        S1 := dw1*a1;
+        
+        dw3 := (vp+v+h) mod S1;// = (b2^-1)*S for S,a2,b2 = XGCD(S1,v + vp + h);
+        if IsZero(dw3) then
+            //S,a2,b2 := XGCD(S1,vp+v + h);
+            //S1 = S, a2 = 1, b2 = 0;
+            u := ExactQuotient(u,S1);
+            up := ExactQuotient(up,S1);
+            s  := a1*(vp - v) mod up;
+            upp := u*up;
+            vpp := V - (V - v - u*s) mod upp;
+            return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),2 - Degree(upp);
+        end if;
+
+        k := ExactQuotient(f - v*(v + h),u);
+        //S,a2,b2 := XGCD(S1,vp+v + h);
+        //S := 1;
+        b2 :=FF!dw3^-1;
+        t := (1 - b2*(v + vp + h)) mod up;
+        a2 := ExactQuotient(t,S1);
+        s  := (a2*a1*(vp - v) + bxz2*k) mod up;           
+
+        //M1 := ExactQuotient(u*s-v+v,up); M2:=ExactQuotient(s*(vp+v+h)-k,up); u:=-s*M1-M2;
+        upp  := ExactQuotient(-s*(s*u + 2*v + h) + k, up);
+        upp   := upp/LeadingCoefficient(upp);
+        vpp   := V - (V + s*u + v + h) mod upp;
+        if Degree(s) eq 1 and Degree(s*u + 2*v + h) lt 3 then
+            npp := 2 - Degree(upp);
+        else
+            npp := 0;
+        end if;
+        
+        return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),npp;
+    end if;
+    
+    s := R!(Q!u^-1)*(vp-v) mod up;  //Using 2x2 system
+    k := ExactQuotient(f - v*(v + h),u);
+    //M1 := ExactQuotient(u*s-v+v,up); M2:=ExactQuotient(s*(vp+v+h)-k,up); u:=-s*M1-M2;
+    upp  := ExactQuotient(-s*(s*u + 2*v + h) + k, up);
+    upp   := upp/LeadingCoefficient(upp);
+    vpp   := V - (V + s*u + v + h) mod upp;
+    if Degree(s) eq 1 and Degree(s*u + 2*v + h) lt 3 then
+        npp := 2 - Degree(upp);
+    else
+        npp := 0;
+    end if;
+    
+    return Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,1),Coeff(vpp,0),npp;
+    */ //endIGNORE
+
+    
+    f0:= ccs[1][1]; 
+    f1:= ccs[1][2]; 
+    f2:= ccs[1][3]; 
+    f3:= ccs[1][4]; 
+    f4:= ccs[1][5]; 
+    f5:= ccs[1][6]; 
+    f6:= ccs[1][7];
+    h0:= ccs[2][1]; 
+    h1:= ccs[2][2]; 
+    h2:= ccs[2][3]; 
+    h3:= ccs[2][4];
+    y0:= ccs[3][1]; 
+    y1:= ccs[3][2]; 
+    y2:= ccs[3][3]; 
+    y3:= ccs[3][4];
+    c1:= ccs[5][2]; 
+    c2:= ccs[5][3]; 
+    c3:= ccs[5][4];
+    c4:= ccs[5][5];
+    c5:= ccs[5][6];
+    d0:= ccs[4][1];
+    d1:= ccs[4][2];
+    d2:= ccs[4][3];
+    d5:= ccs[4][6];
+    d6:= ccs[4][7];
+
+    
+    //d := Resultant(u,up); // computed with 2x2 system
+    m3 := up1 - u1;
+    m4 := u0 - up0;
+    m1 := m4 + up1*m3;
+    m2 := -up0*m3;
+    d  := m1*m4 - m2*m3;
+
+    //Test for special case
+    if IsZero(d) then
+        //dw1 := u mod up; // = (a1^-1)*S for S,a1,b1 = XGCD(u,up); //dw1 := -m3x + m4;
+        if IsZero(m3) then //u = up
+            //dw2 := (vp+v+h) mod u;// = (b2^-1)*S for S,a2,b2 = XGCD(u,v + vp + h);
+            t1 := v1 + h1;
+            t2 := u1*c3;
+            t3 := c2 - t2;
+            t4 := u0*t3;
+            dw21:= vp1 + t1 - (u0 + u1)*(c3 + t3) + t2 + t4;
+            dw20:= vp0 + v0 + h0 - t4;
+
+            if IsZero(dw20) and IsZero(dw21) then //vp = -v-h
+                //if ADD_DEBUG then
+                //    "2ADD0";
+                //end if;
+                return <0,0,1,y1,y0,1>;
+            end if;//dw20dw21
+
+            //k := ExactQuotient(f - v*(v + h),u);
+            t2 := y1 - v1;
+            t3 := y0 - v0;
+            t4 := c2*t3;
+            k2 := c3*t2;
+            k1 := c4*(t3 + t2) - k2 - t4 - u1*k2;
+            k0 := d2 + t4 - v1*t1 - u0*k2 - u1*k1;
+
+            //b2 := LeadingCoefficient(dw2)^-1;
+            b2 := dw21^-1;
+
+            //u := ExactQuotient(u,dw2*b2);
+            u0 := u1 - dw20*b2;
+
+            //s := b2*k mod u;
+            s0 := b2*(k0 - u0*(k1 - u0*k2));
+
+            //upp := u^2;
+            upp1 := u0 + u0;
+            upp0 := u0^2;
+
+            //vpp := V - (V - v - u*s) mod upp;
+            vpp1 := s0 + v1;
+            vpp0 := v0 + u0*s0;
+
+            //if ADD_DEBUG then
+            //    "2ADDDBL2";
+            //end if;
+            return <1,upp1,upp0,vpp1,vpp0,0>;
+        end if;//m3
+
+        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (-m3)^-1;
+        //S1 := dw1*a1;//S10 := m4*a1;//S1 := x + S10;
+        //dw3 := (vp+v+h) mod S1;// = (b2^-1)*S for S,a2,b2 = XGCD(S1,v + vp + h);
+        t0 := v0 + h0;
+        vh1 := v1 + h1;
+        M2 := m3^2;
+        M3 := -m3*M2;
+        dw3 := M3*(vp0 + t0) - m4*(M2*(vp1 + vh1) + m4*(m3*c2 + m4*c3));
+  
+        if IsZero(dw3) then
+            //S,a2,b2 := XGCD(S1,vp+v + h);
+            //S1 = S, a2 = 1, b2 = 0;
+
+            //a1 := LeadingCoefficient(dw1)^-1;
+            //S1 := dw1*a1;
+            a1 := -m3^-1;
+            S1 := m4*a1;
+
+            //u := ExactQuotient(u,S1);
+            //up := ExactQuotient(up,S1);
+            u0 := u1 - S1;             
+            up0 := up1 - S1;
+
+            //s  := a1*(vp - v) mod up;
+            s0 := a1*(vp0 - v0 - up0*(vp1 - v1));
+
+            //upp := u*up;
+            upp1 := u0 + up0;
+            upp0 := u0*up0;
+
+            //vpp := V - (V - v - u*s) mod upp;
+            vpp1 := v1 + s0;
+            vpp0 := v0 + s0*u0;
+
+            //if ADD_DEBUG then 
+            //    "2ADD1ADD2-P1=P3";
+            //end if;
+            return <1,upp1,upp0,vpp1,vpp0,0>;
+        end if;//dw3
+
+        //k := ExactQuotient(f - v*(v + h),u);
+        t2 := y1 - v1;
+        t3 := y0 - v0;
+        t4 := c2*t3;
+        k2 := c3*t2;
+        k1 := c4*(t3 + t2) - k2 - t4 - u1*k2;
+        k0 := d2 + t4 - v1*vh1 - u0*k2 - u1*k1;
+
+        //S,a2,b2 := XGCD(S1,vp+v + h);S := 1;
+        //T := (1 - b2*(v + vp + h)) mod up;
+        //a2 := ExactQuotient(T,S1);
+        //a12 := a1*a2;
+        //a12 := M2*T1*(M2/dw3); with weight 1/M2
+        t2 := c2 - up1*c3;
+        a12 := -M2*(vp1 + vh1 - up0*c3 - up1*t2);       
+        
+        //sp :=  (a12*(vp - v) + M3*k) mod up; s(dw3)
+        sp1 := a12*(vp1 - v1) + M3*(k1 - up1*k2);
+        sp0 := a12*(vp0 - v0) + M3*(k0 - up0*k2);
+        D  := dw3^2;
+
+        //Rest same as frequent case with d=dw3
+        if IsZero(sp1) then  //s1 = 0
+            if IsZero(sp0) then
+                //if ADD_DEBUG then
+                //    "2ADD0nP1=P3";
+                //end if; 
+                return <0,0,1,y1,y0,0>;
+            end if;//sp0
+
+            w3 := (dw3*sp0)^-1;  //1/s0D
+            s0 := sp0^2*w3;    //s0
+            w4 := D*w3;        
+            t0   := s0*u1;
+            upp0 := w4*(s0*(s0*d5 + d6) - y1 + v1) - up1;
+            vpp0 := upp0*(t0 + c1 + v1 - upp0*(c2 + s0 - c3*upp0)) - v0 - h0 - s0*u0;
+
+            //if ADD_DEBUG then
+            //    "2ADD1n0P1=P3";
+            //end if; 
+            return <0, 1, upp0, y1, vpp0,0>;
+        end if;//sp1
+
+        w1 := -sp1*(sp1 + c3*dw3);
+
+        if IsZero(w1) then  //s1 = -c3
+            t1 := c2 - c3*u1;
+            w0 := sp0 + dw3*t1;
+
+            if IsZero(w0) then
+                //if ADD_DEBUG then
+                //    "2ADD0n2P1=P3";
+                //end if;
+                return <0,0,1,y1,y0,2>;
+            end if;//w0
+
+            w2 := (dw3*w0)^-1;
+            s0 := sp0*w0*w2;
+            w3 := D*w2;
+            t0   := s0*u1;
+            t2   := t0 - c3*u0 + v1 + c1;
+            t3   := s0 + t1;
+            upp0 := w3*(t2 - s0*d5*t3) - up1;
+            vpp0 := upp0*(t2 - upp0*t3) - v0 - h0 - s0*u0;
+
+            //if ADD_DEBUG then
+            //    "2ADD1n1P1=P3";
+            //end if; 
+            return <0,1,upp0,y1,vpp0,1>;
+        end if;//w1
+
+        w2 := (dw3*w1)^-1; //1/d^3*(s1*(s1 + c3))
+        w3 := w2*w1;  //1/d
+        w4 := w2*D*dw3; //1/(s1*(s1 + c3))
+        s1 := sp1*w3;
+        s0 := sp0*w3;
+
+        l0   := s0*u0;
+        t1   := s1*u1;
+        l2   := s0 + t1;
+        t2   := l2 + c2;
+        l1   := (s0 + s1)*(u0 + u1) - l0 - t1;
+        upp1 := -w4*(s1*(t2 + s0) + s0*c3) - up1;
+        upp0 := -w4*(s0*t2 + s1*(l1 + v1 + vh1) - c3*(y1 - v1)) - up0 - up1*upp1;
+
+        t0   := c3 + s1;
+        t1   := upp1*t0;
+        t2   := t2 - t1;
+        t3   := upp0*t2;
+        vpp1 := (upp0 + upp1)*(t0 + t2) - vh1 - l1 - t1 - t3;
+        vpp0 := t3 - v0 - h0 - l0;
+        //if ADD_DEBUG then
+        //    "2ADD2P1=P3";
+        //end if;
+        return <1,upp1,upp0,vpp1,vpp0,0>;
+    end if;//d
+
+    r0  := vp0 - v0;
+    r1  := vp1 - v1;
+    sp1 := r0*m3 + r1*m4;
+    sp0 := r0*m1 + r1*m2;
+    D  := d^2;
+    
+    if IsZero(sp1) then  //s1 = 0
+
+        if IsZero(sp0) then
+            //if ADD_DEBUG then
+            //    "2ADD0s0=0";
+            //end if; 
+            return <0,0,1,y1,y0,0>;
+        end if;//sp0
+
+        w3 := (d*sp0)^-1;  //1/s0D
+        s0 := sp0^2*w3;    //s0
+        w4 := D*w3;        
+        t0   := s0*u1;
+        upp0 := w4*(s0*(s0*d5 + d6) - y1 + v1) - up1;
+        vpp0 := upp0*(t0 + c1 + v1 - upp0*(c2 + s0 - c3*upp0)) - v0 - h0 - s0*u0;
+
+        //if ADD_DEBUG then
+        //    "2ADD1s1=0";
+        //end if;
+        return <0, 1, upp0, y1, vpp0,0>;
+    end if;//sp1
+
+    w1 := -sp1*(sp1 + c3*d);
+
+    if IsZero(w1) then  //s1 = -c3
+        t1 := c2 - c3*u1;
+        w0 := sp0 + d*t1;
+
+        if IsZero(w0) then
+            //if ADD_DEBUG then 
+            //    "2ADD0s1=-c3";
+            //end if;
+            return <0,0,1,y1,y0,2>;
+        end if;//w0
+
+        w2 := (d*w0)^-1;
+        s0 := sp0*w0*w2;
+        w3 := D*w2;
+        t0   := s0*u1;
+        t2   := t0 - c3*u0 + v1 + c1;
+        t3   := s0 + t1;
+        upp0 := w3*(t2 - s0*d5*t3) - up1;
+        vpp0 := upp0*(t2 - upp0*t3) - v0 - h0 - s0*u0;
+
+        //if ADD_DEBUG then
+        //    "2ADD1s1=-c3";
+        //end if;
+        return <0,1,upp0,y1,vpp0,1>;
+    end if;//w1
+
+    w2 := (d*w1)^-1; //1/d^3*(s1*(s1 + c3))
+    w3 := w2*w1;  //1/d
+    w4 := w2*D*d; //1/(s1*(s1 + c3))
+    s1 := sp1*w3;
+    s0 := sp0*w3;
+
+    vh1  := v1 + h1;
+    l0   := s0*u0;
+    t1   := s1*u1;
+    l2   := s0 + t1;
+    t2   := l2 + c2;
+    l1   := (s0 + s1)*(u0 + u1) - l0 - t1;
+    upp1 := -w4*(s1*(t2 + s0) + s0*c3) - up1;
+    upp0 := -w4*(s0*t2 + s1*(l1 + v1 + vh1) - c3*(y1 - v1)) - up0 - up1*upp1;
+
+    t0   := c3 + s1;
+    t1   := upp1*t0;
+    t2   := t2 - t1;
+    t3   := upp0*t2;
+    vpp1 := (upp0 + upp1)*(t0 + t2) - vh1 - l1 - t1 - t3;
+    vpp0 := t3 - v0 - h0 - l0;
+
+    //if ADD_DEBUG then
+    //    "2ADD2";
+    //end if;
+    return <1,upp1,upp0,vpp1,vpp0,0>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ADD():
+// Input: u1,v1,n1: Polynomials u,v and number n representing an arbirtrary
+//                  divisor D1 over a split model HEC.
+//        u2,v2,n2: Polynomials u,v and number n representing an arbirtrary
+//                  divisor D2 over a split model HEC.
+//             ccs: Table of curve constants and precomputations, see 
+//                  Precompuation in arb_splitG2_UTL.mag
+//
+// Output: Mumford coordinates upp2,upp1,upp0,vpp1,vpp0 and balanced n 
+//         for D1 + D2               
+// Description: Explicit computation for adding any two divisors in reduced    
+//              basis. Handles all cases explicitly.               
+///////////////////////////////////////////////////////////////////////////////
+ADD:= function(d1,d2,ccs)//startIGNORE
+
+    if IsOne(d1[1]) then
+        if IsOne(d2[1]) then
+            return Deg2ADD(d1[3],d1[2],d1[5],d1[4],d2[3],d2[2],d2[5],d2[4],ccs); //Deg2Add(0)
+
+        elif IsOne(d2[2]) then
+            if IsZero(d2[6]) then
+                return Deg12ADDUP(d2[3],d2[5],d1[3],d1[2],d1[5],d1[4],ccs); //Deg12ADDUP
+            else
+                return Deg12ADD(d2[3],d2[5],d1[3],d1[2],d1[5],d1[4],ccs); //Deg12ADD
+            end if;
+        else
+            if d2[6] eq 0 then
+                return Deg02ADDUP(d1[3],d1[2],d1[5],d1[4],ccs); //Deg02ADD with UP Adjust
+            elif d2[6] eq 1 then
+            
+                //if ADD_DEBUG then
+                //    "20ADD2";
+                //end if;
+                return <d1[1],d1[2],d1[3],d1[4],d1[5],0>; //NEUTRAL
+            else
+                return Deg02ADDDWN(d1[3],d1[2],d1[5],d1[4],ccs); //Deg02ADD with DWN Adjust
+            end if;
+        end if;
+
+    elif IsOne(d1[2]) then
+        if IsOne(d2[1]) then
+            if IsZero(d1[6]) then
+                return Deg12ADDUP(d1[3],d1[5],d2[3],d2[2],d2[5],d2[4],ccs); //Deg12ADDUP
+            else
+                return Deg12ADD(d1[3],d1[5],d2[3],d2[2],d2[5],d2[4],ccs); //Deg12ADD
+            end if;
+
+        elif IsOne(d2[2]) then
+            n := d1[6] + d2[6] -1;
+            if n eq 1 then
+                return Deg1ADDDWN(d1[3],d1[5],d2[3],d2[5],ccs); //Deg1ADD with DWN Adjust
+            elif n eq -1 then
+                return Deg1ADDUP(d1[3],d1[5],d2[3],d2[5],ccs); //Deg1ADD with DWN Adjust
+            else
+                return Deg1ADD(d1[3],d1[5],d2[3],d2[5],ccs); //Deg1ADD with DWN Adjust
+            end if;
+        else
+            if d2[6] eq 0 then
+                if d1[6] eq 0 then
+                    return Deg01ADDUP(d1[3],d1[5],ccs); //Deg01ADD with UP Adjust
+                else
+                    //if ADD_DEBUG then
+                    //    "10ADD1n0";
+                    //end if;
+                    return <d1[1],d1[2],d1[3],d1[4],d1[5],0>; 
+                end if;
+            elif d2[6] eq 1 then
+                //if ADD_DEBUG then
+                //    "10ADD1nn";
+                //end if;
+                return <d1[1],d1[2],d1[3],d1[4],d1[5],d1[6]>; //NEUTRAL
+            else
+                if d1[6] eq 0 then
+                    //if ADD_DEBUG then
+                    //    "10ADD1n1";
+                    //end if;
+                    return <d1[1],d1[2],d1[3],d1[4],d1[5],1>;
+                else
+                    return Deg01ADDDWN(d1[3],d1[5],ccs); //Deg01ADD with DWN Adjust
+                end if;
+            end if;
+        end if;
+
+    else 
+        if IsOne(d2[1]) then
+            if d1[6] eq 0 then
+                return Deg02ADDUP(d2[3],d2[2],d2[5],d2[4],ccs); //Deg02ADD with UP Adjust
+            elif d1[6] eq 1 then
+                //if ADD_DEBUG then
+                //    "02ADD2";
+                //end if;
+                return <d2[1],d2[2],d2[3],d2[4],d2[5],0>; //NEUTRAL
+            else
+                return Deg02ADDDWN(d2[3],d2[2],d2[5],d2[4],ccs); //Deg02ADD with DWN Adjust
+            end if;
+
+        elif IsOne(d2[2]) then
+            if d1[6] eq 0 then
+                if d2[6] eq 0 then
+                    return Deg01ADDUP(d2[3],d2[5],ccs); //Deg01ADD with UP Adjust
+                else
+                    //if ADD_DEBUG then
+                    //    "01ADD1n0";
+                    //end if;
+                    return <d2[1],d2[2],d2[3],d2[4],d2[5],0>; 
+                end if;
+            elif d1[6] eq 1 then
+                //if ADD_DEBUG then
+                //    "01ADD1nn";
+                //end if;
+                return <d2[1],d2[2],d2[3],d2[4],d2[5],d2[6]>; //NEUTRAL
+            else
+                if d2[6] eq 0 then
+                    //if ADD_DEBUG then
+                    //    "01ADD1n1";
+                    //end if;
+                    return <d2[1],d2[2],d2[3],d2[4],d2[5],1>;
+                else
+                    return Deg01ADDDWN(d2[3],d2[5],ccs); //Deg01ADD with DWN Adjust
+                end if;
+            end if;
+
+        else // Degree 0 with 0 additions, all precomputed
+            //if ADD_DEBUG then
+            //    "0ADD0";
+            //end if;
+            return <0,0,1,ccs[3][2],ccs[3][1],d1[6] + d2[6] -1>;
+            //n := n1 + n2 - 1;
+        end if;
+    end if;
+end function;//endIGNORE

@@ -1,0 +1,730 @@
+///////////////////////////////////////////////////////////////////////////////
+//////// POLYNOMIAL BALANCED DIVISOR ARITHMETIC OVER ARBIRTRARY FIELDS. ///////
+///////////////////////////////////////////////////////////////////////////////
+//
+// This work extends from prime field only polynomial divisor arithmetic by 
+// Andrew V.Sutherland, http://arxiv.org/abs/1607.08602, to work over
+// arbitrary fields.
+//  
+// For more detials see XXXXXXXXXXXXXXXX, Sebastian Lindner, 2019.
+
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This source file contains arbitrary field implementations of the following 
+// alogirthms: Precompute, Compose, Reduce, Adjust, Addition, Negation.
+// Also given are functions for generating random split hyperelliptic curves 
+// over arbitrary finite fields and for generating random divisor classes on 
+// them, as well as functions for testing the code and converting between
+// adapted and reduced basis.
+
+//-----------------------------------------------------------------------------
+// SPLIT HYPERELLIPTIC CURVES
+//-----------------------------------------------------------------------------
+// Split Hyperelliptic curves are of the form  y^2 + y*h(x) = f(x) where f  
+// degree 2g + 2, h degree <= g+1. The points at infinity are P_infpl:=(1:1:0)
+// and P_infmin:=(1:-1:0). Hyperelliptic conjugate of affine point P=(x,y) is
+// -P=(x,-y-h). The genus 2 infinity divisor is D_inf = P_infpl + P_infmin.
+
+//-----------------------------------------------------------------------------
+// MUMFORD REPRESENTATION
+//-----------------------------------------------------------------------------
+// For polynomials u,v with u monic, deg(v) < deg(u) and u dividing f-h*v-v^2
+// we use (u,v) to denote the Mumford representations of the affine semi-
+// reduced divisor with points (a,v(a)) where a ranges over the roots of u, and
+// v interpolates the roots.
+
+//-----------------------------------------------------------------------------
+// BALANCED REPRESENTATION
+//-----------------------------------------------------------------------------
+// For u,v as above with deg(u) <= g and 0 <= n <= g-deg(u) we take
+// (u,v,n) = (u,v) + n*P_infpl + (g-deg(u)-n)P_infmin - D_inf as the unique 
+// representation of its divisor class.
+
+//-----------------------------------------------------------------------------
+// Vpl POLYNOMIAL
+//-----------------------------------------------------------------------------
+// The auxiliary polynomial Vpl is the unique monic poly of deg g + 1 for which 
+// deg(f + V*h(x) - V^2) <= g. For (u,v,n) as above, adjusting with Vpl is 
+// tantatmount to adding P_infpl to divisor (u,v,n). Adjusting with -Vpl-h is 
+// tantatmount to adding P_infmin to divisor (u,v,n). 
+
+//-----------------------------------------------------------------------------
+// REDUCED BASIS
+//-----------------------------------------------------------------------------
+// Given a divisor D=(u,v,n) in regular Mumford represenation (adapted basis)  
+// as above, the reduced basis of D is (u,vr,n) where vr:= Vpl-((Vpl-v) mod u).
+// vr has degree 3 and Vpl3 = vr3, Vpl2 = vr2, where Vpl is given as above. To 
+// convert from reduced to adapted basis, take v = vr (mod u). Due to 
+// cancelations during explicit computation, reduced basis of a divisor is 
+// considered faster when computing divisor arithmetic with explicit formulas 
+// over genus 2 split curves. The polynomial arithmetic given here is in 
+// adapted basis.
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////FUNCTIONS///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+// Coeff(poly,n)
+//-----------------------------------------------------------------------------
+// Input: poly: Polynomial over a field.
+//           n: natural number.
+//
+// Return: The n-monomial's coefficient.
+//-----------------------------------------------------------------------------
+Coeff := function(poly,n)
+    c:=Coefficients(poly); return n+1 le #c select c[n+1] else 0;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// RandomSplitCurve(g,q,hIsZero)
+//-----------------------------------------------------------------------------
+// Input:       g: genus.
+//              q: field parameter.
+//        hIsZero: Boolean, if true then h polynomial is 0.
+//
+// Return: Random(ish) hyperelliptic polynomials of curve with two points at
+//         infinity f and h in GF(q)[x] where f is seperable of degree 2g+2 and 
+//         polynomial h of degree <= g+1.
+//-----------------------------------------------------------------------------
+RandomSplitCurve := function(g,q,hIsZero)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h for genus g
+        f:= R ! [Random(F): i in [0..2*g+2]];
+        if hIsZero then
+            h:= R ! 0;
+        else
+            h:= R ! [Random(F): i in [0..g+1]];
+        end if;
+
+        //Check if f and h are hyperelliptic polynomials
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h are hyperelliptic polynomials, check to see if
+        //the curve has two points at infinity and is genus g.
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 2) and (Degree(f) eq 2*g+2) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// ValidateSplitCurve(f,h)
+//-----------------------------------------------------------------------------
+// Input: f: polynomial.
+//        h: polynomial.
+//
+// Return: Verifies that f and h are hyperelliptic polynomials for a curve of 
+//         genus g with two points at infinity and returns g.
+//-----------------------------------------------------------------------------
+ValidateSplitCurve := function(f,h)
+    try
+        C:=HyperellipticCurve(f,h);
+        isHC:= true;
+    catch e
+        isHC:= false;
+    end try;
+
+    assert isHC;
+    g:= ExactQuotient(Degree(f)-2,2);
+    pointsAtInf:= PointsAtInfinity(C);
+    assert #pointsAtInf eq 2;
+    return g;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// ComputeVpl(f,h)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials of a split curve.
+//
+// Return: Unique Vpl polynomial of degree g+1 for which 
+//         deg(f-h*Vpl-Vpl^2) <= g.
+//-----------------------------------------------------------------------------
+ComputeVpl := function(f,h)
+    g := ValidateSplitCurve(f,h);
+    R<x>:=PolynomialRing(BaseRing(f));
+
+    //g+1 coefficient of h, can be 0
+    hl:= Coeff(h,g+1);
+    //Leading coefficient of f, has to have degree 2g+2
+    fl:= Coeff(f,2*g+2);
+
+    //Leading term of Vpl is set to be a solution of the quadratic equation fl - hl*x - x^2
+    Vl:= -Coeff(Factorization(fl - hl*x - x^2)[2][1],0);
+    Vpl := Vl*x^(g+1);
+
+    //Derivative of fl - hl*yl - yl^2, denominator in discovery of Vpl.
+    dinv:= (2*Vl + hl)^-1;
+    
+
+    //Work down one term at a time, using first g+1 terms of f, and all of h
+    i:=g;    
+    while i ge 0 do
+        Vpl +:= dinv*Coeff(f - h*Vpl - Vpl^2, g+1+i)*x^i;
+        i-:=1;
+    end while;
+    assert Degree(f - h*Vpl - Vpl^2) le g;
+    return Vpl;
+
+end function;
+
+
+//-----------------------------------------------------------------------------
+// ValidateReducedDivisorAB(D,f,h)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,v,n) where u,v are Mumford polynomials and n is 
+//             balancing weight.
+//        f,h: hyperelliptic polynomials corresponding to curve that D is 
+//             is validated for.
+//
+// Return: Nothing, verify that D is a valid unique divisor class 
+//         representative in adapted basis.
+//-----------------------------------------------------------------------------
+ValidateReducedDivisorAB := procedure(D,f,h)
+    g := ValidateSplitCurve(f,h);
+    assert IsMonic(D[1]) and Degree(D[2]) lt Degree(D[1]) and D[3] ge 0 and D[3] le g-Degree(D[1]);
+    assert IsDivisibleBy(f-h*D[2]-D[2]^2,D[1]);
+end procedure;
+
+
+//-----------------------------------------------------------------------------
+// ValidateReducedDivisorRB(D,f,h)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,vr,n) where for u,v are Mumford polynomials, 
+//             vr = Vpl - ((Vpl - v) mod u) and n is balancing weight.
+//        f,h: hyperelliptic polynomials corresponding to curve that D is 
+//             is validated for.
+//
+// Return: Nothing, verify that D is a valid unique divisor class 
+//         representative in reduced basis.
+//-----------------------------------------------------------------------------
+ValidateReducedDivisorRB := procedure(D,f,h)
+    g := ValidateSplitCurve(f,h);
+    assert IsMonic(D[1]) and Degree(D[2]) eq g + 1 and D[3] ge 0 and D[3] le g-Degree(D[1]);
+    assert IsDivisibleBy(f-h*D[2]-D[2]^2,D[1]);
+end procedure;
+
+
+//-----------------------------------------------------------------------------
+// ValidateSemiReducedDivisor(D,f,h)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,v,n) where u,v are Mumford polynomials and n is 
+//             balancing weight.
+//        f,h: hyperelliptic polynomials corresponding to curve that D is 
+//             is validated for.
+//
+// Return: Nothing, verify that D is a valid  divisor class in semi reduced 
+//         representation with deg(u)+n <= 2g.
+//-----------------------------------------------------------------------------
+ValidateSemiReducedDivisor := procedure(D,f,h)
+    g := ValidateSplitCurve(f,h);
+    assert IsMonic(D[1]) and Degree(D[2]) lt Degree(D[1]) and Degree(D[1]) le 2*g and D[3] ge -Ceiling(g/2) and Degree(D[1])+ D[3] le g+Ceiling(g/2);
+    assert IsDivisibleBy(f-h*D[2]-D[2]^2,D[1]);
+end procedure;
+
+
+//-----------------------------------------------------------------------------
+// ReducedBasis(D,f,h)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,v,n) where u,v are Mumford polynomials and n is 
+//             balancing weight.
+//        f,h: hyperelliptic polynomials corresponding to curve that D is 
+//             is validated for.
+//
+// Return: Unique divisor Dhat = (u,vr,n) ~ D, in reduced basis where 
+//         vr = Vpl - ((Vpl - v) mod u).
+//-----------------------------------------------------------------------------
+ReducedBasis := function(D,f,h)
+    g:= ValidateSplitCurve(f,h);
+    ValidateReducedDivisorAB(D,f,h);
+    v:=D[2];
+    assert Degree(v) lt g;
+    Vpl:= ComputeVpl(f,h);
+    vhat := Vpl - ((Vpl - v) mod D[1]);
+    Dhat := <D[1],vhat,D[3]>;
+    ValidateReducedDivisorRB(Dhat,f,h);
+    return Dhat;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// NegativeReducedBasis(D,f,h)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,v,n) where u,v are Mumford polynomials and n is 
+//             balancing weight.
+//        f,h: hyperelliptic polynomials corresponding to curve that D is 
+//             is validated for.
+//
+// Return: Unique divisor Dhat = (u,vr,n) ~ D, in reduced basis where 
+//         vr = -Vpl - h + ((Vpl + h + v) mod u).
+//-----------------------------------------------------------------------------
+NegativeReducedBasis := function(D,f,h)
+    g:= ValidateSplitCurve(f,h);
+    ValidateReducedDivisorAB(D,f,h);
+    v:=D[2];
+    assert Degree(v) lt g;
+    Vpl:= ComputeVpl(f,h);
+    vhat := -Vpl - h + ((Vpl + h + v) mod D[1]);
+    Dhat := <D[1],vhat,D[3]>;
+    ValidateReducedDivisorRB(Dhat,f,h);
+    return Dhat;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// AdaptedBasis(D,f,h)
+//-----------------------------------------------------------------------------
+// Input:   D: D is (u,vr,n) where for u,v are Mumford polynomials, 
+//             vr = Vpl - ((Vpl - v) mod u) and n is balancing weight.
+//        f,h: hyperelliptic polynomials corresponding to curve that D is 
+//             is validated for.
+//
+// Return: Unique divisor Dhat = (u,v,n) ~ D, in adapted basis where 
+//         v = vr mod u.
+//-----------------------------------------------------------------------------
+AdaptedBasis := function(D,f,h)
+    g:= ValidateSplitCurve(f,h);
+    ValidateReducedDivisorRB(D,f,h);
+    v:=D[2];
+    assert Degree(v) eq g+1;
+    vhat := v mod D[1];
+    Dhat := <D[1],vhat,D[3]>;
+    ValidateReducedDivisorAB(Dhat,f,h);
+    return Dhat;
+end function;
+
+//-----------------------------------------------------------------------------
+// CRTLift(A,B)
+//-----------------------------------------------------------------------------
+// Input: A: Relatively prime polynomials A=[a_1,a_2,...,a_n] over F[x]
+//        B: Polynomials B=[b1,...,bn]
+//
+// Return: CRT lift by Garner's algorithm, compute b mod a_1*...*a_n in F[x] 
+//         such that b ~ b_i mod a_i for all i.    
+//-----------------------------------------------------------------------------
+CRTLift := function(A,B)
+    assert #A ge 1;
+    if #A eq 1 then return B[1]; end if;
+    if #A eq 2 then return (B[1]*A[2]*InverseMod(A[2],A[1]) + B[2]*A[1]*InverseMod(A[1],A[2])) mod (A[1]*A[2]); end if;
+    n := Ceiling(#A/2);
+    return $$([&*A[[1..n]],&*A[[n+1..#A]]],[$$(A[[1..n]],B[[1..n]]),$$(A[[n+1..#A]],B[[n+1..#B]])]);
+end function;
+
+
+//-----------------------------------------------------------------------------
+// RandomDivisorAB(f,h)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to curve that divisor is 
+//             is being created for.
+//
+// Return: Fairly random divisor D = (u,v,n), in adapted basis over
+//         HyperellipticCurve(f,h).
+//-----------------------------------------------------------------------------
+RandomDivisorAB := function(f,h)
+    g  := ValidateSplitCurve(f,h);
+    FF := BaseRing(f);
+    R<x> := Parent(f);  
+    
+
+    while true do
+        tryAgain:= false;
+        //Keeps creating u until GCD(u,Derivative(u)) eq 1 
+        u := R![Random(FF) : i in [1..g+1]];
+        if GCD(u,Derivative(u)) ne 1 then 
+            continue; 
+        end if;
+        u := u/LeadingCoefficient(u);
+
+        //Checks for deg 0 u
+        if Degree(u) eq 0 then 
+            v:=R!0; 
+            break; 
+        end if;
+
+        //Attempt to compute v such that (v^2 + v*h = f) mod u with 
+        //deg(v) < deg(u). 
+        uFactors := [a[1] : a in Factorization(u)];
+        
+        for factor in uFactors do 
+            if Degree(factor) ne 1 then
+                tryAgain:= true;
+                break;
+            end if;
+        end for;
+
+        //If tryAgain flag was set, skip the rest and try again with another u 
+        if tryAgain then
+            continue;
+        end if;
+        
+        //Take factorization of u, find v such that
+        //(v^2 + v*h = f) mod ui for u = u1*u2*..*ui*..*ud, where d
+        //d is Deg(u)
+        Vs := [];
+        for uFactor in uFactors do
+            //Create quotient field with first u factor
+            S,projmap:=quo<R|uFactor>;
+
+            vChoices:= [a[1] : a in Factorization(x^2 + R!projmap(h)*x - R!projmap(f))];
+            //Make sure linear factorization exists
+            //If not, then exit for loop, and force retry
+            if Degree(vChoices[1]) eq 2 then
+                tryAgain:= true;
+                break;
+            end if;
+            //Randomize choice of factor
+            Append(~Vs, R!-Coeff(vChoices[Random([1,#vChoices])],0));
+        end for;
+
+        //If tryAgain flag was set, skip the rest and try again with another u 
+        if tryAgain then
+            continue;
+        end if;
+
+        // If no issues arose, then we can lift back to mod u
+        v:=CRTLift(uFactors,Vs);
+
+        //Confirm proper divisor
+        assert IsDivisibleBy(v^2 + v*h - f,u);
+        break;
+
+    end while;
+    return <u,v,Random(g-Degree(u))>;
+end function;
+
+//-----------------------------------------------------------------------------
+// RandomDivisorRB(f,h,d)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to curve that divisor is 
+//             is being created for.
+//          d: Intended degree of divisor.
+//
+// Return: Fairly random divisor D = (u,v,n) of degree d, in reduced basis over
+//         HyperellipticCurve(f,h).
+//-----------------------------------------------------------------------------
+RandomDivisorRB:= function(f,h,d)
+    adapted:= RandomDivisorAB(f,h,d);
+    return ReducedBasis(adapted,f,h);
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Compose(D1,D2,f,h)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) divisors over 
+//               HyperellipticCurve(f,h), to be composed together.
+//          f,h: hyperelliptic polynomials corresponding to curve that divisors  
+//               are composed over.
+//    
+// Return: Semi-reduced divisor D3 = (u3,v3,n3) ~ D1 + D2 using algorithm from
+//         Section 10.4 Galbraith book.
+//-----------------------------------------------------------------------------
+Compose := function(D1,D2,f,h)
+    g := ValidateSplitCurve(f,h);
+    ValidateReducedDivisorAB(D1,f,h);  
+    ValidateReducedDivisorAB(D2,f,h);
+    u1:=D1[1]; 
+    v1:=D1[2]; 
+    n1:=D1[3];
+    u2:=D2[1]; 
+    v2:=D2[2];     
+    n2:=D2[3];
+    s,sc:= XGCD([u1,u2,v1+v2+h]);
+    u3:= ExactQuotient(u1*u2,s^2);
+    v3:= ExactQuotient(sc[1]*u1*v2+sc[2]*u2*v1+sc[3]*(v1*v2+f),s) mod u3;
+    return <u3, v3, n1+n2+Degree(s)-Ceiling(g/2)>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Reduce(D,f,h)
+//-----------------------------------------------------------------------------
+// Input:  D: D=(u,v,n) semi-reduced divisor with deg(u) > g+1 over 
+//            HyperellipticCurve(f,h).
+//       f,h: hyperelliptic polynomials corresponding to curve that D is   
+//            reduced over.
+//       Vpl: Unique polynomial of degree g+1 for which 
+//            deg(f - Vpl*h - Vpl^2) <= g.
+// 
+// Return: Not necessarily unique divisor Dp = (up,vp,np) ~ D with deg(up) 
+//         <= g+1 using algorithm from Section 10.4 Galbraith book.
+//         Might have to adjust further if np is out of range.
+//-----------------------------------------------------------------------------
+Reduce := function(D,f,h,Vpl)
+    g := ValidateSplitCurve(f,h);
+    FF:= BaseRing(f);
+    ValidateSemiReducedDivisor(D,f,h);
+    u:=D[1]; 
+    v:=D[2]; 
+    n:=D[3];
+    assert Degree(u) gt g+1;
+    up:= ExactQuotient(v^2+h*v-f, u);
+    up:= up / LeadingCoefficient(up);
+    vp:= (-v-h) mod up;
+    if Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(Vpl) then
+        np := n + Degree(u)-(g+1);
+    elif Degree(v) eq g+1 and LeadingCoefficient(v) eq LeadingCoefficient(-Vpl-h) then
+        np := n+g+1-Degree(up);
+    elif Degree(v) ge g+1 then
+        np:= n + Degree(v) - Degree(up);
+    else
+        np:= n+g+1-Degree(up);
+    end if;
+    return <up,vp,np>;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Adjust(D,f,h)
+//-----------------------------------------------------------------------------
+// Input:  D: D=(u,v,n) semi-reduced divisor over HyperellipticCurve(f,h) with
+//            deg(u) <= g+1.
+//       f,h: hyperelliptic polynomials corresponding to curve that D is  
+//            adjusted over.
+//       Vpl: Unique polynomial of degree g+1 for which 
+//            deg(f - Vpl*h - Vpl^2) <= g.
+// 
+// Return: Unique reduced divisor Dp = (up,vp,np) ~ D with deg(u) < g+1 and 
+//         0 <= np <= deg(u)- g, using algorithm from Section 10.4 Galbraith 
+//         book.
+//-----------------------------------------------------------------------------
+Adjust := function(D,f,h,Vpl)
+    g := ValidateSplitCurve(f,h);
+    ValidateSemiReducedDivisor(D,f,h);
+    u:=D[1]; 
+    v:=D[2]; 
+    n:=D[3];
+    assert Degree(u) le g+1;
+
+    if (0 le n) and (n le g-Degree(u)) then //Already adjusted, impossible if Degree(u) = g+1
+        return <u,v,n>,f,h,Vpl;
+    //Adjustment Cases
+    elif n gt g-Degree(u) then //ADJDWN
+    //"DWN";
+        vhat := Vpl-((Vpl-v) mod u);
+        up := ExactQuotient (f-h*vhat-vhat^2,u);
+        up := up/LeadingCoefficient(up);
+        vp := (-vhat-h) mod up ;
+        np := n + Degree(u)-(g+1);
+    elif n lt 0 then //ADJUP
+    //"UP";
+        vhat := -Vpl-h+((Vpl+v+h) mod u);
+        up := ExactQuotient (f-h*vhat-vhat^2,u);  
+        up := up/LeadingCoefficient(up);
+        vp := (-vhat-h) mod up;
+        np := n + g + 1 - Degree(up);
+
+    //Following case is given in literature and Andrew Sutherlands's code, but not his paper.
+    //Impossible to get to this case! 
+    //When Deg(u) = g+1, first if catches n>=0, the elif catches n<0.
+    //Remark: This cases is exactly the same as the first if case when Deg(u) = g+1
+    //elif Degree(u) eq g+1 then 
+    //    vhat := Vpl-((Vpl-v) mod u);
+    //    up := ExactQuotient(f-h*vhat-vhat^2,u);  
+    //    up := up/LeadingCoefficient(up);
+    //    vp := (-vhat-h) mod up;
+    //    np := n;                               
+    end if;
+    assert Degree(up) le Degree(u) or (n lt 0 and np gt n) or (n gt g-Degree(u) and np lt n);
+    return $$(<up,vp,np>,f,h,Vpl);
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Add(D1,D2,f,h,Vpl)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//          Vpl: Unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h - Vpl^2) <= g.
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Add := function(D1,D2,f,h,V)
+    g := ValidateSplitCurve(f,h);
+    D := Compose(D1,D2,f,h);
+    while Degree(D[1]) gt g+1 do 
+        D := Reduce(D,f,h,V); 
+    end while;
+    D3 := Adjust(D,f,h,V);
+    return D3;
+end function;
+
+//-----------------------------------------------------------------------------
+// Nucomp(D1,D2,f,h,Vpl)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(u1,v1,n1) and D2=(u2,v2,n2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//          Vpl: Unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h - Vpl^2) <= g.
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp := function(D1,D2,f,h,V)
+    g := ValidateSplitCurve(f,h);
+    R := Parent(f);
+    u1 := D1[1];
+    v1 := D1[2];
+    n1 := D1[3];
+    u2 := D2[1];
+    v2 := D2[2];
+    n2 := D2[3];
+
+    //Choose direction of reduction, only effects special cases.
+    if n1 + n2 - Ceiling(g/2) ge Floor((g + 1 - Degree(u2) - Degree(u1))/2) then vh := V - ((V - v1) mod u1);
+    else vh := -V - h + ((V + h + v1) mod u1); end if;
+    //Check if NUCOMP is necessary
+    d1,e := XGCD([u1,u2]);
+    e1   := e[1];
+    d,e := XGCD([d1,vh+v2+h]);
+    deg := Degree(u2) + Degree(u1) - 2*Degree(d);
+    npp := n1 + n2 + Degree(d) - Ceiling(g/2);
+
+    if deg le g  and ((npp ge 0 and npp le g-deg) or (2*Degree(d) - Degree(u2) gt 0)) then return Add(D1,D2,f,h,V);
+    end if;
+
+    //Composition Portion of NUCOMP
+    k   := ExactQuotient(f - vh*h - vh^2, u1);
+    ud1 := ExactQuotient(u1,d);
+    ud2 := ExactQuotient(u2,d);
+    r   := (e[1]*e1*(v2 - vh) + e[2]*k) mod ud2;
+    rp  := ud2; cp := R!0; c := R!-1; l := -1;        
+    //Check if one adjust, special reduction, or regular reduction.        
+    if deg le g + 1 or (deg eq g + 2 and Degree(rp) - Degree(r) gt 1) then 
+            special := true;  degd := 0;
+    else special := false; degd := Degree(rp) - Degree(r); end if;
+    //Reduction Portion of NUCOMP
+    if  deg gt g+2 then 
+        while Degree(r) ge (Degree(u2) - Degree(u1) + g + 1)/2 do //Reductions
+            cdeg := deg - 2*degd;
+            q,rn := Quotrem(rp,r);
+            cn := cp - q*c; 
+            rp := r; r := rn; cp := c; c := cn; l := -l;
+            t := Degree(rp) - Degree(r);
+            //Check if last reduction is special or an adjust
+            if cdeg eq g + 1 or (cdeg eq g + 2 and t gt 1) then special := true;
+            else degd := degd + t;
+            end if;
+        end while;
+    end if;
+    //Reconstruct divisor from continued fraction
+    M1  := ExactQuotient(ud1*r + (v2 - vh)*c, ud2);
+    M2  := ExactQuotient(r*(v2 + vh + h) + k*d*c, ud2);
+    upp := l*(r*M1 - c*M2);
+    vpp := (ExactQuotient(ud1*r + cp*upp, c) - vh - h) mod upp;
+    upp := upp/LeadingCoefficient(upp);
+    //Figure out npp
+    if LeadingCoefficient(vh) eq LeadingCoefficient(V) then
+        if special then delta := deg - degd - g - 1;
+        else            delta := deg - degd - Degree(upp);
+        end if;
+    else //LeadingCoefficient(vh) eq LeadingCoefficient(-V-h)
+        if special then delta := degd + g + 1 - Degree(upp);
+        else            delta := degd;
+        end if;
+    end if;
+    npp := npp + delta;
+    D3 := Adjust(<upp,vpp,npp>,f,h,V); //Extra adjusts required if g ge 3
+    return D3;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Double(D,f,h,Vpl)
+//-----------------------------------------------------------------------------
+// Input:     D: D=(u,v,n) reduced divisor over HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D is    
+//               doubled over.
+//          Vpl: Unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h - Vpl^2) <= g.
+// 
+// Return: Unique reduced divisor Dp ~ D + D, (invokes Add function).
+//-----------------------------------------------------------------------------
+Double := function (D,f,h,V) 
+    return Add(D,D,f,h,V); 
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Negate(D,f,h,Vpl)
+//-----------------------------------------------------------------------------
+// Input:     D: D=(u,v,n) reduced divisor over HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D is    
+//               negated over.
+//          Vpl: Unique polynomial of degree g+1 for which 
+//               deg(f - Vpl*h - Vpl^2) <= g.
+// 
+// Return: Unique reduced divisor Dp ~ -D.
+//-----------------------------------------------------------------------------
+Negate := function(D,f,h,Vpl)
+    g := ValidateSplitCurve(f,h);
+    ValidateReducedDivisorAB(D,f,h);
+    u1:=D[1]; 
+    v1:=D[2]; 
+    n1:=D[3];
+
+    if g mod 2 eq 0 then 
+        return <u1,-v1 - (h mod u1),g-Degree(u1)-n1>; 
+    end if;
+
+    if n1 gt -1 then 
+        return <u1,-v1-(h mod u1),g-Degree(u1)-n1-1>; 
+    end if;
+
+    return Adjust(<u1,-v1-(h mod u1),Ceiling(3*g/2)-Degree(u1)>,f,h,Vpl);
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Neutral(f,h)
+//-----------------------------------------------------------------------------
+// Input: f,h: hyperelliptic polynomials corresponding to genus g curve that N     
+//             is defined over.
+//          
+// Return: Unique neutral divisor N = (1,0,Ceiling(g/2)).
+//-----------------------------------------------------------------------------
+Neutral := function(f,h)
+    g := ValidateSplitCurve(f,h);
+    return <Parent(f)!1,Parent(f)!0,Ceiling(g/2)>;
+end function;
+
+
+
+
+//-----------------------------------------------------------------------------
+//Deg(D,f,h)
+//-----------------------------------------------------------------------------
+// Input: D: D=(u,v,n) reduced divisor over HyperellipticCurve(f,h).
+//        f,h: hyperelliptic polynomials corresponding to curve that D is    
+//               negated over.
+//
+// Return: Degree of D
+//-----------------------------------------------------------------------------
+Deg := function(D,f,h)
+    ValidateReducedDivisorAB(D,f,h);
+    return Degree(D[1]);
+end function;
+
+
