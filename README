@@ -1,0 +1,81 @@
+Sebastian Lindner 2020
+
+This repository contains magma, python and bash files related to explicit formulas
+for ramified and balanced divisor split genus 2 and 3 arithmetic, polynomial 
+arithmetic for generic genus arithmetic, and testing scripts.
+
+-------------------------
+ Genus 2 and 3 Formulas:
+-------------------------
+
+Testing files included are:
+
+   test_all.sh  
+                - A shell script that runs all tests for explicit balanced
+                 split and ramified genus 2 arithmetic.
+
+                - Invokes: posReduced/arb_splitG2_whiteBox_tester.mag,
+                           posReduced/arb_splitG2_random.mag,
+                           posReduced/ch2_splitG2_whiteBox_tester.mag,
+                           posReduced/ch2_splitG2_random.mag,
+                           posReduced/nch2_splitG2_whiteBox_tester.mag and,
+                           posReduced/nch2_splitG2_random.mag,
+                           negReduced/arb_splitG2_whiteBox_tester.mag,
+                           negReduced/arb_splitG2_random.mag,
+                           negReduced/ch2_splitG2_whiteBox_tester.mag,
+                           negReduced/ch2_splitG2_random.mag,
+                           negReduced/nch2_splitG2_whiteBox_tester.mag and,
+                           negReduced/nch2_splitG2_random.mag in g2/splitModel folder.
+
+                           arb_ramifiedG2_whiteBox_tester.mag,
+                           arb_ramifiedG2_random.mag,
+                           ch2_ramifiedG2_whiteBox_tester.mag,
+                           ch2_ramifiedG2_random.mag,
+                           nch2_ramifiedG2_whiteBox_tester.mag,
+                           nch2_ramifiedG2_random.mag in g2/ramifiedModel folder.
+
+                           negReduced/arb_splitG3_whiteBox_tester.mag,
+                           negReduced/arb_splitG3_random.mag,
+                           negReduced/ch2_splitG3_whiteBox_tester.mag,
+                           negReduced/ch2_splitG3_random.mag,
+                           negReduced/nch2_splitG3_whiteBox_tester.mag and,
+                           negReduced/nch2_splitG3_random.mag in g3/splitModel folder.
+               
+
+                - The test_all.sh script can be run by typing:
+
+                     './test_all.sh'
+
+   *_whiteBox_tester.mag
+                - White box testers cover all possible computation path in the
+                  explicit formulas by computing one divisor composition
+                  computer generated for each possible computation path.
+   
+   *_random.mag
+                - Random testers compute 2500-5000 random divisor additions and
+                  doubles using explicit formulas over randomly chosen small
+                  characteristic fields for each arb, ch2 and nch2 settings.
+
+   Genus 2 formulas are located in the g2Formula sub folders of g2/ramifiedModel,
+   g2/splitModel/posReduced and g2/splitModel/negReduced, genus 3 formulas are located
+   in g3/splitModel/negReduced/g3Formula.
+
+---------------------------
+ Generic Genus Algorithms:
+---------------------------
+
+------------------------------------
+ White Box Testing Case Generation:
+------------------------------------
+
+-------------------------
+ Latex Table Generation:
+-------------------------
+
+
+----------------
+ Miscellaneous:
+----------------
+
+1024bit_primes.mag:
+  -Some 1024 bit primes pre generated with magma and used in timing experiments.
