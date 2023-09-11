@@ -1,0 +1,72 @@
+% This file contains CHAPTER SEVEN
+
+\chapter{Conclusion} 
+\label{cha:conclusion}
+In this thesis, efficient computational approaches for computing divisor class
+arithmetic on ramified and split model curves were developed, introducing
+several novel algorithms that outperform previous best. Balanced NUCOMP for
+generic genus split model curves, explicit formulas based on NUCOMP and Balanced
+NUCOMP for genus 2 ramified and split model curves, and genus 3 split model
+curves were developed, and thoroughly tested. Balanced NUCOMP introduces a new
+"negative reduced" basis for the normalization of the $v$ Mumford polynomial,
+eliminating the inefficiencies for odd genus split model curves found in
+previous work on arithmetic in the infrastructure of a split model curve. Moreover,
+in previous work it was suggested that NUCOMP does not benefit divisor class
+arithmetic over hyperelliptic curves of small genera, but explicit formulas
+based on NUCOMP over genus 2 ramified model curves and Balance NUCOMP over genus
+2 and 3 split model curves prove to be computationally more efficient than
+previous best in the above cases mentioned. Most notably over split model genus 3
+curves, there is a considerable improvement overall in the operation counts of
+divisor class addition and doubling supported by empirical evidence using Magma.
+Ramified model genus 3 arithmetic would also benefit from NUCOMP techniques but
+was not considered in this thesis due to ongoing work elsewhere; this will be
+presented along with our split model results in a forthcoming paper. All
+algorithms are implemented, tested for correctness, and empirically tested for
+comparisons to previous best. All software developed in support of this thesis
+is available at \url{https://github.com/salindne/divisorArithmetic}.
+
+
+\section{Future Work}
+\label{sec:futurework}
+The work of this thesis has to potential to be extended in the following ways:
+
+Adapt NUCOMP to divisor arithmetic over non-hyperelliptic $C_{a,b}$ curves as
+this setting also plays a role in computational number theoretic
+applications~\cite{Sutherland_sato_2016}. Algorithms for divisor arithmetic on
+generic $C_{a,b}$ curves~\cite{harasawa2000fast}, specialized subsets of cases
+such as superelliptic curves~\cite{shaska_2019}, or specific cases for example
+$a = 3, b = 4$ have been worked on. Explicit
+formulas for the case  $a=3$, $b=4$ have recently been developed
+in~\cite{evan_g3}. The general pattern of composing and reducing divisor class
+representatives to a reduced form is common among all algorithms mentioned. An
+adaptation of NUCOMP to these settings may result in similar improvements seen
+in the hyperelliptic curve setting.
+
+Automating the generation of near-optimal explicit formulas for any genus based
+on this work would also be of interest. This would provide further improvements for
+$g > 3$ where developing formulas by hand is far too tedious, yielding
+algorithms and implementations that are greatly improved over polynomial
+arithmetic based algorithms. Choosing the right explicit techniques to apply
+generically may prove to be challenging, because finding optimal explicit formulas
+most certainly would require cycles of testing and optimization. The program
+could apply as many combinations of techniques as possible and output explicit
+formulas based on the intended application through specification inputs such as
+the relative cost of field additions compared to field multiplications. This
+type of work would also benefit from automatically generating testing scripts and
+example inputs, that could be based on the testing scripts of this work.
+
+At this point, divisor class arithmetic in genus 2 and 3 is quite thoroughly
+optimized. Using ideas of the thesis (NUCOMP), there is still lots of room for
+improvement in genus 4 and above, and perhaps for non-hyperelliptic curves.
+Automation is possibly within reach as well for those cases. As discussed in
+Section~\ref{sec:practicalConsiderations}, it is unlikely that arithmetic on
+inert models will be needed in the future for numerical investigations, but if
+that changes it should be possible to extend the ideas in this thesis to develop
+efficient formulas for inert models as well. Perhaps the ideas of this work can
+be applied to special families of curves, such as those with Kummer
+surfaces~\cite{Gaudry_kummer_2007} and higher-genus analogues of DIK
+curves~\cite{Doche_DIK_2006} or Edwards curves~\cite{edwards2007normal}. Isogeny
+based cryptographic protocols (if divisor class arithmetic plays a role) could
+be an application, or even direct improvements to isogeny computations
+themselves. The impactful results of this thesis leave us with many interesting
+avenues to explore.

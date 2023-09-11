@@ -1,0 +1,145 @@
+\contentsline {chapter}{Abstract}{ii}{chapter*.1}%
+\contentsline {chapter}{Preface}{iii}{chapter*.2}%
+\contentsline {chapter}{Acknowledgments}{iv}{chapter*.3}%
+\contentsline {chapter}{Table of Contents}{iv}{section*.4}%
+\contentsline {chapter}{List of Tables}{viii}{section*.5}%
+\contentsline {chapter}{List of Algorithms}{ix}{section*.5}%
+\contentsline {chapter}{\chapternumberline {1}Introduction}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Motivation}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Summary of Research Contributions}{3}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Balanced NUCOMP}{3}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Explicit Formulas for Genus 2 and 3 Arithmetic}{5}{subsection.1.2.2}%
+\contentsline {section}{\numberline {1.3}Organization of Thesis}{7}{section.1.3}%
+\contentsline {chapter}{\chapternumberline {2}Mathematical Background}{9}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Hyperelliptic Curves}{9}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}Function Field of a Hyperelliptic Curve}{12}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}Points on a Hyperelliptic Curve}{13}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}Orders of Rational Functions}{16}{subsection.2.1.3}%
+\contentsline {subsection}{\numberline {2.1.4}Practical Considerations}{19}{subsection.2.1.4}%
+\contentsline {section}{\numberline {2.2}Divisor Class Group}{24}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Affine Divisor Arithmetic}{29}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Mumford Representation of Affine Divisors}{29}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Composition and Reduction of Divisors in Mumford Representation}{33}{subsection.2.3.2}%
+\contentsline {section}{\numberline {2.4}Divisor Class Arithmetic}{37}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}Divisor Class Arithmetic on Ramified Models}{38}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}Divisor Class Arithmetic on Split Models}{40}{subsection.2.4.2}%
+\contentsline {subsubsection}{Balanced Setting}{41}{section*.7}%
+\contentsline {subsubsection}{Divisor Class Arithmetic}{45}{section*.8}%
+\contentsline {chapter}{\chapternumberline {3}Balanced NUCOMP}{51}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Improvements to Addition Algorithms}{53}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}General Techniques}{53}{subsection.3.1.1}%
+\contentsline {subsubsection}{XGCD and DivRem}{53}{section*.9}%
+\contentsline {subsubsection}{Optimization for the Most Frequently-Occurring Input}{54}{section*.10}%
+\contentsline {subsubsection}{Revised Mumford Representations and Tenner's Technique}{56}{section*.11}%
+\contentsline {subsection}{\numberline {3.1.2}Improved Divisor Class Arithmetic for Ramified Models}{59}{subsection.3.1.2}%
+\contentsline {subsection}{\numberline {3.1.3}Improved Balanced Arithmetic}{61}{subsection.3.1.3}%
+\contentsline {subsubsection}{Divisor Representation using Reduced Bases}{61}{section*.12}%
+\contentsline {subsubsection}{Improved Balanced Addition and Doubling}{64}{section*.13}%
+\contentsline {subsubsection}{Improved Balanced Adjust}{64}{section*.14}%
+\contentsline {section}{\numberline {3.2}NUCOMP}{69}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Continued Fraction Expansions for Divisor Class Arithmetic}{69}{subsection.3.2.1}%
+\contentsline {subsubsection}{Continued Fraction Expansions}{70}{section*.15}%
+\contentsline {subsubsection}{Semi-Reduced Divisor Arithmetic Using Continued Fraction Expansions}{72}{section*.16}%
+\contentsline {subsection}{\numberline {3.2.2}NUCOMP Algorithm}{76}{subsection.3.2.2}%
+\contentsline {section}{\numberline {3.3}Balanced NUCOMP}{76}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Normalization With Negative Reduced Basis}{79}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Adapting NUCOMP to the Balanced Setting}{83}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Eliminating an Adjustment for Some Non-Generic Cases}{86}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Empirical Analysis}{86}{subsection.3.3.4}%
+\contentsline {chapter}{\chapternumberline {4}Towards Explicit Formulas}{92}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Generic Methods}{93}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Harley's Improvements in the Frequent Case}{93}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Linear Algebra Techniques in the Frequent Case}{95}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}NUCOMP as Basis for Explicit Formulas}{98}{subsection.4.1.3}%
+\contentsline {subsubsection}{Genus 2}{98}{section*.17}%
+\contentsline {subsubsection}{Genus 3}{101}{section*.18}%
+\contentsline {subsubsection}{Discussion}{104}{section*.19}%
+\contentsline {section}{\numberline {4.2}Explicit Formulations of Divisor Class Arithmetic}{107}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Techniques to Improve Explicit Formulas}{108}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Field Operation Trade Threshold}{109}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}Efficient Exact Division}{109}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Karatsuba Multiplication}{110}{subsection.4.3.3}%
+\contentsline {subsection}{\numberline {4.3.4}Karatsuba Modular Reduction}{111}{subsection.4.3.4}%
+\contentsline {subsection}{\numberline {4.3.5}Using `Almost Inverse'}{112}{subsection.4.3.5}%
+\contentsline {subsection}{\numberline {4.3.6}Alternate Approach to Computing $s$}{115}{subsection.4.3.6}%
+\contentsline {subsection}{\numberline {4.3.7}Montgomery's Trick of Simultaneous Inversion}{118}{subsection.4.3.7}%
+\contentsline {subsection}{\numberline {4.3.8}Reordering of the Normalization Step}{119}{subsection.4.3.8}%
+\contentsline {subsection}{\numberline {4.3.9}Equating Coefficients}{119}{subsection.4.3.9}%
+\contentsline {section}{\numberline {4.4}Novel Techniques}{120}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}Omitting $l'$ and the Alternate Computation of $v''$}{120}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}Alternate computation of $k$}{121}{subsection.4.4.2}%
+\contentsline {chapter}{\chapternumberline {5}Explicit Formulas for Genus 2 Arithmetic}{122}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Improved Genus 2 Ramified Model Explicit Formulas}{122}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Curve Simplifications}{123}{subsection.5.1.1}%
+\contentsline {subsubsection}{char(k) $\neq $ 2}{124}{section*.20}%
+\contentsline {subsubsection}{char(k) = 2}{124}{section*.21}%
+\contentsline {subsection}{\numberline {5.1.2}Prior Work}{125}{subsection.5.1.2}%
+\contentsline {subsection}{\numberline {5.1.3}Contributions Summary}{126}{subsection.5.1.3}%
+\contentsline {subsubsection}{Special Cases}{127}{section*.22}%
+\contentsline {subsection}{\numberline {5.1.4}Explicit Formulas for Doubling}{127}{subsection.5.1.4}%
+\contentsline {subsubsection}{Genus 2 Ramified Model Degree 2 Doubling}{128}{section*.23}%
+\contentsline {subsubsection}{Genus 2 Ramified Model Degree 1 Doubling}{134}{section*.24}%
+\contentsline {subsection}{\numberline {5.1.5}Explicit Formulas for Addition}{135}{subsection.5.1.5}%
+\contentsline {subsubsection}{Genus 2 Ramified Model Degree 2 Addition}{135}{section*.25}%
+\contentsline {subsubsection}{Genus 2 Ramified Model Degree 1 and 2 Addition}{140}{section*.26}%
+\contentsline {subsubsection}{Genus 2 Ramified Model Degree 1 Addition}{141}{section*.27}%
+\contentsline {subsection}{\numberline {5.1.6}Field Operation Costs and Comparisons}{143}{subsection.5.1.6}%
+\contentsline {subsubsection}{Comparison Considerations}{144}{section*.28}%
+\contentsline {subsubsection}{Frequent Case Comparisons}{145}{section*.29}%
+\contentsline {subsubsection}{Special Case Comparisons}{145}{section*.30}%
+\contentsline {section}{\numberline {5.2}Improved Genus 2 Split Model Explicit Formulas}{146}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Curve Simplifications}{147}{subsection.5.2.1}%
+\contentsline {subsubsection}{char(k) $\neq $ 2}{148}{section*.31}%
+\contentsline {subsubsection}{char(k) = 2}{148}{section*.32}%
+\contentsline {subsection}{\numberline {5.2.2}Prior Work}{148}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Summary of Contributions}{149}{subsection.5.2.3}%
+\contentsline {subsubsection}{Special Cases}{151}{section*.33}%
+\contentsline {subsection}{\numberline {5.2.4}Explicit Formulations}{152}{subsection.5.2.4}%
+\contentsline {subsection}{\numberline {5.2.5}Precomputations}{152}{subsection.5.2.5}%
+\contentsline {subsection}{\numberline {5.2.6}Explicit Formulas for Doubling}{153}{subsection.5.2.6}%
+\contentsline {subsubsection}{Balancing Coefficient}{154}{section*.34}%
+\contentsline {subsubsection}{Genus 2 Split Model Degree 2 Doubling}{154}{section*.35}%
+\contentsline {subsubsection}{Genus 2 Split Model Degree 1 Doubling}{158}{section*.36}%
+\contentsline {subsection}{\numberline {5.2.7}Explicit Formulas for Addition}{161}{subsection.5.2.7}%
+\contentsline {subsubsection}{Balancing Coefficient}{162}{section*.37}%
+\contentsline {subsubsection}{Genus 2 Split Model Degree 2 Addition}{162}{section*.38}%
+\contentsline {subsubsection}{Genus 2 Split Model Degree 1 and 2 Addition}{166}{section*.39}%
+\contentsline {subsubsection}{Genus 2 Split Model Degree 1 Addition}{168}{section*.40}%
+\contentsline {subsubsection}{Genus 2 Split Model Degree 0 Addition}{171}{section*.41}%
+\contentsline {subsection}{\numberline {5.2.8}Field Operation Costs and Comparisons}{173}{subsection.5.2.8}%
+\contentsline {subsubsection}{Comparison Summary}{174}{section*.42}%
+\contentsline {section}{\numberline {5.3}Empirical Analysis}{176}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Explicit Special Cases}{179}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}Ramified and Split Model Comparisons}{180}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Summary}{183}{subsection.5.3.3}%
+\contentsline {chapter}{\chapternumberline {6}Explicit Formulas for Genus 3 Balanced Arithmetic}{185}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Improved Genus 3 Split Model Explicit Formulas}{185}{section.6.1}%
+\contentsline {subsection}{\numberline {6.1.1}Curve Simplifications}{187}{subsection.6.1.1}%
+\contentsline {subsection}{\numberline {6.1.2}Prior Work}{187}{subsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.1.3}Summary of Contributions}{188}{subsection.6.1.3}%
+\contentsline {subsubsection}{Special Cases}{190}{section*.43}%
+\contentsline {subsection}{\numberline {6.1.4}Precomputations}{190}{subsection.6.1.4}%
+\contentsline {subsection}{\numberline {6.1.5}Explicit Doubling}{192}{subsection.6.1.5}%
+\contentsline {subsubsection}{Balancing Coefficient}{193}{section*.44}%
+\contentsline {subsubsection}{Genus 3 Split Model Degree 3 Doubling}{193}{section*.45}%
+\contentsline {subsubsection}{Genus 3 Split Model Degree 2 Doubling}{203}{section*.46}%
+\contentsline {subsubsection}{Degree 1 Doubling}{207}{section*.47}%
+\contentsline {subsection}{\numberline {6.1.6}Explicit Addition}{209}{subsection.6.1.6}%
+\contentsline {subsubsection}{Balancing Coefficient}{211}{section*.48}%
+\contentsline {subsubsection}{Degree 3 Addition}{212}{section*.49}%
+\contentsline {subsubsection}{Degree 2 and 3 Addition}{219}{section*.50}%
+\contentsline {subsubsection}{Degree 2 Addition}{222}{section*.51}%
+\contentsline {subsubsection}{Degree 1 and 3 Addition}{227}{section*.52}%
+\contentsline {subsubsection}{Degree 1 and 2 Addition}{231}{section*.53}%
+\contentsline {subsubsection}{Degree 1 Addition}{232}{section*.54}%
+\contentsline {subsubsection}{Degree 0 Addition}{236}{section*.55}%
+\contentsline {subsection}{\numberline {6.1.7}Field Operation Costs and Comparisons}{238}{subsection.6.1.7}%
+\contentsline {subsubsection}{Comparison Summary}{239}{section*.56}%
+\contentsline {subsubsection}{Frequent Case Comparisons}{241}{section*.57}%
+\contentsline {subsubsection}{Special Case Comparisons}{242}{section*.58}%
+\contentsline {section}{\numberline {6.2}Empirical Analysis}{242}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Explicit Special Cases}{244}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Split Model Comparisons}{244}{subsection.6.2.2}%
+\contentsline {chapter}{\chapternumberline {7}Conclusion}{247}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Future Work}{248}{section.7.1}%
+\contentsline {chapter}{Bibliography}{250}{chapter*.59}%

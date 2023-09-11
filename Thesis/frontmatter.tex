@@ -1,0 +1,74 @@
+% Sample University of Calgary Thesis
+% This file contains the FRONT MATTER other thna the title page
+
+\chapter{Abstract}
+The divisor class group of a hyperelliptic curve over a field is a finite
+abelian group at the center of many open questions in algebraic
+geometry and number theory. Sutherland~\cite{Sutherland_g3_2019} surveys some of
+these, including the computation of the associated $L$-functions and zeta
+functions used in his investigation of Sato-Tate
+distributions~\cite{Sutherland_sato_2016}. Many of these problems lend
+themselves to empirical investigation, and as emphasized by Sutherland, fast
+arithmetic in the divisor class group is crucial for their efficiency. Indeed,
+implementations of these fundamental operations are at the core of the algebraic
+geometry packages of widely-used computer algebra systems such as Magma and
+Sage. 
+
+This thesis provides contributions to improve the efficiency of divisor class
+arithmetic on hyperelliptic curves, with special attention to the often ignored
+split model cases and to genus 2 and 3. There are two main contributions: the
+introduction of ``Balanced NUCOMP'' for improved arithmetic on curves given by
+split models of arbitrary genus, and improved explicit formulas for genus 2
+(ramified and split models) and genus 3 (split models) based on Balanced NUCOMP
+for split models and NUCOMP for ramified models. Empirical analysis, using a
+complete Magma implementation and testing suite, is conducted with all
+contributed algorithms to provide proof of correctness and comparisons to
+previous best. Our results show that Balanced NUCOMP does offer improvements to
+split model arithmetic, further narrowing the performance gap between split and
+ramified models. Our explicit formulas require fewer field operations, most
+notably significantly fewer additions, than previous best for computing
+arithmetic on genus 2 (ramified and split models), and genus 3 (split models).
+Our empirical results demonstrate that our formulas yield the fastest
+general-purpose arithmetic for these cases.
+
+\chapter{Preface}
+
+This thesis is original, unpublished, independent work by the author,
+Sebastian, A, Lindner.
+
+
+%Portions of the introductory text of Chapter~1 are used with
+%permission from Smith et al. (2015) of which I am an author. Table~1.1
+%is modified from Supplementary Table~3 in Smith et
+%al. (2014). Chapter~2 of this thesis has been published as J.~Smith
+%and J.~Doe, ``Title of Article''. Journal Name, vol.~1, issue~1.
+
+
+  
+\chapter{Acknowledgments}
+
+I would like to thank my supervisor, Dr. Michael J. Jacobson, for his consistent support
+and guidance throughout all stages of my academic growth and this dissertation.
+Furthermore I would like to acknowledge and thank Dr. Renate Scheidler, Dr. Laurent Imbert, 
+Randy Yee, and Parthasarathi Das for their support and for meaningful
+conversations that contributed to my academic growth and the completion of this
+work. Finally, thank you to my wife for her seemingly endless patience, support
+and encouragement. 
+
+\tableofcontents
+
+% If you have no tables, delete the next line
+
+\listoftables
+
+% If you have no figures, delete the next line
+\addcontentsline{toc}{chapter}{List of Algorithms}
+\listofalgorithms
+
+% Consult Ch 9 of the memoir class manual on how to set up other
+% content lists. Note that memoir does not automatically clear the
+% page for these. ucalgmthesis fixes this for the default table of
+% contents and lists of tables and figures, but not for anything you
+% define
+
+%\listoffigures

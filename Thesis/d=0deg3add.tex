@@ -1,0 +1,88 @@
+\begin{algorithm}
+    \caption{Degree 3 Addition $d = 0$ Subroutine \label{alg:g3explSPLIT3ADDd}}
+    \begin{algorithmic} [1]
+    \State $dw_1 = t_7x^2 + t_4x + t_1 = u_1 \pmod{u_2}$. 
+    \If{$t_7$ is 0}
+        \If{$t_4$ is 0}
+            \State $dw_2 =  (v_2 + v_1 + h) \pmod{u_2} = dw_{22}x^2 + dw_{21}x + dw_{20}.$
+            \If{$dw_{22}$ is 0}
+                \If{$dw_{21}$ is 0} \hspace{1pt} \Return $[1,\Vn,1]$.
+                \Else 
+                    \State $k = (f - v_1(v_1 + h))/u_1$.
+                    \State $u_1 = u_1/dw_2$ with weight $dw_{21}$.
+                    \State $u_2 = u_2/dw_2$ with weight $dw_{21}$.
+                    \State $s = k(dw_{21}) \pmod{u_1} = s_1(dw_{21})^3x + s_0(dw_{21})^4$.
+                    \State $k = kdw_2$ with weight $dw_{21}$
+                    \State $u = (-s(su_1 + 2v_1 + h) + k)/u_2. \s\s\s$ (exact division)
+                    \State $v = \Vn - (\Vn +u_1s + v_1 + h) \pmod{u}$.
+                    \If{$s_1(dw_{21})^3$ is 0}
+                        \If{Degree 4 term of $-s(su_1 + 2v_1 + h) + k$ is 0}
+                            \If{Degree 3 term of $-s(su_1 + 2v_1 + h) + k$ is 0} \hspace{2pt} \Return $[1,\Vn,3]$.
+                            \Else \hspace{2pt} \Return $[u,v,2]$.
+                            \EndIf
+                        \Else \hspace{2pt} \Return $[u,v,1]$.
+                        \EndIf
+                    \Else \hspace{2pt} \Return $[u,v,0]$.
+                    \EndIf
+                \EndIf
+            \Else
+                \State $dw_3 = dw_{31}x + dw_{30} = u_2 \pmod{dw_2}$.
+                \If{$dw_{31}$ is 0}
+                    \State $k = (f - v_1(v_1 + h))/u_1$.
+                    \State $b_2 = dw_{22}^{-1}.$
+                    \State $S = dw_2b_2$.
+                    \State $u_1 = u_1/S. \s\s\s$ (exact division)
+                    \State $u_2 = u_2/S. \s\s\s$ (exact division)
+                    \State $s = b_2k \pmod{u_2}$.
+                    \State $k = kdw_2$ with weight $dw_{21}$
+                    \State $u = u_1u_2$, $v = \Vn - (\Vn - v_1 - u_1s) \pmod{u}$.
+                \Else
+                    \State $k = (f - v_1(v_1 + h))/u_1$.
+                    \State $u_2 = u_2/dw_3$ with weight $dw_{31}/((dw_{22})^2)$.
+                    \State $b_2 = b_{21}x + b_{20} = dw_3/dw_2 \pmod{ u_2}$ using 2x2 system of equations.
+                    \State $s = s_1'x + s_0' = b_2k \pmod{u_2}$, with weight $d((dw_{22})^2/dw_{31})$.
+                    \State $k = kdw_3$, with weight $dw_{31}/((dw_{22})^2)$
+                    \State $u = (-s(su_1 + 2v_1 + h) + k)/u_2. \s\s\s$ (exact division)
+                    \State $v = \Vn - (\Vn +u_1s + v_1 + h) \pmod{u}$.
+                    \If{$s_1'$ is 0}
+                        \If{Degree 4 term of $-s(su_1 + 2v_1 + h) + k$ is 0}
+                            \If{Degree 3 term of $-s(su_1 + 2v_1 + h) + k$ is 0} \hspace{2pt} \Return $[1,\Vn,3]$.
+                            \Else \hspace{2pt} \Return $[u,v,2]$.
+                            \EndIf
+                        \Else \hspace{2pt} \Return $[u,v,1]$.
+                        \EndIf
+                    \Else \hspace{2pt} \Return $[u,v,0]$.
+                    \EndIf
+                \EndIf
+            \EndIf
+        \Else
+            \State $S =dw_1$ with weight $t_4$.
+            \State $dw_2 = (v_2 + v_1 + h) \pmod{S}$, with weight $T_4 = t_4^4$.
+            \If{$dw_2$ is 0}
+                \State $u_1 = u_1/S$ with weight $t_4$.
+                \State $u_2 = u_2/S$ with weight $t_4$.
+                \State $k = (f - v_1(v_1 + h))/u_1$.
+                \State $s = s'_1(t_4^2)x + s'_0(t_4^3) = (v_2 - v_1) \pmod{u_2}$ weighted.
+                \State $u = (-s(su_1 + 2v_1 + h) + k)/u_2. \s\s\s$ (exact division)
+                \State $v = \Vn - (\Vn +u_1s + v_1 + h) \pmod{u}$.
+                \If{$s_1'$ is 0}
+                    \If{Degree 4 term of $-s(su_1 + 2v_1 + h) + k$ is 0}
+                        \If{Degree 3 term of $-s(su_1 + 2v_1 + h) + k$ is 0} \hspace{2pt} \Return $[1,\Vn,3]$.
+                        \Else \hspace{2pt} \Return $[u,v,2]$.
+                        \EndIf
+                    \Else \hspace{2pt} \Return $[u,v,1]$.
+                    \EndIf
+                \Else \hspace{2pt} \Return $[u,v,0]$.
+                \EndIf
+            \Else
+                \State $k = (f - v_1(v_1 + h))/u_1$.
+                \State $t = (dw_2 - T_4(v_1 + v_2 + h) \pmod{u_2}$.
+                \State $a_2 = t/S$, weighted.
+                \State $s = s'_2(dw_2)x^2 + s'_1(dw_2)x + s'_0(dw_2) = (a_2(v_2 - v_1)t_4^3 + kT_4) \pmod{u_2}$ with weight $dw_2$.
+                \State Let $d = dw_2$ and goto line~9 of Algorithm~\ref{alg:g3explSPLIT3ADD}.
+            \EndIf
+        \EndIf
+    \Else %STOPPED HERE line 9136
+    \EndIf
+    \end{algorithmic}
+    \end{algorithm}

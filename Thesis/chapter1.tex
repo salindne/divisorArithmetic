@@ -1,0 +1,295 @@
+% This file contains CHAPTER ONE
+
+\chapter{Introduction}
+
+
+\section{Motivation}
+The divisor class group of a hyperelliptic curve defined over a finite field is
+a finite abelian group at the center of a number of important open questions in
+algebraic geometry and number theory. Sutherland~\cite{Sutherland_g3_2019}
+surveys some of these, including the computation of the associated $L$-functions
+and zeta functions used in his investigation of Sato-Tate
+distributions~\cite{Sutherland_sato_2016}. Many of these problems lend
+themselves to empirical investigation, and as emphasized by Sutherland, fast
+arithmetic in the divisor class group is crucial for their efficiency. Indeed,
+implementations of these fundamental operations are at the core of the algebraic
+geometry packages of widely-used computer algebra systems such as Magma and
+Sage.
+
+All hyperelliptic curves are represented as models that are categorized as
+either ramified (imaginary), split (real), or inert according to their number of
+points at infinity defined over the base field. Ramified curves have one point
+at infinity, whereas split curves have two. Inert (also called unusual) curves
+have no infinite points defined over the base field and are usually avoided in
+practice as they have cumbersome divisor class group arithmetic and can be
+transformed to a split model over a quadratic extension of the base field.
+
+Divisor class group arithmetic differs on ramified and split models. Many
+efficient algorithms have been proposed for the ramified setting, notably due to
+its extensive use in cryptographic applications. The split scenario is more
+complicated. As a result, optimizing divisor arithmetic on split hyperelliptic
+curves has received less attention from the research community. However, split
+models have many interesting properties; most importantly, they exist for a
+large array of hyperelliptic curves that cannot be described with a ramified
+model. Thus, exhaustive computations such as those
+in~\cite{Sutherland_sato_2016} require working on split models by necessity.
+
+Arithmetic in the divisor class group of a hyperelliptic curve can be described
+algebraically using an algorithm due to Cantor~\cite{Cantor_compjac_1987}, and
+expressed in terms of polynomial arithmetic. Various improvements and extensions
+to Cantor's algorithm have been proposed for ramified model curves, including an
+adaptation of Shank's NUCOMP algorithm~\cite{ShanksNUCOMP} for composing binary
+quadratic forms~\cite{jacobson_nucomp_2002}. The main idea behind NUCOMP is that
+instead of composing two divisors directly and then reducing to find an
+equivalent reduced divisor, a type of reduction is applied part way through the
+composition, so that when the composition is finished the result is almost
+always reduced.  The effect is that the sizes of the intermediate operands are
+reduced and intermediate divisor class representations need not be computed,
+resulting in better performance in most cases. Improvements to NUCOMP have been
+proposed, most recently the work of~\cite{ImbJac13:amc}, where best practices
+for computing Cantor's algorithm and NUCOMP are empirically investigated. 
+
+NUCOMP has also been proposed for arithmetic in the so-called infrastructure of
+a split model curve~\cite{jacobson_fast_2007}. However, as shown by Galbraith
+et. al.~\cite{Galbraith_balanced_2008,Morales_balanced_2009}, arithmetic on
+split model hyperelliptic curves is most efficiently realized via a divisor
+arithmetic framework referred to as balanced. Although the balanced and the
+infrastructure frameworks are similar, NUCOMP had yet to be applied explicitly
+to the former.
+
+Several optimized algorithms, known as explicit formulas, are available for
+divisor class arithmetic in the divisor class group of genus 2 and 3
+hyperelliptic curves. These algorithms, which describe divisor class arithmetic
+in terms of as few field operations as possible, are typically highly
+specialized for certain families of curves with efficient computational
+properties. This is too restrictive, as curves used for number theoretic
+applications are generic and cannot be chosen with computationally efficient
+properties. These algorithms also only compute the most common divisor input
+cases under the assumption that the arithmetic is computed over
+cryptographically large finite fields of size
+128-bits~\cite{BosCostelloHisilLauter_fastg2_2013}, and the uncommon cases are
+instead computed using polynomial arithmetic. Furthermore, field additions are
+often not even considered. This is not ideal for number theoretic applications,
+as the finite field sizes are relatively much smaller.
+
+
+
+\section{Summary of Research Contributions}
+This thesis provides contributions to improve the efficiency of divisor class
+arithmetic on hyperelliptic curves, with special attention to the often ignored
+split model cases and to genus 2 and 3. There are two main contributions; the
+introduction of ``Balanced NUCOMP'' for improved arithmetic on curves given by
+split models of arbitrary genus, and improved explicit formulas for genus 2
+(ramified and split models) and genus 3 (split models). Empirical analysis is
+conducted for all contributed algorithms to provide proof of correctness and
+comparisons to previous best. Details for both main contributions are described
+next.
+
+
+
+
+\subsection{Balanced NUCOMP}
+The first contribution of this work is a generalization of NUCOMP for divisor
+class arithmetic to the  balanced setting of a divisor class group over split
+model hyperelliptic curves. All best practices from previous works in the
+ramified model setting are incorporated and new balanced setting-specific
+improvements that further enhance practical performance are introduced.
+Specifically, this novel version of NUCOMP includes various improvements over
+its infrastructure counterpart~\cite{jacobson_fast_2007}:
+\begin{itemize}
+    \item Describes for the first time exactly how to use NUCOMP in the
+    framework of balanced divisors, including explicit computations of the
+    required balancing coefficients;
+    \item Introduces a novel normalization of divisors in order to eliminate
+    the extra adjustment step required in \cite{jacobson_fast_2007} for typical
+    inputs when the genus of the hyperelliptic curve is odd, so that in all
+    cases typical inputs require no extra reduction nor adjustment steps;
+    \item Uses certain aspects of NUCOMP to compute one adjustment step
+    almost for free in some cases.
+\end{itemize}
+
+In part, the efficiency of Balanced NUCOMP is achieved via a new normalization
+of the Mumford $v$ polynomial dubbed "negative reduced basis", that eliminates
+the need for extra adjustment steps over odd genus split model curves introduced
+in prior work on arithmetic in the infrastructure of split model
+curves~\cite{jacobson_fast_2007}. The use of the negative reduced basis does not
+affect the efficiency of arithmetic over even genus split model curves, and
+closes the gap between the two cases discussed in~\cite{jacobson_fast_2007}. The
+new basis takes advantage of the  inequality between the number of the two types
+of adjustments required in divisor class addition, that is inherently part of
+the definition of a balanced divisor class. Over even genus split model curves,
+the inequality does not exist, and the change in normalization to $v$ has no
+effect.
+
+The development of Balanced NUCOMP also involved incorporating and accounting
+for the balancing coefficient $n$ from the balanced setting over split model
+curves. A proof of correctness is provided, relating Cantor's algorithm applied
+to balanced divisor arithmetic to Balanced NUCOMP. In contrast to the NUCOMP
+algorithm proposed in~\cite{jacobson_fast_2007}, this work applies NUCOMP
+techniques to special low input degree divisor classes in order to combine
+addition and adjustments steps together using NUCOMP techniques.
+
+Finally, implementation of the work in Magma was developed as proof of concept
+and for empirical timing purposes. Thorough empirical timing analysis comparing
+the different reduced bases considered, as well as comparing Balanced NUCOMP to
+previous best, are provided as support for the algorithm design choices made.
+The analysis demonstrates the efficiency gains realized from the novel version
+of NUCOMP as compared with the previous best balanced divisor class group
+arithmetic based on Cantor's algorithm and the arithmetic implemented in Magma,
+showing that NUCOMP is the method of choice for all but the smallest genera. In
+such cases overhead introduced by NUCOMP negates the benefits, where the
+cross-over point is implementation dependent.
+
+With these improvements, NUCOMP is more efficient than Cantor's algorithm for
+genus as low as 5, compared to 7 using the version in \cite{jacobson_fast_2007}.
+The implementation developed in this work is faster than Magma's built-in
+arithmetic for $g \geq 7$, and the gap increases with the genus. Magma is closed
+source software and therefore an analysis of Magma's implementation was not
+possible. Magma does document that built-in arithmetic takes advantage of C
+implementations, and in comparison any implementations written in Magma require
+passing through Magma's interface, consequently incurring additional
+computational overhead in comparison.
+
+
+
+\subsection{Explicit Formulas for Genus 2 and 3 Arithmetic}
+The second contribution is novel explicit formulas for divisor addition and
+doubling on generic hyperelliptic curves in Weierstrass form for both ramified
+and split models of genus 2 and split models of genus 3. These formulas include
+several contributions:
+\begin{itemize}
+
+    \item New streamlined explicit formulas for computing divisor class
+    arithmetic over genus 2 and 3 split model curves using the balanced
+    framework are developed based on the novel Balanced NUCOMP algorithm
+    introduced in this thesis. The split model formulas in this work are the
+    first to completely encapsulate divisor class arithmetic in the balanced
+    framework, whereas previous split model formulas were developed for
+    computing arithmetic in the
+    infrastructure~\cite{EricksonJacobsonStein_realg2_2011, rad2019jacobian}.
+    \item All previous literature on computing genus 2 and 3 divisor doubling
+    and addition was surveyed, and through combining the best aspects of
+    previous works and novel techniques introduced here, the number of field
+    operations in almost all cases over genus 2 ramified and genus 2 and 3 split
+    curves were reduced. The reduction in field additions is especially
+    significant. The relative cost of a field addition is non trivial when
+    compared to a field multiplication; for example three additions are
+    considered equivalent in cost to one multiplication in the work of
+    Sutherland~\cite{Sutherland_g3_2019}. Ramified model genus 3 formulas were
+    omitted as these are work in progress by a student supervised by the author of this work. 
+    \item All genus 2 ramified and genus 2 and 3 split model formulas developed
+    are complete in the sense that all possible cases are explicitly computed,
+    and every case requires exactly one inversion. Previous
+    work~\cite{EricksonJacobsonStein_realg2_2011, rad2019jacobian,
+    Sutherland_g3_2019} omitted explicit computation of most non-typical input
+    cases. 
+\end{itemize}
+
+First, the general approaches on which explicit formulas are based in previous
+work were considered  and a complete survey of all prior explicit techniques was
+conducted during the development process. NUCOMP and Balanced NUCOMP were
+considered as possibilities, although these were not part of any previous work
+on explicit formulas.
+
+NUCOMP and Balanced NUCOMP based approaches specialized to genus 2 and Balanced
+NUCOMP specialized to genus 3 for ramified and split model curves produced the
+simplest formulas requiring fewer operation counts than any prior work. NUCOMP
+based approaches efficiently describe special cases computations; taking
+advantage of this resulted in explicit formulas that are complete, and require
+only one inversion for any computation path. The split model formulas in this
+thesis are the first to completely encapsulate divisor class arithmetic in the
+balanced setting, whereas previous split model formulas were developed for
+computing arithmetic in the
+infrastructure~\cite{EricksonJacobsonStein_realg2_2011, rad2019jacobian} or
+considered only the most frequently occurring divisor class
+input~\cite{Sutherland_g3_2019} cases.
+
+Implementations of all formulas were developed in Magma as proof of concept.
+Explicit formulas are very complex and prone to errors. Both black-box and
+white-box testing programs were utilized to provide thorough evidence that the
+formulas as they appear in the Magma code are all correct. Black-box testing
+computes numerous additions of randomly chosen divisor classes over randomly
+chosen curve models and compares the output of each addition to that obtained
+using Cantor's Algorithm. White-box testing uses specially-selected divisor
+class additions that are guaranteed to use every possible computation path
+within each formula, and similarly compares the output to Cantor's Algorithm.
+Moreover, empirical timing tests were developed in Magma, including
+implementations of previous work, to compare the work of this thesis with prior
+work on the same platform.
+
+Following~\cite{Sutherland_g3_2019}, the formulas use an affine model where each
+operation requires one field inversion. In the context of computational number
+theoretic applications like those in~\cite{Kedlaya_lseries_2008}, affine
+formulas are superior to the inversion-free formulas obtained using projective
+coordinates because group order algorithms such as baby-step giant-step require
+frequent equality tests. As representations of group elements using projective
+coordinates are not unique, their use would incur a non-negligible computational
+cost per equality test, and precludes the use of more efficient searchable data
+structures for the baby steps such as hash tables. Furthermore, as described in
+~\cite{Sutherland_g3_2019}, the inversions can often be combined using a trick
+due to Montgomery, allowing a batch of inversions to be computed with only one
+field inversion and a small number of field multiplications. Thus, in this work,
+as cryptographic applications are not our motivation, only affine formulas are
+developed. If projective formulas are required for some other application, our
+formulas can readily be converted to that setting using standard practices.
+
+Although the applications mentioned above involve hyperelliptic curves defined
+over finite fields, versions of our formulas that work over any field, as well
+as versions specialized to fields of characteristic not equal to two and fields
+of characteristic two are included. For the latter two cases, the  formulas take
+advantage of simplifications that result from canonical forms of the
+hyperelliptic curve equation in which several terms are zero. Magma
+implementations are given for all of the formulas in this thesis and are
+available at \url{https://github.com/salindne/divisorArithmetic}. 
+
+
+\section{Organization of Thesis}
+In Chapter~\ref{cha:bg}, the mathematical background of hyperelliptic curves
+limited to the material essential to understanding this thesis is introduced.
+Basic definitions and properties of hyperelliptic curves, divisors, the divisor
+class group and the group law arithmetic over the divisor class group are
+provided. The most efficient divisor class group setting dubbed ``balanced
+setting" is introduced for split model curves, using balanced representations of
+divisor classes. Most definitions, theorems and algorithms are followed by
+examples for better understanding.
+
+The purpose of Chapter~\ref{cha:nucomp} is the introduction of a novel
+adaptation of NUCOMP to the balanced setting of the divisor class group over
+split model curves. A general algorithm called Balanced NUCOMP for divisor class
+arithmetic over all genus is introduced, with discussion of the development
+process and algorithm design choices. Empirical analysis producing evidence for
+the improvements Balanced NUCOMP brings over previous best. The chapter begins
+with a variety of improvements to generic genus polynomial-based divisor class
+addition algorithms from previous works, along with background on the NUCOMP
+algorithm over ramified model curves.
+
+Chapter~\ref{cha:towardsExplicit} introduces generic approaches for, basic
+definition of, and techniques for developing explicit formulas from previous works.
+A novel approach based on NUCOMP for ramified curves, and Balanced NUCOMP for
+split curves is also described for genus 2 and 3 curves, where the development of all
+explicit formulas, including special cases, is unified for each setting
+respectively. All novel explicit formula techniques introduced in
+this thesis are provided at the end of the chapter.
+
+Chapters~\ref{cha:g2} and~\ref{cha:g3} introduce the novel formulas
+developed in this thesis for genus 2 and 3 respectively. Chapter~\ref{cha:g2} is
+split into major sections, genus 2 ramified model formulas in
+Section~\ref{sec:g2ramExpl}, and genus 2 split model formulas in
+Section~\ref{sec:g2splitExpl}. Both sections and Chapter~\ref{cha:g3} have
+similar structure where first curve simplifications via isomorphisms are
+introduced and prior work in each setting is discussed. The basic formulations
+of doubling and addition algorithms required for complete doubling and addition
+are then presented, followed by a discussion and comparison of the field
+operations costs compared to literature. Both Chapters~\ref{cha:g2}
+and~\ref{cha:g3} end with an empirical timing analysis of the formulas compared to
+previous best computed in Magma using the same platform. The empirical results
+provide evidence supporting the assertions made in the operation cost
+comparisons.
+
+A summary of the work done in this thesis and suggestions for potential research
+for the future are given in Chapter~\ref{cha:conclusion}. All novel
+implementations were solely developed by the author of this thesis. Some
+previous best explicit formulas implemented in Magma were available from the
+respective authors of previous literature, all others were implemented here,
+based on the respective papers.
+
