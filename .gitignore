@@ -1,0 +1,9 @@
+# Docker/Magma setup (local only)
+docker-compose.yml
+Dockerfile
+magma.tar.xz
+run-magma.sh
+
+# Rust build artifacts
+rust/target/
+
