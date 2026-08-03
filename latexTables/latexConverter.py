@@ -630,7 +630,7 @@ class Table(object):
         if codeOp[0] == '^':
             return '{}^{'+codeOp[1:]+'}'
         elif codeOp == '*':
-            return ' \cdot '
+            return r' \cdot '
         else:
             return codeOp
 
