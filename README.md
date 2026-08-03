@@ -49,6 +49,9 @@ all eight split testers set `UTL_DEBUG := false`.
 
 - `latexTables/latexConverter.py` — crashes on startup; its input paths are stale. The committed
   `.tex` tables cannot be regenerated. See [ERRATA.md](ERRATA.md).
+- On the local Docker Magma setup, only 6 of the 23 testers load at all — the genus-2 ramified family.
+  The other 17 abort inside Magma's allocator before running anything. Cause not isolated; see
+  [Most of the suite does not load](#most-of-the-suite-does-not-load-on-the-setup-described-above).
 - `whitebox/whitebox_auto_NEG.py` — only the `nch2` genus-2 split configuration is reachable; the
   ramified and posReduced paths are structurally unreachable, and the three genus-3 case generators
   have stale load paths.
@@ -89,10 +92,59 @@ or through the wrapper:
 MAGMA=./run-magma.sh ./test_all.sh
 ```
 
-**Known limitation of older Magma builds.** A 32-bit Magma V2.21-4 aborts with
-`memi_reduce_block_mmap` when loading any single *function* above roughly 500 lines. That is enough for
-the genus-2 formulas (~265-line functions) but not for the genus-3 ones, so the genus-3 sections of the
-suite cannot be loaded under such a build. Splitting files does not help — the limit is per function.
+### Most of the suite does not load on the setup described above
+
+Worth knowing before you conclude a formula is broken.
+
+**Symptom.** Loading a formula file aborts with `memi_reduce_block_mmap: block moved` followed by
+`Magma: Internal error`, at around 9.8 MB of reported memory usage — so not a memory cap being hit, but
+Magma's allocator failing to relocate an mmap'd block. The abort happens during `load`, before any
+arithmetic runs.
+
+**Measured, running the suite end to end:** 6 of the 23 testers complete; 17 abort this way. The six are
+exactly the genus-2 ramified family. Sorted by the longest single *function* in the formula files each
+tester loads:
+
+| family | longest function | result |
+|---|---|---|
+| genus 2 ramified | 265–267 lines | completes |
+| genus 2 split, both bases | 351–386 lines | aborts |
+| genus 3 split | 547–2288 lines | aborts |
+
+So the threshold on this setup lies between 267 and 351 lines, and it is **per function, not per file** —
+splitting a file into smaller files does not help. Note it is not "genus 2 works, genus 3 does not":
+genus-2 *split* also aborts.
+
+**The cause has not been isolated,** and it is worth being explicit that there are two candidates:
+
+1. **The Magma build.** `magma.tar.xz` unpacks Magma **V2.21-4 (STUDENT)** from 2015, and the executable
+   is a **32-bit i386** binary (`ELF32`, `Machine type: x86-athlon`). A 32-bit address space is a real
+   constraint independent of anything else.
+2. **The container and CPU emulation.** The image is `linux/arm64` on Apple Silicon, so that i386 binary
+   runs emulated, with an address-space layout quite unlike the one it was built for.
+
+Do not assume it is the Magma version. It may equally be the emulation, or the interaction of the two.
+
+**Already tried, and did not help:** rebuilding with `--platform linux/amd64`; Ubuntu 22.04, 18.04 and
+native-i386 base images; disabling ASLR (`--privileged` with `setarch -R`); an unlimited stack; a legacy
+VA layout; and Magma's own `-m` and `-S` memory-arena flags.
+
+**Not yet tried, and the two things most likely to settle it:** a native x86-64 Linux host with no
+emulation in the picture, and any Magma newer than 2.21. Either would distinguish candidate 1 from
+candidate 2.
+
+**Practical consequences.**
+
+- Expect `./test_all.sh` to report 6 passed, 17 failed, 1 skipped, and to exit 1 on this setup. The 17
+  failures are environmental, not formula defects — check the logs under `.test-logs/` for
+  `memi_reduce_block_mmap` before drawing any conclusion about a formula.
+- A full run takes about 5 minutes here, nearly all of it the six that work.
+- Individual testers can be run directly, which is often more useful:
+  `cd g2/ramifiedModel && ../../run-magma.sh nch2_ramifiedG2_whiteBox_tester.mag`
+- `MAGMA` may be given as a relative path; `test_all.sh` resolves it to an absolute one, because it
+  changes directory into each formula tree as it goes.
+- This is the reason a Python verification framework is planned: the genus-2 split and all genus-3
+  formulas currently have no runnable oracle on this machine at all.
 
 ---
 

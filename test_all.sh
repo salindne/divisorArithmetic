@@ -33,6 +33,14 @@ LOGDIR="${LOGDIR:-$ROOT/.test-logs}"
 # preflight
 # ---------------------------------------------------------------------------
 
+# If MAGMA is given as a path rather than a bare command name, make it absolute.
+# This script cds into each formula directory, so a relative wrapper path such as
+# MAGMA=./run-magma.sh would resolve during preflight and then fail with exit 127
+# on every single tester.
+case "$MAGMA" in
+    */*) MAGMA="$(cd "$(dirname "$MAGMA")" && pwd)/$(basename "$MAGMA")" ;;
+esac
+
 if ! command -v "$MAGMA" >/dev/null 2>&1 && [ ! -x "$MAGMA" ]; then
     cat >&2 <<EOF
 error: Magma not found as '$MAGMA'.
@@ -208,8 +216,10 @@ elif (( m > 0 )); then elapsed="${m} minute(s) and ${s} second(s)"
 else                   elapsed="${s} second(s)"
 fi
 
-nfail=$(grep -c . "$FAILLOG" 2>/dev/null || echo 0)
-nskip=$(grep -c . "$SKIPLOG" 2>/dev/null || echo 0)
+# wc -l, not `grep -c . || echo 0`: grep exits 1 on no match, so the fallback
+# fired in addition to grep's own "0" and produced a two-line count.
+nfail=$(wc -l < "$FAILLOG" | tr -d '[:space:]')
+nskip=$(wc -l < "$SKIPLOG" | tr -d '[:space:]')
 
 heading 'SUMMARY'
 printf '  passed:  %s\n  failed:  %s\n  skipped: %s\n  elapsed: %s\n  logs:    %s\n\n' \

@@ -38,6 +38,10 @@ EXPECTED_ABSENT = {
     "magma.tar.xz": "gitignored: licensed Magma tarball, never committed",
     # Named generically in prose as an example of a family, not as a path.
     "timings_[xx]bit.mag": "placeholder for the ten per-field-size drivers",
+    # Created at runtime by test_all.sh and gitignored.
+    ".test-logs/": "gitignored: per-tester logs, created on first run",
+    # A Docker platform identifier, not a filesystem path.
+    "linux/arm64": "docker platform string, not a path",
 }
 
 # Bare filenames mentioned in prose rather than as locations. Checking these as
