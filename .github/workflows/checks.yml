@@ -1,0 +1,96 @@
+name: checks
+
+# Static checks only. Magma cannot run here and never will: it is commercial
+# software distributed as a licensed tarball that must not be committed or pushed
+# to a registry, and it exits 0 even when an assertion fails, so it could not
+# gate on exit status even on a self-hosted runner. The semantic gate for the
+# formulas is a Python verification framework, added separately; this workflow
+# covers everything that can be checked without Magma.
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-lint:
+    # Catches syntax errors, undefined names, Python-2-isms and invalid escape
+    # sequences. The ruleset is deliberately narrow: this repository contains
+    # research scripts that are not going to be restyled, so only real defects
+    # are selected.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: ruff
+        run: |
+          pip install --quiet ruff
+          ruff check --select E9,F63,F7,F82,F821,W605 --exclude rust .
+      - name: compile with SyntaxWarning as error
+        run: |
+          python -W error::SyntaxWarning -m compileall -q \
+            $(git ls-files '*.py' | grep -v '^rust/')
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: false
+      - name: shellcheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          # Every tracked shell script, so a new one cannot be added unchecked.
+          mapfile -t scripts < <(git ls-files '*.sh' | grep -v '^rust/')
+          printf 'checking: %s\n' "${scripts[@]}"
+          shellcheck -S warning "${scripts[@]}"
+
+  path-integrity:
+    # Stale paths are the largest class of defect in this repository: broken
+    # `load` statements and broken `open()` calls, several of which silently
+    # disabled whole tools. Known-broken ones are declared in
+    # tools/known_broken_paths.txt; anything new fails.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - run: python3 tools/check_paths.py --strict
+
+  readme-paths:
+    # The previous README named a tester that had never existed, gave three
+    # filenames wrong and two directories wrong. Note this job is the authority
+    # on filename casing: macOS is case-insensitive, so a casing error passes on
+    # a developer machine and only fails here.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - run: python3 tools/check_readme_paths.py
+
+  harness-selftest:
+    # test_all.sh could not fail: it checked no exit status, grepped no output,
+    # and ended in an echo. This proves the replacement actually detects failure,
+    # using a fake Magma so it needs no licence.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: false
+      - run: tools/tests/run.sh

@@ -1,0 +1,75 @@
+# Known-broken path references, checked by tools/check_paths.py.
+#
+# Format:  <source file>::<referenced target>
+#
+# This is debt with a name attached. It exists so the check can pass on the
+# repository as it stands while still failing on anything NEWLY broken. It
+# should only ever shrink. `tools/check_paths.py --strict` fails if an entry
+# here has started resolving, so stale entries cannot accumulate either.
+#
+# Not listed, because it is a rule rather than debt: whitebox/testerFiles/ holds
+# generator output meant to be copied into the formula directory it tests and
+# run from there, so its `load` lines resolve at the destination. See
+# is_relocatable() in tools/check_paths.py.
+
+# ---------------------------------------------------------------------------
+# latexConverter.py: all live input paths are missing the negReduced/ component,
+# so the script raises FileNotFoundError before doing anything. The real tree is
+# g2/splitModel/{pos,neg}Reduced/g2Formulas/ and
+# g3/splitModel/negReduced/g3Formulas/. Some of these occurrences are inside a
+# triple-quoted block or commented out and so are inert, but all of them are
+# stale and all of them should go when the script is repaired.
+#
+# Owner: the operation-count tables PR. See ERRATA.md E4 and E6.
+# ---------------------------------------------------------------------------
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/arb_splitG2_ADD.mag
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/arb_splitG2_DBL.mag
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/arb_splitG2_UTL.mag
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/ch2_splitG2_ADD.mag
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/ch2_splitG2_DBL.mag
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/ch2_splitG2_UTL.mag
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/nch2_splitG2_ADD.mag
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/nch2_splitG2_DBL.mag
+latexTables/latexConverter.py::../g2/splitModel/g2Formulas/nch2_splitG2_UTL.mag
+latexTables/latexConverter.py::../g3/splitModel/g3Formulas/arb_splitG3_ADD.mag
+latexTables/latexConverter.py::../g3/splitModel/g3Formulas/arb_splitG3_DBL.mag
+latexTables/latexConverter.py::../g3/splitModel/g3Formulas/arb_splitG3_UTL.mag
+latexTables/latexConverter.py::../g3/splitModel/g3Formulas/ch2_splitG3_ADD.mag
+latexTables/latexConverter.py::../g3/splitModel/g3Formulas/ch2_splitG3_DBL.mag
+latexTables/latexConverter.py::../g3/splitModel/g3Formulas/nch2_splitG3_ADD.mag
+latexTables/latexConverter.py::../g3/splitModel/g3Formulas/nch2_splitG3_DBL.mag
+
+# ---------------------------------------------------------------------------
+# The three genus-3 whitebox case generators. Two faults each: they load from
+# g3/splitModel/g3Formulas/, a directory that has never existed (the real one is
+# g3/splitModel/negReduced/g3Formulas/), and they want a copy of
+# poly_balanced_arithmetic.mag in whitebox/genFiles/, which is not there.
+#
+# This is why no ch2 genus-3 whitebox tester exists: the machinery to generate
+# one is broken, not merely unused. See README.md "Whitebox case generation".
+#
+# Owner: the verification-framework PR, which subsumes case generation.
+# ---------------------------------------------------------------------------
+whitebox/genFiles/arb_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/arb_splitG3_ADD.mag
+whitebox/genFiles/arb_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/arb_splitG3_DBL.mag
+whitebox/genFiles/arb_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/arb_splitG3_UTL.mag
+whitebox/genFiles/arb_splitG3_WB_gen.mag::genFiles/poly_balanced_arithmetic.mag
+whitebox/genFiles/ch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/ch2_splitG3_ADD.mag
+whitebox/genFiles/ch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/ch2_splitG3_DBL.mag
+whitebox/genFiles/ch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/ch2_splitG3_UTL.mag
+whitebox/genFiles/ch2_splitG3_WB_gen.mag::genFiles/poly_balanced_arithmetic.mag
+whitebox/genFiles/nch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/nch2_splitG3_ADD.mag
+whitebox/genFiles/nch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/nch2_splitG3_DBL.mag
+whitebox/genFiles/nch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/nch2_splitG3_UTL.mag
+whitebox/genFiles/nch2_splitG3_WB_gen.mag::genFiles/poly_balanced_arithmetic.mag
+
+# ---------------------------------------------------------------------------
+# g2/timings/arbitrary_implementation/ is a superseded fork. Both of its random
+# testers abort immediately on these missing loads, and nothing invokes them.
+# Recorded rather than deleted because the directory sits beside data behind
+# published numbers.
+#
+# Owner: a later cleanup PR.
+# ---------------------------------------------------------------------------
+g2/timings/arbitrary_implementation/arb_ramifiedG2_random.mag::ramifiedUtilities.mag
+g2/timings/arbitrary_implementation/arb_splitG2_random.mag::poly_balanced_arithmetic.mag
