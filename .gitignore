@@ -10,5 +10,8 @@ run-magma.sh
 # Rust build artifacts are ignored by the submodule itself (rust/.gitignore),
 # not from here: superproject ignore rules do not apply inside a submodule.
 
+# Per-tester logs written by test_all.sh
+.test-logs/
+
 # macOS
 .DS_Store

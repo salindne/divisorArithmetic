@@ -9,18 +9,25 @@
 #   ./test_all.sh                        # requires `magma` on PATH
 #   MAGMA=./run-magma.sh ./test_all.sh   # run Magma through the Docker wrapper
 #   SLEEP=0 ./test_all.sh                # skip the decorative pauses
+#   LOGDIR=/somewhere ./test_all.sh      # where per-tester logs are written
+#
+# Exits 0 only if every tester ran to completion and reported no errors;
+# otherwise prints a summary and exits 1.
 #
 # Magma is commercial software and is not part of this repository; see README.md
 # "Requirements and how to run".
 #
 # Runnable from any working directory: all paths are resolved against the
 # location of this script, not the caller's cwd.
+#
+# Kept compatible with bash 3.2, which is what /bin/bash is on macOS.
 
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAGMA="${MAGMA:-magma}"
 SLEEP="${SLEEP:-1}"
+LOGDIR="${LOGDIR:-$ROOT/.test-logs}"
 
 # ---------------------------------------------------------------------------
 # preflight
@@ -40,6 +47,13 @@ See README.md "Requirements and how to run".
 EOF
     exit 127
 fi
+
+mkdir -p "$LOGDIR" || exit 1
+FAILLOG="$LOGDIR/failures.txt"
+SKIPLOG="$LOGDIR/skipped.txt"
+: > "$FAILLOG"
+: > "$SKIPLOG"
+PASSED=0
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -67,13 +81,47 @@ pause() {
     sleep "$1"
 }
 
-# run_test <file> -- run one tester in the current directory
+# run_test <whitebox|random> <file>
+#
+# Magma cannot be gated on its exit status: it returns 0 even when an assertion
+# fails ("Runtime error in assert: Assertion failed") and simply stops reading
+# the file. A truncated run is therefore indistinguishable from a clean one by
+# exit code alone, which is why classification is done by parsing the output and
+# why the terminal-marker check matters as much as the error grep.
 run_test() {
-    "$MAGMA" "$1"
+    local kind=$1 file=$2
+    local rel="${PWD#"$ROOT"/}"
+    local tag="${rel//\//_}__${file%.mag}"
+    local log="$LOGDIR/$tag.log"
+    local status why=''
+
+    "$MAGMA" "$file" 2>&1 | tee "$log"
+    status=${PIPESTATUS[0]}
+
+    if [ "$status" -ne 0 ]; then
+        why="magma exited $status"
+    elif grep -qE 'Runtime error|Assertion failed' "$log"; then
+        why="runtime error or failed assertion"
+    elif [ "$kind" = whitebox ] && ! grep -q 'Total Cases:' "$log"; then
+        why="stopped before the end (no 'Total Cases:' line)"
+    elif [ "$kind" = random ] && grep -q '// Errors occured\.' "$log"; then
+        why="tester reported errors"
+    elif [ "$kind" = random ] && ! grep -q '// No errors\.' "$log"; then
+        why="stopped before the end (no '// No errors.' line)"
+    fi
+
+    if [ -n "$why" ]; then
+        printf '%s/%s: %s\n' "$rel" "$file" "$why" >> "$FAILLOG"
+        printf '\n*** FAIL: %s -- %s\n    log: %s\n\n' "$file" "$why" "$log"
+    else
+        PASSED=$((PASSED + 1))
+        printf '\n    pass: %s\n\n' "$file"
+    fi
 }
 
-# skip_test <file> <reason>
+# skip_test <what> <reason>
 skip_test() {
+    printf '%s: %s\n' "$1" "$2" >> "$SKIPLOG"
     printf 'SKIP: %s -- %s\n\n' "$1" "$2"
 }
 
@@ -82,19 +130,17 @@ run_family() {
     local label=$1 whitebox=$2 random=$3
 
     if [ "$whitebox" = "-" ]; then
-        skip_test "whitebox tester over $label" \
+        skip_test "${PWD#"$ROOT"/} whitebox over $label" \
                   "no such tester exists in this repository"
     else
         boxed "White Box Testing Over $label"
         pause 1
-        run_test "$whitebox"
-        echo
+        run_test whitebox "$whitebox"
     fi
 
     boxed "Random Testing Over $label"
     pause 1
-    run_test "$random"
-    echo
+    run_test random "$random"
 
     boxed "Finished Testing Over $label"
     echo
@@ -152,7 +198,7 @@ run_family "$CH2"  -                                ch2_splitG3_random.mag
 run_family "$NCH2" nch2_splitG3_whitebox_tester.mag nch2_splitG3_random.mag
 
 # ---------------------------------------------------------------------------
-# done
+# summary
 # ---------------------------------------------------------------------------
 
 t=$SECONDS
@@ -161,4 +207,28 @@ if   (( h > 0 )); then elapsed="${h} hour(s), ${m} minute(s) and ${s} second(s)"
 elif (( m > 0 )); then elapsed="${m} minute(s) and ${s} second(s)"
 else                   elapsed="${s} second(s)"
 fi
-printf 'All testing completed in %s\n\n\n' "$elapsed"
+
+nfail=$(grep -c . "$FAILLOG" 2>/dev/null || echo 0)
+nskip=$(grep -c . "$SKIPLOG" 2>/dev/null || echo 0)
+
+heading 'SUMMARY'
+printf '  passed:  %s\n  failed:  %s\n  skipped: %s\n  elapsed: %s\n  logs:    %s\n\n' \
+       "$PASSED" "$nfail" "$nskip" "$elapsed" "$LOGDIR"
+
+if [ "$nskip" -gt 0 ]; then
+    echo '  Skipped:'
+    sed 's/^/    - /' "$SKIPLOG"
+    echo
+fi
+
+if [ "$nfail" -gt 0 ]; then
+    echo '  Failed:'
+    sed 's/^/    - /' "$FAILLOG"
+    echo
+    echo 'TESTING FAILED'
+    echo
+    exit 1
+fi
+
+echo 'All testing completed successfully'
+echo

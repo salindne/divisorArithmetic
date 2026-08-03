@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# Tests that test_all.sh actually detects failure.
+#
+# The suite it guards cannot be run here: Magma is licensed and absent from CI,
+# and the local build cannot load the 9456-line genus-3 testers. So the gate is
+# exercised against tools/tests/fake_magma.sh, which reproduces the output shapes
+# real Magma produces -- including the important one, where a failed assertion
+# stops the file mid-way and Magma still exits 0.
+#
+# Usage: tools/tests/run.sh
+
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+FAKE="$ROOT/tools/tests/fake_magma.sh"
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+fails=0
+
+# expect <expected exit> <mode> <description>
+expect() {
+    local want=$1 mode=$2 desc=$3
+    local out got
+
+    out=$(FAKE_MAGMA_MODE="$mode" MAGMA="$FAKE" SLEEP=0 LOGDIR="$WORK/$mode" \
+          "$ROOT/test_all.sh" 2>&1)
+    got=$?
+
+    if [ "$got" -eq "$want" ]; then
+        printf 'ok    %-10s exit=%s  %s\n' "$mode" "$got" "$desc"
+    else
+        printf 'FAIL  %-10s exit=%s (wanted %s)  %s\n' "$mode" "$got" "$want" "$desc"
+        printf '%s\n' "$out" | tail -20 | sed 's/^/        | /'
+        fails=$((fails + 1))
+    fi
+}
+
+echo "testing test_all.sh failure detection"
+echo
+
+expect 0 pass      'all testers clean'
+expect 1 assert    'failed assertion, magma still exits 0'
+expect 1 errors    'random tester reports "// Errors occured."'
+expect 1 truncated 'whitebox tester stops early with no error message'
+
+echo
+
+# The pass run must also have actually run the testers rather than trivially
+# succeeding, and must report the known ch2 genus-3 whitebox gap as skipped.
+out=$(FAKE_MAGMA_MODE=pass MAGMA="$FAKE" SLEEP=0 LOGDIR="$WORK/verify" \
+      "$ROOT/test_all.sh" 2>&1)
+npass=$(printf '%s\n' "$out" | sed -n 's/^  passed:  *\([0-9]*\)$/\1/p')
+nskip=$(printf '%s\n' "$out" | sed -n 's/^  skipped: *\([0-9]*\)$/\1/p')
+
+if [ "$npass" = "23" ]; then
+    printf 'ok    %-10s 23 testers passed, not a vacuous success\n' 'coverage'
+else
+    printf 'FAIL  %-10s expected 23 passing testers, got "%s"\n' 'coverage' "$npass"
+    fails=$((fails + 1))
+fi
+
+if [ "$nskip" = "1" ]; then
+    printf 'ok    %-10s the ch2 genus-3 whitebox gap is reported, not hidden\n' 'skip'
+else
+    printf 'FAIL  %-10s expected 1 skip, got "%s"\n' 'skip' "$nskip"
+    fails=$((fails + 1))
+fi
+
+echo
+if [ "$fails" -gt 0 ]; then
+    echo "$fails check(s) failed"
+    exit 1
+fi
+echo 'all checks passed'
