@@ -107,7 +107,7 @@ for F in FIELDS do
             ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
             va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
 
-            un3, un2, un1, un0, vn2, vn1, vn0 := DOUBLE(D1, f, h);
+            un3, un2, un1, un0, vn2, vn1, vn0 := DBL(D1, f, h);
 
             if ((cantor[1] ne un3*x^3 + un2*x^2 + un1*x + un0) or (cantor[2] ne vn2*x^2 + vn1*x + vn0)) and not (un3 eq -1 and un2 eq -1 and un1 eq -1 and un0 eq -1) then
                 errorFlag:= true;
