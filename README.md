@@ -183,8 +183,10 @@ first everywhere and every name is positional. That is parameter reordering in b
 rather than any renaming, since the names are already correct, and it is deferred until there is an
 oracle that samples mixed-degree inputs thoroughly enough to catch a swapped pair.
 
-Genus 3 also collapses same-degree cases unevenly: `Deg1ADD` for 1+1 and `Deg3ADD` for 3+3, but
-`Deg22ADD` for 2+2.
+Same-degree cases are spelled with a single digit everywhere except one: `Deg1ADD` for 1+1 and
+`Deg3ADD` for 3+3, but `Deg22ADD` for 2+2 in both genus-3 models. It is the lone holdout, and purely
+cosmetic, since a same-degree case has no operand order to confuse. Collapsing it to `Deg2ADD` is queued
+with the reordering above. Doubling is already uniform: `Deg1DBL`, `Deg2DBL`, `Deg3DBL`.
 
 **The reference implementation is duplicated.** `reduced_basis_arithmetic.mag` exists in 8 copies across
 the tree in 5 byte-distinct versions, and genus 3 additionally has a separate 730-line
