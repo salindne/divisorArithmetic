@@ -10,7 +10,7 @@ of Calgary, 2020), built as `ucalgary_2020_lindner_sebastian.pdf` in this direct
 
 | model | genus 2 | genus 3 |
 |---|---|---|
-| ramified (imaginary), `deg f = 2g+1` | ✅ `arb`, `nch2`, `ch2` | ⛔ not present, see [Status](#status) |
+| ramified (imaginary), `deg f = 2g+1` | ✅ `arb`, `nch2`, `ch2` | ⚠️ `arb`, `nch2` only, see [Status](#status) |
 | balanced split (real), `deg f = 2g+2` | ✅ `arb`, `nch2`, `ch2` | ✅ `arb`, `nch2`, `ch2` |
 
 Also here: generic-genus Cantor and NUCOMP reference implementations, timing experiments against prior
@@ -34,9 +34,15 @@ reduced at genus 2, negative reduced at genus 3. See [Reduced basis](#reduced-ba
 | genus 2 balanced split, each basis, each of `arb`/`nch2`/`ch2` | 77 |
 | genus 3 balanced split, `arb` and `nch2` | 405 |
 | genus 3 balanced split, `ch2` | **0, none exists** |
+| genus 3 ramified, `arb` and `nch2` | **0, none exists yet** |
 
-The `ch2` genus-3 family has 405 labelled branches and no whitebox tester. It is covered only by random
-testing, and its `test_all.sh` invocation is commented out because the file was never produced.
+The `ch2` genus-3 split family has 405 labelled branches and no whitebox tester. It is covered only by
+random testing, and its `test_all.sh` invocation is commented out because the file was never produced.
+
+Genus-3 ramified has no whitebox testers either. Its two random testers were imported from upstream
+along with the formulas and are transitional: both guard addition with `if D1 ne D2`, so neither can
+exercise `ADD(D, D)`, and `Random(Jac)` almost always yields degree 3, so low-degree branches are barely
+covered. Purpose-built testers replace them later.
 
 Whitebox testers instrument ADD and DBL branches only. UTL branches are not instrumented: all eight
 split testers set `UTL_DEBUG := false`.
@@ -122,6 +128,7 @@ whole suite passes. Full diagnosis, and the list of approaches that do not work,
 | path | contents |
 |---|---|
 | [g2/ramifiedModel/](g2/ramifiedModel/) | genus 2 ramified formulas, testers, shared utilities |
+| [g3/ramifiedModel/](g3/ramifiedModel/) | genus 3 ramified formulas, testers, shared utilities |
 | [g2/splitModel/posReduced/](g2/splitModel/posReduced/) | genus 2 balanced split, positive reduced |
 | [g2/splitModel/negReduced/](g2/splitModel/negReduced/) | genus 2 balanced split, negative reduced |
 | [g3/splitModel/negReduced/](g3/splitModel/negReduced/) | genus 3 balanced split, negative reduced |
@@ -159,6 +166,21 @@ Formula files live in a `g2Formulas/` or `g3Formulas/` subdirectory of each mode
 Tester filenames are inconsistently cased, historically: genus 2 uses `*_whiteBox_tester.mag` with a
 capital B, genus 3 uses `*_whitebox_tester.mag`.
 
+**`Deg<i><j>ADD` means different things in different families, so check before comparing.** Function
+names give the degrees of the two input divisors, but the two families disagree on whether the digits
+describe the parameter order:
+
+| | example | order the parameters arrive in |
+|---|---|---|
+| genus 2 ramified | `Deg12ADD(up0,vp0, u1,u0,v1,v0, …)` | **smaller** degree first, so the digits are positional |
+| genus 3, both models | `Deg23ADD(u12,u11,u10,…, u21,u20,…)` | **larger** degree first, so the digits are merely sorted |
+
+Genus 3 ramified follows genus 3 split, which is why it was safe to rename its imported
+`Deg32ADD` to `Deg23ADD` without touching parameters. Reconciling the two families is open work.
+
+Genus 3 also collapses same-degree cases unevenly: `Deg1ADD` for 1+1 and `Deg3ADD` for 3+3, but
+`Deg22ADD` for 2+2.
+
 **The reference implementation is duplicated.** `reduced_basis_arithmetic.mag` exists in 8 copies across
 the tree in 5 byte-distinct versions, and genus 3 additionally has a separate 730-line
 `poly_balanced_arithmetic.mag`. The copy under
@@ -174,7 +196,7 @@ before trusting any cross-comparison.
 ./test_all.sh
 ```
 
-runs 23 testers across genus 2 and genus 3.
+runs 25 testers across genus 2 and genus 3.
 
 **Whitebox testers** compute one computer-generated divisor operation per computation path and assert
 the result against the reference implementation. Case counts are in [Status](#status).
@@ -186,9 +208,11 @@ family:
 | tester | divisors | curves per trial |
 |---|---|---|
 | genus 2, all families | 2500 or 5000 | 1 |
-| genus 3 `arb` | 100 | 10 |
-| genus 3 `nch2` | 500 | 3 |
-| genus 3 `ch2` | 1000 | 5 |
+| genus 3 split `arb` | 100 | 10 |
+| genus 3 split `nch2` | 500 | 3 |
+| genus 3 split `ch2` | 1000 | 5 |
+| genus 3 ramified `arb` | 100 | 10 trials |
+| genus 3 ramified `nch2` | 500 | 5 trials |
 
 **Not run by `test_all.sh`:** the `ch2` genus-3 whitebox tester, which does not exist and whose
 invocation is commented out; [generic/reduced_basis_tester.mag](generic/reduced_basis_tester.mag);
@@ -299,10 +323,12 @@ The recorded pointer may lag the submodule's `main`.
 
 ## Known gaps and roadmap
 
-- **Genus 3 ramified formulas are not here.** Deferred in the thesis, chapter 7, as ongoing work
-  elsewhere. Being merged in separately.
-- **No whitebox tester for `ch2` genus 3**, 405 branches covered by random testing only. The generator
-  that would produce it is broken.
+- **Genus 3 ramified is `arb` and `nch2` only.** The `ch2` specialisation, and an `nch2` doubling, are
+  still to be derived; `nch2` currently borrows the `arb` doubling and so pays for h-terms on every
+  double.
+- **No whitebox tester for `ch2` genus 3 split**, 405 branches covered by random testing only. The
+  generator that would produce it is broken.
+- **No whitebox testers for genus 3 ramified.** Its two random testers are transitional imports.
 - **No positive-reduced basis at genus 3.**
 - **A Python verification framework is planned**, so the formulas can be checked without Magma and
   therefore in CI, which a licensed tool can never do. Until then, defects found are recorded in
