@@ -47,8 +47,9 @@ covered. Purpose-built testers replace them later.
 Whitebox testers instrument ADD and DBL branches only. UTL branches are not instrumented: all eight
 split testers set `UTL_DEBUG := false`.
 
-**The full suite passes:** 23 testers, 0 failures, about 34 minutes, via
-[tools/magma-docker/](tools/magma-docker/). With a stock emulator only 6 of the 23 load, for reasons
+**The full suite passes:** 25 testers, 0 failures, about 40 minutes, via
+[tools/magma-docker/](tools/magma-docker/). With a stock emulator only the six genus-2 ramified testers
+load, for reasons
 that are not obvious. See [Running Magma](#running-magma).
 
 **Not currently runnable:**
@@ -97,6 +98,9 @@ docker build -f tools/magma-docker/Dockerfile -t magma-qemufix .
 MAGMA=tools/magma-docker/magma.sh ./test_all.sh
 ```
 
+That runs 25 testers in about 40 minutes and exits 0. Three whitebox gaps are reported as skips; see
+[Status](#status).
+
 Use [tools/magma-docker/](tools/magma-docker/) rather than a plain `docker build`. On Apple Silicon a
 plain image cannot run most of this repository.
 
@@ -113,7 +117,7 @@ memi_reduce_block_mmap: block moved
 Magma: Internal error
 ```
 
-With a stock emulator 17 of the 23 testers cannot be loaded, everything except genus-2 ramified. It
+With a stock emulator only the six genus-2 ramified testers load; every other tester aborts here. It
 presents as a size limit, because whether Magma needs a shrink correlates with function length. That is
 why it was long mistaken for the formulas being too large for an old Magma.
 
