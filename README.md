@@ -176,7 +176,12 @@ describe the parameter order:
 | genus 3, both models | `Deg23ADD(u12,u11,u10,…, u21,u20,…)` | **larger** degree first, so the digits are merely sorted |
 
 Genus 3 ramified follows genus 3 split, which is why it was safe to rename its imported
-`Deg32ADD` to `Deg23ADD` without touching parameters. Reconciling the two families is open work.
+`Deg32ADD` to `Deg23ADD` without touching parameters.
+
+The intended resolution is to align genus 3 to genus 2, so that the smaller-degree divisor arrives
+first everywhere and every name is positional. That is parameter reordering in both genus-3 models
+rather than any renaming, since the names are already correct, and it is deferred until there is an
+oracle that samples mixed-degree inputs thoroughly enough to catch a swapped pair.
 
 Genus 3 also collapses same-degree cases unevenly: `Deg1ADD` for 1+1 and `Deg3ADD` for 3+3, but
 `Deg22ADD` for 2+2.
