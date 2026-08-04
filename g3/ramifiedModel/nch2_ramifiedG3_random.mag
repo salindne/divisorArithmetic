@@ -1,0 +1,206 @@
+clear;
+///////////////////////////////////////////////////////////////////////////////
+////// TESTING RAMIFIED MODEL DIVISOR ARITHMETIC OVER ARBITRARY FIELDS ////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Sebastian Lindner, 2019
+// - Adapted by Randall Apperley
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This script tests divisor arithmetic functions from arb_ramifiedG2_DBL.m,
+// and arb_ramifiedG2_ADD.m.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//LOAD FILES
+///////////////////////////////////////////////////////////////////////////////
+DBL_DEBUG:= false;
+ADD_DEBUG:= false;
+load "ramifiedUtilities.m";
+load "odd_ramifiedG3_ADD.m";
+// TODO: temp; change to odd_ whenever double file is ready
+load "arb_ramifiedG3_DOUBLE.m";
+"     ";
+
+
+///////////////////////////////////////////////////////////////////////////////
+//GLOBAL TESTING VARIABLES
+///////////////////////////////////////////////////////////////////////////////
+//Field sizes below 20 for random testing
+FIELDS:= {3,5,7,9,11,13,17,19,23,25,29,31};
+TRIALS:= 5;
+DIVISORS:= 1000; //Number of divisor additions and doubling to test per curve
+DEBUG:= false;
+TEST_DBL:= true;
+TEST_ADD:= true;
+
+
+/////////////////////////////////////////////////////////
+///////////////////// TEST LOOPS ////////////////////////
+/////////////////////////////////////////////////////////
+
+printf "///////////////////////////////////////////////////////////////////////\n";
+printf "//\n";
+printf "// - Small finite field and curve picked at random for each trial. \n";
+printf "// - %o total trials.            \n", TRIALS;
+printf "// - %o divisor additions and doubles each per trial.            \n", DIVISORS;
+printf "//";
+errorFlag:= false;
+
+for F in FIELDS do
+  trial:= 1;
+  while trial le TRIALS do
+      printf "\n//    Trial # %o over FF(%o).", trial, F;
+      trial+:=1;
+      // Random finite field FF and polynomial ring over FF
+      FF:=GF(F);
+      R<x>:=PolynomialRing(FF);
+
+      f,h:= RandomG3Curve(F, "odd");
+      C:= HyperellipticCurve(f,h);
+      Jac:= Jacobian(C);
+
+      if DEBUG then
+        "\n";
+        FF, "f is: ", f, "h is: ", h;
+        " ";
+      end if;
+
+      divisor:= 1;
+      while divisor le DIVISORS do
+        divisor+:=1;
+
+        /////////////////////////////////////////////////////
+        ///RANDOM DIVISORS
+        /////////////////////////////////////////////////////
+        D1:= Random(Jac);
+        if DEBUG then
+          "Divisor D1 is: ", D1;
+        end if;
+        u1:= D1[1];
+        v1:= D1[2];
+
+        D2:= Random(Jac);
+        if DEBUG then
+          "Divisor D2 is: ", D2;
+        end if;
+        u2:= D2[1];
+        v2:= D2[2];
+
+
+        /////////////////////////////////////////////////////
+        ///TEST FORMULAS ON DIVISORS
+        /////////////////////////////////////////////////////
+        if DEBUG then "  "; end if;
+        if TEST_DBL then
+
+            cantor:= D1 + D1;
+
+            f7:= Coeff(f, 7); f6:= Coeff(f, 6); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
+
+            h3:= Coeff(h,3); h2:= Coeff(h,2); h1:= Coeff(h,1); h0:= Coeff(h,0);
+
+            ua:= D1[1]; va:= D1[2];
+
+            ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
+            va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
+
+            un3, un2, un1, un0, vn2, vn1, vn0 := DOUBLE(D1, f, h);
+
+            if ((cantor[1] ne un3*x^3 + un2*x^2 + un1*x + un0) or (cantor[2] ne vn2*x^2 + vn1*x + vn0)) and not (un3 eq -1 and un2 eq -1 and un1 eq -1 and un0 eq -1) then
+                errorFlag:= true;
+                "ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+                "the input divisors: ", D1;
+                "Cantor result: ", cantor;
+                "Explicit result: ", un3*x^3 + un2*x^2 + un1*x + un0, vn2*x^2 + vn1*x + vn0;
+            end if;
+
+            if DEBUG then "cantor doubling: ", cantor; end if;
+        end if;
+
+        if TEST_ADD then
+
+            f7:= Coeff(f, 7); f6:= Coeff(f, 6); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
+
+            ua:= D1[1]; va:= D1[2];
+            ub:= D2[1]; vb:= D2[2];
+
+            ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
+            va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
+
+            ub3:= Coeff(ub,3); ub2:= Coeff(ub,2); ub1:= Coeff(ub,1); ub0:= Coeff(ub,0);
+            vb2:= Coeff(vb,2); vb1:= Coeff(vb,1); vb0:= Coeff(vb,0);
+
+
+            cantor:= D1 + D2;
+            //cantor_dub:= D1*2;
+
+            if D1 ne D2 then
+
+                un3, un2, un1, un0, vn2, vn1, vn0 := ADD(D1, D2, f);
+                un,vn := Nucomp_g3_RAM(D1,D2,f,h);
+
+                // ensure ua is always the larger polynomial
+                if D2[1] le D1[1] then
+                    ua:= D1[1]; va:= D1[2];
+                    ub:= D2[1]; vb:= D2[2];
+
+                else
+                    ub:= D1[1]; vb:= D1[2];
+                    ua:= D2[1]; va:= D2[2];
+
+                end if;
+
+                ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
+                va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
+
+                ub3:= Coeff(ub,3); ub2:= Coeff(ub,2); ub1:= Coeff(ub,1); ub0:= Coeff(ub,0);
+                vb2:= Coeff(vb,2); vb1:= Coeff(vb,1); vb0:= Coeff(vb,0);
+
+                // this is here to ensure that I didn't miss any cases
+                if (un3 eq -1 and un2 eq -1 and un1 eq -1 and un0 eq -1) and (F mod 2 ne 0)  then
+                    "-1 detected";
+                    "input: (", u1, v1, "), (", u2, v2, ")";
+                    "result: ", cantor;
+
+                else
+                    if (cantor[1] ne un3*x^3 + un2*x^2 + un1*x + un0) or (cantor[2] ne vn2*x^2 + vn1*x + vn0) then
+                        errorFlag:= true;
+                        "ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+                        "the input divisors: ", D1, D2;
+                        "Cantor result: ", cantor;
+                        "Explicit result: ", un3*x^3 + un2*x^2 + un1*x + un0, vn2*x^2 + vn1*x + vn0;
+                        the_gcd, a1, a2 := Xgcd(ub, ua);
+                        the_gcd2, a1, a2 := Xgcd(h+va+vb, the_gcd);
+                        "the gcd(ub,ua) = ", the_gcd;
+                        "the gcd(h+va+vb,the_gcd) = ", the_gcd2;
+                    end if;
+
+                    if (un ne cantor[1] or vn ne cantor[2]) then
+                        errorFlag:= true;
+                        "NUCOMP ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+                        "the input divisors: ", D1, D2;
+                        "Cantor result: ", cantor;
+                        "NUCOMP result: ", un, vn;
+                    end if;
+
+                end if;
+
+            end if;
+        end if;
+      end while;
+  end while;
+end for;
+printf "\n///////////////////////////////////////////////////////////////////////\n";
+"TEST_ADD: ", TEST_ADD;
+"TEST_DBL: ", TEST_DBL;
+if errorFlag then
+  printf "\n// Errors occurred!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+else
+  printf "\n// No errors.";
+end if;
+printf "\n//";
+printf "\n///////////////////////////////////////////////////////////////////////\n";
+quit;

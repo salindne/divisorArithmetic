@@ -1,0 +1,400 @@
+///////////////////////////////////////////////////////////////////////////////
+/////////////// RAMIFIED HEC EXPLICIT FORMULA TESTING UTILITIES. //////////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Utility functions for testing suit of explicit formulas for ramified 
+// HEC's over arbitrary, characteristic 2 and non characteristic 2 fields.
+//  
+// For more detials see XXXXXXXXXXXXXXXX, Sebastian Lindner, 2019.
+// - Adapted by Randall Apperley
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////FUNCTIONS///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------------------
+// Coeff(poly,n)
+//-----------------------------------------------------------------------------
+// Input: poly: Polynomial over a field.
+//           n: natural number.
+//
+// Return: The n-monomial's coefficient.
+//-----------------------------------------------------------------------------
+Coeff := function(f,n)
+    c:=Coefficients(f); return n+1 le #c select c[n+1] else 0;
+end function;
+
+//-----------------------------------------------------------------------------
+// RandomG2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//     
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f and h in GF(q)[x] where f is monic seperable of degree 
+//         5 and polynomial h of degree <= 2.
+//-----------------------------------------------------------------------------
+RandomG2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h 
+        f:= x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+        h:= Random(0,1)*x^2 + Random(F)*x + Random(F);
+
+
+        //Check if f and h are hyperelliptic polynomials for a curve of genus g
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h correspond to a genus g hyperelliptic curve, check to see 
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+//-----------------------------------------------------------------------------
+// RandomG2NotChar2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//        
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f in GF(q)[x] where f is monic seperable of degree 
+//         5 and 4th power term is 0.
+//-----------------------------------------------------------------------------
+RandomG2NotChar2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f 
+        f:= x^5 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f is hyperelliptic polynomial for a curve 
+        try
+            C:=HyperellipticCurve(f);
+            isHC:= true;
+
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f corresponds to a genus 2 hyperelliptic curve, check to see 
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
+                return f;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+//-----------------------------------------------------------------------------
+// RandomG2Char2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//        
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f and h in GF(q)[x] where f is monic seperable of degree 
+//         5 and 4th, and 3rd power terms are 0, h has degree 2 with the 2nd
+//         power coefficient in {0,1}.
+//-----------------------------------------------------------------------------
+RandomG2Char2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h 
+        f:= x^5 + Random(F)*x^2 + Random(F)*x + Random(F);
+        h:= Random(0,1)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f and h are hyperelliptic polynomials for a curve of genus g
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h correspond to a genus g hyperelliptic curve, check to see 
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+// ========================== RANDALL'S FUNCTIONS =============================
+
+//-----------------------------------------------------------------------------
+// RandomG3Curve(q)   //adapted from RandomG2Curve
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//     
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f and h in GF(q)[x] where f is monic seperable of degree 
+//         5 and polynomial h of degree <= 2.
+//-----------------------------------------------------------------------------
+RandomG3Curve := function(q, char_type)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h 
+        f:= x^7 + Random(F)*x^6 + Random(F)*x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+        //h3 will be made Random(0,1) later
+
+        if char_type eq "odd" then
+            h:= 0*x^3 + 0*x^2 + 0*x + 0;
+        elif char_type eq "arb" then
+            h:= Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+        end if;
+		// TODO: add the case for even char too
+
+        //Check if f and h are hyperelliptic polynomials for a curve of genus g
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h correspond to a genus g hyperelliptic curve, check to see 
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 7) then
+                return f,h;
+            end if;
+        end if;
+        
+    end while;
+end function;
+
+
+XGCD_PARTIAL := function(R2, R1, BOUND, flag)
+
+    C2:= 0;
+    C1:= -1;
+    
+    flag:= false;
+    
+    while Degree(R1) gt BOUND do
+        q,R2 := Quotrem(R2, R1);
+        
+        // swap
+        RT:= R1;
+        R1:= R2;
+        R2:= RT;
+        
+        r:= C2 - q*C1;
+        
+        C2:= C1;
+        C1:= r;
+        
+        flag:= not flag;
+        
+    end while;
+
+    return R2, R1, C2, C1, flag;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// Nucomp_g3_RAM(D1,D2,f,h)
+//-----------------------------------------------------------------------------
+// Input: D1,D2: D1=(ub,v1,w1) and D2=(ua,v2,w2) reduced divisors over  
+//               HyperellipticCurve(f,h).
+//          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
+//               D2 are added over.
+//            g: genus
+// 
+// Return: Unique reduced divisor D3 ~ D1 + D2.
+//-----------------------------------------------------------------------------
+Nucomp_g3_RAM := function(D1,D2,f,h)
+    
+    //if D1 eq D2 then
+    //    return Nuduple_g3_RAM(D1,f,h);
+    //end if;
+
+    //Make sure lower degree u is used
+    if Degree(D1[1]) lt Degree(D2[1]) then
+        ua := D1[1]; v2 := D1[2]; 
+        ub := D2[1]; v1 := D2[2]; 
+    else
+        ub := D1[1]; v1 := D1[2]; 
+        ua := D2[1]; v2 := D2[2];
+    end if;
+
+    //k should be pushed forward depending on case, 
+    //Should only compute k right before needed
+    k := ExactQuotient(f-v1*(v1 + h),ub);
+
+    //Check for GCD cases, covers all ways to get s polynomial
+    S,a1,b1 := XGCD(ub,ua);    
+    if not IsOne(S) then
+        S,a2,b2 := XGCD(S,v2 + v1 + h);
+        if not IsOne(S) then
+            ub := ExactQuotient(ub,S);
+            ua := ExactQuotient(ua,S);
+        end if;
+        s  := (a2*a1*(v2 - v1) + b2*k) mod ua;
+    //Typical
+    else
+        s := a1*(v2 - v1) mod ua;
+    end if;
+    // End of check for gcd cases, stay with in these cases and go forward with
+    // the following output cases within in each GCD case.
+
+
+    //Output Cases
+    //No Reduction
+    if Degree(ua) + Degree(ub) le 3 then
+        u := ub*ua;
+        v := (v1 + ub*s) mod u;
+    //One Reduction step - No Continued Fraction Step
+    elif Degree(s) lt 2 then
+        z := -ub*s;
+        vt:= z - v1 - h;
+        u := ExactQuotient(s*(vt - v1) + k*S,ua);
+        u := u/LeadingCoefficient(u);
+        v := vt mod u;
+    //Two Reduction steps, this is the Typical case - One Continued Fraction Step
+    else
+        q,r := Quotrem(ua,s);
+        M1 := ExactQuotient((v2 - v1)*q + ub*r, ua);
+        M2  := ExactQuotient(r*(v2 + v1 + h) + q*k, ua);
+        u := r*M1 - q*M2; 
+        z := ExactQuotient(ub*r - u, q);
+        u := u/LeadingCoefficient(u);
+        v := (z - v1 - h) mod u;
+    end if;
+    //Ignore w, just need to work in my polynomial algorithms
+    //w := ExactQuotient(f-v*(v + h),u);
+    return u,v;
+end function;
+
+
+// generic implementation of NUCOMP
+NUCOMP:= function(genus, f, h, D1, D2, DEBUG)
+
+    // DA[1] <= DB[1]
+    if D1[1] ge D2[1] then
+        DA:= D1;
+        DB:= D2;
+    else
+        DA:= D2;
+        DB:= D1;
+    end if;
+    
+    ua:= DA[1]; va:= DA[2];
+    ub:= DB[1]; vb:= DB[2];    
+    
+    ss:= vb + va;
+    m:= vb - va;
+    
+    c,the_rem := Quotrem(va^2 + h*va - f, ua);
+    
+    // solve SP = v1 ua + u1 ub (only need v1)
+    SP,v1,u1 := Xgcd(ua, ub);
+
+    // K = v1 (vb - va) mod L 
+    //   = (vb - va)/ua mod ub
+    the_quot,K := Quotrem(m*v1, ub);
+    
+    if Degree(SP) gt 0 then
+    
+        if DEBUG then
+            "SP,v1 are", SP, v1;    
+            "the first K is: ", K;
+        end if;
+        
+        // solve S = u2*SP + v2*(ss + h)
+        S,u2,v2 := Xgcd(SP, ss + h);
+        
+        // K = u2 K - v2 c mod ub
+        //   = K/SP - c/(va + vb + h) mod ub
+        K:= u2*K - v2*c;
+        
+        if S ne 1 then
+            ub,the_rem := Quotrem(ub, S);
+            ua,the_rem := Quotrem(ua, S);
+            c:= c*S;
+        end if;
+               
+        the_quot,K := Quotrem(K, ub);
+        if DEBUG then
+            "the second K is: ", K;
+        end if;
+    end if;
+    
+    // check if NUCOMP steps are required
+    if Degree(ua) + Degree(ub) le genus then
+        un:= ua*ub;
+        //vn:= va + ua*K; //THIS WAS THE OLD LINE OF CODE
+        the_quot, vn:= Quotrem(va + ua*K, un);
+    
+        return un, vn;
+    
+    // otherwise, use NUCOMP
+    else
+        if Degree(va) eq genus + 1 then
+            BOUND:= ShiftRight((Degree(ub) - Degree(ua) + genus + 1),1);
+        else
+            BOUND:= ShiftRight((Degree(ub) - Degree(ua) + genus),1);
+        end if;
+
+        flag:= false;
+        R2,R1,C2,C1,flag := XGCD_PARTIAL(ub, K, BOUND, flag);
+        
+        //"R1 is: ", R1;
+        M1,the_rem := Quotrem(R1*ua + m*C1, ub);
+        M2,the_rem := Quotrem(R1*(ss + h) - c*C1, ub);
+        
+        if DEBUG then
+            "-M1 is: ", -M1;
+            "-M2 is: ", -M2;
+        end if;
+        
+        Ca:= R1*M1;
+        temp:= C1*M2;
+        
+        if flag then
+            Ca:= Ca - temp;
+        else
+            Ca:= temp - Ca;
+        end if;
+        
+        Cb,the_rem := Quotrem(R1*ua + Ca*C2, C1);
+        the_quot,Cb := Quotrem(Cb - va - h, Ca);
+        
+        // making Ca monic
+        un,the_rem := Quotrem(Ca, Coeff(Ca, Degree(Ca)));
+        vn:= Cb;
+        
+        if DEBUG then
+            un, vn;
+        end if;
+        
+        return un, vn;
+    end if;
+    
+end function;
