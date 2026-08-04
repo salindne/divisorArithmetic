@@ -120,7 +120,7 @@ Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, h3, 
             vn1:= 0;
             vn0:= v1_0 - v1_1*un0;
 
-			if (ADD_DEBUG) then "Deg12ADD | Case #2.2: gcd(u1,u2) = u2, gcd(u2,h+v2+v1) = u2"; end if;
+			if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Case #2.2: gcd(u1,u2) = u2, gcd(u2,h+v2+v1) = u2"; end if;
             return un3, un2, un1, un0, vn2, vn1, vn0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
@@ -166,7 +166,7 @@ Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, h3, 
         vn1:= u1_1*s0 + v1_1;
         vn0:= u1_0*s0 + v1_0;
 
-		if (ADD_DEBUG) then "Deg12ADD | Case #2.2: gcd(u1,u2) = u2, gcd(u2,h+v2+v1) = 1"; end if;
+		if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Case #2.2: gcd(u1,u2) = u2, gcd(u2,h+v2+v1) = 1"; end if;
         return un3, un2, un1, un0, vn2, vn1, vn0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
@@ -190,7 +190,7 @@ Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, h3, 
     vn1:= u1_1*s0 + v1_1;
     vn0:= u1_0*s0 + v1_0;
 
-	if (ADD_DEBUG) then "Deg12ADD | Typical"; end if;
+	if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Typical"; end if;
     return un3, un2, un1, un0, vn2, vn1, vn0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
@@ -577,7 +577,7 @@ Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, 
             vn1:= v1_1 - un1*v1_2;
             vn0:= v1_0 - un0*v1_2;
 
-            if (ADD_DEBUG) then "Deg13ADD: gcd(u1,u2) = u2, DB = P1, DA = P2-P1+P3"; end if;
+            if (ADD_DEBUG) then "Deg13ADD (deg 3 first): gcd(u1,u2) = u2, DB = P1, DA = P2-P1+P3"; end if;
             return un3, un2, un1, un0, vn2, vn1, vn0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
@@ -619,7 +619,7 @@ Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, 
         vn1:= s0Plush3*un1 - s0Timesu1_1 - t1_1;
         vn0:= s0Plush3*un0 - s0*u1_0 - t1_0;
 
-        if (ADD_DEBUG) then "Deg13ADD: gcd(u1,u2) = u2, DB = P1, DA = P1+P2+P3"; end if;
+        if (ADD_DEBUG) then "Deg13ADD (deg 3 first): gcd(u1,u2) = u2, DB = P1, DA = P1+P2+P3"; end if;
         return un3, un2, un1, un0, vn2, vn1, vn0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
@@ -653,7 +653,7 @@ Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, 
     vn1:= s0Plush3*un1 - s0Timesu1_1 - t1_1;
     vn0:= s0Plush3*un0 - s0*u1_0 - t1_0;
 
-    if (ADD_DEBUG) then "Deg13ADD: Typical"; end if;
+    if (ADD_DEBUG) then "Deg13ADD (deg 3 first): Typical"; end if;
     return un3, un2, un1, un0, vn2, vn1, vn0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
@@ -748,7 +748,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
                 vn1:= 0;
                 vn0:= v1_0 - un0*(v1_1 - v1_2*un0);
 
-                if (ADD_DEBUG) then "Deg23ADD: gcd(u1,u2) = u2, DB = P1+P2, DA = P3-P1-P2"; end if;
+                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u1,u2) = u2, DB = P1+P2, DA = P3-P1-P2"; end if;
                 return un3, un2, un1, un0, vn2, vn1, vn0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
@@ -802,7 +802,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
                 vn1:= u1_1*s0 + v1_1;
                 vn0:= u1_0*s0 + v1_0;
 
-                if (ADD_DEBUG) then "Deg23ADD: gcd(u1,u2) = u2, DB = P1+P2, DA = P2-P1+P3"; end if;
+                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u1,u2) = u2, DB = P1+P2, DA = P2-P1+P3"; end if;
                 return un3, un2, un1, un0, vn2, vn1, vn0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
@@ -855,7 +855,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
                 vn1:= s0*(un1*ta - u1_1 + un0) + un1*tb + h3*un0 - t1_1;
                 vn0:= s0*(un0*ta - u1_0) + un0*tb - t1_0;
 
-                if (ADD_DEBUG) then "Deg23ADD: gcd(u1,u2) = u2, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"; end if;
+                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u1,u2) = u2, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"; end if;
                 return un3, un2, un1, un0, vn2, vn1, vn0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
@@ -891,7 +891,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
             vn1:= s1*(un1*ta - sm0*tb - tc) - t1_1 + h3*un1;
             vn0:= s1*(un0*ta - sm0*tc) - t1_0 + h3*un0;
 
-            if (ADD_DEBUG) then "Deg23ADD: gcd(u1,u2) = u2, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"; end if;
+            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u1,u2) = u2, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"; end if;
             return un3, un2, un1, un0, vn2, vn1, vn0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
@@ -950,7 +950,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
             vn1:= u1_1*s0 + v1_1;
             vn0:= u1_0*s0 + v1_0;
 
-            if (ADD_DEBUG) then "Deg23ADD: gcd(u1,u2) = dw1, DB = P1+P2, DA = P3-P1+P4"; end if;
+            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u1,u2) = dw1, DB = P1+P2, DA = P3-P1+P4"; end if;
             return un3, un2, un1, un0, vn2, vn1, vn0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
@@ -1016,7 +1016,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
             vn1:= s0*(un1*ta - u1_1 + un0) + un1*tb + h3*un0 - t1_1;
             vn0:= s0*(un0*ta - u1_0) + un0*tb - t1_0;
 
-            if (ADD_DEBUG) then "Deg23ADD: gcd(u1,u2) = dw1, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"; end if;
+            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u1,u2) = dw1, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"; end if;
             return un3, un2, un1, un0, vn2, vn1, vn0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
@@ -1053,7 +1053,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
         vn1:= s1*(un1*ta - sm0*tb - tc) - t1_1 + h3*un1;
         vn0:= s1*(un0*ta - sm0*tc) - t1_0 + h3*un0;
 
-        if (ADD_DEBUG) then "Deg23ADD: gcd(u1,u2) = dw1, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"; end if;
+        if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u1,u2) = dw1, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"; end if;
         return un3, un2, un1, un0, vn2, vn1, vn0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
@@ -1095,7 +1095,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
         vn1:= s0*(un1*ta - u1_1 + un0) + un1*tb + h3*un0 - t1_1;
         vn0:= s0*(un0*ta - u1_0) + un0*tb - t1_0;
 
-        if (ADD_DEBUG) then "Deg23ADD: Typical, deg(s) = 0"; end if;
+        if (ADD_DEBUG) then "Deg23ADD (deg 3 first): Typical, deg(s) = 0"; end if;
         return un3, un2, un1, un0, vn2, vn1, vn0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #1.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
@@ -1132,7 +1132,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
     vn1:= s1*(un1*ta - sm0*tb - tc) - t1_1 + h3*un1;
     vn0:= s1*(un0*ta - sm0*tc) - t1_0 + h3*un0;
 
-    if (ADD_DEBUG) then "Deg23ADD: Typical"; end if;
+    if (ADD_DEBUG) then "Deg23ADD (deg 3 first): Typical"; end if;
     return un3, un2, un1, un0, vn2, vn1, vn0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
