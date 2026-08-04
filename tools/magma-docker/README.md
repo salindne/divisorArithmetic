@@ -29,7 +29,7 @@ Magma: Internal error
 
 It was tempting to read that as "this old Magma cannot handle our larger formulas",
 because the failures correlated with size: files whose longest single function was
-265–267 lines loaded, and 351 lines and up did not. Genus-2 ramified worked;
+265-267 lines loaded, and 351 lines and up did not. Genus-2 ramified worked;
 genus-2 split and all of genus 3 did not. That reading was wrong.
 
 ## What is actually happening
@@ -73,7 +73,7 @@ and aborted. From `linux-user/mmap.c`:
 ```
 
 Whenever the guest passes `MREMAP_MAYMOVE`, QEMU picks a fresh region and forces
-the move with `MREMAP_FIXED` — including for shrinks, where the kernel would not
+the move with `MREMAP_FIXED`, including for shrinks, where the kernel would not
 have moved anything. `MREMAP_MAYMOVE` is permission to move, not a request to.
 
 Note the third branch of that same function, for calls with neither flag, already
@@ -86,9 +86,9 @@ than the whole mapping.
 
 | | before | after |
 |---|---|---|
-| genus-2 ramified (longest fn 265–267 lines) | loads | loads |
-| genus-2 split, both bases (351–386) | **aborts** | loads |
-| genus-3 split (547–2288) | **aborts** | loads |
+| genus-2 ramified (longest fn 265-267 lines) | loads | loads |
+| genus-2 split, both bases (351-386) | **aborts** | loads |
+| genus-3 split (547-2288) | **aborts** | loads |
 
 The 2288-line `arb_splitG3_ADD` function loads in well under a second. Function
 length was never the cause; it only determined whether Magma's allocator happened
@@ -108,8 +108,8 @@ to need a shrink.
   Disabling ASLR, unlimited stack, legacy VA layout, Magma's own `-m` and `-S`.
 
 The remaining alternative, if the patch is ever unavailable, is full-system x86
-emulation — a real guest kernel does `mremap` correctly. It also emulates the whole
-CPU, so expect a large slowdown that this patch avoids.
+emulation, where a real guest kernel does `mremap` correctly. It also emulates the
+whole CPU, so expect a large slowdown that this patch avoids.
 
 ## Upstream
 

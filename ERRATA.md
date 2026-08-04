@@ -2,7 +2,7 @@
 
 Known defects in this repository and in material published from it, with reproducers.
 
-Nothing here is fixed yet, and that is deliberate — though the reason has narrowed.
+Nothing here is fixed yet, and that is deliberate, though the reason has narrowed.
 
 The whole suite now runs locally, so a formula change *can* be checked by hand; see
 [tools/magma-docker/](tools/magma-docker/). Two gaps remain, and they are why these still wait:
@@ -25,7 +25,7 @@ Entries are numbered E1, E2, … and referenced from commit messages and from
 
 ---
 
-## E1 — genus-2 ramified ADD: guard too narrow, evaluates `0⁻¹`
+## E1: genus-2 ramified ADD: guard too narrow, evaluates `0⁻¹`
 
 **Severity:** correctness. Aborts with a Magma runtime error on reachable input.
 
@@ -55,8 +55,8 @@ When `dw21 = 0` but `dw20 ≠ 0` the guard does not fire and `dw21^-1` is evalua
 u = x² + 1        v = 1        D1 = D2 = (u, v)
 ```
 
-- `u` is irreducible over `GF(11)`: `−1 ≡ 10` is not a square mod 11 (squares are 1, 3, 4, 5, 9).
-- `(u, v)` is a valid reduced divisor: `f − v(v+h) = x⁵ + x³ = x³(x² + 1)`, which `u` divides.
+- `u` is irreducible over `GF(11)`: `-1 ≡ 10` is not a square mod 11 (squares are 1, 3, 4, 5, 9).
+- `(u, v)` is a valid reduced divisor: `f - v(v+h) = x⁵ + x³ = x³(x² + 1)`, which `u` divides.
 - With `v1 = vp1 = 0` and `v0 = vp0 = 1`: `dw21 = vp1 + v1 = 0`, `dw20 = vp0 + v0 = 2 ≠ 0`.
 
 So the guard is skipped and `b2 := 0^-1` raises.
@@ -71,11 +71,11 @@ the thesis, which carries the same guard.
 
 ---
 
-## E2 — genus-2 ramified ADD: one 6-valued return among 5-valued returns
+## E2: genus-2 ramified ADD: one 6-valued return among 5-valued returns
 
 **Severity:** latent. No current caller reaches it.
 
-**Where:** the same branch as E1 in all three files — `return 0,0,1,0,0,1;` returns **six** values,
+**Where:** the same branch as E1 in all three files. `return 0,0,1,0,0,1;` returns **six** values,
 while every other return in those files returns five. The trailing `1` is a balancing weight belonging
 to the split model, which the ramified model has no use for.
 
@@ -85,7 +85,7 @@ truth.
 
 ---
 
-## E3 — generic timing scripts build the second divisor from the wrong source
+## E3: generic timing scripts build the second divisor from the wrong source
 
 **Severity:** correctness of published measurements.
 
@@ -114,11 +114,11 @@ and all explicit-formula timings are unaffected.
 
 ---
 
-## E4 — `latexConverter.py` produces an empty second operand under Python 3
+## E4: `latexConverter.py` produces an empty second operand under Python 3
 
 **Severity:** correctness of generated tables. Latent, because the script does not currently run.
 
-**Where:** [latexTables/latexConverter.py](latexTables/latexConverter.py), lines 383–384 and the loop
+**Where:** [latexTables/latexConverter.py](latexTables/latexConverter.py), lines 383-384 and the loop
 at 397:
 
 ```python
@@ -129,7 +129,7 @@ d1Input = [x for x in noConstInput if x not in set(d2Input)]
 Under Python 2, `filter` returned a list, so `set(d2Input)` was a snapshot and both operand lists came
 out right. Under Python 3 `filter` is a lazy iterator: `set(d2Input)` consumes it, so
 
-- nothing is excluded from `d1Input` — every variable, primed and unprimed, lands in `D`;
+- nothing is excluded from `d1Input`, so every variable, primed and unprimed, lands in `D`;
 - the loop at 397 iterates an already-exhausted iterator, so `D'` renders as `[]`.
 
 Reproduced with the file's own variable naming:
@@ -140,11 +140,11 @@ py2:  D = [u1,u0,v1,v0]                   D' = [up1,up0,vp1,vp0]
 ```
 
 **Affects:** every ADD table, if regenerated. The committed `.tex` files are correct because they were
-generated under Python 2 — so the risk is regeneration, not the current content.
+generated under Python 2, so the risk is regeneration, not the current content.
 
 ---
 
-## E5 — malformed `//Constant` directives understate three additions
+## E5: malformed `//Constant` directives understate three additions
 
 **Severity:** correctness of published operation counts.
 
@@ -162,13 +162,13 @@ Three separate problems in that one line:
 
 1. `y2` is missing and a spurious `-yn2` sits in its place. The leading minus is not a valid identifier
    character, and the tokeniser lets it swallow subtraction signs in the expressions it then scans.
-2. `d9` and `d10` are missing, replaced by repeats of `d1` and `d0`; `dn5`–`dn10` are absent entirely.
+2. `d9` and `d10` are missing, replaced by repeats of `d1` and `d0`; `dn5` to `dn10` are absent entirely.
 3. A trailing `f3,d6,d7,d8,d1,d0` repeats entries already declared.
 
 [g3/splitModel/negReduced/g3Formulas/nch2_splitG3_DBL.mag](g3/splitModel/negReduced/g3Formulas/nch2_splitG3_DBL.mag)
 line 12 has a milder version: `d4` and `d1` each appear twice.
 
-**Measured effect:** three additions understated — `23ADD` by 1, `3ADD` by 2. Corrected totals
+**Measured effect:** three additions understated: `23ADD` by 1, `3ADD` by 2. Corrected totals
 (M, S, A, C):
 
 | formula | published | corrected |
@@ -185,7 +185,7 @@ malformed, not the counter.
 
 ---
 
-## E6 — three further `latexConverter.py` counting faults
+## E6: three further `latexConverter.py` counting faults
 
 **Severity:** correctness of generated tables. Recorded together; all three are in the counter itself.
 
@@ -198,7 +198,7 @@ malformed, not the counter.
    forgets the annotation yields plausible but wrong numbers.
 
 **Affects:** the genus-2 and genus-3 operation-count tables. Repairing these belongs with repairing the
-script, which also cannot currently run at all — its six live input paths are missing the `negReduced/`
+script, which also cannot currently run at all, its six live input paths are missing the `negReduced/`
 component and every output call is commented out.
 
 ---
