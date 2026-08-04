@@ -18,9 +18,9 @@ clear;
 ///////////////////////////////////////////////////////////////////////////////
 DBL_DEBUG:= false;
 ADD_DEBUG:= false;
-load "ramifiedUtilities.m";
-load "arb_ramifiedG3_ADD.m";
-load "arb_ramifiedG3_DOUBLE.m";
+load "ramifiedUtilities.mag";
+load "g3Formulas/arb_ramifiedG3_ADD.mag";
+load "g3Formulas/arb_ramifiedG3_DBL.mag";
 "     ";
 
 

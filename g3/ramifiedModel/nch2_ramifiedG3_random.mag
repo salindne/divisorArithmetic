@@ -18,10 +18,10 @@ clear;
 ///////////////////////////////////////////////////////////////////////////////
 DBL_DEBUG:= false;
 ADD_DEBUG:= false;
-load "ramifiedUtilities.m";
-load "odd_ramifiedG3_ADD.m";
+load "ramifiedUtilities.mag";
+load "g3Formulas/nch2_ramifiedG3_ADD.mag";
 // TODO: temp; change to odd_ whenever double file is ready
-load "arb_ramifiedG3_DOUBLE.m";
+load "g3Formulas/arb_ramifiedG3_DBL.mag";
 "     ";
 
 
