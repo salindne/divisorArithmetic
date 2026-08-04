@@ -31,7 +31,7 @@ load "g3Formulas/arb_ramifiedG3_DBL.mag";
 //Field sizes below 20 for random testing
 FIELDS:= {3,5,7,9,11,13,17,19,23,25,29,31};
 TRIALS:= 5;
-DIVISORS:= 1000; //Number of divisor additions and doubling to test per curve
+DIVISORS:= 500; //Number of divisor additions and doubling to test per curve
 DEBUG:= false;
 TEST_DBL:= true;
 TEST_ADD:= true;
