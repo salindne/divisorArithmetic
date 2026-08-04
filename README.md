@@ -23,7 +23,7 @@ LaTeX operation-count table generator, a whitebox test-case generator, and a Rus
 
 ## Status
 
-An honest account of what works, as of the date above.
+An account of what works, as of the date above.
 
 **Formulas.** All shipped formula files are believed correct on their stated domains and are covered by
 the test suite described in [Testing](#testing).
