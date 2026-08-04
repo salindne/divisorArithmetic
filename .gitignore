@@ -20,3 +20,7 @@
 
 # macOS
 .DS_Store
+
+# Python bytecode from the verification harness
+__pycache__/
+*.pyc

@@ -39,14 +39,22 @@ def _bump(k, n=1):
 # pure field arithmetic while 12 (genus-3 split ADD) work on polynomials, and
 # poly.Poly supplies every one of these operations under the same names.
 def _is_zero(x):
+    # Plain ints reach here now that literals are no longer coerced into the field,
+    # e.g. `IsZero(0)` and constants that arithmetic left as ints.
+    if isinstance(x, int):
+        return x == 0
     return x.is_zero()
 
 
 def _is_one(x):
+    if isinstance(x, int):
+        return x == 1
     return x.is_one()
 
 
 def _degree(p):
+    if isinstance(p, int):
+        return 0 if p else -1
     return p.deg
 
 
@@ -95,13 +103,48 @@ def _truthy(v):
     return bool(v)
 
 
+def _order_key(v):
+    """Sort key for Magma's `lt/le/gt/ge` when the operands are polynomials.
+
+    The genus-3 ramified ADD dispatchers open with `if D2[1] le D1[1] then`, the
+    comment saying "ensure u1 is always the larger polynomial", so this ordering
+    decides which divisor reaches a mixed-degree function first -- and those
+    functions are not symmetric in their arguments.
+
+    Degree dominates, which is the part that matters and the part Magma agrees
+    with. Equal degrees are broken deterministically by coefficient text. Magma's
+    own tiebreak for equal-degree polynomials is not reproduced here and does not
+    need to be: when the degrees are equal both divisors go to the same
+    same-degree function, and addition is commutative, so either order must give
+    the same sum. `driver.py` checks that rather than assuming it -- an operand
+    order the formulas were sensitive to would show up as a mismatch.
+    """
+    if hasattr(v, "deg"):
+        return (1, v.deg, tuple(str(v.coeff(i)) for i in range(v.deg, -1, -1)))
+    return (0, 0, (str(v),))
+
+
+def _cmp_ord(a, b, op):
+    if hasattr(a, "deg") or hasattr(b, "deg"):
+        ka, kb = _order_key(a), _order_key(b)
+    else:
+        ka, kb = a, b
+    if op == "lt":
+        return ka < kb
+    if op == "le":
+        return ka <= kb
+    if op == "gt":
+        return ka > kb
+    return ka >= kb
+
+
 _CMP = {
     "eq": lambda a, b: a == b,
     "ne": lambda a, b: a != b,
-    "lt": lambda a, b: a < b,
-    "le": lambda a, b: a <= b,
-    "gt": lambda a, b: a > b,
-    "ge": lambda a, b: a >= b,
+    "lt": lambda a, b: _cmp_ord(a, b, "lt"),
+    "le": lambda a, b: _cmp_ord(a, b, "le"),
+    "gt": lambda a, b: _cmp_ord(a, b, "gt"),
+    "ge": lambda a, b: _cmp_ord(a, b, "ge"),
 }
 
 
@@ -119,7 +162,16 @@ def ev(node, env, F, funcs=None):
         except KeyError:
             raise ParseError("undefined name %r" % node[1])
     if k == "int":
-        return F(node[1])
+        # A Python int, NOT F(n). Coercing literals into the field here made every
+        # literal that is an index or an exponent silently reduce modulo the
+        # characteristic: `Coeff(u,2)` became `Coeff(u, F(2))`, and F(2) == 0 in
+        # characteristic 2, so it returned the constant term. Every char-2 result
+        # was wrong, and only in char 2 -- odd fields gave the right answer by
+        # coincidence, which is exactly how it stayed hidden. Genus 3 would have
+        # been worse still: `Coeff(f,7)` would have read coefficient 1.
+        # Arithmetic against field elements and polynomials still works, because
+        # both coerce int operands (including via __radd__/__rsub__/__rmul__).
+        return node[1]
     if k == "neg":
         return -ev(node[1], env, F, funcs)
 
@@ -144,6 +196,9 @@ def ev(node, env, F, funcs=None):
         if funcs and name in funcs:
             return funcs[name](*args)
         raise ParseError("unknown function %r" % name)
+
+    if k == "list":
+        return [ev(e, env, F, funcs) for e in node[1]]
 
     if k == "index":
         base = ev(node[1], env, F, funcs)
@@ -183,15 +238,22 @@ def ev(node, env, F, funcs=None):
 
 def clean_body(path, fn):
     src = open(path).read()
-    m = re.search(r"^%s:=\s*function\s*\((.*?)\)\s*$(.*?)^end function;" % fn,
+    # Tolerate a space before ":=" and any trailing text after the closing
+    # paren: the dispatchers are declared "ADD:= function(D1, D2, f, h)//startIGNORE",
+    # and requiring ")" at end of line made every one of them unfindable.
+    m = re.search(r"^%s\s*:=\s*function\s*\((.*?)\)[^\n]*$(.*?)^end function;" % fn,
                   src, re.S | re.M)
     assert m, "%s not found in %s" % (fn, path)
     params = [p.strip() for p in m.group(1).split(",")]
     body = m.group(2)
-    # strip debug prints FIRST (they contain ';' inside no string, but the
-    # string may contain '=' and ','); the whole one-line construct goes.
-    body = re.sub(r'if\s*\((?:ADD_DEBUG|DBL_DEBUG)\)\s*then\s*"[^"]*";\s*end if;',
-                  "", body)
+    # Debug prints are NOT stripped. They are the branch-coverage instrumentation:
+    # each one names the computation path the formulas just took, and `run` records
+    # it. Stripping them here would have been silent and selective -- the repository
+    # writes the guard two ways, `if ADD_DEBUG then` (1743 occurrences) and
+    # `if (ADD_DEBUG) then` (70), and a strip of only the parenthesised form removed
+    # exactly the genus-3 ramified family, which is the one this work exists to
+    # verify. Coverage would have read 0 branches out of 0 and looked like success.
+    # Both forms are matched as statements in `_statement`.
     # Block comments FIRST. The genus-3 split files close theirs as
     # "*///endIGNORE" with no space, so a line-comment pass run first matches at
     # the "//" one character early, eats the "*/" with it, and orphans the "/*".
@@ -215,6 +277,19 @@ def statements(body):
             # with "u1 :=D1[1]; v1:= D1[2]; ...". Split at top-level semicolons
             # so each becomes its own statement.
             for piece in _split_semis(buf):
+                # "else <stmt>" and "elif ..." appear inline in the dispatchers,
+                # e.g. `else u2:= D1[1];`. Peel the keyword off so the block
+                # builder sees it on its own.
+                m_else = re.match(r"^else\s+(?!if\b)(.+)$", piece)
+                if m_else:
+                    out.append("else")
+                    out.append(m_else.group(1).strip())
+                    continue
+                m_ei = re.match(r"^else\s+(if\b.*)$", piece)
+                if m_ei:
+                    out.append("else")
+                    out.append(m_ei.group(1).strip())
+                    continue
                 out.append(piece)
             buf = ""
     assert not buf, "dangling text %r" % buf[:120]
@@ -271,54 +346,103 @@ class Block(list):
     pass
 
 
-def build(lines, i=0):
-    """Build a block tree.
+def _branch(lines, i):
+    """Build statements from `i` until an else / elif / end if.
 
-    Handles `if <cond> then` with or without surrounding parentheses. The repo
-    writes both: genus-3 ramified parenthesises, genus-3 split does not, and a
-    parser that insisted on one silently rejected half the repository.
+    Returns (block, index_of_terminator, terminator_text). Keeping the
+    terminator visible to the caller is what makes else a *sibling* of its if
+    rather than a child of it: recursing blindly on `if` buried the else inside
+    the then-branch, so it only ran when the condition was true, exactly
+    backwards.
     """
     blk = Block()
     while i < len(lines):
         ln = lines[i]
+
+        if ln == "end if;":
+            return blk, i, "end"
+        if ln == "else":
+            return blk, i, "else"
+        m = re.match(r"^elif\s+(.*?)\s+then$", ln) or re.match(r"^elif\s*\((.*)\)\s*then$", ln)
+        if m:
+            return blk, i, ("elif", m.group(1).strip())
+
         m = re.match(r"^if\s+(.*?)\s+then$", ln) or re.match(r"^if\s*\((.*)\)\s*then$", ln)
         if m:
-            sub, i = build(lines, i + 1)
-            blk.append(("if", parse_cond(m.group(1).strip()), sub))
+            # Collect the whole if / elif* / else? chain as sibling arms.
+            arms = []
+            cond_now = parse_cond(m.group(1).strip())
+            i2 = i + 1
+            while True:
+                sub, j, term = _branch(lines, i2)
+                arms.append((cond_now, sub))
+                if isinstance(term, tuple) and term[0] == "elif":
+                    cond_now = parse_cond(term[1])
+                    i2 = j + 1
+                    continue
+                if term == "else":
+                    sub2, j2, term2 = _branch(lines, j + 1)
+                    arms.append((None, sub2))
+                    assert term2 == "end", "unterminated else near %r" % lines[j2:j2 + 1]
+                    j = j2
+                break
+            blk.append(("ifchain", arms))
+            i = j + 1
             continue
-        m = re.match(r"^(elif)\s+(.*?)\s+then$", ln)
-        if m:
-            sub, i = build(lines, i + 1)
-            blk.append(("elif", parse_cond(m.group(2).strip()), sub))
-            continue
-        if ln == "else":
-            sub, i = build(lines, i + 1)
-            blk.append(("else", None, sub))
-            continue
+
         if ln == ";":
-            i += 1              # empty statement left by a split; harmless
+            i += 1
             continue
-        if ln == "end if;":
-            return blk, i + 1
+
+        # `R<x> := PolynomialRing(GF(q));` in every split-model Precompute. It
+        # binds nothing on purpose: in the nch2 files the ring is genuinely dead
+        # (the Factorization call below it is commented out and the root is
+        # hardcoded), while the arb and ch2 files do use `x` and `Factorization`.
+        # Binding a dummy would let those silently compute nonsense; leaving the
+        # names unbound makes them fail loudly as unknown identifiers instead.
+        if re.match(r"^[A-Za-z_]\w*\s*<\s*\w+\s*>\s*:=\s*PolynomialRing\(.*\);$", ln):
+            blk.append(("nop", ln))
+            i += 1
+            continue
+
+        m = re.match(r"^assert\s+(.*);$", ln)
+        if m:
+            blk.append(("assert", parse_cond(m.group(1)), m.group(1)))
+            i += 1
+            continue
+
         m = re.match(r"^([A-Za-z_][A-Za-z_0-9]*)\s*:=\s*(.*);$", ln)
         if m:
-            blk.append(("set", m.group(1), parse_expr(m.group(2)))); i += 1
+            blk.append(("set", m.group(1), parse_expr(m.group(2))))
+            i += 1
             continue
+
         m = re.match(r'^"([^"]*)";$', ln)
-        if m:                       # bare unguarded print
-            blk.append(("print", m.group(1))); i += 1
+        if m:
+            blk.append(("print", m.group(1)))
+            i += 1
             continue
+
         m = re.match(r'^if\s*\(?[A-Za-z_0-9]*_DEBUG\)?\s*then\s*"([^"]*)";\s*end if;$', ln)
-        if m:                       # one-line guarded print: a branch label
-            blk.append(("print", m.group(1))); i += 1
+        if m:
+            blk.append(("print", m.group(1)))
+            i += 1
             continue
+
         m = re.match(r"^return\s+(.*);$", ln)
         if m:
             blk.append(("ret", [parse_expr(e) for e in _split_top(m.group(1))]))
             i += 1
             continue
+
         raise AssertionError("unparsed statement: %r" % ln)
-    return blk, i
+    return blk, i, None
+
+
+def build(lines, i=0):
+    blk, j, term = _branch(lines, i)
+    assert term in (None,), "unexpected %r at end of function" % (term,)
+    return blk, len(lines)
 
 
 class Ret(Exception):
@@ -327,29 +451,35 @@ class Ret(Exception):
 
 
 def run(blk, env, F, path, funcs=None):
-    taken = False   # whether an earlier arm of the current if/elif/else fired
     for st in blk:
         if st[0] == "set":
             env[st[1]] = ev(st[2], env, F, funcs)
             path.append(st[1])
+        elif st[0] == "nop":
+            pass
+        elif st[0] == "assert":
+            if not _truthy(ev(st[1], env, F, funcs)):
+                raise AssertionError("assertion failed: %s" % st[2])
         elif st[0] == "print":
             path.append("PRINT:" + st[1])
-        elif st[0] in ("if", "elif", "else"):
-            # An if/elif/else chain is a run of sibling entries. Only evaluate a
-            # later arm if no earlier one in the chain fired.
-            if st[0] == "if":
-                taken = False
-            if st[0] == "else":
-                fired = not taken
-            else:
-                fired = (not taken) if st[0] == "elif" else True
-                if fired:
-                    fired = _truthy(ev(st[1], env, F, funcs))
-            if fired:
-                taken = True
-                run(st[2], env, F, path, funcs)
+        elif st[0] == "ifchain":
+            # arms are [(cond, block), ..., (None, block)] with None marking else.
+            for cond, sub in st[1]:
+                if cond is None or _truthy(ev(cond, env, F, funcs)):
+                    run(sub, env, F, path, funcs)
+                    break
         else:
-            raise Ret([ev(e, env, F, funcs) for e in st[1]])
+            # A dispatcher's `return Deg12ADD(...)` evaluates to the callee's
+            # whole tuple, so splice one level rather than returning a 1-tuple
+            # wrapping it.
+            vals = []
+            for e in st[1]:
+                v = ev(e, env, F, funcs)
+                if isinstance(v, tuple):
+                    vals.extend(v)
+                else:
+                    vals.append(v)
+            raise Ret(vals)
 
 
 class MagmaFn:
@@ -360,17 +490,58 @@ class MagmaFn:
         self.blk, n = build(self.stmts)
         assert n == len(self.stmts), (fn, n, len(self.stmts))
 
-    def __call__(self, *args, path=None):
-        assert len(args) == len(self.params), \
-            (self.name, len(args), len(self.params))
-        F = args[0].F
+    def __call__(self, *args, path=None, funcs=None, F=None):
+        """Invoke the function.
+
+        `funcs` supplies sibling functions so a dispatcher can delegate to its
+        Deg* cases. `F` names the field explicitly; without it the field is taken
+        from whichever argument carries one, since the first parameter is not
+        always a field element (dispatchers take polynomials, and some functions
+        lead with a bare weight).
+        """
+        if len(args) != len(self.params):
+            raise AssertionError("%s expects %d args %r, got %d"
+                                 % (self.name, len(self.params), self.params, len(args)))
+        if F is None:
+            for a in args:
+                if hasattr(a, "F"):
+                    F = a.F
+                    break
+            if F is None:
+                raise AssertionError(
+                    "%s: cannot infer the field from any argument; pass F="
+                    % self.name)
         env = dict(zip(self.params, args))
         pth = [] if path is None else path
+        # Bind the sibling table once. A raw `funcs[name](*args)` inside `ev` drops
+        # funcs/F/path, so it worked one level deep and then failed as soon as a
+        # Deg* case delegated further (Deg12ADD -> Deg12ADDUP). Binding keeps a
+        # single shared `path`, which is what makes branch coverage account for
+        # branches taken inside nested calls rather than only in the dispatcher.
+        bound = _bind(funcs, pth, F) if funcs else None
         try:
-            run(self.blk, env, F, pth)
+            run(self.blk, env, F, pth, bound)
         except Ret as r:
             return tuple(r.vals)
         raise AssertionError("%s fell off the end" % self.name)
+
+
+def _bind(funcs, path, F):
+    """Sibling table whose entries already carry `path`, the table itself and F.
+
+    Self-referential on purpose: a bound callee is given the same bound table, so
+    delegation nests to any depth and every branch label lands in one `path`.
+    """
+    bound = {}
+
+    def wrap(fn):
+        def call(*args):
+            return fn(*args, path=path, funcs=bound, F=F)
+        return call
+
+    for name, fn in funcs.items():
+        bound[name] = wrap(fn)
+    return bound
 
 
 def function_names(path):

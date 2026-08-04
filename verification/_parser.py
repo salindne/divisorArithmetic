@@ -192,6 +192,19 @@ class _P:
             n = self.cond()
             self.expect(")")
             return n
+        if tk == "[":
+            # Sequence literal, nestable. The split-model `Precompute` returns its
+            # precomputed constants as [[f0..f6],[y0,y1,d1..d4],...], and the ADD
+            # dispatchers reach into it as ccs[1][2], so literals and indexing have
+            # to agree on one representation.
+            items = []
+            if self.peek() != "]":
+                items.append(self.cond())
+                while self.peek() == ",":
+                    self.take()
+                    items.append(self.cond())
+            self.expect("]")
+            return ("list", items)
         if tk.isdigit():
             return ("int", int(tk))
         if tk in KEYWORDS:
