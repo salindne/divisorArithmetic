@@ -42,7 +42,8 @@ echo
 
 expect 0 pass      'all testers clean'
 expect 1 assert    'failed assertion, magma still exits 0'
-expect 1 errors    'random tester reports "// Errors occured."'
+expect 1 errors    'random tester reports "// Errors occured." (one r)'
+expect 1 occurred  'random tester reports "// Errors occurred!!!" (two r, no stop)'
 expect 1 truncated 'whitebox tester stops early with no error message'
 
 echo
@@ -54,17 +55,17 @@ out=$(FAKE_MAGMA_MODE=pass MAGMA="$FAKE" SLEEP=0 LOGDIR="$WORK/verify" \
 npass=$(printf '%s\n' "$out" | sed -n 's/^  passed:  *\([0-9]*\)$/\1/p')
 nskip=$(printf '%s\n' "$out" | sed -n 's/^  skipped: *\([0-9]*\)$/\1/p')
 
-if [ "$npass" = "23" ]; then
-    printf 'ok    %-10s 23 testers passed, not a vacuous success\n' 'coverage'
+if [ "$npass" = "25" ]; then
+    printf 'ok    %-10s 25 testers passed, not a vacuous success\n' 'coverage'
 else
-    printf 'FAIL  %-10s expected 23 passing testers, got "%s"\n' 'coverage' "$npass"
+    printf 'FAIL  %-10s expected 25 passing testers, got "%s"\n' 'coverage' "$npass"
     fails=$((fails + 1))
 fi
 
-if [ "$nskip" = "1" ]; then
-    printf 'ok    %-10s the ch2 genus-3 whitebox gap is reported, not hidden\n' 'skip'
+if [ "$nskip" = "3" ]; then
+    printf 'ok    %-10s all 3 whitebox gaps reported, not hidden\n' 'skip'
 else
-    printf 'FAIL  %-10s expected 1 skip, got "%s"\n' 'skip' "$nskip"
+    printf 'FAIL  %-10s expected 3 skips, got "%s"\n' 'skip' "$nskip"
     fails=$((fails + 1))
 fi
 

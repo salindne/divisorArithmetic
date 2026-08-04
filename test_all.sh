@@ -112,7 +112,12 @@ run_test() {
         why="runtime error or failed assertion"
     elif [ "$kind" = whitebox ] && ! grep -q 'Total Cases:' "$log"; then
         why="stopped before the end (no 'Total Cases:' line)"
-    elif [ "$kind" = random ] && grep -q '// Errors occured\.' "$log"; then
+    elif [ "$kind" = random ] && grep -qE '// Errors occur+ed' "$log"; then
+        # Both spellings, deliberately. The repo's own testers print
+        # "// Errors occured." with one r and a full stop; the genus-3 ramified
+        # testers print "// Errors occurred!!!..." with two and no stop. Matching
+        # only the first left this check silently dead for the latter, and the
+        # failure was caught solely by the "no // No errors." fallback below.
         why="tester reported errors"
     elif [ "$kind" = random ] && ! grep -q '// No errors\.' "$log"; then
         why="stopped before the end (no '// No errors.' line)"
@@ -204,6 +209,19 @@ run_family "$ARB"  arb_splitG3_whitebox_tester.mag  arb_splitG3_random.mag
 run_family "$CH2"  -                                ch2_splitG3_random.mag
 
 run_family "$NCH2" nch2_splitG3_whitebox_tester.mag nch2_splitG3_random.mag
+
+heading 'TESTING EXPLICIT GENUS 3 RAMIFIED MODEL ARITHMETIC'
+pause 5
+cd "$ROOT/g3/ramifiedModel" || exit 1
+
+# Imported from upstream and transitional. No whitebox testers exist for this
+# family yet, and these two cannot see ADD(D,D) because both guard addition with
+# "if D1 ne D2". Replaced later in the series by testers that can.
+run_family "$ARB"  -  arb_ramifiedG3_random.mag
+run_family "$NCH2" -  nch2_ramifiedG3_random.mag
+
+# No ch2 genus-3 ramified formulas exist yet; that specialisation is derived
+# later in the series. Nothing to skip-announce because there is no file to run.
 
 # ---------------------------------------------------------------------------
 # summary

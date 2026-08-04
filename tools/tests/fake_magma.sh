@@ -10,6 +10,9 @@
 #   assert     one whitebox tester hits a failed assertion and stops mid-file,
 #              exiting 0 -- the case that makes exit-status gating useless
 #   errors     one random tester completes but reports "// Errors occured."
+#   occurred   same, but with the genus-3 ramified testers' spelling,
+#              "// Errors occurred!!!" -- two r's, no full stop. A separate mode
+#              because matching only the one-r spelling left that check dead.
 #   truncated  one whitebox tester stops early with no error message at all
 #
 # Usage: FAKE_MAGMA_MODE=assert ./fake_magma.sh <tester.mag>
@@ -29,6 +32,8 @@ esac
 # a test that only checks the first result cannot pass by accident.
 TARGET_WHITEBOX='nch2_splitG2_whiteBox_tester.mag'
 TARGET_RANDOM='ch2_ramifiedG2_random.mag'
+# The genus-3 ramified testers use the other spelling, so they get their own target.
+TARGET_RAMIFIED_G3='nch2_ramifiedG3_random.mag'
 
 emit_whitebox_header() {
     echo "// Whitebox testing of explicit formulas."
@@ -37,7 +42,7 @@ emit_whitebox_header() {
 }
 
 case "$kind:$mode" in
-    whitebox:pass|whitebox:errors)
+    whitebox:pass|whitebox:errors|whitebox:occurred)
         emit_whitebox_header
         echo '
 Total Cases: 22'
@@ -62,6 +67,16 @@ Total Cases: 22'
         [ "$file" = "$TARGET_WHITEBOX" ] && exit 0
         echo '
 Total Cases: 22'
+        ;;
+    random:occurred)
+        echo '// Random testing of explicit formulas.'
+        if [ "$file" = "$TARGET_RAMIFIED_G3" ]; then
+            echo '
+// Errors occurred!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        else
+            echo '
+// No errors.'
+        fi
         ;;
     random:pass|random:assert|random:truncated)
         echo '// Random testing of explicit formulas.'
