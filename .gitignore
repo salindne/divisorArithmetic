@@ -1,11 +1,16 @@
-# Magma toolchain and Docker setup (local only).
-# magma.tar.xz is a licensed commercial tarball and must never be committed or
-# pushed to a registry. The Dockerfile/compose/wrapper are kept local too; see
-# README.md "Requirements" for the exact commands to recreate them.
-docker-compose.yml
-Dockerfile
-magma.tar.xz
-run-magma.sh
+# The licensed Magma tarball, and the ad-hoc local setup around it.
+#
+# magma.tar.xz is commercial licensed software: never commit it, and never push
+# an image containing it to any registry.
+#
+# These patterns are root-anchored on purpose. Unanchored patterns match at every
+# depth, which previously hid tools/magma-docker/Dockerfile -- the committed,
+# reproducible build recipe -- from git entirely.
+/magma.tar.xz
+/Dockerfile
+/docker-compose.yml
+/run-magma.sh
+/run-magma-patched.sh
 
 # Rust build artifacts are ignored by the submodule itself (rust/.gitignore),
 # not from here: superproject ignore rules do not apply inside a submodule.
