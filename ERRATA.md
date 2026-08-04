@@ -2,11 +2,23 @@
 
 Known defects in this repository and in material published from it, with reproducers.
 
-Nothing here is fixed yet, and that is deliberate. There is currently no way to check a change to a
-formula file: Magma is the only implementation, it cannot be run in CI, and on older builds it cannot
-even load the genus-3 formulas. A Python verification framework is planned to provide that oracle;
-until it exists, editing a formula to fix one of these would be an unverifiable change to published
-work. Each entry records what is wrong, how to reproduce it, and what it affects.
+Nothing here is fixed yet, and that is deliberate — though the reason has narrowed.
+
+The whole suite now runs locally, so a formula change *can* be checked by hand; see
+[tools/magma-docker/](tools/magma-docker/). Two gaps remain, and they are why these still wait:
+
+- **The testers do not exercise these inputs.** All three genus-2 ramified random testers guard their
+  addition with `if D1 ne D2 then` (line 102 or 103), so they never call `ADD(D, D)` at all. E1's
+  reproducer has `D1 = D2`. The whitebox testers carry no such guard, but they run one constructed case
+  per branch and none targets E1's combination of `dw21 = 0` with `dw20 ≠ 0`. So the suite passing tells
+  you nothing about E1, and the testers need rebuilding before a fix can be demonstrated rather than
+  asserted.
+- **Nothing gates a regression.** Magma is licensed and cannot run on hosted CI, and it exits 0 even on
+  `Runtime error in assert: Assertion failed`, so it can never gate on exit status. Until an
+  exhaustively-enumerating, licence-free oracle exists, a formula edit is a change to published work
+  that no automation will re-check.
+
+Each entry records what is wrong, how to reproduce it, and what it affects.
 
 Entries are numbered E1, E2, … and referenced from commit messages and from
 [README.md](README.md).
