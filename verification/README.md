@@ -29,8 +29,14 @@ python3 driver.py --curves 30 --pairs 16 --seed 23 --show-all   # the long run
 python3 selftest.py --list          # what each section checks
 ```
 
-Both exit 0 only on success. `driver.py` also fails when branch coverage falls below
-`--min-coverage` (default 100).
+Both exit 0 only on success.
+
+**`driver.py` with no arguments will exit 1**, and that is correct rather than a
+problem: the default coverage floor is 100%, and the three genus-3 split ADD files
+have branches that random sampling does not reach at any volume (see Known limits).
+It prints exactly which branches, and the comparison result is on the line above:
+`0 mismatched` is the number that says the formulas agree. Pass `--min-coverage 50`,
+as CI does, to gate on comparisons and coverage collapse rather than on that gap.
 
 Two flags worth knowing:
 
@@ -60,9 +66,9 @@ Measured with `driver.py --curves 30 --pairs 16`:
 | | |
 |---|---|
 | families covered | **14** — ramified and split, genus 2 and 3, both reduced bases |
-| operations compared | ~590,000 |
+| operations compared | **674,528** |
 | wrong on the formulas' documented domains | **0** |
-| branch coverage | 84% overall; **100% on all nine ramified files** |
+| branch coverage | **86.9%** overall; **100% on all nine ramified files** |
 | `selftest.py` | 8 sections, 8 passing |
 | parse coverage | 240 of 246 functions |
 
@@ -75,7 +81,7 @@ Every Magma tester here either guards `if D1 ne D2` or runs one constructed case
 branch, so neither can see the `D1 = D2` region at all. The driver reports it
 separately from failures on the documented domain:
 
-- **~53,000 wrong sums where `D1 == D2`.** The thesis assumes `D1 ≠ D2` and no file
+- **64,883 wrong sums where `D1 == D2`**, in the run above. The thesis assumes `D1 ≠ D2` and no file
   checks it. A double-and-add ladder hits this. PR5 adds the dispatch that fixes it.
 - **Divisions by zero in the same region** — errata E1, where the guard
   `IsZero(dw20) and IsZero(dw21)` is too narrow, so `dw21 = 0` with `dw20` nonzero
