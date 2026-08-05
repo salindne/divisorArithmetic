@@ -1,7 +1,7 @@
 """selftest.py -- checks the verification framework itself.
 
-`driver.py` compares the .mag formulas against `reference.py`. Nothing that says
-tells you whether the comparison is trustworthy: a reference that is wrong in the
+`driver.py` compares the .mag formulas against `reference.py`. Nothing it reports
+tells you whether that comparison is trustworthy: a reference that is wrong in the
 same way as a formula agrees with it, and a curve generator that only ever produces
 degenerate curves agrees with everything. This is the file that checks the checker.
 
@@ -68,10 +68,15 @@ from poly import Poly
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
-# The audit's harness and stored repros. Outside this repository on purpose: they
-# are evidence from a prior review, not part of the deliverable.
+# The audit's harness and stored repros. Outside this repository on purpose: they are
+# evidence from a prior review, not part of the deliverable.
+#
+# Resolved relative to the repository, not to anyone's home directory. A committed
+# absolute path would be wrong on every machine but one, and would have made the two
+# sections that use it look permanently skipped to everybody else.
 AUDIT_HARNESS = os.environ.get(
-    "AUDIT_HARNESS", "/Users/s3b/Dev/divisor-audits/g3ram/harness")
+    "AUDIT_HARNESS",
+    os.path.join(os.path.dirname(ROOT), "divisor-audits", "g3ram", "harness"))
 
 CH2_FIELDS = (2, 4, 8, 16)
 ODD_FIELDS = (3, 5, 7, 9, 11, 13)
