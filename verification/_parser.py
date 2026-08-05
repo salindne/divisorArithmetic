@@ -53,7 +53,7 @@ _TOKEN = re.compile(r"""
       \s*(?:
         (?P<int>\d+)
       | (?P<ident>[A-Za-z_][A-Za-z_0-9]*)
-      | (?P<op><=|>=|[-+*/^(),;\[\]])
+      | (?P<op><=|>=|[-+*/^(),;\[\]<>])
       | (?P<bad>\S)
       )
 """, re.X)
@@ -192,18 +192,31 @@ class _P:
             n = self.cond()
             self.expect(")")
             return n
-        if tk == "[":
-            # Sequence literal, nestable. The split-model `Precompute` returns its
-            # precomputed constants as [[f0..f6],[y0,y1,d1..d4],...], and the ADD
-            # dispatchers reach into it as ccs[1][2], so literals and indexing have
-            # to agree on one representation.
+        if tk in ("[", "<"):
+            # Sequence `[..]` and tuple `<..>` literals, both nestable. The
+            # split-model `Precompute` returns its precomputed constants as
+            # [[f0..f6],[y0,y1,d1..d4],...], and the ADD dispatchers reach into it
+            # as ccs[1][2], so literals and indexing have to agree on one
+            # representation.
+            #
+            # Magma distinguishes the two -- a sequence is homogeneous, a tuple is
+            # not -- but both are 1-based indexable and nothing in these files
+            # depends on the difference, so both become one list type. The genus-2
+            # negReduced nch2 Precompute returns `<<<f0,...>>>`, which is why the
+            # tuple form is needed at all.
+            #
+            # `<` is unambiguous here: the formulas spell comparison `lt`/`le`/`gt`,
+            # never `<`, and the one other use of angle brackets, `R<x> :=
+            # PolynomialRing(...)`, is matched as a whole statement before any
+            # expression parsing happens.
+            close = "]" if tk == "[" else ">"
             items = []
-            if self.peek() != "]":
+            if self.peek() != close:
                 items.append(self.cond())
                 while self.peek() == ",":
                     self.take()
                     items.append(self.cond())
-            self.expect("]")
+            self.expect(close)
             return ("list", items)
         if tk.isdigit():
             return ("int", int(tk))

@@ -237,7 +237,7 @@ def adapted_basis(curve, D):
     return (u, v, w, n)
 
 
-def split_identity(curve, V=None):
+def split_identity(curve, V=None, positive=False):
     """The zero class in the split model.
 
     Its balancing weight is ceil(g/2), not 0. Composition sets
@@ -277,10 +277,11 @@ def split_check_divisor(curve, D, V):
     return None
 
 
-def split_add(curve, D1, D2, V):
-    """[D1] + [D2] in the split model, negative reduced.
+def split_add(curve, D1, D2, V, positive=False):
+    """[D1] + [D2] in the split model.
 
-    Ported from Add_SPLIT_NEG. Compose, normalise, reduce, adjust.
+    Ported from Add_SPLIT_NEG, with `positive=True` selecting Add_SPLIT_POS.
+    Compose, normalise, reduce, adjust.
     """
     f, h, g = curve.f, curve.h, curve.genus
     u1, v1, w1, n1 = _split4(curve, D1)
@@ -306,12 +307,12 @@ def split_add(curve, D1, D2, V):
     w = (w1 - K * (t1 + v)).exact_quotient(u2)
     n = n1 + n2 + S.deg - _ceil_div(g, 2)
 
-    u, v, w, n = _split_normalise_reduce(curve, u, v, w, n, V)
-    return split_adjust(curve, (u, v, w, n), V)
+    u, v, w, n = _split_normalise_reduce(curve, u, v, w, n, V, positive)
+    return split_adjust(curve, (u, v, w, n), V, positive)
 
 
-def split_double(curve, D, V):
-    """2*[D] in the split model, negative reduced. Ported from Double_SPLIT_NEG."""
+def split_double(curve, D, V, positive=False):
+    """2*[D] in the split model. Ported from Double_SPLIT_{NEG,POS}."""
     f, h, g = curve.f, curve.h, curve.genus
     u1, v1, w1, _n1 = _split4(curve, D)
     n1 = _split4(curve, D)[3]
@@ -332,12 +333,21 @@ def split_double(curve, D, V):
     w = (w1 - K * (t1 + T)).exact_quotient(u1)
     n = 2 * n1 + S.deg - _ceil_div(g, 2)
 
-    u, v, w, n = _split_normalise_reduce(curve, u, v, w, n, V)
-    return split_adjust(curve, (u, v, w, n), V)
+    u, v, w, n = _split_normalise_reduce(curve, u, v, w, n, V, positive)
+    return split_adjust(curve, (u, v, w, n), V, positive)
 
 
-def _split_normalise_reduce(curve, u, v, w, n, V):
-    """The normalise-then-reduce tail shared by split_add and split_double."""
+def _split_normalise_reduce(curve, u, v, w, n, V, positive=False):
+    """The normalise-then-reduce tail shared by split_add and split_double.
+
+    `positive=True` selects the positive reduced basis. Compose and normalise are
+    identical in both; the only difference in the reduce loop is which of the two
+    leading coefficients is tested first, and Add_SPLIT_POS and Add_SPLIT_NEG
+    differ in exactly that. Getting it backwards produces a valid divisor in the
+    right basis that is nonetheless the wrong class, which is what the positive
+    families looked like before this existed: 37 of 63 operations agreeing rather
+    than all of them.
+    """
     f, h, g = curve.f, curve.h, curve.genus
 
     # --- normalise: bring v back into reduced basis if it outgrew u
@@ -349,12 +359,14 @@ def _split_normalise_reduce(curve, u, v, w, n, V):
 
     # --- reduce
     steps = 0
-    Vn_lc = (-V - h).lc()
-    V_lc = V.lc()
+    # first/second are the two leading coefficients, in the order the chosen
+    # basis's Magma source tests them.
+    first_lc = V.lc() if positive else (-V - h).lc()
+    second_lc = (-V - h).lc() if positive else V.lc()
     while u.deg > g + 1:
-        if v.deg == g + 1 and v.lc() == Vn_lc:
+        if v.deg == g + 1 and v.lc() == first_lc:
             n = n + u.deg - (g + 1)
-        elif v.deg == g + 1 and v.lc() == V_lc:
+        elif v.deg == g + 1 and v.lc() == second_lc:
             n = n + g + 1 - w.deg
         else:
             delta = u.deg - w.deg
@@ -379,12 +391,19 @@ def _split_normalise_reduce(curve, u, v, w, n, V):
     return (u.monic(), v, w * lc, n)
 
 
-def split_adjust(curve, D, V):
-    """Bring the balancing weight into range. Ported from Adjust_SPLIT_NEG.
+def split_adjust(curve, D, V, positive=False):
+    """Bring the balancing weight into range.
+
+    Ported from Adjust_SPLIT_NEG, with `positive=True` selecting Adjust_SPLIT_POS.
+    The two are mirror images: each adjusts directly in its own basis in one
+    direction, and in the other direction converts to the opposite basis, loops
+    there, and converts back.
 
     Adjusts up while n < 0, down while n > g - deg u, and leaves an
     already-balanced divisor alone.
     """
+    if positive:
+        return _split_adjust_pos(curve, D, V)
     f, h, g = curve.f, curve.h, curve.genus
     u, v, w, n = _split4(curve, D)
     steps = 0
@@ -443,6 +462,59 @@ def split_adjust(curve, D, V):
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
+
+def _split_adjust_pos(curve, D, V):
+    """Adjust_SPLIT_POS: the same algorithm in the positive reduced basis."""
+    h, g = curve.h, curve.genus
+    u, v, w, n = _split4(curve, D)
+    steps = 0
+
+    if n > g - u.deg:
+        while n > g - u.deg:
+            n = n + u.deg - (g + 1)
+            ou = u
+            u = w
+            q, r = (V + v + h).divmod(u)
+            tv = V - r
+            w = ou - q * (tv - v)
+            v = tv
+            steps += 1
+            if steps > 64:
+                raise ArithmeticError("down-adjustment failed to terminate")
+        lc = u.lc()
+        u, w = u.monic(), w * lc
+
+    elif n < 0:
+        # convert into the negative reduced basis, loop there, convert back
+        Vn = -V - h
+        t = Vn - V
+        q, r = t.divmod(u)
+        tv = v + t - r
+        w = w - q * (v + h + tv)
+        v = tv
+        while n < -1:
+            ou = u
+            u = w
+            q, r = (Vn + v + h).divmod(u)
+            tv = Vn - r
+            w = ou - q * (tv - v)
+            v = tv
+            n = n + g + 1 - u.deg
+            steps += 1
+            if steps > 64:
+                raise ArithmeticError("up-adjustment failed to terminate")
+        ou = u
+        u = w
+        q, r = (V + v + h).divmod(u)
+        tv = V - r
+        w = ou - q * (tv - v)
+        v = tv
+        n = n + g + 1 - u.deg
+        lc = u.lc()
+        u, w = u.monic(), w * lc
+
+    return (u, v, w, n)
+
 
 def _split4(curve, D):
     """Accept (u, v, w, n) or (u, v, n) or (u, v), filling in what is missing.

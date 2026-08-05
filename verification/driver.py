@@ -41,6 +41,8 @@ import re
 import sys
 
 import curves as C
+from maginterp import _as_int  # noqa: F401
+from _parser import parse_expr
 import maginterp as M
 import reference as R
 from ff import GF
@@ -62,9 +64,21 @@ ODD_FIELDS = (3, 5, 7, 11, 13)
 class Family(object):
     """One (model, genus, class) triple and the files implementing it."""
 
-    def __init__(self, model, genus, kind, add_path, dbl_path):
+    def __init__(self, model, genus, kind, add_path, dbl_path, utl_path=None):
         self.model, self.genus, self.kind = model, genus, kind
         self.add_path, self.dbl_path = add_path, dbl_path
+        self.utl_path = utl_path
+
+    @property
+    def is_split(self):
+        return self.model.startswith("split")
+
+    @property
+    def basis(self):
+        """"pos" or "neg" for a split family; None for a ramified one."""
+        if self.model == "splitpos":
+            return "pos"
+        return "neg" if self.model == "splitneg" else None
 
     @property
     def name(self):
@@ -112,7 +126,13 @@ def discover_families(root=ROOT):
             key = (model + basis, genus, kind)
             seen.setdefault(key, {})[op] = os.path.join(dirpath, fn)
     for (model, genus, kind), ops in sorted(seen.items()):
-        out.append(Family(model, genus, kind, ops.get("ADD"), ops.get("DBL")))
+        add = ops.get("ADD")
+        utl = None
+        if add:
+            cand = add.replace("_ADD.mag", "_UTL.mag")
+            if os.path.exists(cand):
+                utl = cand
+        out.append(Family(model, genus, kind, add, ops.get("DBL"), utl))
     return out, excluded
 
 
@@ -199,15 +219,10 @@ def domain_constraints(fam, families, op="ADD"):
     params, _body = _dispatcher_body(path, op)
     if params and any(p.strip() == "ccs" for p in params):
         # The split dispatchers never touch f or h: they take `ccs`, the constants
-        # `Precompute` derives from the curve, so their validity domain is not
-        # visible here and the contrast below would wrongly report "arbitrary
-        # curves". Producing `ccs` needs a root of x^2 + h_g x - f_{2g+2}, and for
-        # the arb and ch2 families Precompute takes it from Magma's Factorization
-        # and picks "the second solution" -- an ordering that cannot be reproduced
-        # without Magma, and picking the other root swaps the positive and negative
-        # reduced bases. Reported as a blocker instead of guessed at.
-        return None, ("takes precomputed ccs; needs Precompute, whose infinite-place "
-                      "root choice depends on Magma's factor ordering")
+        # `Precompute` derives from the curve. Their domain therefore is not visible
+        # from this contrast and is derived by `split_spec` instead, which reads
+        # Precompute. Callers for split families use that, not this.
+        return None, "split family: see split_spec"
     mine = read_support(path, op)
     if mine is None:
         return None, "no %s dispatcher" % op
@@ -331,6 +346,407 @@ def decode_divisor(F, genus, vals):
 
 
 # ---------------------------------------------------------------------------
+# split model
+# ---------------------------------------------------------------------------
+
+_DECL_LITERAL = re.compile(r"^\s*//\s*(f\d+|h\d+)\s*:=\s*(?:FF!)?\s*(-?\d+)\s*;")
+
+
+def _precompute_return_rows(path):
+    """The innermost comma-separated groups of Precompute's return, as token lists.
+
+    Used to read off normal-form assumptions stated inline rather than in a comment.
+    `nch2_splitG2_UTL.mag` returns `<<f0,f1,f2,f3,f4,0,f6>, ...>`: a literal 0 sits
+    where f5 would go, which states f5 = 0 as plainly as a comment would. Missing it
+    left that family agreeing on 19 of 40 operations instead of 39.
+    """
+    src = open(path).read()
+    m = re.search(_SIG % "Precompute", src, re.S | re.M)
+    if not m:
+        return []
+    nc = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", m.group(2), flags=re.S))
+    r = re.search(r"return\s+(.*?);", nc, re.S)
+    if not r:
+        return []
+    text = " ".join(r.group(1).split())
+    rows = []
+    for grp in re.findall(r"[\[<]([^\[\]<>]*)[\]>]", text):
+        toks = [t.strip() for t in grp.split(",") if t.strip()]
+        if toks:
+            rows.append(toks)
+    return rows
+
+
+def _return_tree(path):
+    """Precompute's return value as a nested tree of token names.
+
+    Parsed with the interpreter's own expression parser rather than by splitting
+    text, so sequence and tuple nesting is exact -- which matters because the two
+    bases nest differently, negReduced three deep and posReduced two.
+    """
+    src = open(path).read()
+    m = re.search(_SIG % "Precompute", src, re.S | re.M)
+    if not m:
+        return None
+    nc = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", m.group(2), flags=re.S))
+    r = re.search(r"return\s+(.*?);", nc, re.S)
+    if not r:
+        return None
+    try:
+        return parse_expr(" ".join(r.group(1).split()))
+    except Exception:
+        return None
+
+
+def _ccs_paths(*paths):
+    """Every ccs index path any formula file actually reads, as tuples of ints."""
+    out = set()
+    for path in paths:
+        if not path:
+            continue
+        src = re.sub(r"//[^\n]*", "",
+                     re.sub(r"/\*.*?\*/", "", open(path).read(), flags=re.S))
+        for m in re.finditer(r"ccs((?:\[\s*\d+\s*\])+)", src):
+            out.add(tuple(int(i) for i in re.findall(r"\d+", m.group(1))))
+    return out
+
+
+def _unread_slots(fam):
+    """Curve coefficients that Precompute stores in ccs and no formula ever reads.
+
+    This is where the split model's real domain lives, and neither of the simpler
+    rules finds it. posReduced's nch2 Precompute reads f5 and passes it straight
+    into ccs[1][6]; the ADD file reads only ccs[1][1] through ccs[1][5], so f5 is
+    assumed zero by the formulas while Precompute looks like it handles it. Judging
+    by Precompute alone therefore misses the constraint, and judging by the
+    dispatchers alone is impossible because they never mention f or h at all.
+
+    The leading coefficients f_{2g+2} and h_{g+1} are excluded: those are fixed by
+    the places at infinity, which `split_spec` derives separately, and calling them
+    zero would contradict it.
+
+    An access to an interior node counts as reading everything beneath it, so an
+    unrecognised access pattern loses constraints rather than inventing them.
+
+    Returns the raw unread set. It is NOT a domain constraint on its own -- see
+    `_unread_contrast`, which is what callers should use.
+    """
+    tree = _return_tree(fam.utl_path) if fam.utl_path else None
+    if tree is None:
+        return {}
+    read = _ccs_paths(fam.add_path, fam.dbl_path)
+    out = {}
+    top_f, top_h = 2 * fam.genus + 2, fam.genus + 1
+
+    def walk(node, prefix):
+        if node[0] == "list":
+            for i, item in enumerate(node[1], start=1):
+                walk(item, prefix + (i,))
+            return
+        if node[0] != "var":
+            return
+        name = node[1]
+        m = re.fullmatch(r"([fh])(\d+)", name)
+        if not m:
+            return
+        var, idx = m.group(1), int(m.group(2))
+        if (var == "f" and idx == top_f) or (var == "h" and idx == top_h):
+            return
+        if any(prefix[:k] in read for k in range(1, len(prefix) + 1)):
+            return
+        out[name] = 0
+
+    walk(tree, ())
+    return out
+
+
+def _dead_reads(path):
+    """Coefficients Precompute extracts from the curve and then never uses.
+
+    A third place a normal-form assumption hides. `posReduced/ch2_splitG2_UTL.mag`
+    writes `f3:= Coeff(f,3);` and never mentions f3 again, and f3 never reaches the
+    returned ccs either -- so neither the literal-substitution rule nor the unread-
+    slot rule sees it, and that family alone kept mismatching after the other eight
+    were clean.
+    """
+    src = open(path).read()
+    m = re.search(_SIG % "Precompute", src, re.S | re.M)
+    if not m:
+        return set()
+    nc = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", m.group(2), flags=re.S))
+    dead = set()
+    for mm in re.finditer(r"\b([fh])(\d+)\s*:=\s*Coeff\(", nc):
+        name = mm.group(1) + mm.group(2)
+        if len(re.findall(r"\b%s\b" % name, nc)) <= 1:
+            dead.add(name)
+    return dead
+
+
+def _unread_contrast(fam, families):
+    """Coefficients `arb` reads through ccs and this specialisation does not.
+
+    The unread set alone is not a constraint. A coefficient no formula reads simply
+    does not influence the answer, and for the low coefficients of f that is
+    genuinely true rather than an assumption: Cantor reduction needs the quotient,
+    and f0 lands in the remainder. Applied raw, the rule claimed the arb genus-2
+    split family required f0 through f5 to vanish, which is plainly false since arb
+    is the family valid on arbitrary curves.
+
+    Contrasting against arb of the same basis and genus fixes it, exactly as the
+    ramified families are handled: what the general family reads and a specialisation
+    does not is what that specialisation assumed away. arb contrasts against itself
+    and so is left unconstrained, which is the correct answer for it.
+    """
+    if fam.kind == "arb":
+        return {}
+    ref = [g for g in families
+           if g.model == fam.model and g.genus == fam.genus and g.kind == "arb"]
+    if not ref:
+        return {}
+    mine = set(_unread_slots(fam))
+    theirs = set(_unread_slots(ref[0]))
+    if fam.utl_path and ref[0].utl_path:
+        mine |= _dead_reads(fam.utl_path)
+        theirs |= _dead_reads(ref[0].utl_path)
+    top = {"f%d" % (2 * fam.genus + 2), "h%d" % (fam.genus + 1)}
+    return {name: 0 for name in sorted(mine - theirs - top)}
+
+
+def _inline_pins(fam, families):
+    """{'f5': 0} for coefficients replaced by a literal in Precompute's return.
+
+    Slot position means nothing on its own: the ch2 files return a compressed row
+    `[f0,f1,f2,f6]` where slot 3 holds f6, not f3. So each row is aligned against the
+    same-length row of the family's own `arb` counterpart, which lists the
+    coefficients in full, and a literal counts as a pin only where it lines up with a
+    named coefficient there.
+    """
+    pins = {}
+    ref = [g for g in families
+           if g.model == fam.model and g.genus == fam.genus and g.kind == "arb"]
+    if not ref or not ref[0].utl_path or not fam.utl_path:
+        return pins
+    mine = _precompute_return_rows(fam.utl_path)
+    theirs = _precompute_return_rows(ref[0].utl_path)
+    name = re.compile(r"[fh]\d+")
+    for row in mine:
+        if not any(name.fullmatch(t) for t in row):
+            continue
+        for other in theirs:
+            if len(other) != len(row):
+                continue
+            named = [(i, t) for i, t in enumerate(other) if name.fullmatch(t)]
+            if len(named) < len(other) - 1:
+                continue
+            if any(row[i] != t for i, t in named if name.fullmatch(row[i])):
+                continue
+            for i, t in named:
+                if re.fullmatch(r"-?\d+", row[i]):
+                    pins[t] = int(row[i])
+            break
+    return pins
+
+
+def split_spec(fam, families=()):
+    """What `fam`'s own Precompute assumes about the curve and its infinite places.
+
+    The split dispatchers read neither f nor h -- they take `ccs`, the constants
+    Precompute derives -- so the arb-contrast used for the ramified families sees
+    nothing. Everything therefore comes from Precompute's source:
+
+      declared    Commented-out literal assignments, which is how these files state
+                  their normal form. `nch2_splitG3_UTL.mag` writes `//f7:= 0;`,
+                  `//f8:= 1;` and `//h0..h4:= 0;`, and `ch2_splitG3_UTL.mag` writes
+                  `//f4..f7:= 0;`, `//h3:= 0;`, `//h4:= 1;`. Authoritative where
+                  present.
+
+      hlead       Forced to 1 when the factored quadratic is spelled with a literal
+                  `x` rather than an h coefficient: the ch2 files factor
+                  `x^2 + x - f6`, which is `x^2 + h_{g+1} x - f_{2g+2}` with
+                  h_{g+1} = 1 substituted in.
+
+      y           Forced when there is no live Factorization at all, meaning the
+                  root is hardcoded. The nch2 files do this, writing `y3 := 1`, and
+                  since nch2 also has h = 0 that pins f_{2g+2} = 1.
+
+    Deriving it beats tabulating it for the usual reason, and there is a second
+    reason here: PR6 through PR8 add new specialisations, and each will state its
+    own normal form the same way.
+    """
+    out = {"declared": {}, "hlead": None, "y": None, "reads": set(), "why": []}
+    if not fam.utl_path:
+        return out
+    unread = _unread_contrast(fam, families)
+    if unread:
+        out["declared"].update(unread)
+        out["why"].append("arb reads these through ccs and this family does not, "
+                          "so zero: %s" % ", ".join(sorted(unread)))
+    out["declared"].update(_inline_pins(fam, families))
+    if _inline_pins(fam, families):
+        out["why"].append("literal substitutions in Precompute's return: %s"
+                          % ", ".join("%s=%d" % kv
+                                      for kv in sorted(out["declared"].items())))
+    src = open(fam.utl_path).read()
+    m = re.search(_SIG % "Precompute", src, re.S | re.M)
+    if not m:
+        return out
+    body = m.group(2)
+    for line in body.split("\n"):
+        d = _DECL_LITERAL.match(line)
+        if d:
+            out["declared"][d.group(1)] = int(d.group(2))
+    if out["declared"]:
+        out["why"].append("normal form declared in source: %s"
+                          % ", ".join("%s=%d" % kv
+                                      for kv in sorted(out["declared"].items())))
+    nc = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", body, flags=re.S))
+    out["reads"] = {(a, int(b)) for a, b in
+                    re.findall(r"Coeff\(\s*([fh])\s*,\s*(\d+)\s*\)", nc)}
+    fac = re.search(r"Factorization\(([^)]*)\)", nc)
+    if fac is None:
+        out["y"] = 1
+        out["why"].append("no live Factorization, so the infinite-place root is "
+                          "hardcoded; f_{2g+2} is pinned by it")
+    else:
+        arg = fac.group(1)
+        if not re.search(r"\bh\d+\b", arg):
+            out["hlead"] = 1
+            out["why"].append("factors %r, an h coefficient substituted by the "
+                              "literal 1, so deg h = g+1 with leading 1" % arg.strip())
+        else:
+            out["why"].append("factors %r, both coefficients read from the curve"
+                              % arg.strip())
+
+    # Coefficients arb's Precompute reads and this one never does are assumed away,
+    # the same contrast the ramified families use. h_{g+1} is exempt when hlead is
+    # forced: the ch2 files stop reading it precisely because they substituted the
+    # literal 1, so calling it zero would be exactly backwards.
+    ref = [g for g in families
+           if g.model == fam.model and g.genus == fam.genus and g.kind == "arb"]
+    if ref and ref[0].utl_path and fam.kind != "arb":
+        gone = split_spec(ref[0])["reads"] - out["reads"]
+        if out["hlead"] is not None:
+            gone.discard(("h", fam.genus + 1))
+        for var, idx in sorted(gone):
+            out["declared"].setdefault("%s%d" % (var, idx), 0)
+        if gone:
+            out["why"].append("arb reads these and this family does not, so zero: %s"
+                              % ", ".join("%s%d" % g for g in sorted(gone)))
+    return out
+
+
+def split_curve_in_domain(F, fam, spec, rng, attempts=400):
+    """A validated split curve inside `fam`'s domain, with rational infinite places."""
+    genus = fam.genus
+    df, dh = C.deg_f(genus, "split"), C.deg_h_max(genus, "split")
+    for _ in range(attempts):
+        try:
+            cur = C.random_curve(
+                F, fam.kind, rng, genus=genus, model="split",
+                infinity_y=(F.one if spec["y"] == 1 else None),
+                force_hlead=(F.one if spec["hlead"] == 1 else None))
+        except ValueError:
+            return None                      # class impossible over this field
+        f, h = cur.f, cur.h
+        if spec["declared"]:
+            fc, hc = f.coeffs_up_to(df), h.coeffs_up_to(dh)
+            for name, val in spec["declared"].items():
+                idx = int(name[1:])
+                tgt = fc if name[0] == "f" else hc
+                if idx < len(tgt):
+                    tgt[idx] = F.one if val == 1 else (
+                        F.zero if val == 0 else F(val))
+            f, h = Poly(F, fc), Poly(F, hc)
+            if f.deg != df:
+                continue
+        try:
+            cand = C.Curve(F, f, h, fam.kind, genus, "split")
+        except AssertionError:
+            continue
+        try:
+            V = C.split_basis(cand, fam.basis)
+        except ArithmeticError:
+            continue                          # infinite places conjugate or equal
+        ok, _why = C.validate_split_curve(cand, V, rng,
+                                          positive=(fam.basis == "pos"))
+        if ok:
+            return cand
+    return None
+
+
+def build_args_split(params, curve, ccs, D1, D2=None):
+    """Map a split dispatcher's parameter names onto values.
+
+    Signatures are `(u1,v1,n1,u2,v2,n2,ccs)` for ADD and `(u,v,n,ccs)` for DBL,
+    the same at both genuses, with u and v as polynomials and n the balancing
+    weight. Read off the parsed signature for the same reason the ramified side is.
+    """
+    args = []
+    for p in params:
+        key = p.strip()
+        if key in ("u1", "u"):
+            args.append(D1[0])
+        elif key in ("v1", "v"):
+            args.append(D1[1])
+        elif key in ("n1", "n"):
+            args.append(D1[3])
+        elif key == "u2":
+            args.append(D2[0])
+        elif key == "v2":
+            args.append(D2[1])
+        elif key == "n2":
+            args.append(D2[3])
+        elif key == "ccs":
+            args.append(ccs)
+        else:
+            raise KeyError("unmapped split dispatcher parameter %r" % key)
+    return args
+
+
+def decode_split(F, genus, vals, V):
+    """(u, v, n) from a split dispatcher's flat return.
+
+    The convention, taken from the repository's own testers rather than assumed:
+
+        genus 2   nU2, nU1, nU0, nV1, nV0, nN         6 values
+        genus 3   nU3, nU2, nU1, nU0, nV2, nV1, nV0, nN   8 values
+
+    so 2g+2 values: g+1 coefficients of u descending, then only the LOW g
+    coefficients of v, then the balancing weight.
+
+    Only the low g coefficients of v come back because v is carried in reduced
+    basis: `vhat = V - (V - v) mod u` agrees with V in every coefficient above
+    deg u, so the top ones are already known. The genus-2 tester rebuilds it as
+    `nV:= R ! Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + nV1*x + nV0;`, which is exactly
+    this. Rebuilding it wrong would compare a different divisor and look like a
+    formula defect.
+    """
+    want = 2 * genus + 2
+    note = None
+    if len(vals) != want:
+        return None, None, None, ("returned %d values, expected %d"
+                                  % (len(vals), want))
+    uc = list(vals[:genus + 1])[::-1]
+    vlow = list(vals[genus + 1:2 * genus + 1])[::-1]
+    n = vals[-1]
+    u = Poly.from_coeffs(F, uc)
+    vc = [V.coeff(i) for i in range(genus + 2)]
+    for i, c in enumerate(vlow):
+        vc[i] = c if not isinstance(c, int) else F(c)
+    return u, Poly.from_coeffs(F, vc), _as_weight(n), note
+
+
+def _as_weight(n):
+    if isinstance(n, int):
+        return n
+    for attr in ("to_int", "lift", "value"):
+        if hasattr(n, attr):
+            got = getattr(n, attr)
+            return int(got() if callable(got) else got)
+    return int(str(n))
+
+
+# ---------------------------------------------------------------------------
 # the run
 # ---------------------------------------------------------------------------
 
@@ -426,6 +842,207 @@ def run_family(fam, families, res, fields, n_curves, n_pairs, seed, verbose):
             res.skipped.append((fam.name + " over GF(%d)" % q,
                                 "only %d of %d curves found in domain"
                                 % (made, n_curves)))
+
+
+def run_split_family(fam, families, res, fields, n_curves, n_pairs, seed, verbose,
+                     probe=None):
+    """Differential-test one split family.
+
+    `probe` short-circuits into a counting mode used to settle the infinite-place
+    root choice: it returns (agree, total) instead of recording into `res`.
+    """
+    spec = split_spec(fam, families)
+    try:
+        subs = dict(M.discover(fam.utl_path)) if fam.utl_path else {}
+        add_subs = M.discover(fam.add_path)
+        add_params, _ = _dispatcher_body(fam.add_path, "ADD")
+        subs.update(add_subs)
+        add = add_subs["ADD"]
+    except Exception as e:
+        res.skipped.append((fam.name + " ADD",
+                            "cannot load: %s: %s" % (type(e).__name__, e)))
+        return (0, 0) if probe is not None else None
+    if "Precompute" not in subs:
+        res.skipped.append((fam.name, "no Precompute available, so ccs cannot "
+                                      "be built"))
+        return (0, 0) if probe is not None else None
+    dbl = dbl_params = None
+    if fam.dbl_path:
+        try:
+            dsubs = M.discover(fam.dbl_path)
+            dbl_params, _ = _dispatcher_body(fam.dbl_path, "DBL")
+            dbl = dsubs["DBL"]
+            merged = dict(dsubs)
+            merged.update(subs)
+            subs = merged
+        except Exception as e:
+            res.skipped.append((fam.name + " DBL",
+                                "cannot load: %s: %s" % (type(e).__name__, e)))
+
+    agree = total = 0
+    for q in fields:
+        F = GF(q)
+        if fam.kind == "ch2" and F.char != 2:
+            continue
+        if fam.kind == "nch2" and F.char == 2:
+            continue
+        rng = random.Random("%s|%d|%d" % (fam.name, q, seed))
+        made = 0
+        for _ in range(n_curves * 6):
+            if made >= n_curves:
+                break
+            cur = split_curve_in_domain(F, fam, spec, rng)
+            if cur is None:
+                continue
+            try:
+                V = C.split_basis(cur, fam.basis)
+            except ArithmeticError:
+                continue
+            try:
+                raw = subs["Precompute"](cur.f, cur.h, F.q, funcs=subs, F=F)
+                # Precompute returns ONE value, the nested constants sequence, so
+                # unwrap the interpreter's return tuple. Passing the tuple straight
+                # through added a nesting level and every ccs[2][...] raised
+                # IndexError.
+                #
+                # The nesting inside differs by basis and is deliberately not
+                # normalised here: negReduced returns
+                # [[[f..],[h..],[yn..],[c..]],[[d..],[au..]]] and is indexed
+                # ccs[1][1][i], while posReduced returns
+                # [[f..],[h..],[y..],[d..],[c..],[au..]] and is indexed ccs[1][i].
+                # Each family's own formulas agree with its own Precompute, which is
+                # all that is required.
+                ccs = raw[0] if len(raw) == 1 else list(raw)
+            except M._Irreducible:
+                continue
+            except Exception as e:
+                res.errors["%s Precompute: %s: %s"
+                           % (fam.name, type(e).__name__, str(e)[:56])] += 1
+                continue
+            made += 1
+            a, t = _exercise_split(fam, cur, V, ccs, add, add_params, dbl,
+                                  dbl_params, subs, res, rng, n_pairs, q,
+                                  verbose, probe)
+            agree += a
+            total += t
+        if made == 0:
+            res.skipped.append((fam.name + " over GF(%d)" % q,
+                               "no curve in the formulas' domain with rational "
+                               "places at infinity"))
+    return (agree, total) if probe is not None else None
+
+
+def _exercise_split(fam, cur, V, ccs, add, add_params, dbl, dbl_params, subs,
+                    res, rng, n_pairs, q, verbose, probe):
+    agree = total = 0
+    for mode in C.PAIR_MODES:
+        for _ in range(n_pairs):
+            try:
+                pair = C.random_split_divisor_pair(cur, V, rng, mode=mode)
+            except Exception as e:
+                res.errors["split pair %s %s: %s"
+                           % (fam.name, mode, type(e).__name__)] += 1
+                continue
+            if not pair:
+                continue
+            D1, D2 = pair
+            if probe is None:
+                res.pairs_by_mode[mode] += 1
+            a, t = _compare_split(fam, cur, V, ccs, add, add_params, subs, res,
+                                  D1, D2, "ADD", q, mode, probe)
+            agree += a
+            total += t
+            if dbl is not None:
+                a, t = _compare_split(fam, cur, V, ccs, dbl, dbl_params, subs,
+                                      res, D1, None, "DBL", q, mode, probe)
+                agree += a
+                total += t
+    return agree, total
+
+
+def _compare_split(fam, cur, V, ccs, fn, params, subs, res, D1, D2, op, q, mode,
+                   probe):
+    F = cur.F
+    path = []
+    same = (op == "ADD" and D2 is not None
+            and D1[0] == D2[0] and D1[1] == D2[1] and D1[3] == D2[3])
+    try:
+        args = build_args_split(params, cur, ccs, D1, D2)
+    except KeyError as e:
+        res.errors["%s %s: %s" % (fam.name, op, e)] += 1
+        return 0, 0
+    try:
+        vals = fn(*args, path=path, funcs=subs, F=F)
+    except Exception as e:
+        bucket = res.precondition_errors if same else res.errors
+        bucket["%s %s %s: %s: %s"
+               % (fam.name, op, mode, type(e).__name__, str(e)[:60])] += 1
+        return 0, 1
+    src = fam.add_path if op == "ADD" else fam.dbl_path
+    if probe is None:
+        for step in path:
+            if step.startswith("PRINT:"):
+                res.covered[src].add(step[6:])
+
+    gu, gv, gn, note = decode_split(F, fam.genus, vals, V)
+    if gu is None:
+        res.errors["%s %s: %s" % (fam.name, op, note)] += 1
+        return 0, 1
+    try:
+        pos = (fam.basis == "pos")
+        want = (R.split_add(cur, D1, D2, V, pos) if op == "ADD"
+                else R.split_double(cur, D1, V, pos))
+    except Exception as e:
+        res.errors["reference %s %s: %s: %s"
+                   % (fam.name, op, type(e).__name__, str(e)[:50])] += 1
+        return 0, 1
+
+    ok = (gu == want[0] and gv == want[1] and gn == want[3])
+    if probe is not None:
+        return (1 if ok else 0), 1
+    res.compared += 1
+    if ok:
+        res.matched += 1
+        return 1, 1
+    (res.precondition if same else res.mismatches).append(dict(
+        family=fam.name, field=q, op=op, mode=mode,
+        f=str(cur.f), h=str(cur.h),
+        D1="(%s, %s, n=%s)" % (D1[0], D1[1], D1[3]),
+        D2=None if D2 is None else "(%s, %s, n=%s)" % (D2[0], D2[1], D2[3]),
+        got="(%s, %s, n=%s)" % (gu, gv, gn),
+        want="(%s, %s, n=%s)" % (want[0], want[1], want[3]),
+        branch=[st[6:] for st in path if st.startswith("PRINT:")]))
+    return 0, 1
+
+
+def resolve_root_choice(fam, families, fields, seed, curves=2, pairs=2):
+    """Settle which root of the infinite-place quadratic Precompute's index means.
+
+    The arb and ch2 Precompute functions take the value at infinity from
+    `Factorization(x^2 + h*x - f)[2][1]`, "the second solution from the
+    factorization given by magma". Magma's ordering of the two factors is an
+    internal detail that cannot be reproduced by reading the source, and the two
+    choices are not interchangeable: swapping them exchanges y and yn, which
+    exchanges the positive and negative reduced bases.
+
+    So it is measured, not assumed. Both orderings are run against the independent
+    reference and the one that agrees is adopted. If both agree the choice does not
+    matter for this family; if neither does, the disagreement is a finding rather
+    than a silently wrong constant.
+
+    This establishes the harness is self-consistent. It does NOT prove the ordering
+    matches Magma's -- only running Magma can do that, which PR1's emulator fix now
+    makes possible and which the plan lists as external calibration.
+    """
+    scores = {}
+    for choice in ("first", "second"):
+        M.ROOT_CHOICE[0] = choice
+        throwaway = Result()
+        agree, total = run_split_family(fam, families, throwaway, fields, curves,
+                                        pairs, seed, False, probe=True)
+        scores[choice] = (agree, total)
+    M.ROOT_CHOICE[0] = "first"
+    return scores
 
 
 def _exercise(fam, cur, add, params, dbl, dbl_params, subs, res, rng,
@@ -656,9 +1273,9 @@ def report(res, families_run, show_all, strict=False):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--model", default="ramified",
+    ap.add_argument("--model", default="all",
                     help="ramified | split | splitpos | splitneg | all "
-                         "(default ramified)")
+                         "(default all)")
     ap.add_argument("--genus", type=int, default=0, help="2, 3, or 0 for both")
     ap.add_argument("--class", dest="klass", default="all",
                     help="arb | nch2 | ch2 | all")
@@ -700,6 +1317,20 @@ def main(argv=None):
     if a.list:
         print("\n  families found (%d), * = selected by these flags\n" % len(families))
         for fam in families:
+            if fam.is_split:
+                sp = split_spec(fam, families)
+                bits = []
+                if sp["declared"]:
+                    bits.append(", ".join("%s=%d" % kv
+                                          for kv in sorted(sp["declared"].items())))
+                if sp["hlead"] == 1:
+                    bits.append("h%d=1" % (fam.genus + 1))
+                if sp["y"] == 1:
+                    bits.append("infinite-place root = 1")
+                dom = ("basis %s; %s" % (fam.basis, "; ".join(bits))
+                       if bits else "basis %s; arbitrary split curves" % fam.basis)
+                print("   %s %-22s %s" % ("*" if fam in sel else " ", fam.name, dom))
+                continue
             cons, why = domain_constraints(fam, families, "ADD")
             if cons is None:
                 dom = "unavailable: %s" % why
@@ -732,7 +1363,11 @@ def main(argv=None):
             fl = CH2_FIELDS if fam.kind == "ch2" else (
                 ODD_FIELDS if fam.kind == "nch2" else CH2_FIELDS + ODD_FIELDS)
         print("  %-24s fields %s" % (fam.name, ", ".join(str(x) for x in fl)))
-        run_family(fam, families, res, fl, a.curves, a.pairs, a.seed, a.verbose)
+        if fam.is_split:
+            run_split_family(fam, families, res, fl, a.curves, a.pairs, a.seed,
+                             a.verbose)
+        else:
+            run_family(fam, families, res, fl, a.curves, a.pairs, a.seed, a.verbose)
 
     return report(res, sel, a.show_all, a.strict)
 

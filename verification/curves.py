@@ -96,9 +96,22 @@ class Curve:
                              % (model, ", ".join(MODELS)))
         want_f = deg_f(genus, model)
         want_h = deg_h_max(genus, model)
-        assert f.deg == want_f and f.is_monic(), (
-            "f must be monic of degree %d for genus %d %s, got degree %d"
-            % (want_f, genus, model, f.deg))
+        # Monic is required for the ramified model and NOT for the split one. A
+        # split curve needs `x^2 + h_{g+1} x - f_{2g+2}` to have a root in F, and
+        # forcing f_{2g+2} = 1 makes that quadratic `x^2 + x + 1` for every
+        # characteristic-2 curve -- irreducible over GF(8) and GF(32), so every
+        # candidate was rejected and the ch2 split families looked untestable. The
+        # formulas themselves treat it as a live parameter: the arb and ch2
+        # Precompute functions both read Coeff(f, 2g+2), which would be pointless if
+        # it were always 1. reference.compute_vp reads it generally too.
+        if model == "ramified":
+            assert f.deg == want_f and f.is_monic(), (
+                "f must be monic of degree %d for genus %d %s, got degree %d"
+                % (want_f, genus, model, f.deg))
+        else:
+            assert f.deg == want_f, (
+                "f must have degree exactly %d for genus %d %s, got degree %d"
+                % (want_f, genus, model, f.deg))
         assert h.deg <= want_h, (
             "deg h must be <= %d for genus %d %s, got %d"
             % (want_h, genus, model, h.deg))
@@ -156,7 +169,7 @@ def _random_poly(F, max_deg, rng, monic_deg=None):
 
 
 def random_curve(F, kind, rng=random, genus=3, model="ramified",
-                 normal_form=False):
+                 normal_form=False, infinity_y=None, force_hlead=None):
     """A candidate curve of the requested class (no validation performed).
 
     `normal_form=True` restricts to the characteristic-2 ramified normal form
@@ -168,6 +181,14 @@ def random_curve(F, kind, rng=random, genus=3, model="ramified",
     Those formulas cannot be tested on anything else: outside this shape they
     are not claimed correct, so a mismatch there would be an artefact rather
     than a bug. See divisor-audits/g3ram/CHAR2_NORMAL_FORM.md.
+
+    For the split model, `infinity_y` fixes the root of
+    `x^2 + h_{g+1} x - f_{2g+2}` and `force_hlead` fixes h's leading coefficient.
+    Both exist because the split formula families differ in what they assume about
+    the places at infinity, and each family's own Precompute states which: the nch2
+    files hardcode the root as 1, the ch2 files hardcode h_{g+1} as 1 inside the
+    polynomial they factor, and the arb files read both from the curve. See
+    `_split_leading` and driver.py's `split_infinity_spec`.
     """
     kind = canonical_kind(kind)
     df = deg_f(genus, model)
@@ -211,8 +232,62 @@ def random_curve(F, kind, rng=random, genus=3, model="ramified",
             cs = h.coeffs_up_to(dh)
             cs[dh] = F.one
             h = Poly(F, cs)
+        if force_hlead is not None:
+            cs = h.coeffs_up_to(dh)
+            cs[dh] = force_hlead
+            h = Poly(F, cs)
+        f = _split_leading(F, f, h, df, dh, rng, infinity_y)
 
     return Curve(F, f, h, kind, genus=genus, model=model)
+
+
+def _split_leading(F, f, h, df, dh, rng, y=None):
+    """Set f's leading coefficient so the places at infinity are rational.
+
+    The split model needs `x^2 + h_{g+1} x - f_{2g+2}` to have a root in F: that
+    root is the value attached to a place at infinity, and without it the two
+    places are conjugate over a quadratic extension and the curve is not a split
+    one over F at all.
+
+    Rather than draw f_{2g+2} and reject, pick the root `y` and solve for the
+    coefficient: `f_{2g+2} = y^2 + h_{g+1} * y`, which splits by construction.
+
+    This matters most in characteristic 2. Drawing f monic makes the quadratic
+    `x^2 + x + 1` for every single curve, whose roots lie in GF(4); over GF(8) or
+    GF(32) it is irreducible, so *every* candidate was rejected and the ch2 split
+    families looked untestable. Choosing y instead gives valid curves over every
+    characteristic-2 field.
+
+    Two families of y are excluded:
+
+      y = 0 and y = -h_{g+1}, because both give f_{2g+2} = y*(y + h_{g+1}) = 0 and
+      drop the degree below 2g+2.
+
+      y with 2y + h_{g+1} = 0, because that is the double root: the quadratic then
+      has one root rather than two, so the curve has a single place at infinity and
+      is ramified there, not split. Precompute divides by exactly that quantity and
+      raises ZeroDivisionError, and reference.compute_vp refuses for the same reason
+      ("2*Vl + hl = 0, so Vp cannot be built"). Such curves are not split curves, so
+      excluding them is correct rather than convenient.
+
+    Over GF(2) with h_{g+1} = 1 nothing survives, since y must avoid both 0 and 1.
+    That is a real fact about the field, not a gap: there is no characteristic-2
+    split curve over GF(2) with deg h = g+1, and callers are told rather than left
+    with a silent zero.
+    """
+    hl = h.coeff(dh)
+    choices = [e for e in F.elements()
+               if not e.is_zero() and not (e + hl).is_zero()
+               and not (e + e + hl).is_zero()]
+    if not choices:
+        return f                      # GF(2) with h_{g+1} = 1: nothing to pick
+    if y is None:
+        y = choices[rng.randrange(len(choices))]
+    cs = f.coeffs_up_to(df)
+    cs[df] = y * y + hl * y
+    if cs[df].is_zero():
+        return f
+    return Poly(F, cs)
 
 
 def singularity_diagnostic(curve):
@@ -888,3 +963,130 @@ def random_valid_curve(F, kind, rng=random, max_attempts=400, stats=None,
             return c
     raise CurveRejected("no valid %s curve over %r after %d attempts"
                         % (kind, F, max_attempts))
+
+
+# ---------------------------------------------------------------------------
+# split-model divisors
+# ---------------------------------------------------------------------------
+
+def split_basis(curve, basis):
+    """Vp for the positive reduced basis, Vn for the negative one.
+
+    `basis` is "pos" or "neg", which is how the repository splits the directories.
+    Raises ArithmeticError, via compute_vp, for a curve whose places at infinity
+    are conjugate or coincide -- neither is a split curve over its own field.
+    """
+    vp = cantor.compute_vp(curve)
+    return vp if basis == "pos" else cantor.compute_vn(curve, vp)
+
+
+def to_split_divisor(curve, D, V, rng=random, n=None):
+    """Lift a (u, v) pair to a balanced divisor (u, v, w, n) in the basis V.
+
+    The prime-divisor and CRT machinery above is model-independent -- it only ever
+    uses f and h -- so the same generators, and in particular the same careful
+    PAIR_MODES gcd structures, serve the split model. What has to be added is the
+    balancing weight and the change of basis.
+
+    The weight is drawn from [0, g - deg u], which is what
+    reference.split_check_divisor enforces. Note this is why deg u is capped at g
+    rather than the g+1 that max_divisor_degree allows: at deg u = g+1 the range is
+    empty and no valid weight exists.
+    """
+    u, v = D[0], D[1]
+    w = (curve.f - v * (v + curve.h)).exact_quotient(u)
+    room = curve.genus - u.deg
+    if room < 0:
+        return None
+    if n is None:
+        n = rng.randint(0, room)
+    elif not 0 <= n <= room:
+        return None
+    return cantor.reduced_basis(curve, (u, v, w, n), V)
+
+
+def random_split_divisor(curve, V, rng=random, degs=None):
+    """A random reduced balanced divisor in the basis V."""
+    if degs is None:
+        degs = tuple(range(curve.genus + 1))
+    D = random_divisor(curve, rng, degs=degs)
+    return to_split_divisor(curve, D, V, rng)
+
+
+def random_split_divisor_pair(curve, V, rng=random, mode="generic"):
+    """A balanced-divisor pair, reusing the ramified pair modes verbatim.
+
+    Returns None when the underlying pair cannot be built or when either divisor
+    has deg u > g, so a caller counts the skip rather than seeing a silent retry.
+    """
+    degs = tuple(range(curve.genus + 1))
+    pair = random_divisor_pair(curve, rng, mode=mode, degs=degs)
+    if not pair:
+        return None
+    D1, D2 = pair
+    S1 = to_split_divisor(curve, D1, V, rng)
+    S2 = to_split_divisor(curve, D2, V, rng)
+    if S1 is None or S2 is None:
+        return None
+    return S1, S2
+
+
+def validate_split_curve(curve, V, rng=random, n_divisors=8, n_pairs=10,
+                         n_triples=4, positive=False):
+    """Empirically test that reference.py forms a group on this split curve.
+
+    The split analogue of validate_curve, and a separate function rather than a
+    branch inside it because almost everything differs: divisors carry a balancing
+    weight, validity is judged by split_check_divisor, the identity has weight
+    ceil(g/2) rather than 0, and the group law needs the basis V.
+
+    validate_curve cannot be reused as-is -- it draws divisors up to
+    max_divisor_degree, which is g+1 for the split model, and then judges them with
+    the ramified check_divisor, which caps deg u at g. Every split curve was
+    rejected with "deg u = 3 > 2".
+
+    Returns (ok, reason).
+    """
+    try:
+        zero = cantor.split_identity(curve, V)
+        tset = []
+        for _ in range(n_divisors * 6):
+            if len(tset) >= n_divisors:
+                break
+            D = random_split_divisor(curve, V, rng)
+            if D is not None:
+                tset.append(D)
+        if len(tset) < 3:
+            return False, "could not build enough split divisors"
+        for D in tset:
+            why = cantor.split_check_divisor(curve, D, V)
+            if why is not None:
+                return False, "generated divisor invalid: %s" % why
+
+        for D in tset:
+            if not cantor.eq(cantor.split_add(curve, D, zero, V, positive), D):
+                return False, "identity law failed (right)"
+            if not cantor.eq(cantor.split_add(curve, zero, D, V, positive), D):
+                return False, "identity law failed (left)"
+
+        for _ in range(n_pairs):
+            D1, D2 = rng.choice(tset), rng.choice(tset)
+            S = cantor.split_add(curve, D1, D2, V, positive)
+            why = cantor.split_check_divisor(curve, S, V)
+            if why is not None:
+                return False, "closure failed: %s" % why
+            if not cantor.eq(S, cantor.split_add(curve, D2, D1, V, positive)):
+                return False, "commutativity failed"
+
+        for _ in range(n_triples):
+            D1, D2, D3 = (rng.choice(tset) for _ in range(3))
+            L = cantor.split_add(
+                curve, cantor.split_add(curve, D1, D2, V, positive), D3, V, positive)
+            R = cantor.split_add(
+                curve, D1, cantor.split_add(curve, D2, D3, V, positive), V, positive)
+            if not cantor.eq(L, R):
+                return False, "associativity failed"
+        return True, "ok"
+    except (ExactQuotientError, ArithmeticError, ZeroDivisionError,
+            CurveRejected, AssertionError) as exc:
+        return False, "%s: %s" % (type(exc).__name__, exc)

@@ -1,26 +1,45 @@
-"""maginterp2.py -- generalisation of magma-interp.py to ANY of the four
-ramified-G3 formula files.  Executes the Magma source text directly so that no
-hand transcription can introduce or hide a bug.
+"""maginterp.py -- executes the .mag formula source directly.
 
-Grammar supported (all the Deg_ij ADD / Deg_i DOUBLE bodies use):
-    <name> := <expr>;              (may span several source lines)
-    if (<cond>) then ... end if;
-    return <expr>, ... ;
-    if (ADD_DEBUG|DBL_DEBUG) then "..."; end if;      (skipped)
-    <cond> ::= C {and C},  C ::= <expr> eq 0 | <expr> ne 0
-Integer literals are coerced into the field of the incoming arguments, so 2
-vanishes in characteristic 2 and -1 == 1, exactly as Magma.
-`/` is field division; a zero divisor raises ZeroDivisionError.
+Running the Magma source text itself is the point: no formula is transcribed into
+Python, so no transcription can introduce a bug or hide one. Every family in the
+repository is in scope, both models and both genuses, not just the file this began
+as an interpreter for.
+
+Statements supported, which is everything the formula files and their dispatchers
+use:
+
+    <name> := <expr>;                        (may span several source lines)
+    R<x> := PolynomialRing(...);             (binds x; see _polynomial_ring)
+    if <cond> then ... elif ... else ... end if;
+    return <expr>, ...;
+    assert <cond>;
+    "literal";  and  if ADD_DEBUG then "literal"; end if;
+
+Debug prints are kept, not skipped: they name the computation path taken and are
+the branch-coverage instrumentation `driver.py` reports against.
+
+Expressions are parsed by `_parser`, which handles calls, indexing, sequence and
+tuple literals, and the full precedence chain -- see its docstring for why an
+ad-hoc tokeniser was not enough.
+
+Two conventions worth stating because getting them wrong is silent:
+
+  * Integer literals stay Python ints. Coercing them into the field made every
+    literal used as an index or an exponent reduce modulo the characteristic, so
+    `Coeff(u,2)` read the constant term in characteristic 2. Arithmetic still
+    coerces where an int meets a field element or polynomial, so `2*v` is zero in
+    characteristic 2 and `-1 == 1`, exactly as Magma.
+  * `/` is field division and a zero divisor raises ZeroDivisionError rather than
+    being smoothed over. Errata E1 is exactly such a division, and it has to
+    surface.
+
+`COUNT` accumulates operation counts; the conventions there mirror the "4m 2s 32a"
+comments in the formula files.
 """
 import re
-import sys
-
-HERE = "/private/tmp/claude-501/-Users-s3b-Dev-divisor-arithmetic/f1be528a-632c-4bff-89ce-61f41f8f0235/scratchpad/g3ramaudit"
-REPO = ("/private/tmp/claude-501/-Users-s3b-Dev-divisor-arithmetic/"
-        "f1be528a-632c-4bff-89ce-61f41f8f0235/scratchpad/g3ram/")
-sys.path.insert(0, HERE)
 
 from _parser import parse_cond, parse_expr, tokens, ParseError  # noqa: F401
+from poly import Poly
 
 # Operation counter. The conventions are load-bearing: the audit's op-count
 # scripts read these, and they mirror the "4m 2s 32a" comments in the formula
@@ -69,6 +88,111 @@ def _leading(p):
 def _exact_quotient(a, b):
     return a.exact_quotient(b)
 
+
+def _gf(F, q):
+    """Magma's `GF(q)`.
+
+    The interpreter runs over one field at a time, the one threaded as F, so this
+    confirms the requested size matches rather than constructing a second field
+    that the surrounding arithmetic could not mix with. A mismatch is a real error:
+    it would mean the file is asking for a field the caller did not supply.
+    """
+    q = _as_int(q)
+    if q != F.q:
+        raise ParseError("GF(%d) requested but the run is over GF(%d)" % (q, F.q))
+    return F
+
+
+def _polynomial_ring(F, base=None):
+    """Magma's `PolynomialRing(...)`, as the ring's own indeterminate.
+
+    Returning `x` directly, rather than a ring object, is what makes the
+    `R<x> := PolynomialRing(GF(q));` statement usable: the interpreter binds the
+    angle-bracket name to this value, which is exactly what the source then uses.
+    """
+    return Poly.x(F)
+
+
+def _factorization(F, p):
+    """Magma's `Factorization` for the one shape the split files need.
+
+    The split-model Precompute functions factor a monic quadratic to obtain the two
+    values attached to the places at infinity:
+
+        y_g is a solution of x^2 + h_g*x - f_{2g+2}
+
+    Only that case is supported, and anything else raises rather than returning a
+    plausible wrong answer. The result mimics Magma's shape, a 1-based sequence of
+    <factor, multiplicity> pairs, so source that writes `Factorization(...)[2][1]`
+    works unchanged.
+
+    Ordering is the delicate part and it is NOT guessed. `ROOT_CHOICE` selects
+    which root comes first; `driver.py` runs both settings and keeps the one that
+    agrees with the independent reference, so the choice is established by
+    measurement rather than by assuming Magma's internal factor order.
+    """
+    if not hasattr(p, "deg") or p.deg != 2 or not p.is_monic():
+        raise ParseError("Factorization is supported only for a monic quadratic, "
+                         "got %r" % (p,))
+    b, c = p.coeff(1), p.coeff(0)
+    roots = _quadratic_roots(F, b, c)
+    if roots is None:
+        raise _Irreducible("x^2 + %s*x + %s has no root in GF(%d)" % (b, c, F.q))
+    r1, r2 = roots
+    if ROOT_CHOICE[0] == "second":
+        r1, r2 = r2, r1
+    one = F.one
+    return [[Poly.from_coeffs(F, [-r1, one]), 1],
+            [Poly.from_coeffs(F, [-r2, one]), 1]]
+
+
+class _Irreducible(Exception):
+    """The quadratic defining the infinite places has no root in this field.
+
+    Not a defect: such a curve has its two places at infinity conjugate over a
+    quadratic extension, so it is not a split-model curve at all and the caller
+    should skip it. Distinguished from a genuine error so a driver can count it
+    as a skip rather than a failure.
+    """
+
+
+def _quadratic_roots(F, b, c):
+    """Roots of x^2 + b*x + c in F, or None if it has none.
+
+    Brute force over the field. The fields in play are GF(2) to GF(32) and small
+    primes, so enumeration is cheaper and far more obviously correct than a
+    characteristic-split formula -- and it needs no separate char-2 branch, where
+    the quadratic formula does not apply at all.
+    """
+    out = []
+    for e in F.elements():
+        if (e * e + b * e + c).is_zero():
+            out.append(e)
+    if not out:
+        return None
+    if len(out) == 1:
+        return out[0], out[0]
+    return out[0], out[1]
+
+
+# Which root of the infinite-place quadratic `Factorization` returns first.
+#
+# "second" is not a guess. The source says "We pick the second solution from the
+# factorization given by magma" and takes `Factorization(...)[2][1]`, and measuring
+# both orderings against the independent reference confirms it: over the negative
+# reduced basis the arb genus-2 family agrees on 31 of 32 operations with "second"
+# and 2 of 32 with "first", and ch2 agrees 28 of 32 against 2 of 32. The two
+# orderings are not interchangeable because swapping them exchanges y and yn, hence
+# the positive and negative reduced bases.
+#
+# A list so `driver.py` can flip it to re-derive this rather than trust it.
+ROOT_CHOICE = ["second"]
+
+FIELD_BUILTINS = {
+    "GF": _gf,
+    "PolynomialRing": _polynomial_ring,
+    "Factorization": _factorization,
+}
 
 BUILTINS = {
     "IsZero": _is_zero,
@@ -193,6 +317,8 @@ def ev(node, env, F, funcs=None):
         args = [ev(a, env, F, funcs) for a in argnodes]
         if name in BUILTINS:
             return BUILTINS[name](*args)
+        if name in FIELD_BUILTINS:
+            return FIELD_BUILTINS[name](F, *args)
         if funcs and name in funcs:
             return funcs[name](*args)
         raise ParseError("unknown function %r" % name)
@@ -296,6 +422,28 @@ def statements(body):
     return out
 
 
+def _depth_delta(s, i):
+    """Bracket-nesting change at position i, treating Magma tuples as brackets.
+
+    `<` and `>` delimit tuples, and `Precompute` in the genus-2 negReduced nch2
+    file returns `<<<f0,f1,...>,...>>`. Without counting them the commas inside
+    read as depth zero and the return was torn into fragments, the first of which
+    was the unparsable `<<<f0`.
+
+    Safe because these files spell comparison `lt`/`le`/`gt`/`ge` as words and never
+    as symbols; `<=` and `>=` are still skipped explicitly so a stray one cannot
+    unbalance the count.
+    """
+    ch = s[i]
+    if ch in "([":
+        return 1
+    if ch in ")]":
+        return -1
+    if ch in "<>" and not (i + 1 < len(s) and s[i + 1] == "="):
+        return 1 if ch == "<" else -1
+    return 0
+
+
 def _split_semis(s):
     """Split a joined line at top-level ';', keeping each terminator.
 
@@ -305,11 +453,8 @@ def _split_semis(s):
     if s.endswith("then") or s == "end if;" or "_DEBUG" in s:
         return [s]
     out, depth, cur = [], 0, ""
-    for ch in s:
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
+    for i, ch in enumerate(s):
+        depth += _depth_delta(s, i)
         cur += ch
         if ch == ";" and depth == 0:
             out.append(cur.strip())
@@ -327,11 +472,8 @@ def _split_top(s):
     parse.
     """
     out, depth, cur = [], 0, ""
-    for ch in s:
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
+    for i, ch in enumerate(s):
+        depth += _depth_delta(s, i)
         if ch == "," and depth == 0:
             out.append(cur)
             cur = ""
@@ -394,14 +536,17 @@ def _branch(lines, i):
             i += 1
             continue
 
-        # `R<x> := PolynomialRing(GF(q));` in every split-model Precompute. It
-        # binds nothing on purpose: in the nch2 files the ring is genuinely dead
-        # (the Factorization call below it is commented out and the root is
-        # hardcoded), while the arb and ch2 files do use `x` and `Factorization`.
-        # Binding a dummy would let those silently compute nonsense; leaving the
-        # names unbound makes them fail loudly as unknown identifiers instead.
-        if re.match(r"^[A-Za-z_]\w*\s*<\s*\w+\s*>\s*:=\s*PolynomialRing\(.*\);$", ln):
-            blk.append(("nop", ln))
+        # `R<x> := PolynomialRing(GF(q));` in every split-model Precompute. The
+        # angle-bracket name is bound to the ring's indeterminate, which is what the
+        # source then uses: the arb and ch2 files build `x^2 + h3*x - f6` and factor
+        # it to get the values attached to the two places at infinity. The ring
+        # object itself is never used, only its generator, so that is what is bound.
+        # In the nch2 files this is dead code -- the Factorization call below it is
+        # commented out and the root is hardcoded -- and binding it costs nothing.
+        m = re.match(r"^[A-Za-z_]\w*\s*<\s*(\w+)\s*>\s*:=\s*(PolynomialRing\(.*\));$",
+                     ln)
+        if m:
+            blk.append(("set", m.group(1), parse_expr(m.group(2))))
             i += 1
             continue
 
@@ -577,27 +722,20 @@ def discover(path, only=None, skip_unparsable=True):
     return out_obj
 
 
-def load(fname, names):
-    """Back-compatible loader for the audit's stored scripts."""
-    return {n: MagmaFn(REPO + fname, n) for n in names}
-
-
-ADD_MAIN = "arb_ramifiedG3_ADD.m"
-ADD_VAR = "arb_ramifiedG3_ADD_use_for_odd_even.m"
-DBL_MAIN = "arb_ramifiedG3_DOUBLE.m"
-DBL_VAR = "arb_ramifiedG3_DOUBLE_use_for_odd_even.m"
-
 if __name__ == "__main__":
-    for fname, names in [
-        (ADD_MAIN, ["Deg11ADD", "Deg21ADD", "Deg22ADD", "Deg31ADD",
-                    "Deg32ADD", "Deg33ADD"]),
-        (ADD_VAR, ["Deg11ADD", "Deg12ADD", "Deg22ADD", "Deg13ADD",
-                   "Deg23ADD", "Deg33ADD"]),
-        (DBL_MAIN, ["Deg1DOUBLE", "Deg2DOUBLE", "Deg3DOUBLE"]),
-        (DBL_VAR, ["Deg1DOUBLE", "Deg2DOUBLE", "Deg3DOUBLE"]),
-    ]:
-        print("===", fname)
-        for n in names:
-            f = MagmaFn(REPO + fname, n)
-            print("   %-10s %2d params  %3d stmts  %2d top-level"
-                  % (n, len(f.params), len(f.stmts), len(f.blk)))
+    # Parse coverage across every formula file, so a regression in the parser shows
+    # up as a number rather than as a driver that quietly tests less.
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    ok, bad = 0, []
+    for path in sorted(root.glob("g*/*[lM]odel/**/g*Formulas/*.mag")):
+        for name in function_names(str(path)):
+            try:
+                MagmaFn(str(path), name)
+                ok += 1
+            except Exception as exc:                       # noqa: BLE001
+                bad.append("%s::%s: %s" % (path.name, name, exc))
+    print("%d functions parsed, %d failed" % (ok, len(bad)))
+    for line in bad:
+        print("   ", line)
