@@ -600,8 +600,6 @@ def run(blk, env, F, path, funcs=None):
         if st[0] == "set":
             env[st[1]] = ev(st[2], env, F, funcs)
             path.append(st[1])
-        elif st[0] == "nop":
-            pass
         elif st[0] == "assert":
             if not _truthy(ev(st[1], env, F, funcs)):
                 raise AssertionError("assertion failed: %s" % st[2])

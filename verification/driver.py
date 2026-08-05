@@ -41,7 +41,6 @@ import re
 import sys
 
 import curves as C
-from maginterp import _as_int  # noqa: F401
 from _parser import parse_expr
 import maginterp as M
 import reference as R
