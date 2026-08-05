@@ -864,7 +864,25 @@ def validate_curve(curve, rng=random, level="standard", n_pairs=None,
 
     level: "fast" (cheap screen used while resampling curves), "standard"
     (default) or "exhaustive".
+
+    Also rejects on the textbook criterion, for the same reason validate_split_curve
+    does. Neither check subsumes the other and both are individually incomplete:
+
+      * The criterion detects geometric singularity, over the algebraic closure. Most
+        of the curves it flags here have their singular point only in an extension
+        field, where F-rational divisor arithmetic can never reach it.
+      * The empirical filter samples finitely, so it can miss a singular point even
+        when that point IS F-rational. Measured over 500 candidates per field: at
+        genus 3 over GF(8), four accepted curves had an F-rational singular point,
+        and they passed even standard-level validation.
+
+    So the conservative combination is the right one -- reject if either objects.
+    This uses the criterion to REJECT, never to accept, so the module's refusal to
+    assume a nonsingularity criterion still holds; the cost is a narrower tested
+    domain, which is the safe direction.
     """
+    if singularity_diagnostic(curve):
+        return False, "singular by the textbook criterion"
     strategy, cap, triples, n_rand = LEVELS[level]
     if n_pairs is not None:
         cap = n_pairs
@@ -1013,19 +1031,62 @@ def random_split_divisor(curve, V, rng=random, degs=None):
     return to_split_divisor(curve, D, V, rng)
 
 
-def random_split_divisor_pair(curve, V, rng=random, mode="generic"):
+# Cycled by the driver across repetitions. "random" appears every other slot on
+# purpose: cycling the five modes equally left only one draw in five uniform, and
+# that lost a genus-3 split DBL branch that needs a mid-range weight (55/55 down to
+# 54/55) while gaining ADD branches. Half uniform, half endpoints keeps both.
+WEIGHT_MODES = ("random", "min", "random", "max", "random", "mixed",
+                "random", "mixed_rev")
+
+
+def _weight_for(curve, D, which, rng):
+    """A balancing weight for D, drawn as `which` prescribes.
+
+    The legal range is [0, g - deg u]. Drawing it uniformly leaves the endpoints
+    thinly sampled, and the endpoints are what the reduce and adjust branches key
+    on -- the genus-3 split ADD files carry 350 labelled branches and a uniform
+    weight reached only about four fifths of them. `min` and `max` pin the weight to
+    each end of the range on purpose.
+    """
+    room = curve.genus - D[0].deg
+    if room < 0:
+        return None
+    if which == "min":
+        return 0
+    if which == "max":
+        return room
+    return rng.randint(0, room)
+
+
+def random_split_divisor_pair(curve, V, rng=random, mode="generic",
+                              weights="random"):
     """A balanced-divisor pair, reusing the ramified pair modes verbatim.
 
-    Returns None when the underlying pair cannot be built or when either divisor
-    has deg u > g, so a caller counts the skip rather than seeing a silent retry.
+    `weights` additionally controls the two balancing weights: "random" each,
+    "min"/"max" both pinned to an end of their legal range, and "mixed"/"mixed_rev"
+    one of each. The gcd structure comes from the ramified pair modes, which the
+    split model shares because they depend only on f and h.
+
+    Returns None when the underlying pair cannot be built or when either divisor has
+    deg u > g, so a caller counts the skip rather than seeing a silent retry.
     """
     degs = tuple(range(curve.genus + 1))
     pair = random_divisor_pair(curve, rng, mode=mode, degs=degs)
     if not pair:
         return None
     D1, D2 = pair
-    S1 = to_split_divisor(curve, D1, V, rng)
-    S2 = to_split_divisor(curve, D2, V, rng)
+    if weights == "mixed":
+        w1, w2 = "min", "max"
+    elif weights == "mixed_rev":
+        w1, w2 = "max", "min"
+    else:
+        w1 = w2 = weights
+    n1 = _weight_for(curve, D1, w1, rng)
+    n2 = _weight_for(curve, D2, w2, rng)
+    if n1 is None or n2 is None:
+        return None
+    S1 = to_split_divisor(curve, D1, V, rng, n=n1)
+    S2 = to_split_divisor(curve, D2, V, rng, n=n2)
     if S1 is None or S2 is None:
         return None
     return S1, S2

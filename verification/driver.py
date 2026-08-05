@@ -936,9 +936,13 @@ def _exercise_split(fam, cur, V, ccs, add, add_params, dbl, dbl_params, subs,
                     res, rng, n_pairs, q, verbose, probe):
     agree = total = 0
     for mode in C.PAIR_MODES:
-        for _ in range(n_pairs):
+        for i in range(n_pairs):
+            # Cycle the weight mode across the repetitions so the balancing-weight
+            # endpoints get sampled without multiplying the pair count by five.
+            wmode = C.WEIGHT_MODES[i % len(C.WEIGHT_MODES)]
             try:
-                pair = C.random_split_divisor_pair(cur, V, rng, mode=mode)
+                pair = C.random_split_divisor_pair(cur, V, rng, mode=mode,
+                                                  weights=wmode)
             except Exception as e:
                 res.errors["split pair %s %s: %s"
                            % (fam.name, mode, type(e).__name__)] += 1
