@@ -94,3 +94,58 @@ jobs:
         with:
           submodules: false
       - run: tools/tests/run.sh
+
+  verify-formulas:
+    # The first job in this workflow that checks the formulas themselves rather
+    # than the repository around them. Everything above is a static check by
+    # construction; this one runs the real .mag source through an interpreter and
+    # compares it against an independent implementation of the group law.
+    #
+    # Two jobs rather than one, because they answer different questions and a
+    # failure in either should be readable on its own:
+    #
+    #   selftest  is the framework trustworthy? Group axioms, the empirical curve
+    #             filter against the textbook singularity criterion, three-way
+    #             agreement between the reference and two independent
+    #             implementations, and the recorded errata as required test
+    #             vectors. If this fails, nothing the driver says means anything.
+    #
+    #   driver    do the formulas agree with the reference? Every family, both
+    #             models, both genuses, both reduced bases.
+    #
+    # Pure standard library, so there is no install step and no dependency to
+    # break. That is what makes this job possible at all: Magma is licensed and
+    # cannot run on a hosted runner, so before this landed no CI job could verify
+    # a formula.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: false
+
+      - name: framework selftest
+        working-directory: verification
+        # The `reference` and `repros` sections need the audit artefacts, which are
+        # deliberately outside this repository. They report themselves as skipped
+        # here rather than being silently dropped.
+        run: python3 selftest.py --quick
+
+      - name: differential test, every family
+        working-directory: verification
+        # Modest volume: this has to finish in CI time. It is not the exhaustive
+        # run -- that is a local job -- and the settings are stated here so nobody
+        # mistakes a green tick for full coverage.
+        #
+        # --strict is NOT used. Today's formulas are wrong wherever D1 == D2, which
+        # is a documented precondition no file claims to support and which PR5
+        # fixes; --strict would fail every run until then and teach everyone to
+        # ignore this job. The count is still printed on every run.
+        #
+        # --min-coverage 50 because at this volume the three genus-3 split ADD
+        # files, 350 labelled branches each, cannot all be reached. A local run at
+        # 30 curves reaches 84% overall and 100% on every ramified file. The floor
+        # exists so this job fails when coverage COLLAPSES, which is what a broken
+        # interpreter or dispatcher looks like, rather than being permanently red
+        # over a gap that needs constructed cases to close. Every unexercised branch
+        # is still listed on every run.
+        run: python3 driver.py --curves 4 --pairs 4 --seed 1 --min-coverage 50

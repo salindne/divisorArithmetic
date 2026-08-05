@@ -1141,7 +1141,7 @@ def _compare(fam, cur, fn, params, subs, res, D1, D2, op, q, mode, verbose):
 # reporting
 # ---------------------------------------------------------------------------
 
-def report(res, families_run, show_all, strict=False):
+def report(res, families_run, show_all, strict=False, min_coverage=100.0):
     w = sys.stdout.write
     w("\n")
     w("=" * 72 + "\n")
@@ -1255,7 +1255,13 @@ def report(res, families_run, show_all, strict=False):
         w("           got  %s\n           want %s\n" % (m["got"], m["want"]))
         w("\n")
 
-    failed = (bool(res.mismatches) or bool(res.errors) or uncovered_any
+    pct = 100.0 * total_c / total_l if total_l else 100.0
+    short = pct + 1e-9 < min_coverage
+    if uncovered_any and not short:
+        w("  branch coverage is %.1f%%, at or above the --min-coverage floor of "
+          "%.1f%%, so the gaps above do not fail this run. They are still gaps.\n\n"
+          % (pct, min_coverage))
+    failed = (bool(res.mismatches) or bool(res.errors) or short
               or (strict and (res.precondition or res.precondition_errors)))
     if failed:
         reasons = []
@@ -1263,13 +1269,19 @@ def report(res, families_run, show_all, strict=False):
             reasons.append("%d mismatch(es)" % len(res.mismatches))
         if res.errors:
             reasons.append("%d error kind(s)" % len(res.errors))
-        if uncovered_any:
-            reasons.append("unexercised branches")
+        if short:
+            reasons.append("branch coverage %.1f%% below the %.1f%% floor"
+                           % (pct, min_coverage))
         if strict and res.precondition:
             reasons.append("%d D1 == D2 failure(s)" % len(res.precondition))
         w("  FAILED: %s\n\n" % ", ".join(reasons))
     else:
-        w("  PASS: every comparison matched and every branch was exercised\n\n")
+        if uncovered_any:
+            w("  PASS: every comparison matched. Branch coverage %.1f%% meets the "
+              "%.1f%% floor,\n        but %d of %d branches were never exercised, "
+              "listed above.\n\n" % (pct, min_coverage, total_l - total_c, total_l))
+        else:
+            w("  PASS: every comparison matched and every branch was exercised\n\n")
     return 1 if failed else 0
 
 
@@ -1293,6 +1305,11 @@ def main(argv=None):
                     help="list families and the domain read out of each")
     ap.add_argument("--show-all", action="store_true",
                     help="do not truncate skip, error or coverage lists")
+    ap.add_argument("--min-coverage", type=float, default=100.0,
+                    help="fail below this branch-coverage percentage; default 100. "
+                         "Lower it only where the volume is deliberately small, as "
+                         "CI does, and never to hide a gap: every unexercised "
+                         "branch is listed either way")
     ap.add_argument("--strict", action="store_true",
                     help="also fail on wrong answers where D1 == D2, which today's "
                          "formulas do not claim to support (PR5)")
@@ -1373,7 +1390,7 @@ def main(argv=None):
         else:
             run_family(fam, families, res, fl, a.curves, a.pairs, a.seed, a.verbose)
 
-    return report(res, sel, a.show_all, a.strict)
+    return report(res, sel, a.show_all, a.strict, a.min_coverage)
 
 
 if __name__ == "__main__":

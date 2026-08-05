@@ -21,7 +21,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-READMES = ["README.md", "generic/README.md"]
+def _discover_readmes():
+    """Every README in the repository, found rather than listed.
+
+    This was a hardcoded pair, which meant a new README was not checked at all --
+    `verification/README.md`, `tools/magma-docker/README.md` and `Thesis/README.md`
+    were all escaping the very check that exists because a README claimed a tester
+    that had never existed. Discovery is the point of the tool.
+
+    `rust/` is a submodule and owns its own documentation.
+    """
+    found = []
+    for path in sorted(ROOT.rglob("README.md")):
+        rel = path.relative_to(ROOT)
+        if rel.parts and rel.parts[0] in (".git", "rust"):
+            continue
+        found.append(str(rel))
+    return found
+
+
+READMES = _discover_readmes()
 
 EXTENSIONS = (".mag", ".py", ".sh", ".tex", ".pdf", ".md", ".yml", ".yaml",
               ".txt", ".xz", ".gnuplot", ".raw")
@@ -42,6 +61,15 @@ EXPECTED_ABSENT = {
     ".test-logs/": "gitignored: per-tester logs, created on first run",
     # A Docker platform identifier, not a filesystem path.
     "linux/arm64": "docker platform string, not a path",
+    "linux/amd64": "docker platform string, not a path",
+    # Inside the QEMU source tree, which tools/magma-docker/ patches at build time.
+    # Named so a reader can find what the mremap patch touches; it is not a path in
+    # this repository and never will be.
+    "linux-user/mmap.c": "path inside the QEMU source tree, not this repository",
+    # Thesis/README.md is the university thesis class's own documentation, kept with
+    # the class. It describes an example that ships with the class upstream and was
+    # not copied here; the class itself is excluded from this repository's licence.
+    "sample-thesis.tex": "example shipped with the upstream thesis class, not copied here",
 }
 
 # Bare filenames mentioned in prose rather than as locations. Checking these as
