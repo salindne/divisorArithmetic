@@ -29,23 +29,26 @@ python3 driver.py --curves 30 --pairs 16 --seed 23 --show-all   # the long run
 python3 selftest.py --list          # what each section checks
 ```
 
-Both exit 0 only on success.
+**`driver.py` exits 0 if and only if the formulas agree with the reference.** Branch
+coverage is *reported*, not gated. Those are different questions and only the first
+is a property of the formulas: coverage depends on where the sampling happened to
+land, and it grows logarithmically -- 35% at 2 curves, 54% at 4, 77% at 16, 84% at 30
+-- so a floor would either be met trivially or fail runs for a reason unrelated to
+correctness.
 
-**`driver.py` with no arguments will exit 1**, and that is correct rather than a
-problem: the default coverage floor is 100%, and the three genus-3 split ADD files
-have branches that random sampling does not reach at any volume (see Known limits).
-It prints exactly which branches, and the comparison result is on the line above:
-`0 mismatched` is the number that says the formulas agree. Pass `--min-coverage 50`,
-as CI does, to gate on comparisons and coverage collapse rather than on that gap.
+What does fail a run, besides a mismatch: any error, and **any selected family that
+produced no comparisons**. That guard is deliberate and deterministic — a dispatcher
+that cannot be loaded, or a field sweep with no usable curve, would otherwise report
+zero mismatches and pass. "Nothing failed" must not be reachable by testing nothing.
 
 Two flags worth knowing:
 
 - `--strict` additionally fails on wrong answers where `D1 == D2`. Today's formulas
   are wrong there, so this fails until PR5 lands. It is how PR5 will be shown to
   have worked.
-- `--min-coverage PCT` lowers the coverage floor. CI uses 50 because its volume is
-  deliberately small. It never hides anything: every unexercised branch is listed on
-  every run either way.
+- `--min-coverage PCT` turns coverage into a gate, default 0 (report only). Set it to
+  100 once coverage is deterministic, which needs constructed cases rather than
+  sampling.
 
 ## What is here
 

@@ -141,11 +141,18 @@ jobs:
         # fixes; --strict would fail every run until then and teach everyone to
         # ignore this job. The count is still printed on every run.
         #
-        # --min-coverage 50 because at this volume the three genus-3 split ADD
-        # files, 350 labelled branches each, cannot all be reached. A local run at
-        # 30 curves reaches 84% overall and 100% on every ramified file. The floor
-        # exists so this job fails when coverage COLLAPSES, which is what a broken
-        # interpreter or dispatcher looks like, rather than being permanently red
-        # over a gap that needs constructed cases to close. Every unexercised branch
-        # is still listed on every run.
-        run: python3 driver.py --curves 4 --pairs 4 --seed 1 --min-coverage 50
+        # This job is green if and only if the formulas agree with the reference.
+        # Branch coverage is reported, not gated: whether the formulas are correct
+        # and whether random sampling happened to reach every branch are different
+        # questions, and only the first is a property of the formulas. Coverage
+        # grows logarithmically -- 35% at 2 curves, 54% at 4, 77% at 16, 84% at 30 --
+        # so any coverage floor would either be met trivially or fail runs for a
+        # reason unrelated to correctness. It becomes gateable once constructed
+        # cases make it deterministic.
+        #
+        # What DOES fail here besides a mismatch: any error, and any selected family
+        # that produced no comparisons at all. That last one is the anti-vacuity
+        # guard, and it is deterministic -- a dispatcher that cannot be loaded, or a
+        # field sweep that finds no usable curve, would otherwise report zero
+        # mismatches and pass.
+        run: python3 driver.py --curves 4 --pairs 4 --seed 1

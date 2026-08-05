@@ -761,6 +761,7 @@ class Result(object):
         self.covered = collections.defaultdict(set)     # file -> {label}
         self.skipped = []               # (what, why)
         self.pairs_by_mode = collections.Counter()
+        self.per_family = collections.Counter()   # family -> comparisons made
 
     def ok(self):
         return not self.mismatches and not self.errors
@@ -1004,6 +1005,7 @@ def _compare_split(fam, cur, V, ccs, fn, params, subs, res, D1, D2, op, q, mode,
     if probe is not None:
         return (1 if ok else 0), 1
     res.compared += 1
+    res.per_family[fam.name] += 1
     if ok:
         res.matched += 1
         return 1, 1
@@ -1118,6 +1120,7 @@ def _compare(fam, cur, fn, params, subs, res, D1, D2, op, q, mode, verbose):
         return
 
     res.compared += 1
+    res.per_family[fam.name] += 1
     if gu == want[0] and gv == want[1]:
         res.matched += 1
         return
@@ -1158,6 +1161,14 @@ def report(res, families_run, show_all, strict=False, min_coverage=100.0):
             flag = "" if n else "   <-- none generated"
             w("    %-18s %6d%s\n" % (mode, n, flag))
         w("\n")
+
+    silent = [f.name for f in families_run if not res.per_family.get(f.name)]
+    w("  comparisons per family\n")
+    for fam in families_run:
+        n = res.per_family.get(fam.name, 0)
+        w("    %-24s %8d%s\n" % (fam.name, n,
+                                 "   <-- NOTHING TESTED" if not n else ""))
+    w("\n")
 
     w("  branch coverage\n")
     total_l = total_c = 0
@@ -1260,7 +1271,13 @@ def report(res, families_run, show_all, strict=False, min_coverage=100.0):
         w("  branch coverage is %.1f%%, at or above the --min-coverage floor of "
           "%.1f%%, so the gaps above do not fail this run. They are still gaps.\n\n"
           % (pct, min_coverage))
-    failed = (bool(res.mismatches) or bool(res.errors) or short
+    # A family that produced no comparison at all is a failure regardless of the
+    # coverage floor. This is the anti-vacuity guard: without it, a dispatcher that
+    # cannot be loaded, or a field sweep that finds no usable curve, reports zero
+    # mismatches and passes. "Nothing failed" must never be reachable by testing
+    # nothing, and unlike branch coverage this is deterministic rather than a
+    # function of how the sampling happened to land.
+    failed = (bool(res.mismatches) or bool(res.errors) or short or bool(silent)
               or (strict and (res.precondition or res.precondition_errors)))
     if failed:
         reasons = []
@@ -1271,6 +1288,9 @@ def report(res, families_run, show_all, strict=False, min_coverage=100.0):
         if short:
             reasons.append("branch coverage %.1f%% below the %.1f%% floor"
                            % (pct, min_coverage))
+        if silent:
+            reasons.append("%d family(ies) produced no comparisons: %s"
+                           % (len(silent), ", ".join(silent)))
         if strict and res.precondition:
             reasons.append("%d D1 == D2 failure(s)" % len(res.precondition))
         w("  FAILED: %s\n\n" % ", ".join(reasons))
@@ -1304,11 +1324,14 @@ def main(argv=None):
                     help="list families and the domain read out of each")
     ap.add_argument("--show-all", action="store_true",
                     help="do not truncate skip, error or coverage lists")
-    ap.add_argument("--min-coverage", type=float, default=100.0,
-                    help="fail below this branch-coverage percentage; default 100. "
-                         "Lower it only where the volume is deliberately small, as "
-                         "CI does, and never to hide a gap: every unexercised "
-                         "branch is listed either way")
+    ap.add_argument("--min-coverage", type=float, default=0.0,
+                    help="fail below this branch-coverage percentage. Default 0, "
+                         "meaning coverage is REPORTED but does not decide the exit "
+                         "status: whether the formulas agree and whether random "
+                         "sampling happened to reach every branch are different "
+                         "questions, and only the first is a property of the "
+                         "formulas. Set 100 once branch coverage is deterministic, "
+                         "which needs constructed cases rather than sampling")
     ap.add_argument("--strict", action="store_true",
                     help="also fail on wrong answers where D1 == D2, which today's "
                          "formulas do not claim to support (PR5)")
