@@ -1045,8 +1045,24 @@ def validate_split_curve(curve, V, rng=random, n_divisors=8, n_pairs=10,
     the ramified check_divisor, which caps deg u at g. Every split curve was
     rejected with "deg u = 3 > 2".
 
+    Unlike validate_curve this ALSO rejects on the textbook criterion, because the
+    empirical part is weaker here: there is no split negation implemented, so the
+    inverse and cancellation laws are not among the checks, and singular curves
+    survived. Measured before this: the ramified filter and the diagnostic agreed
+    exactly, 176 accepted-and-smooth against 24 rejected-and-singular with no
+    disagreement, while the split filter accepted 22 of 240 curves the diagnostic
+    calls singular, spread evenly over every family at roughly the 1/q rate at which
+    h^2 + 4f is genuinely not squarefree.
+
+    Using the criterion to REJECT is safe in a way that using it to accept would not
+    be: it can only shrink the tested domain, never admit a curve the group law
+    fails on. And it is valid for both models, since `(2y+h)^2 = h^2 + 4f` makes the
+    affine smoothness test independent of whether deg f is 2g+1 or 2g+2.
+
     Returns (ok, reason).
     """
+    if singularity_diagnostic(curve):
+        return False, "singular by the textbook criterion"
     try:
         zero = cantor.split_identity(curve, V)
         tset = []

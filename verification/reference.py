@@ -237,13 +237,20 @@ def adapted_basis(curve, D):
     return (u, v, w, n)
 
 
-def split_identity(curve, V=None, positive=False):
-    """The zero class in the split model.
+def split_identity(curve, V=None):
+    """The zero class in the split model, in whichever basis V names.
 
     Its balancing weight is ceil(g/2), not 0. Composition sets
     n = n1 + n2 + deg(S) - ceil(g/2), so adding a u = 1 class (where S = 1 and
     deg S = 0) shifts n by n_E - ceil(g/2). Only n_E = ceil(g/2) leaves the
     other operand's weight alone, which is what an identity has to do.
+
+    Takes no `positive` flag, unlike split_add and split_adjust: the identity is
+    whatever `reduced_basis` makes of (1, 0) against the given V, and that is
+    already generic in V. Passing Vp gives the positive-basis identity.
+
+    The V=None default is the negative basis, matching the rest of this module's
+    history. Callers testing the positive basis must pass Vp explicitly.
     """
     if V is None:
         V = compute_vn(curve)
