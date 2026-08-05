@@ -855,7 +855,7 @@ def _cancellation_pairs(tset, n_targeted, strategy, cap, rng):
 
 
 def validate_curve(curve, rng=random, level="standard", n_pairs=None,
-                   n_triples=None, n_random=None):
+                   n_triples=None, n_random=None, require_smooth=True):
     """Empirically test that reference.py forms a group on this curve.
 
     Checks: validity of every test divisor, left/right identity, inverses,
@@ -876,12 +876,17 @@ def validate_curve(curve, rng=random, level="standard", n_pairs=None,
         genus 3 over GF(8), four accepted curves had an F-rational singular point,
         and they passed even standard-level validation.
 
-    So the conservative combination is the right one -- reject if either objects.
+    So the conservative combination is the right one -- reject if either objects, and
+    `require_smooth=True` is the default for that reason. It is a parameter rather
+    than a hardcoded test so `random_valid_curve(require_smooth=False)` still means
+    what it says; that path exists to study the curves the criterion rejects, and
+    silently overriding it would have made the flag a lie.
+
     This uses the criterion to REJECT, never to accept, so the module's refusal to
     assume a nonsingularity criterion still holds; the cost is a narrower tested
     domain, which is the safe direction.
     """
-    if singularity_diagnostic(curve):
+    if require_smooth and singularity_diagnostic(curve):
         return False, "singular by the textbook criterion"
     strategy, cap, triples, n_rand = LEVELS[level]
     if n_pairs is not None:
@@ -932,7 +937,8 @@ def validate_curve(curve, rng=random, level="standard", n_pairs=None,
 
 def random_valid_curve(F, kind, rng=random, max_attempts=400, stats=None,
                        require_smooth=True, always_validate=False,
-                       level=None, **kw):
+                       level=None, genus=3, model="ramified", normal_form=False,
+                       infinity_y=None, force_hlead=None, basis="neg", **kw):
     """Sample candidate curves until one passes `validate_curve`.
 
     Acceptance is empirical: a curve is kept only when reference.py demonstrably
@@ -945,6 +951,19 @@ def random_valid_curve(F, kind, rng=random, max_attempts=400, stats=None,
     `stats` (optional dict) accumulates attempts / rejections split by whether
     the diagnostic called the curve singular, so the two filters can be
     cross-tabulated.
+
+    Curve-shape arguments -- genus, model and the split-model infinity controls --
+    are named explicitly and forwarded to `random_curve`. They used to fall into
+    `**kw`, which is forwarded to `validate_curve` instead, so `genus=3` raised
+    TypeError and the generator call was a bare `random_curve(F, kind, rng)`: this
+    function could only ever produce genus-3 ramified curves whatever it was asked
+    for. Remaining `**kw` still goes to the validator, which is where n_pairs and
+    friends belong.
+
+    For `model="split"` the split validator is used, with `basis` selecting the
+    reduced basis. Routing a split curve through `validate_curve` would reject every
+    one of them: it draws divisors up to degree g+1, which the split model allows,
+    and then judges them with the ramified check that caps deg u at g.
     """
     if level is None:
         # without the diagnostic filter the group test is the only guard, so
@@ -953,12 +972,30 @@ def random_valid_curve(F, kind, rng=random, max_attempts=400, stats=None,
     attempts = 0
     while attempts < max_attempts:
         attempts += 1
-        c = random_curve(F, kind, rng)
+        c = random_curve(F, kind, rng, genus=genus, model=model,
+                         normal_form=normal_form, infinity_y=infinity_y,
+                         force_hlead=force_hlead)
         sing = singularity_diagnostic(c)
         if sing and require_smooth and not always_validate:
             ok, why = False, "diagnostic: singular"
         else:
-            ok, why = validate_curve(c, rng, level=level, **kw)
+            # require_smooth=False here on purpose: the diagnostic is applied by
+            # this function, both above and below, and `always_validate` exists so
+            # the group test can still run on a curve the diagnostic rejected. If
+            # validate_curve applied it too, that cross-tabulation would be
+            # impossible and `always_validate` would silently do nothing.
+            if model == "split":
+                try:
+                    V = split_basis(c, basis)
+                except ArithmeticError as exc:
+                    ok, why = False, "no split basis: %s" % exc
+                else:
+                    ok, why = validate_split_curve(
+                        c, V, rng, positive=(basis == "pos"),
+                        require_smooth=False, **kw)
+            else:
+                ok, why = validate_curve(c, rng, level=level,
+                                         require_smooth=False, **kw)
             if ok and sing and require_smooth:
                 ok, why = False, "diagnostic: singular"
         if stats is not None:
@@ -1093,7 +1130,7 @@ def random_split_divisor_pair(curve, V, rng=random, mode="generic",
 
 
 def validate_split_curve(curve, V, rng=random, n_divisors=8, n_pairs=10,
-                         n_triples=4, positive=False):
+                         n_triples=4, positive=False, require_smooth=True):
     """Empirically test that reference.py forms a group on this split curve.
 
     The split analogue of validate_curve, and a separate function rather than a
@@ -1122,7 +1159,7 @@ def validate_split_curve(curve, V, rng=random, n_divisors=8, n_pairs=10,
 
     Returns (ok, reason).
     """
-    if singularity_diagnostic(curve):
+    if require_smooth and singularity_diagnostic(curve):
         return False, "singular by the textbook criterion"
     try:
         zero = cantor.split_identity(curve, V)
