@@ -142,26 +142,52 @@ domain rather than admitting a curve the group law fails on.
 
 ## Known limits
 
-- **The three genus-3 split ADD files plateau near 83%.** They carry 350 labelled
-  branches each. Volume helps up to a point — 5 curves to 30 moved one file from 40%
-  to 81% — and then stops. The rest need *constructed* cases, one per branch, which
-  is what this repository's own whitebox generators do. Closing it means adding that
-  mechanism, not turning up a dial.
-- **The infinite-place root choice is verified self-consistent, not verified against
-  Magma.** The split `Precompute` functions take the value at infinity from
-  `Factorization(x² + h·x − f)[2][1]`, "the second solution from the factorization
-  given by magma". Magma's factor ordering cannot be recovered by reading the source,
-  so both orderings were run against the reference and the agreeing one adopted — 31
-  of 32 against 2 of 32, and the two are not interchangeable because swapping them
-  exchanges the reduced bases. That establishes internal consistency. Confirming it
-  matches Magma needs a Magma run.
+- **`ch2_splitG3_ADD` sits at 220 of 350 branches, and `_DBL` at 54 of 55**, because
+  that family has no whitebox tester and harvesting cannot reach the rest.
+
+  Its generator cannot run — and neither can the other two genus-3 split generators.
+  `whitebox/genFiles/ch2_splitG3_WB_gen.mag`, and its arb and nch2 siblings alongside it,
+  all load from `../g3/splitModel/g3Formulas/`, which does not exist: the formulas live
+  in `g3/splitModel/negReduced/g3Formulas/`. PR1 recorded this as a fault in the ch2
+  generator specifically; it is all three, and they differ from one another by four or
+  five lines modulo the class name, so they are one program. The deployed `arb` and
+  `nch2` testers load by relative path instead, so they were placed under a layout their
+  generators never caught up with.
+
+  Deliberately not repaired here. The path fix is shared, so doing it properly
+  regenerates `arb` and `nch2` too — about 19,000 lines of generated output that
+  currently passes under Magma and replays 405 of 405 here — for no gain on those two.
+  It is PR6's scope, which already covers `whitebox/genFiles/`. And the gap costs
+  coverage percentage rather than confidence: those formulas are checked by 274
+  constructed cases and by `driver.py`.
+
+- **Random sampling alone plateaus near 87%**, which is why it is not the gate. The
+  three genus-3 split ADD files carry 350 labelled branches each; raising volume moved
+  one from 40% to 81% and then stopped. Constructed cases close it instead.
+
+- **The infinite-place root is exact wherever a basis polynomial is available, and
+  conventional otherwise.** The split `Precompute` functions take the value at infinity
+  from `Factorization(x² + h·x − f)[2][1]`, "the second solution from the factorization
+  given by magma", and Magma's factor ordering cannot be recovered by reading source.
+  Constructed cases supply `V` explicitly, so `y_{g+1}` is its leading coefficient and
+  `maginterp.ROOT_PIN` makes the choice exact — no convention involved. Measured, no
+  global ordering would have worked: one fails 247 cases, all in characteristic 2, the
+  other 332, all over odd primes. `driver.py`'s generated inputs have no supplied `V`,
+  so they fall back to `ROOT_CHOICE`, established by running both against the reference.
+
+- **`ff.py`'s extension-field moduli match Magma's**, queried from Magma directly rather
+  than assumed. They already agreed for GF(4), GF(8), GF(16), GF(27) and GF(32); GF(9)
+  and GF(25) did not, and that reproduced as wrong constructed cases. Anything outside
+  `MAGMA_MODULI` still uses the search order, so a new extension field wants checking
+  before its cases are trusted.
+
 - **`g2/timings/` and `g3/timings/` are excluded**, and named as excluded on every
-  `--list`. They hold an earlier generation of the formulas: the same function names,
-  but every body differs, with a different `ccs` layout, tuple returns and opposite
-  signs on some terms. They are not the formulas of record.
-- **Two `selftest.py` sections need artefacts from outside this repository** — the
-  prior audit's harness and stored repros. They report as SKIP when absent, never as
-  passing.
+  `--list`. They hold an earlier generation of the formulas: the same function names, but
+  every body differs, with a different `ccs` layout, tuple returns and opposite signs on
+  some terms. They are not the formulas of record; see `ERRATA.md` E7.
+
+- **Two `selftest.py` sections need artefacts from outside this repository** — the prior
+  audit's harness and stored repros. They report as SKIP when absent, never as passing.
 
 ## Relationship to the Magma testers
 

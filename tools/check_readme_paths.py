@@ -70,6 +70,11 @@ EXPECTED_ABSENT = {
     # the class. It describes an example that ships with the class upstream and was
     # not copied here; the class itself is excluded from this repository's licence.
     "sample-thesis.tex": "example shipped with the upstream thesis class, not copied here",
+    # Named in verification/README.md precisely BECAUSE it does not exist: it is the
+    # stale path all three genus-3 split whitebox generators load from, which is why
+    # none of them runs. Naming it is the point of the sentence.
+    "../g3/splitModel/g3Formulas/":
+        "the broken load path in whitebox/genFiles/*_splitG3_WB_gen.mag, named as broken",
 }
 
 # Bare filenames mentioned in prose rather than as locations. Checking these as

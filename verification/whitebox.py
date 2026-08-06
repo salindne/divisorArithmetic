@@ -33,10 +33,9 @@ Cases come from two places, and which one is always visible in the report:
   anything less is a regression.
 
   **harvested** by `--harvest` for a family that has no tester -- genus-3 ramified,
-  and genus-3 split ch2 whose generator has stale load paths (a PR1 finding). Search
-  for an input reaching each labelled branch, then freeze it. Held to the coverage
-  recorded when it was harvested, since search cannot reach a branch needing an
-  algebraic coincidence.
+  and genus-3 split ch2, whose generator cannot run. Search for an input reaching each
+  labelled branch, then freeze it. Held to the coverage recorded when it was harvested,
+  since search cannot reach a branch needing an algebraic coincidence.
 
 Harvesting uses the random generators, but **the result is a constructed case like any
 other**: this replays frozen inputs and never samples. Randomness builds the corpus
@@ -881,7 +880,7 @@ def _families_without_testers(testers):
         (("ramified", 3, "arb", None), "harvested at 100%; PR6 writes the tester"),
         (("ramified", 3, "nch2", None), "harvested at 100%; PR6 writes the tester"),
         (("split", 3, "ch2", "neg"),
-         "harvested to a baseline; its generator has stale load paths (PR1 finding)"),
+         "harvested to a baseline; see README: all three genus-3 split generators\n          have stale load paths, not just this one"),
     ]
     out = []
     for key, why in known:
