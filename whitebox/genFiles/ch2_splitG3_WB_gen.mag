@@ -25,10 +25,10 @@ ADD_DEBUG := true;
 ///////////////////////////////////////////////////////////////////////////////
 //LOAD FILES
 ///////////////////////////////////////////////////////////////////////////////
-load "genFiles/poly_balanced_arithmetic.mag";
-load "../g3/splitModel/g3Formulas/ch2_splitG3_UTL.mag";
-load "../g3/splitModel/g3Formulas/ch2_splitG3_DBL.mag";
-load "../g3/splitModel/g3Formulas/ch2_splitG3_ADD.mag";
+load "../g3/splitModel/negReduced/poly_balanced_arithmetic.mag";
+load "../g3/splitModel/negReduced/g3Formulas/ch2_splitG3_UTL.mag";
+load "../g3/splitModel/negReduced/g3Formulas/ch2_splitG3_DBL.mag";
+load "../g3/splitModel/negReduced/g3Formulas/ch2_splitG3_ADD.mag";
 "     ";
 
 SetOutputFile("logs/ch2_splitG3_log.txt"); //Comment out if manually debugging
