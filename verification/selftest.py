@@ -584,6 +584,71 @@ def section_swap(rep, quick):
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def section_whitebox(rep, quick):
+    """The constructed-case gate replays cleanly, and fires when a formula is broken."""
+    import whitebox as W                                        # noqa: PLC0415
+
+    res = W.Result()
+    testers = W.find_testers()
+    if not testers:
+        rep.fail("whitebox", "no whitebox tester was found")
+        return
+    for t in testers:
+        W.replay_tester(t, res, False)
+    W.replay_harvested(res, False)
+    if res.mismatches or res.errors or res.unparsed or res.no_branch:
+        rep.fail("whitebox", "%d mismatch(es), %d error kind(s), %d unparsed, "
+                             "%d reached no branch"
+                 % (len(res.mismatches), len(res.errors), len(res.unparsed),
+                    len(res.no_branch)))
+        return
+    clean = res.replayed
+
+    # Now break a formula on a copy and confirm the cases catch it. A gate that has
+    # never been seen to fail is not known to be a gate -- the same
+    # demonstrate-rather-than-assume rule the swap section follows.
+    src = os.path.join(ROOT, "g2", "ramifiedModel", "g2Formulas",
+                       "nch2_ramifiedG2_ADD.mag")
+    text = open(src).read()
+    m = re.search(r"^(\s*)(upp1\s*:=\s*)([^;]+);", text, re.M)
+    if not m:
+        rep.skip("whitebox", "%d cases replayed clean; no line found to mutate"
+                 % clean)
+        return
+    mutated = (text[:m.start()]
+               + "%s%s%s + 1;" % (m.group(1), m.group(2), m.group(3))
+               + text[m.end():])
+    tmp = tempfile.mkdtemp(prefix="selftest-whitebox-")
+    saved_root = W.ROOT
+    try:
+        dst = os.path.join(tmp, "g2", "ramifiedModel", "g2Formulas")
+        os.makedirs(dst)
+        for fn in os.listdir(os.path.dirname(src)):
+            shutil.copy(os.path.join(os.path.dirname(src), fn), dst)
+        for fn in os.listdir(os.path.join(ROOT, "g2", "ramifiedModel")):
+            q = os.path.join(ROOT, "g2", "ramifiedModel", fn)
+            if os.path.isfile(q):
+                shutil.copy(q, os.path.join(tmp, "g2", "ramifiedModel", fn))
+        open(os.path.join(dst, os.path.basename(src)), "w").write(mutated)
+        W.ROOT = tmp
+        broken = W.Result()
+        for t in W.find_testers(tmp):
+            if "nch2_ramifiedG2" in t:
+                W.replay_tester(t, broken, False)
+        caught = bool(broken.mismatches or broken.errors)
+    finally:
+        W.ROOT = saved_root
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    if not caught:
+        rep.fail("whitebox", "a perturbed formula went undetected by %d cases"
+                 % broken.replayed)
+    else:
+        rep.ok("whitebox", "%d cases replay clean; a perturbed formula is caught "
+                           "by %d of %d" % (clean, len(broken.mismatches),
+                                            broken.replayed))
+
+
 SECTIONS = [
     ("fields", section_fields),
     ("parse", section_parse),
@@ -593,6 +658,7 @@ SECTIONS = [
     ("errata", section_errata),
     ("repros", section_repros),
     ("swap", section_swap),
+    ("whitebox", section_whitebox),
 ]
 
 
