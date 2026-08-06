@@ -94,3 +94,66 @@ jobs:
         with:
           submodules: false
       - run: tools/tests/run.sh
+
+  verify-formulas:
+    # The first job in this workflow that checks the formulas themselves rather
+    # than the repository around them. Everything above is a static check by
+    # construction; this one runs the real .mag source through an interpreter and
+    # compares it against an independent implementation of the group law.
+    #
+    # Two jobs rather than one, because they answer different questions and a
+    # failure in either should be readable on its own:
+    #
+    #   selftest  is the framework trustworthy? Group axioms, the empirical curve
+    #             filter against the textbook singularity criterion, three-way
+    #             agreement between the reference and two independent
+    #             implementations, and the recorded errata as required test
+    #             vectors. If this fails, nothing the next step says means anything.
+    #
+    #   whitebox  do the formulas agree with the reference on every one of their
+    #             computation paths? Constructed cases only, so it is deterministic
+    #             and can gate on coverage.
+    #
+    # driver.py is deliberately NOT here. It is the random differential tester, and
+    # at CI volume it is neither a real correctness check nor a coverage gate -- the
+    # defects it is good at finding were found by exhaustive enumeration over
+    # millions of pairs, not by a 37-second sample. It stays a local and pre-release
+    # tool, documented in verification/README.md.
+    #
+    # Pure standard library, so there is no install step and no dependency to
+    # break. That is what makes this job possible at all: Magma is licensed and
+    # cannot run on a hosted runner, so before this landed no CI job could verify
+    # a formula.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: false
+
+      - name: framework selftest
+        working-directory: verification
+        # The `reference` and `repros` sections need the audit artefacts, which are
+        # deliberately outside this repository. They report themselves as skipped
+        # here rather than being silently dropped.
+        run: python3 selftest.py --quick
+
+      - name: constructed whitebox cases, every developed formula
+        working-directory: verification
+        # 1,682 deliberately constructed cases, one per computation path, replayed
+        # through the interpreter and compared against reference.py. Deterministic and
+        # about two seconds.
+        #
+        # This is the gate rather than random sampling because sampling coverage is
+        # coupon-collector: 54% at CI volume, 84% after twelve minutes, and it stalls.
+        # It could never gate on coverage without either failing honest runs or gating
+        # on nothing.
+        #
+        # 1,338 cases are read at run time out of the repository's own whitebox
+        # testers, so they cannot drift out of step with them, and those files are held
+        # to 100% coverage. The remaining 344 are for the three families that have no
+        # tester, harvested once offline into harvested_cases.json. Expected coverage
+        # lives in coverage_baseline.json as a NAMED label set -- what is exempt, with
+        # the reason -- so a newly added branch fails by default and branches cannot
+        # be traded one-for-one. All three developed genus-3 ramified files are at
+        # 100%. Nothing here samples.
+        run: python3 whitebox.py
