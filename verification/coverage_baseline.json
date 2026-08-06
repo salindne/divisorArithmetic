@@ -1,0 +1,35 @@
+{
+ "files": {
+  "g2/splitModel/negReduced/g2Formulas/ch2_splitG2_UTL.mag": {
+   "expect": 2,
+   "of": 3,
+   "why": "Precompute's own exits; the whitebox testers were built to cover ADD/DBL branches, not these"
+  },
+  "g2/splitModel/posReduced/g2Formulas/nch2_splitG2_UTL.mag": {
+   "expect": 2,
+   "of": 3,
+   "why": "Precompute's own exits; the whitebox testers were built to cover ADD/DBL branches, not these"
+  },
+  "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_ADD.mag": {
+   "expect": 220,
+   "of": 350,
+   "why": "no whitebox tester exists; cases are harvested by search"
+  },
+  "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_DBL.mag": {
+   "expect": 54,
+   "of": 55,
+   "why": "no whitebox tester exists; cases are harvested by search"
+  },
+  "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_UTL.mag": {
+   "expect": 6,
+   "of": 8,
+   "why": "Precompute's own exits; the whitebox testers were built to cover ADD/DBL branches, not these"
+  },
+  "g3/splitModel/negReduced/g3Formulas/nch2_splitG3_UTL.mag": {
+   "expect": 7,
+   "of": 8,
+   "why": "Precompute's own exits; the whitebox testers were built to cover ADD/DBL branches, not these"
+  }
+ },
+ "note": "Formula files whose coverage is expected below their label count, with the reason. Written by `whitebox.py --record-baseline`, which refuses to lower an entry without --allow-lower. Everything absent from here must be at 100%."
+}

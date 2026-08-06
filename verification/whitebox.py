@@ -71,6 +71,17 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HARVEST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             "harvested_cases.json")
 
+# Every formula file whose coverage is expected to be below its label count, with the
+# reason. One artefact for all such cases, because there are two unrelated causes and
+# collapsing them into "whatever the last harvest happened to find" made the number
+# self-certifying: `--harvest` wrote both the cases and the figure they were graded
+# against, so a worse harvest silently lowered the bar.
+#
+# Written by `--record-baseline`, which REFUSES to lower an existing entry without
+# --allow-lower, so a regression cannot be absorbed by re-recording.
+BASELINE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "coverage_baseline.json")
+
 
 # ---------------------------------------------------------------------------
 # parsing Magma's printed values
@@ -249,7 +260,7 @@ class Result(object):
         self.errors = collections.Counter()
         self.no_branch = []
         self.covered = collections.defaultdict(set)
-        self.precondition = 0
+        self.precondition = []
         # Coverage here is 100% by construction -- one constructed case per branch --
         # so any gap is a regression, not a sampling artefact, and fails the run.
         self.coverage_gaps = []
@@ -262,8 +273,13 @@ class Result(object):
         self.cases_per_tester = {}
 
     def failed(self):
+        # `precondition` is fatal here, unlike in driver.py. driver.py generates inputs
+        # and legitimately lands in the D1 == D2 region; a CONSTRUCTED case never should,
+        # and measurably none does, so a case arriving there means this harness
+        # misclassified it.
         return bool(self.mismatches or self.unparsed or self.errors
-                    or self.no_branch or self.coverage_gaps)
+                    or self.no_branch or self.coverage_gaps or self.precondition
+                    or self.replayed != self.matched)
 
 
 def _formula_paths(model, genus, kind, basis):
@@ -279,12 +295,27 @@ def _formula_paths(model, genus, kind, basis):
             os.path.join(d, stem + "UTL.mag"))
 
 
+def expected_formula_files():
+    """Every formula file that must be accounted for, from the authoritative source.
+
+    Derived from `driver.discover_families`, which walks the tree, rather than from the
+    whitebox testers found on disk. Deriving it from the testers made the expectation a
+    function of the evidence: delete a tester and its formula file stopped being
+    expected, so it vanished from the report instead of failing. A newly added formula
+    file was equally invisible.
+    """
+    out = set()
+    fams, _excluded = D.discover_families()
+    for fam in fams:
+        for p in (fam.add_path, fam.dbl_path, fam.utl_path):
+            if p and os.path.isfile(p):
+                out.add(p)
+    return out
+
+
 def replay_tester(tester, res, show_all):
     model, genus, kind, basis = family_of(tester)
     add_path, dbl_path, utl_path = _formula_paths(model, genus, kind, basis)
-    for p in (add_path, dbl_path):
-        if os.path.isfile(p):
-            res.expected_files.add(p)
     cases, bad = extract(tester)
     res.cases_per_tester[tester] = len(cases)
     res.unparsed.extend(bad)
@@ -302,11 +333,12 @@ def replay_tester(tester, res, show_all):
 
     for case in cases:
         _replay_one(case, model, genus, basis, subs, params,
-                    add_path, dbl_path, res)
+                    add_path, dbl_path, res, utl_path)
     return len(cases)
 
 
-def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res):
+def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res,
+                utl_path=None):
     F = GF(case.q)
     fn = subs.get(case.op)
     if fn is None or case.op not in params:
@@ -336,7 +368,8 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         # cases, all in characteristic 2, the other fails 332, all over odd primes.
         M.ROOT_PIN[0] = Vp.coeff(genus + 1)
         try:
-            raw = subs["Precompute"](case.f, case.h, case.q, funcs=subs, F=F)
+            raw = subs["Precompute"](case.f, case.h, case.q, path=path,
+                                     funcs=subs, F=F)
             ccs = raw[0] if len(raw) == 1 else list(raw)
         except Exception as exc:                                # noqa: BLE001
             res.errors["%s #%d: Precompute: %s: %s"
@@ -357,27 +390,46 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         d2 = (case.D2[0], case.D2[1]) if case.D2 else None
         args = D.build_args(params[case.op], cur, d1, d2)
 
+    # The whole divisor, not just (u, v). In the split model a divisor is (u, v, w, n)
+    # and the balancing weight is part of its identity, so two operands agreeing on u
+    # and v but differing in n are DISTINCT divisors and a perfectly legal addition.
+    #
+    # Comparing only u and v classified 41 such cases as the documented `D1 != D2`
+    # precondition and discarded their verdicts. Measured across the extracted corpus:
+    # 41 ADD cases have equal (u, v) and ZERO have equal (u, v, n) -- so the test never
+    # once fired on a genuinely identical pair, only on 41 legal additions. Those 41 are
+    # also the sole coverage of 41 branches, 13 of them in arb_splitG3_ADD.mag. A defect
+    # confined to them produced "1682 replayed, 1641 matched, 0 mismatched, PASS", exit 0.
     same = (case.op == "ADD" and case.D2 is not None
-            and case.D1[0] == case.D2[0] and case.D1[1] == case.D2[1])
+            and tuple(case.D1) == tuple(case.D2))
     try:
         vals = fn(*args, path=path, funcs=subs, F=F)
     except Exception as exc:                                    # noqa: BLE001
         if same:
-            # The documented D1 != D2 precondition; errata E1. Not this harness's
-            # subject, and the constructed cases are not supposed to contain them.
-            res.precondition += 1
+            res.precondition.append(
+                "%s #%d %s raised %s where D1 == D2"
+                % (os.path.basename(case.tester), case.index, case.op,
+                   type(exc).__name__))
             return
         res.errors["%s #%d %s: %s: %s"
                    % (os.path.basename(case.tester), case.index, case.op,
                       type(exc).__name__, str(exc)[:50])] += 1
         return
 
-    labels = [s[6:] for s in path if s.startswith("PRINT:")]
+    # Precompute's labels belong to the UTL file, not to the ADD/DBL file, so they are
+    # split out by name. Without this they were discarded entirely: the nine split UTL
+    # files carry 42 labels between them and all 42 read as unexercised.
+    utl_labels = set()
+    if utl_path and os.path.isfile(utl_path):
+        utl_labels = D.labels_in(utl_path)
+        res.covered[utl_path].update(
+            x[6:] for x in path if x.startswith("PRINT:") and x[6:] in utl_labels)
+    labels = [x[6:] for x in path
+              if x.startswith("PRINT:") and x[6:] not in utl_labels]
     if not labels:
         res.no_branch.append("%s #%d %s reached no branch label"
                              % (os.path.basename(case.tester), case.index,
                                 case.op))
-    res.covered[src].update(labels)
 
     if model == "split":
         gu, gv, gn, note = D.decode_split(F, genus, vals, basis_poly)
@@ -401,9 +453,18 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
     res.replayed += 1
     if all(a == b for a, b in zip(got, exp)):
         res.matched += 1
+        # Coverage is banked only for a verdict that was actually CHECKED. Banking it
+        # before the comparison meant a discarded verdict still counted its branch as
+        # covered, so 41 branches read as verified while nothing verified them.
+        res.covered[src].update(labels)
         return
     if same:
-        res.precondition += 1
+        # A constructed case must never be in the D1 == D2 region -- none of the 1,338
+        # extracted cases is -- so landing here means the harness is wrong about the
+        # case, not that the case is excused. Recorded and fatal.
+        res.precondition.append(
+            "%s #%d %s disagreed where D1 == D2"
+            % (os.path.basename(case.tester), case.index, case.op))
         return
     res.mismatches.append(dict(
         tester=os.path.basename(case.tester), index=case.index, op=case.op,
@@ -539,8 +600,15 @@ def harvest(families, seed=1, curves=40, pairs=12):
     return out, baseline
 
 
-def _harvest_context(fam, cur, subs, F):
-    """(basis polynomial, ccs) for a generated curve, or None if unusable."""
+def _harvest_context(fam, cur, subs, F, utl_path_labels=None):
+    """(basis polynomial, ccs) for a generated curve, or None if unusable.
+
+    `utl_path_labels` collects Precompute's own branch labels, which are otherwise
+    discarded: the nine split UTL files carry 42 of them and all 42 read as unexercised
+    because the call was made without a path to record into.
+    """
+    if utl_path_labels is None:
+        utl_path_labels = []
     if not fam.is_split:
         return (None, None)
     try:
@@ -550,7 +618,8 @@ def _harvest_context(fam, cur, subs, F):
     basis_poly = Vp if fam.basis == "pos" else (-Vp - cur.h)
     M.ROOT_PIN[0] = Vp.coeff(fam.genus + 1)
     try:
-        raw = subs["Precompute"](cur.f, cur.h, F.q, funcs=subs, F=F)
+        raw = subs["Precompute"](cur.f, cur.h, F.q, path=utl_path_labels,
+                                 funcs=subs, F=F)
         ccs = raw[0] if len(raw) == 1 else list(raw)
     except Exception:                                           # noqa: BLE001
         return None
@@ -604,13 +673,28 @@ def _try_pair(fam, cur, subs, params, op, mode, rng, basis_poly, ccs,
 
 
 def load_harvested():
-    """(cases, per-file coverage baseline) from the committed harvest, or ([], {})."""
+    """The committed harvested cases, or []."""
     if not os.path.isfile(HARVEST_FILE):
-        return [], {}
+        return []
     data = json.loads(open(HARVEST_FILE).read())
     if isinstance(data, list):
-        return data, {}
-    return data.get("cases", []), data.get("baseline", {})
+        return data
+    return data.get("cases", [])
+
+
+def load_baseline():
+    """{repo-relative file: expected branch count} for files not held to 100%."""
+    if not os.path.isfile(BASELINE_FILE):
+        return {}
+    data = json.loads(open(BASELINE_FILE).read())
+    return {k: v["expect"] for k, v in data.get("files", {}).items()}
+
+
+def baseline_reasons():
+    if not os.path.isfile(BASELINE_FILE):
+        return {}
+    data = json.loads(open(BASELINE_FILE).read())
+    return {k: v.get("why", "") for k, v in data.get("files", {}).items()}
 
 
 def replay_harvested(res, show_all, only=None):
@@ -620,7 +704,8 @@ def replay_harvested(res, show_all, only=None):
     no whitebox tester, so its cases are harvested too, and a split case needs its
     basis polynomial and ccs rebuilt rather than just a curve and two divisors.
     """
-    records, baseline = load_harvested()
+    records = load_harvested()
+    baseline = load_baseline()
     if only:
         # --family filters the harvested cases too, so a filtered run reports on the
         # families asked for and nothing else.
@@ -659,11 +744,17 @@ def replay_harvested(res, show_all, only=None):
 
         basis_poly = ccs = None
         if model == "split":
-            ctx = _harvest_context(fam, cur, subs, F)
+            utl_sink = []
+            ctx = _harvest_context(fam, cur, subs, F, utl_sink)
             if ctx is None:
                 res.errors["harvested %d: could not rebuild the split context" % i] += 1
                 continue
             basis_poly, ccs = ctx
+            if fam.utl_path and os.path.isfile(fam.utl_path):
+                names = D.labels_in(fam.utl_path)
+                res.covered[fam.utl_path].update(
+                    x[6:] for x in utl_sink
+                    if x.startswith("PRINT:") and x[6:] in names)
             d1 = _split_divisor_at(cur, _de_poly(F, rec["u1"]),
                                    _de_poly(F, rec["v1"]), rec["n1"], basis_poly)
             d2 = (_split_divisor_at(cur, _de_poly(F, rec["u2"]),
@@ -899,6 +990,13 @@ def main(argv=None):
                     help="substring of a tester path to restrict to")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--show-all", action="store_true")
+    ap.add_argument("--record-baseline", action="store_true",
+                    help="write coverage_baseline.json from this run's coverage. "
+                         "Refuses to LOWER an existing entry unless --allow-lower is "
+                         "given, so a regression cannot be absorbed by re-recording")
+    ap.add_argument("--allow-lower", action="store_true",
+                    help="with --record-baseline, permit lowering an entry. Say why in "
+                         "the commit message")
     ap.add_argument("--harvest", action="store_true",
                     help="regenerate harvested_cases.json for the families that have "
                          "no whitebox tester. Offline and deliberately separate from "
@@ -939,6 +1037,13 @@ def main(argv=None):
             print("no whitebox tester and no harvested case found")
             return 2
 
+    if a.harvest and a.family:
+        # A filtered harvest would write cases for some families and leave the rest of
+        # the corpus stale, while the baseline it is graded against covers all of them.
+        print("--harvest cannot be combined with --family: a partial harvest would\n"
+              "leave the rest of the corpus stale. Harvest everything, or not at all.")
+        return 2
+
     if a.harvest:
         fams, _excl = D.discover_families()
         targets = [f for f in fams if not _has_tester(f, testers)]
@@ -947,29 +1052,86 @@ def main(argv=None):
             return 0
         print("\n  harvesting for %d family(ies) with no whitebox tester\n"
               % len(targets))
-        records, baseline = harvest(targets)
+        records, found = harvest(targets)
         payload = {
             "note": ("Constructed cases for families with no whitebox tester. "
                      "Regenerate with `python3 whitebox.py --harvest`. CI replays "
-                     "these and never samples."),
-            "baseline": baseline,
+                     "these and never samples. Expected coverage lives in "
+                     "coverage_baseline.json, NOT here, so a worse harvest cannot "
+                     "lower its own bar."),
             "cases": records,
         }
         with open(HARVEST_FILE, "w") as fh:
             json.dump(payload, fh, indent=1, sort_keys=True)
-        print("\n  wrote %d cases and %d baselines to %s\n"
-              % (len(records), len(baseline), os.path.basename(HARVEST_FILE)))
+        print("\n  wrote %d cases to %s" % (len(records),
+                                            os.path.basename(HARVEST_FILE)))
+        print("  coverage reached: %s"
+              % ", ".join("%s=%d" % (os.path.basename(k), v)
+                          for k, v in sorted(found.items())))
+        print("  run --record-baseline to accept these figures\n")
         return 0
 
     res = Result()
+    res.expected_files |= expected_formula_files()
     for t in testers:
         n = replay_tester(t, res, a.show_all)
         print("  %-46s %4d cases" % (os.path.basename(t), n))
     n = replay_harvested(res, a.show_all, a.family)
     if n:
         print("  %-46s %4d cases" % ("harvested_cases.json", n))
-    _cases, baseline = load_harvested()
-    return report(res, testers, a.show_all, baseline)
+    if a.record_baseline:
+        return _record_baseline(res, a.allow_lower)
+    return report(res, testers, a.show_all, load_baseline())
+
+
+def _record_baseline(res, allow_lower):
+    """Write coverage_baseline.json from this run, refusing silent regressions."""
+    old = load_baseline()
+    reasons = baseline_reasons()
+    new, lowered = {}, []
+    for src in sorted(res.expected_files | set(res.covered)):
+        labels = D.labels_in(src)
+        if not labels:
+            continue
+        hit = len(res.covered.get(src, set()) & labels)
+        if hit >= len(labels):
+            continue                      # at 100%; needs no entry
+        rel = os.path.relpath(src, ROOT)
+        if rel in old and hit < old[rel]:
+            lowered.append((rel, old[rel], hit))
+        why = reasons.get(rel) or _default_reason(rel)
+        new[rel] = {"expect": hit, "of": len(labels), "why": why}
+    if lowered and not allow_lower:
+        print("refusing to lower %d baseline entr%s:\n"
+              % (len(lowered), "y" if len(lowered) == 1 else "ies"))
+        for rel, was, now in lowered:
+            print("  %s: recorded %d, this run reached %d" % (rel, was, now))
+        print("\nThat is a coverage regression, not a new baseline. Investigate, or\n"
+              "pass --allow-lower and say why in the commit message.")
+        return 1
+    payload = {
+        "note": ("Formula files whose coverage is expected below their label count, "
+                 "with the reason. Written by `whitebox.py --record-baseline`, which "
+                 "refuses to lower an entry without --allow-lower. Everything absent "
+                 "from here must be at 100%."),
+        "files": new,
+    }
+    with open(BASELINE_FILE, "w") as fh:
+        json.dump(payload, fh, indent=1, sort_keys=True)
+    print("\n  recorded %d baseline entr%s to %s\n"
+          % (len(new), "y" if len(new) == 1 else "ies",
+             os.path.basename(BASELINE_FILE)))
+    for rel, v in sorted(new.items()):
+        print("    %-58s %3d/%3d  %s" % (rel, v["expect"], v["of"], v["why"]))
+    print()
+    return 0
+
+
+def _default_reason(rel):
+    if rel.endswith("_UTL.mag"):
+        return ("Precompute's own exits; the whitebox testers were built to cover "
+                "ADD/DBL branches, not these")
+    return "no whitebox tester exists; cases are harvested by search"
 
 
 def _has_tester(fam, testers):
