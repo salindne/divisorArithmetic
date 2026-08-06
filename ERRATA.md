@@ -73,7 +73,7 @@ the thesis, which carries the same guard.
 
 ## E2: genus-2 ramified ADD: one 6-valued return among 5-valued returns
 
-**Severity:** latent. No current caller reaches it.
+**Severity:** latent. Three constructed whitebox cases now reach it (case 16 of each genus-2 ramified whitebox tester, branch ADD05, that branch's only coverage); the Python gate pins them by identity and reports them on every run.
 
 **Where:** the same branch as E1 in all three files. `return 0,0,1,0,0,1;` returns **six** values,
 while every other return in those files returns five. The trailing `1` is a balancing weight belonging

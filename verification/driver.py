@@ -327,9 +327,10 @@ def decode_divisor(F, genus, vals):
     """(u, v) from a dispatcher's flat return, plus a note on any arity anomaly.
 
     The convention is `u_g, ..., u_0, v_{g-1}, ..., v_0`: coefficients descending,
-    u then v, so 2g+1 values. One branch of every ramified ADD returns 2g+2
+    u then v, so 2g+1 values. One branch of each GENUS-2 ramified ADD returns 2g+2
     instead -- a balancing weight left over from the split model, recorded as
-    errata E2. That is returned as a note rather than raised, so a run surfaces it
+    errata E2. Measured: the genus-3 ramified ADD files are uniformly 7-valued, so
+    the earlier "every ramified ADD" wording here overclaimed. That is returned as a note rather than raised, so a run surfaces it
     once instead of aborting on the first pair that reaches the branch.
     """
     want = 2 * genus + 1
@@ -767,17 +768,44 @@ class Result(object):
         return not self.mismatches and not self.errors
 
 
-def labels_in(path):
-    """Every branch label in a file: the coverage denominator.
+_GUARDED_LABEL = re.compile(
+    r'if\s*\(?[A-Za-z_0-9]*_DEBUG\)?\s*then\s*"([^"]*)";\s*end if;')
+_ANY_PRINT = re.compile(r'^\s*"([^"]*)";\s*$', re.M)
 
-    Both guard spellings, `if ADD_DEBUG then "x";` and `if (ADD_DEBUG) then "x";`.
-    The repository uses the first 1743 times and the second 70, and the 70 are all
-    genus-3 ramified -- the family this work exists to verify -- so matching only
-    one form would have reported that family as having no branches to cover.
+
+def labels_in(path):
+    """Every guarded branch label in a file: the coverage denominator.
+
+    All four guard spellings in use -- `if ADD_DEBUG then "x"; end if;` and its
+    parenthesised form, times ADD/DBL, plus `UTL_DEBUG`. Measured across the 36
+    formula files: 1,449 ADD, 294 DBL, 42 UTL, 60 and 10 parenthesised, and the
+    parenthesised ones are all genus-3 ramified -- the family this work exists to
+    verify -- so matching only one form would have reported that family as having no
+    branches to cover.
+
+    Deliberately excludes UNGUARDED prints; see `sentinel_labels`.
+    """
+    return set(_GUARDED_LABEL.findall(open(path).read()))
+
+
+def sentinel_labels(path):
+    """Labels printed with no `_DEBUG` guard: fall-through markers, not branches.
+
+    Two exist, `"THIS SHOULD NEVER HAPPEN";` in arb_ramifiedG3_ADD.mag and its nch2
+    twin, each immediately before `return -1,-1,...`. The interpreter emits them
+    exactly like a guarded label, so they must be accounted for -- but they are not
+    coverage targets. Reaching one means the formulas fell through to a case their
+    author believed impossible, which is a failure, not a branch to tick off.
+
+    So they stay OUT of the denominator (nothing should ever cover them) and callers
+    treat reaching one as fatal. Counting them instead would have required baselining
+    a branch that must never be reached, which says the opposite of what is meant.
     """
     src = open(path).read()
-    return set(re.findall(r'if\s*\(?[A-Za-z_0-9]*_DEBUG\)?\s*then\s*"([^"]*)";',
-                          src))
+    guarded = set(_GUARDED_LABEL.findall(src))
+    stripped = re.sub(r"//[^\n]*", "",
+                      re.sub(r"/\*.*?\*/", "", src, flags=re.S))
+    return {x for x in _ANY_PRINT.findall(stripped) if x not in guarded}
 
 
 def run_family(fam, families, res, fields, n_curves, n_pairs, seed, verbose):
@@ -1174,7 +1202,11 @@ def report(res, families_run, show_all, strict=False, min_coverage=100.0):
     total_l = total_c = 0
     uncovered_any = False
     for fam in families_run:
-        for src in (fam.add_path, fam.dbl_path):
+        # utl_path included so this matches whitebox.py's denominator. Omitting it put
+        # the 42 UTL labels outside the driver's count entirely, so the two tools
+        # reported coverage over 1,813 and 1,855 labels and their numbers were not
+        # comparable.
+        for src in (fam.add_path, fam.dbl_path, fam.utl_path):
             if not src:
                 continue
             labs = labels_in(src)

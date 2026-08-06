@@ -52,6 +52,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import pathlib
 import random
 import re
 import shutil
@@ -649,6 +650,126 @@ def section_whitebox(rep, quick):
                                             broken.replayed))
 
 
+def section_gate_guards(rep, quick):
+    """Each guard on the whitebox gate is shown to FIRE, not merely to exist.
+
+    A review found the gate reporting PASS while 41 verdicts were discarded. The fixes
+    added guards; a guard never observed to fail is not known to be a guard, so each is
+    provoked here and must fail the run.
+    """
+    import io                                                   # noqa: PLC0415
+    import contextlib                                           # noqa: PLC0415
+    import whitebox as W                                        # noqa: PLC0415
+
+    def verdict():
+        """(exit code, FAILED line) for a full replay under current conditions."""
+        res = W.Result()
+        res.expected_files |= W.expected_formula_files()
+        W.KNOWN_ARITY[0] = W.known_arity_anomalies()
+        for t in W.find_testers():
+            W.replay_tester(t, res, False)
+        W.replay_harvested(res, False)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = W.report(res, W.find_testers(), False, W.load_baseline())
+        line = next((x.strip() for x in buf.getvalue().splitlines()
+                     if x.startswith("  FAILED")), "")
+        return code, line
+
+    baseline_src = pathlib.Path(W.BASELINE_FILE).read_text()
+    harvest_src = pathlib.Path(W.HARVEST_FILE).read_text()
+    problems, shown = [], []
+
+    def expect_fail(name, mutate, undo):
+        try:
+            mutate()
+            code, line = verdict()
+            if code == 0:
+                problems.append("%s did not fail the run" % name)
+            else:
+                shown.append("%s -> %s" % (name, line))
+        finally:
+            undo()
+
+    def restore_baseline():
+        pathlib.Path(W.BASELINE_FILE).write_text(baseline_src)
+
+    def restore_harvest():
+        pathlib.Path(W.HARVEST_FILE).write_text(harvest_src)
+
+    code, line = verdict()
+    if code != 0:
+        rep.fail("gate_guards", "the control run already fails: %s" % line)
+        return
+
+    key = "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_ADD.mag"
+
+    def shrink_exemption():
+        # The baseline exempts a set of unreached labels. Remove one: the run must
+        # fail, because that branch is now required and the corpus does not reach it.
+        d = json.loads(baseline_src)
+        d["files"][key]["unreached"] = d["files"][key]["unreached"][1:]
+        pathlib.Path(W.BASELINE_FILE).write_text(json.dumps(d, indent=1))
+
+    def trade_labels():
+        # Swap an exempt label for a covered one, keeping the count identical. The
+        # covered one becomes exempt-but-reached (stale) and the removed one becomes
+        # required-but-missed; both fire. This is the trade a COUNT could not catch.
+        d = json.loads(baseline_src)
+        u = d["files"][key]["unreached"]
+        u[0] = "ADD000"          # a label the corpus does cover
+        pathlib.Path(W.BASELINE_FILE).write_text(json.dumps(d, indent=1))
+
+    def unpin_arity():
+        d = json.loads(baseline_src)
+        d["arity_anomalies"] = d["arity_anomalies"][1:]
+        pathlib.Path(W.BASELINE_FILE).write_text(json.dumps(d, indent=1))
+
+    def drift_case():
+        d = json.loads(harvest_src)
+        d["cases"][0]["labels"] = ["NOT_A_REAL_LABEL"]
+        pathlib.Path(W.HARVEST_FILE).write_text(json.dumps(d, indent=1))
+
+    expect_fail("an exemption is removed from the baseline", shrink_exemption,
+                restore_baseline)
+    # The one a COUNT could not catch: swap a label, keep the total.
+    expect_fail("an exempt label traded for a covered one, count unchanged",
+                trade_labels, restore_baseline)
+
+    # A newly added branch in a baselined file must NOT inherit the exemption --
+    # the hole the covered-set baseline format left open, demonstrated before the
+    # switch to storing `unreached`.
+    orig_labels = D.labels_in
+
+    def add_branch():
+        D.labels_in = (lambda p: orig_labels(p) | {"ADD_NEWLY_ADDED"}
+                       if p.endswith("/ch2_splitG3_ADD.mag") else orig_labels(p))
+
+    expect_fail("a new branch appears in a baselined file", add_branch,
+                lambda: setattr(D, "labels_in", orig_labels))
+    expect_fail("an arity anomaly is not pinned", unpin_arity, restore_baseline)
+    expect_fail("a harvested case drifted from its record", drift_case,
+                restore_harvest)
+
+    # The sentinel guard: declare a label that IS reached to be an unguarded marker.
+    orig = D.sentinel_labels
+
+    def claim_sentinel():
+        D.sentinel_labels = lambda p: ({"ADD00"}
+                                       if p.endswith("nch2_ramifiedG2_ADD.mag")
+                                       else orig(p))
+
+    expect_fail("a reached label declared a fall-through marker", claim_sentinel,
+                lambda: setattr(D, "sentinel_labels", orig))
+
+    for line in shown:
+        rep.note(line)
+    if problems:
+        rep.fail("gate_guards", problems[0])
+    else:
+        rep.ok("gate_guards", "%d guards provoked, all fired" % len(shown))
+
+
 SECTIONS = [
     ("fields", section_fields),
     ("parse", section_parse),
@@ -659,6 +780,7 @@ SECTIONS = [
     ("repros", section_repros),
     ("swap", section_swap),
     ("whitebox", section_whitebox),
+    ("gate_guards", section_gate_guards),
 ]
 
 

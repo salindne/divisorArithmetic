@@ -77,6 +77,7 @@ just not in per-PR CI, where 37 seconds of sampling proves neither thing.
 | `maginterp.py` | executes `.mag` function bodies. `python3 maginterp.py` reports parse coverage |
 | `whitebox.py` | replays the constructed cases; **this is what CI gates on** |
 | `harvested_cases.json` | constructed cases for the three families with no tester |
+| `coverage_baseline.json` | the branches exempt from coverage, **as a named label set with a reason each** — everything else must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Also pins the three known errata-E2 arity anomalies by case identity, so a new one fails while the known ones stay reported-not-fatal until PR5 |
 | `driver.py` | random differential testing, with per-branch coverage; not in CI |
 | `selftest.py` | checks the framework itself, eight sections |
 

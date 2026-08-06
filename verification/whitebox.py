@@ -264,6 +264,15 @@ class Result(object):
         # Coverage here is 100% by construction -- one constructed case per branch --
         # so any gap is a regression, not a sampling artefact, and fails the run.
         self.coverage_gaps = []
+        # Unguarded fall-through markers reached. Never a coverage win: reaching one
+        # means the formulas fell through to a case their author believed impossible.
+        self.sentinels = []
+        # Returns whose value count is not what the model calls for -- errata E2. The
+        # extra value used to be truncated and the case counted as a match.
+        self.arity = []            # unexpected: fatal
+        self.arity_known = []      # errata E2, pinned by identity: reported only
+        self.arity_seen = set()
+        self.drifted = []          # a harvested case no longer reaches what it recorded
         # Files that MUST be accounted for, derived from the testers found and the
         # harvest baseline rather than from what happened to be covered. Without this
         # the coverage loop iterated over its own results, so a tester that yielded no
@@ -279,6 +288,7 @@ class Result(object):
         # misclassified it.
         return bool(self.mismatches or self.unparsed or self.errors
                     or self.no_branch or self.coverage_gaps or self.precondition
+                    or self.sentinels or self.arity or self.drifted
                     or self.replayed != self.matched)
 
 
@@ -426,6 +436,9 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
             x[6:] for x in path if x.startswith("PRINT:") and x[6:] in utl_labels)
     labels = [x[6:] for x in path
               if x.startswith("PRINT:") and x[6:] not in utl_labels]
+    _note_sentinels(res, src, labels,
+                    "%s #%d %s" % (os.path.basename(case.tester), case.index,
+                                   case.op))
     if not labels:
         res.no_branch.append("%s #%d %s reached no branch label"
                              % (os.path.basename(case.tester), case.index,
@@ -437,17 +450,36 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
             res.errors["%s #%d: %s" % (os.path.basename(case.tester),
                                        case.index, note)] += 1
             return
-        want = (R.split_add(cur, d1, d2, basis_poly, basis == "pos")
-                if case.op == "ADD"
-                else R.split_double(cur, d1, basis_poly, basis == "pos"))
+        try:
+            want = (R.split_add(cur, d1, d2, basis_poly, basis == "pos")
+                    if case.op == "ADD"
+                    else R.split_double(cur, d1, basis_poly, basis == "pos"))
+        except Exception as exc:                                # noqa: BLE001
+            res.errors["reference %s: %s: %s"
+                       % (_case_id(case), type(exc).__name__, str(exc)[:50])] += 1
+            return
         got, exp = (gu, gv, gn), (want[0], want[1], want[3])
     else:
-        gu, gv, _note = D.decode_divisor(F, genus, vals)
+        gu, gv, note = D.decode_divisor(F, genus, vals)
+        if note:
+            res.arity_seen.add(_case_id(case))
+            # errata E2: a return with one value too many. driver.py already records
+            # this; whitebox truncated it and counted the case as a match.
+            line = "%s over GF(%d): %s" % (_case_id(case), case.q, note)
+            if _case_id(case) in KNOWN_ARITY[0]:
+                res.arity_known.append(line)
+            else:
+                res.arity.append(line)
         if gu is None:
             res.errors["%s #%d: bad return arity"
                        % (os.path.basename(case.tester), case.index)] += 1
             return
-        want = (R.add(cur, d1, d2) if case.op == "ADD" else R.double(cur, d1))
+        try:
+            want = (R.add(cur, d1, d2) if case.op == "ADD" else R.double(cur, d1))
+        except Exception as exc:                                # noqa: BLE001
+            res.errors["reference %s: %s: %s"
+                       % (_case_id(case), type(exc).__name__, str(exc)[:50])] += 1
+            return
         got, exp = (gu, gv), (want[0], want[1])
 
     res.replayed += 1
@@ -488,6 +520,24 @@ def kind_for(case, model):
     if kind == "ch2" and case.q % 2 != 0:
         return "arb"
     return kind
+
+
+def _case_id(case):
+    """A case identity that survives duplicate basenames: family + index + op."""
+    model, genus, kind, basis = family_of(case.tester)
+    return "%s%s/g%d/%s #%d %s" % (model, basis or "", genus, kind, case.index,
+                                   case.op)
+
+
+# Loaded once by main(); a list so helpers can read it without threading it through.
+KNOWN_ARITY = [set()]
+
+
+def _note_sentinels(res, src, labels, where):
+    """Record any unguarded fall-through marker this case reached."""
+    for name in sorted(set(labels) & D.sentinel_labels(src)):
+        res.sentinels.append("%s reached %r, an unguarded fall-through marker"
+                             % (where, name))
 
 
 def _split_divisor(cur, coords, V):
@@ -687,11 +737,39 @@ def load_harvested():
 
 
 def load_baseline():
-    """{repo-relative file: expected branch count} for files not held to 100%."""
+    """{repo-relative file: set of branches EXEMPT from coverage} -- `unreached`.
+
+    The exempt set is stored explicitly, as labels, and everything else in the file
+    must be covered. Storing what IS covered was tried first and left a hole: a newly
+    added branch was neither in the recorded set nor missing from it, so it was exempt
+    by accident. Storing what is NOT covered makes a new branch fail by default, which
+    is the right default. A count was worse still -- it let branches be traded
+    one-for-one while the number held, kept a stale entry downgrading a file that had
+    since acquired a tester, and made a baseline of 0 unfailable.
+    """
     if not os.path.isfile(BASELINE_FILE):
         return {}
     data = json.loads(open(BASELINE_FILE).read())
-    return {k: v["expect"] for k, v in data.get("files", {}).items()}
+    out = {}
+    for k, v in data.get("files", {}).items():
+        if isinstance(v, dict) and isinstance(v.get("unreached"), list):
+            out[k] = set(v["unreached"])
+    return out
+
+
+def known_arity_anomalies():
+    """Case identities allowed to return the wrong number of values: errata E2.
+
+    Pinned by IDENTITY rather than by count, so a NEW anomaly fails even though the
+    three known ones do not. E2 is a recorded defect that PR5 owns -- one branch of
+    every genus-2 ramified ADD returns 6 values where 5 are expected -- and failing the
+    gate on it would leave CI red until PR5 lands, which teaches everyone to ignore it.
+    Reported loudly on every run regardless.
+    """
+    if not os.path.isfile(BASELINE_FILE):
+        return set()
+    data = json.loads(open(BASELINE_FILE).read())
+    return set(data.get("arity_anomalies", []))
 
 
 def baseline_reasons():
@@ -736,7 +814,12 @@ def replay_harvested(res, show_all, only=None):
         if fam.is_split and fam.utl_path:
             subs.update(M.discover(fam.utl_path))
         subs.update(M.discover(src))
-        params = D._dispatcher_body(src, rec["op"])[0]
+        try:
+            params = D._dispatcher_body(src, rec["op"])[0]
+        except Exception as exc:                                # noqa: BLE001
+            res.errors["harvested %d: cannot read the %s signature: %s"
+                       % (i, rec["op"], type(exc).__name__)] += 1
+            continue
         model = rec.get("model", "ramified")
         try:
             cur = C.Curve(F, _de_poly(F, rec["f"]), _de_poly(F, rec["h"]),
@@ -783,6 +866,15 @@ def replay_harvested(res, show_all, only=None):
                           str(exc)[:50])] += 1
             continue
         labels = [x[6:] for x in path if x.startswith("PRINT:")]
+        _note_sentinels(res, src, labels, "harvested case %d" % i)
+        # The corpus is only meaningful if a case still reaches what it recorded.
+        # Coverage is compared in aggregate, so a case could drift to a different
+        # branch and the totals would hide it. Zero drift measured today; this is the
+        # guard that keeps it so.
+        if rec.get("labels") is not None and labels != rec["labels"]:
+            res.drifted.append(
+                "harvested case %d (%s %s) recorded %s but reached %s"
+                % (i, rec["family"], rec["op"], rec["labels"], labels))
         if not labels:
             res.no_branch.append("harvested case %d reached no branch label" % i)
         res.covered[src].update(labels)
@@ -792,17 +884,32 @@ def replay_harvested(res, show_all, only=None):
             if gu is None:
                 res.errors["harvested %d: %s" % (i, note)] += 1
                 continue
-            want = (R.split_add(cur, d1, d2, basis_poly, fam.basis == "pos")
-                    if rec["op"] == "ADD"
-                    else R.split_double(cur, d1, basis_poly, fam.basis == "pos"))
+            try:
+                want = (R.split_add(cur, d1, d2, basis_poly, fam.basis == "pos")
+                        if rec["op"] == "ADD"
+                        else R.split_double(cur, d1, basis_poly, fam.basis == "pos"))
+            except Exception as exc:                            # noqa: BLE001
+                res.errors["reference harvested %d: %s: %s"
+                           % (i, type(exc).__name__, str(exc)[:50])] += 1
+                continue
             got, exp = (gu, gv, gn), (want[0], want[1], want[3])
         else:
-            gu, gv, _note = D.decode_divisor(F, fam.genus, vals)
+            gu, gv, note = D.decode_divisor(F, fam.genus, vals)
+            if note:
+                ident = "harvested %s #%d %s" % (rec["family"], i, rec["op"])
+                res.arity_seen.add(ident)
+                (res.arity_known if ident in KNOWN_ARITY[0]
+                 else res.arity).append("%s: %s" % (ident, note))
             if gu is None:
                 res.errors["harvested %d: bad return arity" % i] += 1
                 continue
-            want = (R.add(cur, d1, d2) if rec["op"] == "ADD"
-                    else R.double(cur, d1))
+            try:
+                want = (R.add(cur, d1, d2) if rec["op"] == "ADD"
+                        else R.double(cur, d1))
+            except Exception as exc:                            # noqa: BLE001
+                res.errors["reference harvested %d: %s: %s"
+                           % (i, type(exc).__name__, str(exc)[:50])] += 1
+                continue
             got, exp = (gu, gv), (want[0], want[1])
 
         res.replayed += 1
@@ -868,23 +975,60 @@ def report(res, testers, show_all, baseline=None):
         # harvested is held to the baseline recorded when they were harvested, since
         # search cannot reach branches that need an algebraic coincidence -- and that
         # shortfall is written down as a number rather than hidden under a threshold.
-        expect = baseline.get(rel, len(labels))
-        harvested = rel in baseline
-        if len(hit) < expect:
-            mark = "LOST"
-            res.coverage_gaps.append(
-                "%s covers %d branches, below its recorded %d" % (rel, len(hit),
-                                                                  expect))
-        elif len(hit) == len(labels):
-            mark = "ok  "
+        # Compared as SETS, with the baseline storing what is EXEMPT (`unreached`).
+        # Everything not exempt must be covered, so a newly added branch fails by
+        # default rather than inheriting the exemption -- the hole the covered-set
+        # form left open. Three further rules keep an entry honest: an exempt label
+        # that IS now reached is stale and must be re-recorded; an exempt label the
+        # file no longer contains is stale the other way; and no entry may exempt a
+        # whole file.
+        exempt = baseline.get(rel)
+        missing = labels - hit
+        extra_note = ""
+        if exempt is None:
+            if missing:
+                mark = "LOST"
+                res.coverage_gaps.append(
+                    "%s misses %d branch(es) and has no baseline entry: %s"
+                    % (rel, len(missing), ", ".join(sorted(missing)[:4])))
+            else:
+                mark = "ok  "
         else:
-            mark = "base"
+            extra_note = "   (%d exempt by baseline)" % len(exempt)
+            unexpected = missing - exempt
+            stale_hit = exempt & hit
+            stale_gone = exempt - labels
+            if not hit and labels:
+                mark = "LOST"
+                res.coverage_gaps.append(
+                    "%s covers nothing at all; no baseline may exempt a whole file"
+                    % rel)
+            elif unexpected:
+                mark = "LOST"
+                res.coverage_gaps.append(
+                    "%s misses %d branch(es) its baseline does not exempt: %s"
+                    % (rel, len(unexpected), ", ".join(sorted(unexpected)[:4])))
+            elif stale_gone:
+                mark = "LOST"
+                res.coverage_gaps.append(
+                    "%s's baseline exempts %d label(s) the file no longer contains: "
+                    "%s -- re-record" % (rel, len(stale_gone),
+                                         ", ".join(sorted(stale_gone)[:4])))
+            elif stale_hit:
+                mark = "UP  "
+                res.coverage_gaps.append(
+                    "%s now reaches %d branch(es) its baseline exempts: %s -- good "
+                    "news, but the entry is stale; rerun --record-baseline to accept"
+                    % (rel, len(stale_hit), ", ".join(sorted(stale_hit)[:4])))
+            else:
+                mark = "base"
         w("    %s %-56s %3d/%3d  %5.1f%%%s\n"
           % (mark, rel, len(hit), len(labels),
-             100.0 * len(hit) / len(labels) if labels else 100.0,
-             "   (harvested, baseline %d)" % expect
-             if harvested and len(hit) != len(labels) else ""))
-        if len(hit) != len(labels) and not harvested:
+             100.0 * len(hit) / len(labels) if labels else 100.0, extra_note))
+        # Unexercised branches are listed for EVERY file, baselined or not. They used
+        # to be listed only for non-baselined files, so ~131 uncovered branches could
+        # not be named by any invocation.
+        if labels - hit:
             gaps.append((src, sorted(labels - hit)))
     if total_l:
         w("    %-60s %3d/%3d  %5.1f%%\n"
@@ -901,13 +1045,57 @@ def report(res, testers, show_all, baseline=None):
         w("\n")
 
     if res.precondition:
-        w("  %d case(s) landed in the D1 == D2 region and were not counted; that is\n"
-          "  the documented precondition, errata E1, and belongs to PR5 rather than\n"
-          "  to this harness.\n\n" % res.precondition)
+        w("  MISCLASSIFIED AS D1 == D2 (%d). A constructed case must never be in that\n"
+          "  region -- none of the extracted corpus is -- so landing here means this\n"
+          "  harness is wrong about the case, not that the case is excused.\n"
+          % len(res.precondition))
+        for line in (res.precondition if show_all else res.precondition[:10]):
+            w("    %s\n" % line)
+        w("\n")
+
+    if res.arity_known:
+        w("  WRONG RETURN ARITY, known and pinned (%d) -- errata E2, which PR5 owns.\n"
+          "  Not fatal, because the gate would then be red until PR5 lands. Pinned by\n"
+          "  case identity in coverage_baseline.json, so a NEW one still fails.\n"
+          % len(res.arity_known))
+        for line in (res.arity_known if show_all else res.arity_known[:10]):
+            w("    %s\n" % line)
+        w("\n")
+
+    if res.arity:
+        w("  WRONG RETURN ARITY, NOT pinned (%d). The extra value is truncated and the\n"
+          "  case would otherwise be counted as a match.\n" % len(res.arity))
+        for line in (res.arity if show_all else res.arity[:10]):
+            w("    %s\n" % line)
+        w("\n")
+
+    if res.sentinels:
+        w("  UNGUARDED FALL-THROUGH MARKER REACHED (%d). These are not branches to\n"
+          "  cover: reaching one means the formulas fell through to a case their\n"
+          "  author believed impossible.\n" % len(res.sentinels))
+        for line in (res.sentinels if show_all else res.sentinels[:10]):
+            w("    %s\n" % line)
+        w("\n")
 
     if res.unparsed:
         w("  COULD NOT PARSE (%d)\n" % len(res.unparsed))
         for line in (res.unparsed if show_all else res.unparsed[:10]):
+            w("    %s\n" % line)
+        w("\n")
+
+    if res.drifted:
+        w("  HARVESTED CASES DRIFTED (%d) -- the case no longer reaches the branch it\n"
+          "  was frozen for, so the corpus no longer covers what its baseline claims.\n"
+          % len(res.drifted))
+        for line in (res.drifted if show_all else res.drifted[:6]):
+            w("    %s\n" % line)
+        w("\n")
+
+    if res.drifted:
+        w("  HARVESTED CASES DRIFTED (%d) -- the case no longer reaches the branch it\n"
+          "  was frozen for, so the corpus no longer covers what its baseline claims.\n"
+          % len(res.drifted))
+        for line in (res.drifted if show_all else res.drifted[:6]):
             w("    %s\n" % line)
         w("\n")
 
@@ -963,6 +1151,19 @@ def report(res, testers, show_all, baseline=None):
             reasons.append("%d error kind(s)" % len(res.errors))
         if res.coverage_gaps:
             reasons.append("%d file(s) lost branch coverage" % len(res.coverage_gaps))
+        if res.arity:
+            reasons.append("%d case(s) with a wrong return arity" % len(res.arity))
+        if res.sentinels:
+            reasons.append("%d fall-through marker(s) reached" % len(res.sentinels))
+        if res.drifted:
+            reasons.append("%d harvested case(s) drifted from their recorded branches"
+                           % len(res.drifted))
+        if res.precondition:
+            reasons.append("%d case(s) misclassified as D1 == D2"
+                           % len(res.precondition))
+        if res.replayed != res.matched:
+            reasons.append("%d replayed but only %d matched -- a verdict was discarded"
+                           % (res.replayed, res.matched))
         w("  FAILED: %s\n\n" % ", ".join(reasons))
         return 1
     w("  PASS: every constructed case replayed, reached a branch, and matched\n\n")
@@ -1032,7 +1233,7 @@ def main(argv=None):
     # Do not bail on an empty tester list: the three families without a tester have
     # harvested cases and nothing else, so `--family g3/ramifiedModel` must still run.
     if not testers:
-        records, _b = load_harvested()
+        records = load_harvested()
         if a.family and not any(a.family in os.path.join(ROOT, _family_dir(r))
                                 for r in records):
             print("no whitebox tester and no harvested case matched %r" % a.family)
@@ -1075,8 +1276,24 @@ def main(argv=None):
         print("  run --record-baseline to accept these figures\n")
         return 0
 
+    if a.record_baseline and a.family:
+        # A filtered run replays a subset, so recording from it would write
+        # zero-coverage entries for every family the filter excluded -- a live path to
+        # an unfailable baseline. Same rule as --harvest, for the same reason.
+        print("--record-baseline cannot be combined with --family: a filtered run\n"
+              "would record zero coverage for everything the filter excluded.")
+        return 2
+
+    KNOWN_ARITY[0] = known_arity_anomalies()
     res = Result()
-    res.expected_files |= expected_formula_files()
+    # Expectations scope to the filter: a filtered run must account for the filtered
+    # families' files and no others, or --family marks the other 33 files LOST and
+    # exits 1, making the flag useless for the focused runs it exists for. The
+    # anti-vacuity guarantee is unchanged for the full run, which is what CI executes.
+    expected = expected_formula_files()
+    if a.family:
+        expected = {p for p in expected if a.family in p}
+    res.expected_files |= expected
     for t in testers:
         n = replay_tester(t, res, a.show_all)
         print("  %-46s %4d cases" % (os.path.basename(t), n))
@@ -1097,36 +1314,49 @@ def _record_baseline(res, allow_lower):
         labels = D.labels_in(src)
         if not labels:
             continue
-        hit = len(res.covered.get(src, set()) & labels)
+        covered = res.covered.get(src, set()) & labels
+        hit = len(covered)
         if hit >= len(labels):
             continue                      # at 100%; needs no entry
         rel = os.path.relpath(src, ROOT)
-        if rel in old and hit < old[rel]:
-            lowered.append((rel, old[rel], hit))
+        newly_exempt = (labels - covered) - old.get(rel, set())
+        if rel in old and newly_exempt:
+            lowered.append((rel, len(newly_exempt),
+                            ", ".join(sorted(newly_exempt)[:4])))
         why = reasons.get(rel) or _default_reason(rel)
-        new[rel] = {"expect": hit, "of": len(labels), "why": why}
+        new[rel] = {"unreached": sorted(labels - covered),
+                    "of": len(labels), "why": why}
     if lowered and not allow_lower:
         print("refusing to lower %d baseline entr%s:\n"
               % (len(lowered), "y" if len(lowered) == 1 else "ies"))
-        for rel, was, now in lowered:
-            print("  %s: recorded %d, this run reached %d" % (rel, was, now))
+        for rel, n, names in lowered:
+            print("  %s: would newly exempt %d branch(es): %s" % (rel, n, names))
         print("\nThat is a coverage regression, not a new baseline. Investigate, or\n"
               "pass --allow-lower and say why in the commit message.")
         return 1
     payload = {
-        "note": ("Formula files whose coverage is expected below their label count, "
-                 "with the reason. Written by `whitebox.py --record-baseline`, which "
-                 "refuses to lower an entry without --allow-lower. Everything absent "
-                 "from here must be at 100%."),
+        "note": ("Formula files whose coverage is expected below their label count. "
+                 "`unreached` is the exact set of branches EXEMPT from coverage; "
+                 "everything else in the file must be covered, so a newly added "
+                 "branch fails by default and branches cannot be traded one-for-one. "
+                 "Files absent from here must be at 100%. Written by "
+                 "`whitebox.py --record-baseline`, which refuses to grow an entry's "
+                 "exempt set without --allow-lower."),
+        "arity_anomalies": sorted(res.arity_seen),
+        "arity_note": ("Cases returning the wrong number of values: errata E2, which "
+                       "PR5 owns. Pinned by identity so a NEW anomaly still fails."),
         "files": new,
     }
     with open(BASELINE_FILE, "w") as fh:
         json.dump(payload, fh, indent=1, sort_keys=True)
-    print("\n  recorded %d baseline entr%s to %s\n"
+    print("\n  recorded %d baseline entr%s and %d pinned arity anomal%s to %s\n"
           % (len(new), "y" if len(new) == 1 else "ies",
+             len(res.arity_seen), "y" if len(res.arity_seen) == 1 else "ies",
              os.path.basename(BASELINE_FILE)))
     for rel, v in sorted(new.items()):
-        print("    %-58s %3d/%3d  %s" % (rel, v["expect"], v["of"], v["why"]))
+        print("    %-58s %3d/%3d covered (%d exempt)  %s"
+              % (rel, v["of"] - len(v["unreached"]), v["of"],
+                 len(v["unreached"]), v["why"]))
     print()
     return 0
 
@@ -1135,7 +1365,9 @@ def _default_reason(rel):
     if rel.endswith("_UTL.mag"):
         return ("Precompute's own exits; the whitebox testers were built to cover "
                 "ADD/DBL branches, not these")
-    return "no whitebox tester exists; cases are harvested by search"
+    return ("no whitebox tester exists, so cases are harvested by search; the "
+            "remaining branches were NOT reached by the recorded search budget, "
+            "which is not the same as being unreachable")
 
 
 def _has_tester(fam, testers):
