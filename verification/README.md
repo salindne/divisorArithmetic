@@ -148,10 +148,10 @@ domain rather than admitting a curve the group law fails on.
   Its generator cannot run — and neither can the other two genus-3 split generators.
   `whitebox/genFiles/ch2_splitG3_WB_gen.mag`, and its arb and nch2 siblings alongside it,
   all load from `../g3/splitModel/g3Formulas/`, which does not exist: the formulas live
-  in `g3/splitModel/negReduced/g3Formulas/`. PR1 recorded this as a fault in the ch2
-  generator specifically; it is all three, and they differ from one another by four or
-  five lines modulo the class name, so they are one program. The deployed `arb` and
-  `nch2` testers load by relative path instead, so they were placed under a layout their
+  in `g3/splitModel/negReduced/g3Formulas/`. Four of four loads broken in each, and the
+  three differ from one another by four or five lines modulo the class name, so they are
+  one program. The six genus-2 generators are unaffected. The deployed `arb` and `nch2`
+  testers load by relative path instead, so they were placed under a layout their
   generators never caught up with.
 
   Deliberately not repaired here. The path fix is shared, so doing it properly
