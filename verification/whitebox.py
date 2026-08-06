@@ -614,7 +614,7 @@ def load_harvested():
     return data.get("cases", []), data.get("baseline", {})
 
 
-def replay_harvested(res, show_all):
+def replay_harvested(res, show_all, only=None):
     """Replay the committed harvested cases, for both models.
 
     Model-aware for the same reason `harvest` is: genus-3 split ch2 has formulas but
@@ -622,6 +622,12 @@ def replay_harvested(res, show_all):
     basis polynomial and ccs rebuilt rather than just a curve and two divisors.
     """
     records, baseline = load_harvested()
+    if only:
+        # --family filters the harvested cases too, so a filtered run reports on the
+        # families asked for and nothing else.
+        records = [r for r in records
+                   if only in os.path.join(ROOT, _family_dir(r))]
+        baseline = {k: v for k, v in baseline.items() if only in k}
     for rel in baseline:
         p = os.path.join(ROOT, rel)
         if os.path.isfile(p):
@@ -716,6 +722,16 @@ def replay_harvested(res, show_all):
             want=", ".join(str(x) for x in exp),
             labels=labels))
     return len(records)
+
+
+def _family_dir(rec):
+    """A repo-relative path fragment for a harvested record, for --family matching."""
+    model, genus, kind = rec["family"].split("/")
+    basis = rec.get("basis") or ""
+    if model.startswith("split"):
+        return os.path.join("g%s" % genus[1:], "splitModel",
+                            "%sReduced" % basis, kind)
+    return os.path.join("g%s" % genus[1:], "ramifiedModel", kind)
 
 
 def _split_divisor_at(cur, u, v, n, V):
@@ -912,9 +928,17 @@ def main(argv=None):
         print()
         return 0
 
+    # Do not bail on an empty tester list: the three families without a tester have
+    # harvested cases and nothing else, so `--family g3/ramifiedModel` must still run.
     if not testers:
-        print("no whitebox tester matched")
-        return 2
+        records, _b = load_harvested()
+        if a.family and not any(a.family in os.path.join(ROOT, _family_dir(r))
+                                for r in records):
+            print("no whitebox tester and no harvested case matched %r" % a.family)
+            return 2
+        if not records:
+            print("no whitebox tester and no harvested case found")
+            return 2
 
     if a.harvest:
         fams, _excl = D.discover_families()
@@ -942,7 +966,7 @@ def main(argv=None):
     for t in testers:
         n = replay_tester(t, res, a.show_all)
         print("  %-46s %4d cases" % (os.path.basename(t), n))
-    n = replay_harvested(res, a.show_all)
+    n = replay_harvested(res, a.show_all, a.family)
     if n:
         print("  %-46s %4d cases" % ("harvested_cases.json", n))
     _cases, baseline = load_harvested()
