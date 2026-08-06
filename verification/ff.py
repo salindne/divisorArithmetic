@@ -143,8 +143,32 @@ def _is_irreducible(poly, p):
     return True
 
 
+# Magma's own defining polynomials, ascending coefficients, for the extension fields
+# this repository's testers actually use. Queried from Magma directly rather than
+# assumed -- `DefiningPolynomial(GF(q))` under tools/magma-docker/.
+#
+# Matching matters because the whitebox testers write extension-field elements as
+# `FF.1^k`, powers of Magma's generator. Any irreducible gives an isomorphic field, so
+# a case stays a valid test either way, but the curve it names is only the intended one
+# when the generator agrees. The search order below already agrees for GF(4), GF(8),
+# GF(16), GF(27) and GF(32); it did not for GF(9) or GF(25), and that mismatch
+# reproduced as two wrong constructed cases over GF(9).
+MAGMA_MODULI = {
+    (2, 2): [1, 1, 1],              # x^2 + x + 1
+    (2, 3): [1, 1, 0, 1],           # x^3 + x + 1
+    (2, 4): [1, 1, 0, 0, 1],        # x^4 + x + 1
+    (2, 5): [1, 0, 1, 0, 0, 1],     # x^5 + x^2 + 1
+    (3, 2): [2, 2, 1],              # x^2 + 2x + 2
+    (3, 3): [1, 2, 0, 1],           # x^3 + 2x + 1
+    (5, 2): [2, 4, 1],              # x^2 + 4x + 2
+}
+
+
 def _find_irreducible(p, n):
-    """Smallest (in the search order) monic irreducible of degree n over GF(p)."""
+    """Magma's monic irreducible of degree n over GF(p) where known, else the
+    smallest in the search order."""
+    if (p, n) in MAGMA_MODULI:
+        return list(MAGMA_MODULI[(p, n)])
     if n == 1:
         return [0, 1]
     for cand in _monic_polys_of_degree(n, p):

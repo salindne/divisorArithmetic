@@ -126,11 +126,25 @@ def _factorization(F, p):
     <factor, multiplicity> pairs, so source that writes `Factorization(...)[2][1]`
     works unchanged.
 
-    Ordering is the delicate part and it is NOT guessed. `ROOT_CHOICE` selects
-    which root comes first; `driver.py` runs both settings and keeps the one that
-    agrees with the independent reference, so the choice is established by
-    measurement rather than by assuming Magma's internal factor order.
+    Ordering is the delicate part and it is NOT guessed.
+
+    `ROOT_PIN`, when set, names the root that `[2][1]` must yield. That is the exact
+    answer and is what `whitebox.py` uses: a constructed case supplies its basis
+    polynomial V explicitly, and y_{g+1} is V's leading coefficient, so the root is
+    known rather than chosen. Neither global ordering works for every case --
+    measured over 1,258 constructed cases, "second" fails 247 of them and all in
+    characteristic 2, while "first" fails 332 and all over odd primes.
+
+    `ROOT_CHOICE` is the fallback for generated inputs, where no V is given.
+    `driver.py` establishes it by running both settings against the independent
+    reference rather than by assuming Magma's internal factor order.
     """
+    if ROOT_PIN[0] is not None:
+        want = ROOT_PIN[0]
+        other = -want - p.coeff(1)          # the two roots sum to -b
+        one = F.one
+        return [[Poly.from_coeffs(F, [-other, one]), 1],
+                [Poly.from_coeffs(F, [-want, one]), 1]]
     if not hasattr(p, "deg") or p.deg != 2 or not p.is_monic():
         raise ParseError("Factorization is supported only for a monic quadratic, "
                          "got %r" % (p,))
@@ -187,6 +201,11 @@ def _quadratic_roots(F, b, c):
 #
 # A list so `driver.py` can flip it to re-derive this rather than trust it.
 ROOT_CHOICE = ["second"]
+
+# When set to a field element, `Factorization(...)[2][1]` yields exactly that root,
+# making the choice exact instead of conventional. `whitebox.py` sets it per case
+# from the case's own basis polynomial. None means fall back to ROOT_CHOICE.
+ROOT_PIN = [None]
 
 FIELD_BUILTINS = {
     "GF": _gf,

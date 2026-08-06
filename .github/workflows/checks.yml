@@ -108,10 +108,17 @@ jobs:
     #             filter against the textbook singularity criterion, three-way
     #             agreement between the reference and two independent
     #             implementations, and the recorded errata as required test
-    #             vectors. If this fails, nothing the driver says means anything.
+    #             vectors. If this fails, nothing the next step says means anything.
     #
-    #   driver    do the formulas agree with the reference? Every family, both
-    #             models, both genuses, both reduced bases.
+    #   whitebox  do the formulas agree with the reference on every one of their
+    #             computation paths? Constructed cases only, so it is deterministic
+    #             and can gate on coverage.
+    #
+    # driver.py is deliberately NOT here. It is the random differential tester, and
+    # at CI volume it is neither a real correctness check nor a coverage gate -- the
+    # defects it is good at finding were found by exhaustive enumeration over
+    # millions of pairs, not by a 37-second sample. It stays a local and pre-release
+    # tool, documented in verification/README.md.
     #
     # Pure standard library, so there is no install step and no dependency to
     # break. That is what makes this job possible at all: Magma is licensed and
@@ -130,29 +137,21 @@ jobs:
         # here rather than being silently dropped.
         run: python3 selftest.py --quick
 
-      - name: differential test, every family
+      - name: constructed whitebox cases, every developed formula
         working-directory: verification
-        # Modest volume: this has to finish in CI time. It is not the exhaustive
-        # run -- that is a local job -- and the settings are stated here so nobody
-        # mistakes a green tick for full coverage.
+        # 1,682 deliberately constructed cases, one per computation path, replayed
+        # through the interpreter and compared against reference.py. Deterministic and
+        # about two seconds.
         #
-        # --strict is NOT used. Today's formulas are wrong wherever D1 == D2, which
-        # is a documented precondition no file claims to support and which PR5
-        # fixes; --strict would fail every run until then and teach everyone to
-        # ignore this job. The count is still printed on every run.
+        # This is the gate rather than random sampling because sampling coverage is
+        # coupon-collector: 54% at CI volume, 84% after twelve minutes, and it stalls.
+        # It could never gate on coverage without either failing honest runs or gating
+        # on nothing.
         #
-        # This job is green if and only if the formulas agree with the reference.
-        # Branch coverage is reported, not gated: whether the formulas are correct
-        # and whether random sampling happened to reach every branch are different
-        # questions, and only the first is a property of the formulas. Coverage
-        # grows logarithmically -- 35% at 2 curves, 54% at 4, 77% at 16, 84% at 30 --
-        # so any coverage floor would either be met trivially or fail runs for a
-        # reason unrelated to correctness. It becomes gateable once constructed
-        # cases make it deterministic.
-        #
-        # What DOES fail here besides a mismatch: any error, and any selected family
-        # that produced no comparisons at all. That last one is the anti-vacuity
-        # guard, and it is deterministic -- a dispatcher that cannot be loaded, or a
-        # field sweep that finds no usable curve, would otherwise report zero
-        # mismatches and pass.
-        run: python3 driver.py --curves 4 --pairs 4 --seed 1
+        # 1,338 cases are read at run time out of the repository's own whitebox
+        # testers, so they cannot drift out of step with them, and those files are held
+        # to 100% coverage. The remaining 344 are for the three families that have no
+        # tester, harvested once offline into harvested_cases.json and held to the
+        # coverage recorded there. All three developed genus-3 ramified files are at
+        # 100%. Nothing here samples.
+        run: python3 whitebox.py

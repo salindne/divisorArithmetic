@@ -21,34 +21,50 @@ Pure standard library. No install step, no lockfile, no dependency to break.
 cd verification
 
 python3 selftest.py                 # is the framework trustworthy?
-python3 driver.py                   # do the formulas agree with the reference?
+python3 whitebox.py                 # do the formulas agree, on every path?
 
-python3 driver.py --list            # every family, and the domain derived for it
-python3 driver.py --model ramified --genus 3 --class nch2
+python3 whitebox.py --list          # which testers exist, and what is harvested
+python3 whitebox.py --harvest       # rebuild cases for families with no tester
+python3 driver.py                   # random differential testing, not in CI
 python3 driver.py --curves 30 --pairs 16 --seed 23 --show-all   # the long run
 python3 selftest.py --list          # what each section checks
 ```
 
-**`driver.py` exits 0 if and only if the formulas agree with the reference.** Branch
-coverage is *reported*, not gated. Those are different questions and only the first
-is a property of the formulas: coverage depends on where the sampling happened to
-land, and it grows logarithmically -- 35% at 2 curves, 54% at 4, 77% at 16, 84% at 30
--- so a floor would either be met trivially or fail runs for a reason unrelated to
-correctness.
+**`whitebox.py` is the gate.** It replays 1,682 deliberately constructed cases, one
+per computation path, and is deterministic: same inputs, same branches, every run.
+`driver.py` generates random inputs instead, which is a different and complementary
+job -- see below.
 
-What does fail a run, besides a mismatch: any error, and **any selected family that
-produced no comparisons**. That guard is deliberate and deterministic — a dispatcher
-that cannot be loaded, or a field sweep with no usable curve, would otherwise report
-zero mismatches and pass. "Nothing failed" must not be reachable by testing nothing.
+### Why constructed cases gate CI and random sampling does not
 
-Two flags worth knowing:
+Sampling coverage is coupon-collector. Measured across all fourteen families:
+
+| volume | time | operations | coverage |
+|---|---|---|---|
+| `--curves 4 --pairs 4` | 37s | 22,384 | 54.1% |
+| `--curves 16 --pairs 10` | 3.4 min | 224,498 | 76.8% |
+| `--curves 30 --pairs 16` | ~14 min | 674,528 | 86.9% |
+
+It stalls near 87%, so a coverage floor over sampled runs would either be met
+trivially or fail honest runs for a reason unrelated to correctness. Constructed cases
+reach every branch by construction, in two seconds, so coverage becomes a gate worth
+having.
+
+**Both still matter, for different things.** A constructed case gives one input per
+branch, which cannot catch a guard too narrow for a sub-case *within* the branch —
+errata E1 exactly. The evidence is in this repository: the whitebox testers cover
+405/405 branches, pass, and found neither E1 nor `ADD(D, D)`; exhaustive enumeration
+found both. So `driver.py` keeps that job, at volume, locally and before a release —
+just not in per-PR CI, where 37 seconds of sampling proves neither thing.
+
+`driver.py` flags worth knowing:
 
 - `--strict` additionally fails on wrong answers where `D1 == D2`. Today's formulas
   are wrong there, so this fails until PR5 lands. It is how PR5 will be shown to
   have worked.
-- `--min-coverage PCT` turns coverage into a gate, default 0 (report only). Set it to
-  100 once coverage is deterministic, which needs constructed cases rather than
-  sampling.
+- `--min-coverage PCT` turns coverage into a gate, default 0 (report only).
+- A selected family producing **no comparisons** always fails, deterministically:
+  "nothing failed" must not be reachable by testing nothing.
 
 ## What is here
 
@@ -59,7 +75,9 @@ Two flags worth knowing:
 | `curves.py` | curve and divisor generation, and the empirical filter that decides which curves are usable |
 | `_parser.py` | expression parsing for the `.mag` subset: calls, indexing, sequence and tuple literals, full precedence |
 | `maginterp.py` | executes `.mag` function bodies. `python3 maginterp.py` reports parse coverage |
-| `driver.py` | the differential test, with per-branch coverage |
+| `whitebox.py` | replays the constructed cases; **this is what CI gates on** |
+| `harvested_cases.json` | constructed cases for the three families with no tester |
+| `driver.py` | random differential testing, with per-branch coverage; not in CI |
 | `selftest.py` | checks the framework itself, eight sections |
 
 ## Current state
