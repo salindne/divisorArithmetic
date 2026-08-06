@@ -15,7 +15,8 @@ clear;
 ///////////////////////////////////////////////////////////////////////////////
 //PRINT CASES FOR splitG2_tester.py SCRIPT
 ///////////////////////////////////////////////////////////////////////////////
-Write("logs/arb_splitG3_log.txt", "Loaded ..."); 
+WB_LOG := GetEnv("WB_LOG") eq "" select "logs/arb_splitG3_log.txt" else GetEnv("WB_LOG");
+Write(WB_LOG, "Loaded ..."); 
 
 ///////////////////////////////////////////////////////////////////
 UTL_DEBUG := false;
@@ -31,7 +32,7 @@ load "../g3/splitModel/negReduced/g3Formulas/arb_splitG3_DBL.mag";
 load "../g3/splitModel/negReduced/g3Formulas/arb_splitG3_ADD.mag";
 "     ";
 
-SetOutputFile("logs/arb_splitG3_log.txt"); //Comment out if manually debugging
+SetOutputFile(WB_LOG); //Comment out if manually debugging
 SetAutoColumns(false);
 SetColumns(0);
 
@@ -41,13 +42,36 @@ SetColumns(0);
 //Field sizes below 10 for auto gen cases
 //Split curves do not exist for FF(2)
 FIELDS:= {3,4,5,7}; //,8,9,11};
-DIVISORS:= 1;
+// Divisor pairs per curve, minus one. Raising this reuses a curve and its
+// Precompute across more pairs, which is the cheaper way to buy samples; the
+// trade is less curve diversity, so a mix of both levers beats either alone.
+DIVISORS := StringToInteger(GetEnv("WB_DIVISORS") eq "" select "1" else GetEnv("WB_DIVISORS"));
 H_ZERO := false;
+
+///////////////////////////////////////////////////////////////////////////////
+//TRIAL BOUND AND SEED
+///////////////////////////////////////////////////////////////////////////////
+// The trial loop below was `while true do`, stoppable only from outside:
+// whitebox_auto_NEG.py ran this file with `magma` on PATH, then SIGSTOPped the
+// process every ten seconds to scrape the log and killed it once every branch tag
+// had been seen. Neither half survives Magma running in a container, so the bound
+// lives here now and the generator terminates on its own.
+//
+// Reaching every tag is a random search either way -- that is what the loop always
+// was. The difference is that an unreached tag is now reported by the runner
+// instead of spinning here forever.
+//
+// SetSeed makes the search reproducible, so a regenerated tester is a function of
+// (seed, trials) rather than of the moment it happened to be interrupted.
+TRIALS := StringToInteger(GetEnv("WB_TRIALS") eq "" select "400" else GetEnv("WB_TRIALS"));
+SetSeed(StringToInteger(GetEnv("WB_SEED") eq "" select "1" else GetEnv("WB_SEED")));
 
 /////////////////////////////////////////////////////////
 ///////////////////// TEST LOOPS ////////////////////////
 /////////////////////////////////////////////////////////
-while true do
+trial:= 0;
+while trial lt TRIALS do
+  trial +:= 1;
   // Random finite field FF and polynomial ring over FF
   F:= Random(FIELDS);
   FF:=GF(F);
@@ -102,3 +126,6 @@ while true do
     end if;
   end while; 
 end while;
+
+UnsetOutputFile();
+quit;
