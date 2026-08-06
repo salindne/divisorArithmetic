@@ -56,9 +56,6 @@ that are not obvious. See [Running Magma](#running-magma).
 
 - `latexTables/latexConverter.py` crashes on startup, its input paths being stale, so the committed
   `.tex` tables cannot be regenerated. See [ERRATA.md](ERRATA.md).
-- `whitebox/whitebox_auto_NEG.py` can reach only the `nch2` genus-2 split configuration. The ramified
-  and positive-reduced paths are structurally unreachable and the three genus-3 case generators have
-  stale load paths.
 
 ---
 
@@ -256,18 +253,36 @@ results directories corresponds to which run.
 ## Whitebox case generation
 
 [whitebox/whitebox_auto_NEG.py](whitebox/whitebox_auto_NEG.py) drives the case generators in
-[whitebox/genFiles/](whitebox/genFiles/) to emit testers into
-[whitebox/testerFiles/](whitebox/testerFiles/). Run it from the `whitebox/` directory: the generators'
-`load` paths are relative to that, not to `genFiles/`.
+[whitebox/genFiles/](whitebox/genFiles/) to emit a tester. Run it from the `whitebox/` directory: the
+generators' `load` paths are relative to that, not to `genFiles/`.
+
+```
+cd whitebox
+./whitebox_auto_NEG.py ch2 split 3 --trials 12000 --out ../g3/splitModel/negReduced/x.mag
+./whitebox_auto_NEG.py ch2 split 3 --from-log logs/ch2_splitG3_log.txt   # reparse, no Magma
+```
+
+**How a case is chosen.** A generator loops over random curves and divisor pairs and prints a block for
+each operation whose result agrees with Magma's own Cantor arithmetic, letting the formula's own
+`ADD_DEBUG`/`DBL_DEBUG` label name the branch. The runner keeps the first block per label. So a whitebox
+tester is the frozen output of a **coverage-guided random search** — complete and replayable, but not a
+set of hand-designed probes.
+
+Because coverage is a search, a tester can fall short of its own branch count: the genus-3 split `ch2`
+family reaches 347 of 413 labels at 12,000 trials, with the remainder guarded by nested `IsZero`
+coincidences that are rare rather than impossible. `verification/whitebox.py --harvest` fills the
+difference.
 
 Limitations:
 
-- Only the `nch2` genus-2 split configuration is reachable. The output path hardcodes `negReduced`, so
-  every ramified and positive-reduced configuration is unreachable.
-- The three genus-3 generators have stale `load` paths and cannot run.
+- `--trials` bounds the search. An unreached branch is reported, and writing a tester with a gap needs
+  `--allow-incomplete`.
 - [whitebox/testerFiles/arb_splitG3_whiteBox_tester.mag](whitebox/testerFiles/arb_splitG3_whiteBox_tester.mag)
   is a 2-of-405-case fragment from an aborted run, not a usable tester. The real 405-case genus-3
   testers are in [g3/splitModel/negReduced/](g3/splitModel/negReduced/).
+- `whitebox/logs/` holds the residue of a pre-2025 orchestrator run. Two of the three files begin
+  mid-polynomial: that generation reset the log with `truncate(0)` while Magma still held it open at its
+  own write offset. The runner now writes to a separate file and never truncates.
 - [whitebox/logs/](whitebox/logs/) holds output from aborted runs.
 
 ---

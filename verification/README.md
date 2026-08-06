@@ -30,12 +30,27 @@ python3 driver.py --curves 30 --pairs 16 --seed 23 --show-all   # the long run
 python3 selftest.py --list          # what each section checks
 ```
 
-**`whitebox.py` is the gate.** It replays 1,682 deliberately constructed cases, one
-per computation path, and is deterministic: same inputs, same branches, every run.
-`driver.py` generates random inputs instead, which is a different and complementary
-job -- see below.
+**`whitebox.py` is the gate.** It replays 1,802 frozen cases, one per computation path,
+and is deterministic: same inputs, same branches, every run. `driver.py` generates
+random inputs instead, which is a different and complementary job -- see below.
 
-### Why constructed cases gate CI and random sampling does not
+### Where the cases came from: found by search, then frozen
+
+Worth stating plainly, because "constructed" invites the wrong reading. Nobody designed
+these inputs. `whitebox/genFiles/*_WB_gen.mag` loops over random curves and divisor
+pairs, prints a block for each operation whose result agrees with Magma's own Cantor
+arithmetic, and lets the formula's own `ADD_DEBUG`/`DBL_DEBUG` label name the branch;
+`whitebox/whitebox_auto_NEG.py` keeps the first block for each label until every label
+has one. The harvested cases for the families with no tester are the same procedure in
+Python.
+
+So a "constructed case" here means **frozen and committed**, in contrast to sampled
+afresh each run. Two properties earn it a place in CI -- it is *complete* (every
+labelled branch has a case) and *deterministic* (coverage is a fact about the corpus,
+not about this run's luck). What it is **not** is an independently designed probe of
+each branch: a branch is covered by whatever input the search first landed on.
+
+### Why frozen cases gate CI and random sampling does not
 
 Sampling coverage is coupon-collector. Measured across all fourteen families:
 
@@ -46,11 +61,11 @@ Sampling coverage is coupon-collector. Measured across all fourteen families:
 | `--curves 30 --pairs 16` | ~14 min | 674,528 | 86.9% |
 
 It stalls near 87%, so a coverage floor over sampled runs would either be met
-trivially or fail honest runs for a reason unrelated to correctness. Constructed cases
-reach every branch by construction, in two seconds, so coverage becomes a gate worth
+trivially or fail honest runs for a reason unrelated to correctness. The frozen corpus
+reaches every branch in two seconds, every time, so coverage becomes a gate worth
 having.
 
-**Both still matter, for different things.** A constructed case gives one input per
+**Both still matter, for different things.** A frozen corpus gives one input per
 branch, which cannot catch a guard too narrow for a sub-case *within* the branch —
 errata E1 exactly. The evidence is in this repository: the whitebox testers cover
 405/405 branches, pass, and found neither E1 nor `ADD(D, D)`; exhaustive enumeration
@@ -75,11 +90,11 @@ just not in per-PR CI, where 37 seconds of sampling proves neither thing.
 | `curves.py` | curve and divisor generation, and the empirical filter that decides which curves are usable |
 | `_parser.py` | expression parsing for the `.mag` subset: calls, indexing, sequence and tuple literals, full precedence |
 | `maginterp.py` | executes `.mag` function bodies. `python3 maginterp.py` reports parse coverage |
-| `whitebox.py` | replays the constructed cases; **this is what CI gates on** |
-| `harvested_cases.json` | constructed cases for the three families with no tester |
+| `whitebox.py` | replays the frozen cases; **this is what CI gates on** |
+| `harvested_cases.json` | frozen cases for every branch no Magma tester reaches: the two genus-3 ramified families, which have no tester, plus the tail of genus-3 split `ch2`, whose tester's own search missed 58 of 413 |
 | `coverage_baseline.json` | the branches exempt from coverage, **as a named label set with a reason each** — everything else must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Also pins the three known errata-E2 arity anomalies by case identity, so a new one fails while the known ones stay reported-not-fatal until PR5 |
 | `driver.py` | random differential testing, with per-branch coverage; not in CI |
-| `selftest.py` | checks the framework itself, eight sections |
+| `selftest.py` | checks the framework itself, ten sections |
 
 ## Current state
 
@@ -91,7 +106,7 @@ Measured with `driver.py --curves 30 --pairs 16`:
 | operations compared | **674,528** |
 | wrong on the formulas' documented domains | **0** |
 | branch coverage | **86.9%** overall; **100% on all nine ramified files** |
-| `selftest.py` | 8 sections, 8 passing |
+| `selftest.py` | 10 sections, 10 passing |
 | parse coverage | 240 of 246 functions |
 
 The 6 functions not interpreted are `Random*Curve` generators, which are not formulas
@@ -99,7 +114,7 @@ The 6 functions not interpreted are `Random*Curve` generators, which are not for
 
 ## Two things it finds that no Magma tester in this repository can
 
-Every Magma tester here either guards `if D1 ne D2` or runs one constructed case per
+Every Magma tester here either guards `if D1 ne D2` or holds one frozen case per
 branch, so neither can see the `D1 = D2` region at all. The driver reports it
 separately from failures on the documented domain:
 
@@ -143,28 +158,30 @@ domain rather than admitting a curve the group law fails on.
 
 ## Known limits
 
-- **`ch2_splitG3_ADD` sits at 220 of 350 branches, and `_DBL` at 54 of 55**, because
-  that family has no whitebox tester and harvesting cannot reach the rest.
+- **`ch2_splitG3_ADD` sits at 339 of 350 branches.** The eleven that remain are each
+  guarded by a nested `IsZero` on an intermediate value (`z2`, `z3`, `z4`, `w2`, `k3`),
+  so reaching one needs an algebraic coincidence rather than a different kind of input.
+  They are named individually in `coverage_baseline.json`; the reason says *not reached
+  by the recorded budget*, which is not the same as unreachable.
 
-  Its generator cannot run — and neither can the other two genus-3 split generators.
-  `whitebox/genFiles/ch2_splitG3_WB_gen.mag`, and its arb and nch2 siblings alongside it,
-  all load from `../g3/splitModel/g3Formulas/`, which does not exist: the formulas live
-  in `g3/splitModel/negReduced/g3Formulas/`. Four of four loads broken in each, and the
-  three differ from one another by four or five lines modulo the class name, so they are
-  one program. The six genus-2 generators are unaffected. The deployed `arb` and `nch2`
-  testers load by relative path instead, so they were placed under a layout their
-  generators never caught up with.
+  Getting here needed two searches, and the cost difference is the point:
 
-  Deliberately not repaired here. The path fix is shared, so doing it properly
-  regenerates `arb` and `nch2` too — about 19,000 lines of generated output that
-  currently passes under Magma and replays 405 of 405 here — for no gain on those two.
-  It is PR6's scope, which already covers `whitebox/genFiles/`. And the gap costs
-  coverage percentage rather than confidence: those formulas are checked by 274
-  constructed cases and by `driver.py`.
+  | source | budget | branches of 405 |
+  |---|---|---|
+  | Magma generator | 400 trials | 179 |
+  | Magma generator | 12,000 trials (**committed tester**) | 347 |
+  | Magma generator | ~15,700 trials | 353 |
+  | `--harvest` on top of the 347 | `--harvest-curves 160 --harvest-pairs 40`, ~10 min | **401 of 413** |
+
+  The generator's last 14,750 blocks bought six branches; the harvester bought
+  forty-seven in ten minutes, because it varies degree combinations and pair modes
+  deliberately while the generator draws two `RandomDivisorAB` divisors. So the tester
+  supplies the bulk and the harvester the tail, and `--harvest` fills whatever no
+  extracted case reaches rather than only serving families with no tester at all.
 
 - **Random sampling alone plateaus near 87%**, which is why it is not the gate. The
   three genus-3 split ADD files carry 350 labelled branches each; raising volume moved
-  one from 40% to 81% and then stopped. Constructed cases close it instead.
+  one from 40% to 81% and then stopped. The frozen corpus closes it instead.
 
 - **The infinite-place root is exact wherever a basis polynomial is available, and
   conventional otherwise.** The split `Precompute` functions take the value at infinity
