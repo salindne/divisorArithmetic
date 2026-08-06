@@ -254,9 +254,13 @@ class Result(object):
         # Coverage here is 100% by construction -- one constructed case per branch --
         # so any gap is a regression, not a sampling artefact, and fails the run.
         self.coverage_gaps = []
-
-    def __init_gaps__(self):
-        pass
+        # Files that MUST be accounted for, derived from the testers found and the
+        # harvest baseline rather than from what happened to be covered. Without this
+        # the coverage loop iterated over its own results, so a tester that yielded no
+        # cases left its formula file out of the loop entirely and the run passed
+        # having tested nothing. Verified: 11 testers, 0 cases, exit 0.
+        self.expected_files = set()
+        self.cases_per_tester = {}
 
     def failed(self):
         return bool(self.mismatches or self.unparsed or self.errors
@@ -279,7 +283,11 @@ def _formula_paths(model, genus, kind, basis):
 def replay_tester(tester, res, show_all):
     model, genus, kind, basis = family_of(tester)
     add_path, dbl_path, utl_path = _formula_paths(model, genus, kind, basis)
+    for p in (add_path, dbl_path):
+        if os.path.isfile(p):
+            res.expected_files.add(p)
     cases, bad = extract(tester)
+    res.cases_per_tester[tester] = len(cases)
     res.unparsed.extend(bad)
 
     subs = {}
@@ -613,7 +621,11 @@ def replay_harvested(res, show_all):
     no whitebox tester, so its cases are harvested too, and a split case needs its
     basis polynomial and ccs rebuilt rather than just a curve and two divisors.
     """
-    records, _baseline = load_harvested()
+    records, baseline = load_harvested()
+    for rel in baseline:
+        p = os.path.join(ROOT, rel)
+        if os.path.isfile(p):
+            res.expected_files.add(p)
     if not records:
         return 0
     fams, _excl = D.discover_families()
@@ -730,9 +742,13 @@ def report(res, testers, show_all, baseline=None):
     w("  branch coverage from constructed cases\n")
     total_l = total_c = 0
     gaps = []
-    for src in sorted(res.covered):
+    # Iterate the EXPECTED files, not the covered ones. A file that received no cases
+    # must appear here as 0/N and fail, rather than vanishing from the report.
+    for src in sorted(res.expected_files | set(res.covered)):
         labels = D.labels_in(src)
-        hit = res.covered[src] & labels
+        if not labels:
+            continue
+        hit = res.covered.get(src, set()) & labels
         rel = os.path.relpath(src, ROOT)
         total_l += len(labels)
         total_c += len(hit)
@@ -815,6 +831,15 @@ def report(res, testers, show_all, baseline=None):
         for fam, why in missing_fams:
             w("    %-40s %s\n" % (fam, why))
         w("\n")
+
+    # Nothing may pass by testing nothing.
+    if res.replayed == 0:
+        res.coverage_gaps.append("no case was replayed at all")
+    empty = [os.path.basename(t) for t, n in sorted(res.cases_per_tester.items())
+             if n == 0]
+    if empty:
+        res.coverage_gaps.append(
+            "%d tester(s) yielded no cases: %s" % (len(empty), ", ".join(empty)))
 
     if res.failed():
         reasons = []
