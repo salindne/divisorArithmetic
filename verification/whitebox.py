@@ -638,7 +638,11 @@ def _try_pair(fam, cur, subs, params, op, mode, rng, basis_poly, ccs,
     if not pair:
         return None
     d1, d2 = pair
-    if d1[0] == d2[0] and d1[1] == d2[1]:
+    # The whole divisor, for the same reason the replay path compares the whole divisor:
+    # in the split model (u, v) equal with different weights is a legal addition, not the
+    # documented precondition. Comparing only u and v here discarded exactly the class of
+    # input that turned out to be the sole coverage of 41 branches.
+    if tuple(d1) == tuple(d2):
         return None                 # the documented D1 == D2 precondition; PR5's
     arg_d2 = d2 if op == "ADD" else None
     path = []
