@@ -142,13 +142,28 @@ def discover_families(root=ROOT):
 _SIG = r"^%s\s*:=\s*function\s*\((.*?)\)[^\n]*$(.*?)^end function;"
 
 
+_BODY_CACHE = {}
+
+
 def _dispatcher_body(path, op):
-    src = open(path).read()
-    src = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", src, flags=re.S))
-    m = re.search(_SIG % op, src, re.S | re.M)
-    if not m:
-        return None, None
-    return [p.strip() for p in m.group(1).split(",")], m.group(2)
+    """(parameter names, body) for a dispatcher, or (None, None).
+
+    Memoised alongside M.discover: this rereads and strips comments from a file that
+    can be 9,000 lines, and the replay loops call it once per case. The parameter
+    list is copied out because callers are free to modify it.
+    """
+    key = (path, op)
+    if key not in _BODY_CACHE:
+        src = open(path).read()
+        src = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", src, flags=re.S))
+        m = re.search(_SIG % op, src, re.S | re.M)
+        if not m:
+            _BODY_CACHE[key] = (None, None)
+        else:
+            _BODY_CACHE[key] = ([p.strip() for p in m.group(1).split(",")],
+                                m.group(2))
+    params, body = _BODY_CACHE[key]
+    return (list(params) if params is not None else None), body
 
 
 def read_support(path, op):

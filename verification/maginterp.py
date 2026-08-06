@@ -717,26 +717,44 @@ def function_names(path):
             re.finditer(r"^([A-Za-z_][A-Za-z_0-9]*)\s*:=\s*function\s*\(", src, re.M)]
 
 
+_DISCOVER_CACHE = {}
+
+
 def discover(path, only=None, skip_unparsable=True):
     """{name: MagmaFn} for a .mag file, discovering the names itself.
 
     `skip_unparsable=True` returns what it can and records the rest in
     `.unparsable`, so a driver can report partial coverage rather than dying on
     the first dispatcher it cannot read.
+
+    Memoised on (path, only, skip_unparsable). The callers replay hundreds of cases
+    against the same few files, and re-parsing every function of a 9,000-line
+    dispatcher per case was measured at 20.7s of whitebox.py's 21.4s.
+
+    A fresh dict is returned each time because callers mutate what they get
+    (driver.py assigns the result and updates it), and MagmaFn is safe to share:
+    it stores only path, name and parsed statements, taking everything
+    call-dependent as an argument.
     """
-    out, bad = {}, {}
-    for name in function_names(path):
-        if only and name not in only:
-            continue
-        try:
-            out[name] = MagmaFn(path, name)
-        except Exception as e:
-            if not skip_unparsable:
-                raise
-            bad[name] = "%s: %s" % (type(e).__name__, e)
-    out_obj = dict(out)
-    discover.unparsable = bad
-    return out_obj
+    key = (path, None if only is None else tuple(sorted(only)), skip_unparsable)
+    hit = _DISCOVER_CACHE.get(key)
+    if hit is None:
+        out, bad = {}, {}
+        for name in function_names(path):
+            if only and name not in only:
+                continue
+            try:
+                out[name] = MagmaFn(path, name)
+            except Exception as e:
+                if not skip_unparsable:
+                    raise
+                bad[name] = "%s: %s" % (type(e).__name__, e)
+        hit = (out, bad)
+        _DISCOVER_CACHE[key] = hit
+
+    fns, bad = hit
+    discover.unparsable = dict(bad)
+    return dict(fns)
 
 
 if __name__ == "__main__":
