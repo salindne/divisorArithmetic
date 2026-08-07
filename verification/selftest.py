@@ -34,10 +34,11 @@ Sections, and what each would catch:
   errata          The recorded defects E1 and E2, as required test vectors. If the
                   framework cannot surface these, its D1 = D2 coverage is not real
                   and PR5 cannot be shown to fix anything.
-  repros          The audit's stored failures, replayed through the post-rename
-                  files. A repro that stops reproducing means either the rename map
-                  is wrong or the bug moved; both need investigating, and neither
-                  should pass quietly.
+  repros          The audit's stored failures, replayed through the current
+                  files. Since PR5, the equal-divisor records must give the
+                  reference sum (they are the wrong ADD(D, D) outputs the audit
+                  froze, and the dispatch corrects them); any unequal-divisor
+                  record must still reproduce byte-for-byte.
   swap            That a deliberately swapped operand pair is detected. PR10
                   reorders parameters in the genus-3 models and a mistake there is
                   wrong only on mixed-degree inputs, so this capability has to be
@@ -501,10 +502,18 @@ def _norm_value(v):
 
 
 def section_repros(rep, quick):
-    """Replay the audit's stored failures through the post-rename files.
+    """Replay the audit's stored failures through the current files.
 
-    Two things at once: the recorded defects are still present, and PR2's rename
-    was neutral, since a rename that changed behaviour would change these outputs.
+    Originally this asserted byte-identity: the recorded defects still present,
+    and PR2's rename neutral. PR5's equal-divisor dispatch deliberately changes
+    the answer on every record whose two divisors are EQUAL -- those were the
+    wrong ADD(D, D) outputs the audit stored -- so the assertion is now split:
+
+      * records with D1 = D2 must now equal the REFERENCE sum. Differing from
+        the recorded value is the fix working; matching the reference is the
+        stronger replacement for byte-identity.
+      * records with D1 != D2 must still reproduce byte-for-byte, which is the
+        rename-neutrality evidence, unchanged.
     """
     files = ("vfy-odd-repros.json", "even_minimal_repros.json",
              "lowdeg-failures.json")
@@ -514,7 +523,7 @@ def section_repros(rep, quick):
         rep.skip("repros", "no stored repros under %s" % AUDIT_HARNESS)
         return
     fams, _excluded = D.discover_families()
-    same = diff = 0
+    same = diff = dispatched = 0
     problems = []
     for fname in present:
         data = json.loads(open(os.path.join(AUDIT_HARNESS, fname)).read())
@@ -547,18 +556,31 @@ def section_repros(rep, quick):
             except AssertionError as exc:
                 problems.append("%s: curve rejected: %s" % (fname, str(exc)[:50]))
                 continue
-            subs = M.discover(fam.add_path)
+            # DBL merged for the same reason the testers load both files: the
+            # dispatcher's equal-divisor route resolves against it. nch2 borrows
+            # the arb DBL exactly as its tester and driver.py do.
+            subs = dict(M.discover(fam.dbl_path)) if fam.dbl_path else {}
+            subs.update(M.discover(fam.add_path))
             params, _body = D._dispatcher_body(fam.add_path, "ADD")
+            D1 = divisor("D1", ("u1", "v1"))
+            D2 = divisor("D2", ("u2", "v2"))
             try:
-                out = subs["ADD"](*D.build_args(params, cur,
-                                                divisor("D1", ("u1", "v1")),
-                                                divisor("D2", ("u2", "v2"))),
+                out = subs["ADD"](*D.build_args(params, cur, D1, D2),
                                   funcs=subs, F=F)
                 gu, gv, _note = D.decode_divisor(F, 3, out)
                 got = "%s, %s" % (gu, gv)
             except Exception as exc:                        # noqa: BLE001
                 got = type(exc).__name__
-            if _norm_value(r.get("got")) == _norm_value(got):
+            if D1 == D2:
+                want = R.add(cur, D1, D2)
+                want_s = "%s, %s" % want
+                if _norm_value(want_s) == _norm_value(got):
+                    dispatched += 1
+                else:
+                    problems.append("%s branch %r with D1 = D2: expected the "
+                                    "reference sum %r, got %r"
+                                    % (fname, r.get("branch", "?"), want_s, got))
+            elif _norm_value(r.get("got")) == _norm_value(got):
                 same += 1
             else:
                 diff += 1
@@ -567,11 +589,13 @@ def section_repros(rep, quick):
                                     % (fname, r.get("branch", "?"),
                                        r.get("got"), got))
     if problems:
-        rep.fail("repros", "%d of %d changed; first: %s"
-                 % (diff, same + diff, problems[0]))
+        rep.fail("repros", "%d unequal-divisor record(s) changed, %d equal-"
+                           "divisor record(s) wrong; first: %s"
+                 % (diff, len(problems) - min(diff, len(problems)), problems[0]))
     else:
-        rep.ok("repros", "%d stored repros reproduce byte-for-byte across %d files"
-               % (same, len(present)))
+        rep.ok("repros", "%d equal-divisor repros now give the reference sum; "
+                         "%d unequal ones reproduce byte-for-byte across %d "
+                         "files" % (dispatched, same, len(present)))
 
 
 def section_swap(rep, quick):

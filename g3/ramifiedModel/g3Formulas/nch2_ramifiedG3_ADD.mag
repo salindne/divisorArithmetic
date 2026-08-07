@@ -2106,7 +2106,17 @@ end function;
 // Description:
 //
 ///////////////////////////////////////////////////////////////////////////////
-ADD:= function(D1, D2, f)
+ADD:= function(D1, D2, f)//startIGNORE
+
+    // D1 = D2 is a doubling, not an addition: the Deg* cases below assume
+    // D1 != D2 (the thesis Require clause) and return wrong results without it.
+    // This family has no DBL of its own until PR6 derives one; it doubles with
+    // the general (arb) formula at h = 0, exactly as its own tester does --
+    // nch2_ramifiedG3_random.mag loads arb_ramifiedG3_DBL.mag for this. 0*f is
+    // the zero polynomial of f's ring.
+    if D1 eq D2 then
+        return DBL(D1,f,0*f);
+    end if;
 
     // ensure u1 is always the larger polynomial
     if D2[1] le D1[1] then

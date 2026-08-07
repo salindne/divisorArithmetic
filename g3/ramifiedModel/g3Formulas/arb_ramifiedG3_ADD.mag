@@ -2146,6 +2146,15 @@ end function;
 ///////////////////////////////////////////////////////////////////////////////
 ADD:= function(D1, D2, f, h)//startIGNORE
 
+    // D1 = D2 is a doubling, not an addition: the Deg* cases below assume
+    // D1 != D2 (the thesis Require clause) and return wrong results without it.
+    // Above the operand sort on purpose -- identical operands have nothing to
+    // normalise, and the guard then owes nothing to the tie-break for
+    // equal-degree u.
+    if D1 eq D2 then
+        return DBL(D1,f,h);
+    end if;
+
     // ensure u1 is always the larger polynomial
     if D2[1] le D1[1] then
         u1:= D1[1]; v1:= D1[2];
