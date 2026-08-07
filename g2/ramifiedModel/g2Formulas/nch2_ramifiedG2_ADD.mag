@@ -8,6 +8,10 @@
 //              h(x) = 0 and             
 //              f(x) = x^5 + f3x^3 + f2x^2 + f1x + f0           
 //                                                                      
+//
+// Precondition: the Deg* cases below assume D1 != D2 (the thesis Require
+//               clause). The ADD dispatcher routes D1 = D2 to DBL, so callers
+//               need not check; calling a Deg* case directly still requires it.
 ///////////////////////////////////////////////////////////////////////////////
 
 //Must keep next two lines in this format for latex conversion
