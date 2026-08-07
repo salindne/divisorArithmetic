@@ -21,7 +21,10 @@ The whole suite now runs locally, so a formula change *can* be checked by hand; 
 Each entry records what is wrong, how to reproduce it, and what it affects.
 
 Entries are numbered E1, E2, … and referenced from commit messages and from
-[README.md](README.md).
+[README.md](README.md). **A number is never reused.** E7 is deliberately absent here: it is a divergent
+generation of the formulas under `g2/timings/` and `g3/timings/`, and deciding what it means for the
+published timing figures needs the operation counter run over both trees, so it is tracked with that work
+rather than asserted early.
 
 ---
 
@@ -203,6 +206,72 @@ component and every output call is commented out.
 
 ---
 
+## E8: `Negate` returns a non-inverse at odd genus
+
+**Severity:** latent, and total where it fires. `poly_balanced_arithmetic.mag`'s `Negate(D,f,h,Vpl)`
+never returns a group inverse at genus 3.
+
+The function branches on parity:
+
+```magma
+if g mod 2 eq 0 then
+    return <u1,-v1 - (h mod u1),g-Degree(u1)-n1>;
+end if;
+if n1 gt -1 then
+    return <u1,-v1-(h mod u1),g-Degree(u1)-n1-1>;      // odd genus
+end if;
+```
+
+The even branch is right. The odd branch produces weight `g - deg(u) - n - 1`, which at genus 3 is two
+less than the inverse's weight. The correct expression, and the one that agrees with the even branch, is
+`2*Ceiling(g/2) - deg(u) - n`.
+
+**Measured**, GF(4), a random genus-3 char-2 split curve, `Neutral(f,h) = <1,0,2>`:
+
+| weight expression | `Add(D, Negate(D)) eq Neutral` |
+|---|---|
+| shipped, `g-deg(u)-n-1` | **0 of 30** — 21 wrong, 9 raised |
+| `2*Ceiling(g/2)-deg(u)-n` | **30 of 30** |
+
+The nine that raise do so because the result is not even a reduced divisor, so `Adjust` cannot repair it;
+`Adjust` preserves the divisor class, and the class is already wrong.
+
+**Affects:** nothing today. Grep finds no call site in the repository — only the comment at
+`poly_balanced_arithmetic.mag:671`. It is a trap for the first caller, which is why it is recorded rather
+than left to be rediscovered. Found while writing a class-targeted pair mode for the genus-3 split
+whitebox generator, which needs an inverse and therefore carries its own local one.
+
+**Not fixed here.** `poly_balanced_arithmetic.mag` is loaded by both deployed genus-3 testers and by
+every genus-3 entry in `test_all.sh`; editing it to repair dead code is not worth putting those at risk
+in a PR about the generators. A fix belongs with a test that exercises `Negate` at both parities.
+
+---
+
+## E9: `RandomDivisorRB` cannot be called
+
+**Severity:** latent. `poly_balanced_arithmetic.mag`:
+
+```magma
+RandomDivisorRB:= function(f,h,d)
+    adapted:= RandomDivisorAB(f,h,d);
+    return ReducedBasis(adapted,f,h);
+end function;
+```
+
+`RandomDivisorAB` takes **two** arguments. Calling `RandomDivisorRB` therefore raises
+`Number of arguments (3) does not equal expected number of arguments (2)` — it has never worked. The
+docstring above `RandomDivisorRB` advertises a degree parameter `d` that `RandomDivisorAB` does not
+accept and never has.
+
+A second, quieter problem: it returns `ReducedBasis`, the **positive** reduced basis, while living in
+`negReduced/` where every formula file expects the negative one. So even repaired by dropping `d`, it
+would hand back divisors in the wrong basis for its own directory.
+
+**Affects:** nothing today; no call site, only the comment at `poly_balanced_arithmetic.mag:414`.
+Recorded because a caller would hit two bugs, not one.
+
+---
+
 ## Not defects
 
 Two things that look wrong and are not, recorded so they are not "fixed" by mistake:
@@ -215,5 +284,5 @@ Two things that look wrong and are not, recorded so they are not "fixed" by mist
   E1's family.
 - **The `load` paths in `whitebox/genFiles/`** are relative to `whitebox/`, not to `genFiles/`, because
   that is the directory the generator is driven from. They resolve correctly when run as intended. The
-  genus-3 generators are genuinely broken, but for a different reason: they point at
-  `g3/splitModel/g3Formulas/`, which does not exist.
+  genus-3 generators pointed at `g3/splitModel/g3Formulas/`, which does not exist; that was genuinely
+  broken and is repaired.
