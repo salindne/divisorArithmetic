@@ -6,7 +6,7 @@ and table-generation machinery behind them.
 Sebastian Lindner. Companion code to *Explicit Formulas for Hyperelliptic Curve Arithmetic* (University
 of Calgary, 2020), built as `ucalgary_2020_lindner_sebastian.pdf` in this directory.
 
-**Last updated:** 2026-08-04.
+**Last updated:** 2026-08-07.
 
 | model | genus 2 | genus 3 |
 |---|---|---|
@@ -47,7 +47,7 @@ covered. Purpose-built testers replace them later.
 Whitebox testers instrument ADD and DBL branches only. UTL branches are not instrumented: all eight
 split testers set `UTL_DEBUG := false`.
 
-**The full suite passes:** 25 testers, 0 failures, about 40 minutes, via
+**The full suite passes:** 26 testers, 0 failures, 2 deliberate skips, about 40 minutes, via
 [tools/magma-docker/](tools/magma-docker/). With a stock emulator only the six genus-2 ramified testers
 load, for reasons
 that are not obvious. See [Running Magma](#running-magma).
@@ -95,7 +95,7 @@ docker build -f tools/magma-docker/Dockerfile -t magma-qemufix .
 MAGMA=tools/magma-docker/magma.sh ./test_all.sh
 ```
 
-That runs 25 testers in about 40 minutes and exits 0. Three whitebox gaps are reported as skips; see
+That runs 26 testers in about 40 minutes and exits 0. The two genus-3 ramified whitebox gaps are reported as skips; see
 [Status](#status).
 
 Use [tools/magma-docker/](tools/magma-docker/) rather than a plain `docker build`. On Apple Silicon a
@@ -204,7 +204,7 @@ before trusting any cross-comparison.
 ./test_all.sh
 ```
 
-runs 25 testers across genus 2 and genus 3.
+runs 26 testers across genus 2 and genus 3.
 
 **Whitebox testers** compute one computer-generated divisor operation per computation path and assert
 the result against the reference implementation. Case counts are in [Status](#status).
@@ -358,7 +358,9 @@ The recorded pointer may lag the submodule's `main`.
 - **No positive-reduced basis at genus 3.**
 - **A Python verification framework is planned**, so the formulas can be checked without Magma and
   therefore in CI, which a licensed tool can never do. Until then, defects found are recorded in
-  [ERRATA.md](ERRATA.md) rather than fixed, because nothing would catch a regression.
+  [ERRATA.md](ERRATA.md) rather than fixed until an oracle can see the fix. The verification
+  framework is that oracle now -- the `ADD(D, D)` dispatch and E1's closure went through it --
+  and the remaining entries wait on the tooling their own text names.
 
 ---
 

@@ -688,13 +688,35 @@ class MagmaFn:
         raise AssertionError("%s fell off the end" % self.name)
 
 
+class _BoundTable(dict):
+    """A sibling table whose entries already carry path/funcs/F.
+
+    Exists so `_bind` can recognise its own output. Without that, a call chain of
+    depth three -- ADD -> DBL -> Deg2DBL, which is exactly what the PR5 equal-divisor
+    dispatch creates -- re-bound the already-bound table inside DBL's __call__, and
+    the second wrapper then passed path=/funcs=/F= keywords to the first wrapper's
+    positional-only closure: TypeError. Nothing reached depth three before that
+    dispatch, so the defect was latent; the docstring below claimed "nests to any
+    depth" and was wrong until now.
+    """
+
+
 def _bind(funcs, path, F):
     """Sibling table whose entries already carry `path`, the table itself and F.
 
     Self-referential on purpose: a bound callee is given the same bound table, so
     delegation nests to any depth and every branch label lands in one `path`.
+
+    Idempotent: a table that is already bound is returned unchanged. That is
+    correct, not merely convenient -- the nested call threads the same shared
+    `path` list and the same F that the table was bound with, and the single
+    shared path is what makes branch coverage account for branches taken inside
+    nested calls.
     """
-    bound = {}
+    if isinstance(funcs, _BoundTable):
+        return funcs
+
+    bound = _BoundTable()
 
     def wrap(fn):
         def call(*args):

@@ -66,6 +66,7 @@ class Family(object):
     def __init__(self, model, genus, kind, add_path, dbl_path, utl_path=None):
         self.model, self.genus, self.kind = model, genus, kind
         self.add_path, self.dbl_path = add_path, dbl_path
+        self.dbl_borrowed = False
         self.utl_path = utl_path
 
     @property
@@ -131,7 +132,21 @@ def discover_families(root=ROOT):
             cand = add.replace("_ADD.mag", "_UTL.mag")
             if os.path.exists(cand):
                 utl = cand
-        out.append(Family(model, genus, kind, add, ops.get("DBL"), utl))
+        dbl = ops.get("DBL")
+        borrowed = False
+        if add and not dbl and kind != "arb":
+            # A specialisation with an ADD but no DBL of its own doubles with the
+            # general formula: nch2 genus-3 ramified ships no nch2 DBL until PR6,
+            # and its own tester loads arb_ramifiedG3_DBL.mag for exactly this.
+            # Without the borrow this driver silently skipped the family's
+            # doubling altogether -- no skip line, against this file's own rule
+            # that nothing is capped silently.
+            sib = seen.get((model, genus, "arb"), {}).get("DBL")
+            if sib:
+                dbl, borrowed = sib, True
+        fam = Family(model, genus, kind, add, dbl, utl)
+        fam.dbl_borrowed = borrowed
+        out.append(fam)
     return out, excluded
 
 
@@ -840,6 +855,9 @@ def run_family(fam, families, res, fields, n_curves, n_pairs, seed, verbose):
     dbl = None
     dbl_params = None
     if fam.dbl_path:
+        if getattr(fam, "dbl_borrowed", False):
+            print("  %-24s DBL borrowed from %s (its own DBL is PR6)"
+                  % (fam.name, os.path.basename(fam.dbl_path)))
         try:
             dsubs = M.discover(fam.dbl_path)
             dbl_params, _ = _dispatcher_body(fam.dbl_path, "DBL")
@@ -1216,14 +1234,18 @@ def report(res, families_run, show_all, strict=False, min_coverage=100.0):
     w("  branch coverage\n")
     total_l = total_c = 0
     uncovered_any = False
+    seen_srcs = set()
     for fam in families_run:
         # utl_path included so this matches whitebox.py's denominator. Omitting it put
         # the 42 UTL labels outside the driver's count entirely, so the two tools
         # reported coverage over 1,813 and 1,855 labels and their numbers were not
-        # comparable.
+        # comparable. Deduped by path: a specialisation that borrows the arb DBL
+        # would otherwise list that file twice and grow the denominator whitebox.py
+        # and this tool were deliberately aligned on.
         for src in (fam.add_path, fam.dbl_path, fam.utl_path):
-            if not src:
+            if not src or src in seen_srcs:
                 continue
+            seen_srcs.add(src)
             labs = labels_in(src)
             if not labs:
                 continue

@@ -7,6 +7,12 @@
 //              f(x) = f6*x^6 + f2x^2 + f1x + f0               
 //
 //                                                                      
+//
+// Precondition: the Deg* cases below assume D1 != D2 (the thesis Require
+//               clause), where a divisor is the triple (u, v, n) -- equal (u, v)
+//               with different balancing weights are distinct divisors. The ADD
+//               dispatcher routes D1 = D2 to DBL, so callers need not check;
+//               calling a Deg* case directly still requires it.
 ///////////////////////////////////////////////////////////////////////////////
 
 //Must keep next two lines in this format for latex conversion
@@ -1352,6 +1358,15 @@ end function;
 //              basis. Handles all cases explicitly.               
 ///////////////////////////////////////////////////////////////////////////////
 ADD:= function(u1,v1,n1,u2,v2,n2,ccs)//startIGNORE
+    // D1 = D2 is a doubling, not an addition: the Deg* cases below assume
+    // D1 != D2 (the thesis Require clause) and return wrong results without it.
+    // In this model a divisor is (u, v, n) -- equal (u, v) with DIFFERENT
+    // balancing weights are distinct divisors and a legal addition, so all
+    // three coordinates are compared and that case falls through untouched.
+    if u1 eq u2 and v1 eq v2 and n1 eq n2 then
+        return DBL(u1,v1,n1,ccs);
+    end if;
+
     u10:= Coeff(u1,0); 
     u11:= Coeff(u1,1); 
     u12:= Coeff(u1,2); 

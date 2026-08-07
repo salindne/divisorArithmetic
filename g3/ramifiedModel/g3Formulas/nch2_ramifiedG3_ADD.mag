@@ -3,6 +3,10 @@
 //                                                   
 // Description:  
 //    In odd characteristic, we have the assumption h(x)=0, i.e., all h_i coeffs vanish from formulas
+//
+// Precondition: the Deg* cases below assume D1 != D2 (the thesis Require
+//               clause). The ADD dispatcher routes D1 = D2 to DBL, so callers
+//               need not check; calling a Deg* case directly still requires it.
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -248,7 +252,7 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, 
             dw0:= v2Plust1_0;
 
             // if gcd(u2,h+v2+v1) = u2
-            if (dw1 eq 0) then
+            if (dw1 eq 0 and dw0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(u2,u1) = u2
 				// gcd(u2,h+v2+v1) = u2
@@ -1206,7 +1210,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             dw0:= ht0;
 
             // if gcd(u2,h+v2+v1) = u2
-            if (dw2 eq 0 and dw1 eq 0) then
+            if (dw2 eq 0 and dw1 eq 0 and dw0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(u2,u1) = u2
                 // DB = P1+P2-P3, DA = P3-P1-P2
@@ -1234,7 +1238,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             dx0:= u2_0*ta - dw0*temp6;					//dw2^2
 
             // if gcd(u2,h+v2+v1) = dw
-            if (dx1 eq 0) then
+            if (dx1 eq 0 and dx0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(u2,u1) = u2
                 // DB = P1+P2+P3, DA = P1-P2-P3
@@ -2106,7 +2110,17 @@ end function;
 // Description:
 //
 ///////////////////////////////////////////////////////////////////////////////
-ADD:= function(D1, D2, f)
+ADD:= function(D1, D2, f)//startIGNORE
+
+    // D1 = D2 is a doubling, not an addition: the Deg* cases below assume
+    // D1 != D2 (the thesis Require clause) and return wrong results without it.
+    // This family has no DBL of its own until PR6 derives one; it doubles with
+    // the general (arb) formula at h = 0, exactly as its own tester does --
+    // nch2_ramifiedG3_random.mag loads arb_ramifiedG3_DBL.mag for this. 0*f is
+    // the zero polynomial of f's ring.
+    if D1 eq D2 then
+        return DBL(D1,f,0*f);
+    end if;
 
     // ensure u1 is always the larger polynomial
     if D2[1] le D1[1] then

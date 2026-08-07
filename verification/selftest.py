@@ -34,10 +34,11 @@ Sections, and what each would catch:
   errata          The recorded defects E1 and E2, as required test vectors. If the
                   framework cannot surface these, its D1 = D2 coverage is not real
                   and PR5 cannot be shown to fix anything.
-  repros          The audit's stored failures, replayed through the post-rename
-                  files. A repro that stops reproducing means either the rename map
-                  is wrong or the bug moved; both need investigating, and neither
-                  should pass quietly.
+  repros          The audit's stored failures, replayed through the current
+                  files. Since PR5, the equal-divisor records must give the
+                  reference sum (they are the wrong ADD(D, D) outputs the audit
+                  froze, and the dispatch corrects them); any unequal-divisor
+                  record must still reproduce byte-for-byte.
   swap            That a deliberately swapped operand pair is detected. PR10
                   reorders parameters in the genus-3 models and a mistake there is
                   wrong only on mixed-degree inputs, so this capability has to be
@@ -375,8 +376,9 @@ def section_errata(rep, quick):
     """E1 and E2 as required test vectors."""
     problems, notes = [], []
 
-    # E2: exactly one 6-valued return among 5-valued ones, in each genus-2
-    # ramified ADD file. Static, so it is checked by reading the source.
+    # E2, fixed in PR5: no 6-valued return may remain in any genus-2 ramified
+    # ADD file. Static, so it is checked by reading the source; a reappearance
+    # is a regression of the fix, not a new pin.
     for fn in ("arb", "ch2", "nch2"):
         path = os.path.join(ROOT, "g2", "ramifiedModel", "g2Formulas",
                             "%s_ramifiedG2_ADD.mag" % fn)
@@ -386,16 +388,25 @@ def section_errata(rep, quick):
         for m in re.finditer(r"return\s+([^;]+);", src):
             k = len(M._split_top(m.group(1)))
             arities[k] = arities.get(k, 0) + 1
-        if arities.get(6, 0) != 1:
-            problems.append("%s: expected exactly one 6-valued return, found %d"
+        if arities.get(6, 0) != 0:
+            problems.append("%s: errata E2 was fixed in PR5, but %d 6-valued "
+                            "return(s) are back"
                             % (os.path.basename(path), arities.get(6, 0)))
         else:
-            notes.append("E2 %-4s one 6-valued return among %d 5-valued"
+            notes.append("E2 %-4s fixed: 0 6-valued returns among %d 5-valued"
                          % (fn, arities.get(5, 0)))
 
     # E1: the exact vector from the errata. GF(11), y^2 = x^5 + x^3 + 1,
     # u = x^2 + 1, v = 1, D1 = D2. The guard `IsZero(dw20) and IsZero(dw21)` is
     # too narrow, so dw21 = 0 with dw20 nonzero reaches `dw21^-1`.
+    #
+    # Two assertions since PR5, and both must hold:
+    #   1. ADD on this vector now returns the correct double -- the dispatcher
+    #      routes D1 = D2 to DBL before any Deg* case runs, which closes every
+    #      known firing of E1 (they all have D1 = D2, the unit-mod-u argument).
+    #   2. Deg2ADD called DIRECTLY with the same coefficients still divides by
+    #      zero. The narrow guard is retained and recorded, not repaired; this
+    #      is what keeps E1 an erratum rather than silently declaring it fixed.
     F = GF(11)
     f = Poly.from_coeffs_desc(F, [F.one, F.zero, F.one, F.zero, F.zero, F.one])
     h = Poly.zero(F)
@@ -404,16 +415,45 @@ def section_errata(rep, quick):
     if not ((v * v + v * h - f) % u).is_zero():
         problems.append("E1 vector is not a valid divisor; the vector is wrong")
     fams, _excluded = D.discover_families()
-    fired = []
+    dispatched, fired = [], []
+    want = None
     for name in ("ramified/g2/arb", "ramified/g2/nch2"):
         fam = [x for x in fams if x.name == name][0]
-        subs = M.discover(fam.add_path)
+        subs = dict(M.discover(fam.dbl_path))
+        subs.update(M.discover(fam.add_path))
         params, _body = D._dispatcher_body(fam.add_path, "ADD")
         cur = C.Curve(F, f, h, fam.kind, 2, "ramified")
+        if want is None:
+            want = R.add(cur, (u, v), (u, v))
+
+        # 1. through the dispatcher: correct, and equal to the reference double.
         try:
-            subs["ADD"](*D.build_args(params, cur, (u, v), (u, v)),
-                        funcs=subs, F=F)
-            problems.append("E1 did not reproduce in %s: no division by zero" % name)
+            got = subs["ADD"](*D.build_args(params, cur, (u, v), (u, v)),
+                              funcs=subs, F=F)
+            gu, gv, note = D.decode_divisor(F, 2, list(got))
+            if note:
+                problems.append("E1 dispatch in %s: %s" % (name, note))
+            elif (gu, gv) != want:
+                problems.append("E1 dispatch in %s returned the wrong double"
+                                % name)
+            else:
+                dispatched.append(name.split("/")[-1])
+        except Exception as exc:                            # noqa: BLE001
+            problems.append("E1 dispatch in %s raised %s, expected a clean "
+                            "double" % (name, type(exc).__name__))
+
+        # 2. the narrow guard itself, reached directly: still errata E1.
+        vals = {}
+        for base, poly in (("u", u), ("up", u), ("v", v), ("vp", v),
+                           ("f", f), ("h", h)):
+            for i2 in range(6):
+                vals["%s%d" % (base, i2)] = poly.coeff(i2)
+        deg2 = subs["Deg2ADD"]
+        try:
+            deg2(*[vals[k] for k in deg2.params], funcs=subs, F=F)
+            problems.append("E1 did not reproduce in %s: Deg2ADD returned "
+                            "cleanly -- the recorded erratum has silently "
+                            "disappeared" % name)
         except ZeroDivisionError:
             fired.append(name.split("/")[-1])
         except Exception as exc:                            # noqa: BLE001
@@ -422,14 +462,17 @@ def section_errata(rep, quick):
     # ch2 is deliberately not on that list: the vector is over GF(11) and the ch2
     # formulas require characteristic 2, so it is outside their domain. Their own
     # instance of E1 shows up in driver.py runs over GF(2) and GF(8).
-    notes.append("E1 reproduced in: %s (ch2 needs a char-2 vector, out of domain "
-                 "for this one)" % ", ".join(fired))
+    notes.append("E1: ADD(D,D) dispatches to the correct double in %s; Deg2ADD "
+                 "directly still divides by zero in %s (ch2 needs a char-2 "
+                 "vector, out of domain for this one)"
+                 % (", ".join(dispatched), ", ".join(fired)))
     for line in notes:
         rep.note(line)
     if problems:
         rep.fail("errata", problems[0])
     else:
-        rep.ok("errata", "E1 reproduces as a division by zero; E2 arity confirmed")
+        rep.ok("errata", "E1 dispatched around and still recorded; E2 fixed, "
+                         "no 6-valued return remains")
 
 
 def _parse_prime_poly(F, text):
@@ -461,10 +504,18 @@ def _norm_value(v):
 
 
 def section_repros(rep, quick):
-    """Replay the audit's stored failures through the post-rename files.
+    """Replay the audit's stored failures through the current files.
 
-    Two things at once: the recorded defects are still present, and PR2's rename
-    was neutral, since a rename that changed behaviour would change these outputs.
+    Originally this asserted byte-identity: the recorded defects still present,
+    and PR2's rename neutral. PR5's equal-divisor dispatch deliberately changes
+    the answer on every record whose two divisors are EQUAL -- those were the
+    wrong ADD(D, D) outputs the audit stored -- so the assertion is now split:
+
+      * records with D1 = D2 must now equal the REFERENCE sum. Differing from
+        the recorded value is the fix working; matching the reference is the
+        stronger replacement for byte-identity.
+      * records with D1 != D2 must still reproduce byte-for-byte, which is the
+        rename-neutrality evidence, unchanged.
     """
     files = ("vfy-odd-repros.json", "even_minimal_repros.json",
              "lowdeg-failures.json")
@@ -474,7 +525,7 @@ def section_repros(rep, quick):
         rep.skip("repros", "no stored repros under %s" % AUDIT_HARNESS)
         return
     fams, _excluded = D.discover_families()
-    same = diff = 0
+    same = diff = dispatched = 0
     problems = []
     for fname in present:
         data = json.loads(open(os.path.join(AUDIT_HARNESS, fname)).read())
@@ -507,18 +558,31 @@ def section_repros(rep, quick):
             except AssertionError as exc:
                 problems.append("%s: curve rejected: %s" % (fname, str(exc)[:50]))
                 continue
-            subs = M.discover(fam.add_path)
+            # DBL merged for the same reason the testers load both files: the
+            # dispatcher's equal-divisor route resolves against it. nch2 borrows
+            # the arb DBL exactly as its tester and driver.py do.
+            subs = dict(M.discover(fam.dbl_path)) if fam.dbl_path else {}
+            subs.update(M.discover(fam.add_path))
             params, _body = D._dispatcher_body(fam.add_path, "ADD")
+            D1 = divisor("D1", ("u1", "v1"))
+            D2 = divisor("D2", ("u2", "v2"))
             try:
-                out = subs["ADD"](*D.build_args(params, cur,
-                                                divisor("D1", ("u1", "v1")),
-                                                divisor("D2", ("u2", "v2"))),
+                out = subs["ADD"](*D.build_args(params, cur, D1, D2),
                                   funcs=subs, F=F)
                 gu, gv, _note = D.decode_divisor(F, 3, out)
                 got = "%s, %s" % (gu, gv)
             except Exception as exc:                        # noqa: BLE001
                 got = type(exc).__name__
-            if _norm_value(r.get("got")) == _norm_value(got):
+            if D1 == D2:
+                want = R.add(cur, D1, D2)
+                want_s = "%s, %s" % want
+                if _norm_value(want_s) == _norm_value(got):
+                    dispatched += 1
+                else:
+                    problems.append("%s branch %r with D1 = D2: expected the "
+                                    "reference sum %r, got %r"
+                                    % (fname, r.get("branch", "?"), want_s, got))
+            elif _norm_value(r.get("got")) == _norm_value(got):
                 same += 1
             else:
                 diff += 1
@@ -527,11 +591,13 @@ def section_repros(rep, quick):
                                     % (fname, r.get("branch", "?"),
                                        r.get("got"), got))
     if problems:
-        rep.fail("repros", "%d of %d changed; first: %s"
-                 % (diff, same + diff, problems[0]))
+        rep.fail("repros", "%d unequal-divisor record(s) changed, %d equal-"
+                           "divisor record(s) wrong; first: %s"
+                 % (diff, len(problems) - min(diff, len(problems)), problems[0]))
     else:
-        rep.ok("repros", "%d stored repros reproduce byte-for-byte across %d files"
-               % (same, len(present)))
+        rep.ok("repros", "%d equal-divisor repros now give the reference sum; "
+                         "%d unequal ones reproduce byte-for-byte across %d "
+                         "files" % (dispatched, same, len(present)))
 
 
 def section_swap(rep, quick):
@@ -650,6 +716,126 @@ def section_whitebox(rep, quick):
                                             broken.replayed))
 
 
+def section_dispatch(rep, quick):
+    """A dispatcher can delegate to another dispatcher, three levels deep.
+
+    PR5 puts `if D1 eq D2 then return DBL(...); end if;` at the top of every ADD,
+    which makes ADD -> DBL -> Deg*DBL the first depth-three call chain in the
+    repository. `_bind` used to re-wrap an already-bound sibling table at each
+    level, and the second wrapper passed path=/funcs=/F= keywords into the first
+    wrapper's positional-only closure: TypeError. Latent until the dispatch
+    existed, which is exactly why this section injects the guard into a COPY and
+    exercises the chain now -- the oracle must be shown to see the change before
+    the change lands.
+    """
+    import maginterp as M                                       # noqa: PLC0415
+    from poly import Poly                                       # noqa: PLC0415
+
+    add_src = os.path.join(ROOT, "g2", "ramifiedModel", "g2Formulas",
+                           "arb_ramifiedG2_ADD.mag")
+    dbl_src = os.path.join(ROOT, "g2", "ramifiedModel", "g2Formulas",
+                           "arb_ramifiedG2_DBL.mag")
+
+    # The bound table must be recognised as its own output.
+    F = GF(11)
+    subs = dict(M.discover(dbl_src))
+    subs.update(M.discover(add_src))
+    b1 = M._bind(subs, [], F)
+    if M._bind(b1, [], F) is not b1:
+        rep.fail("dispatch", "_bind is not idempotent: re-binding a bound table "
+                             "produced a new table")
+        return
+
+    # Inject the PR5 guard into a copy of the ADD file, then run the full chain.
+    text = open(add_src).read()
+    sig = "ADD:= function(u,v,up,vp,f,h)//startIGNORE\n"
+    if sig not in text:
+        rep.skip("dispatch", "ADD dispatcher signature not found to inject after")
+        return
+    # Multi-line, matching the files' own block style -- the interpreter's
+    # statement splitter does not accept the one-line if-then-return form, so the
+    # real PR5 edits use this shape too.
+    guard = ("    if u eq up and v eq vp then\n"
+             "        return DBL(u,v,f,h);\n"
+             "    end if;\n")
+    mutated = text.replace(sig, sig + guard, 1)
+
+    tmp = tempfile.mkdtemp(prefix="selftest-dispatch-")
+    try:
+        tmp_add = os.path.join(tmp, "arb_ramifiedG2_ADD.mag")
+        open(tmp_add, "w").write(mutated)
+        table = dict(M.discover(dbl_src))
+        table.update(M.discover(tmp_add))
+
+        # Errata E1's own vector: GF(11), f = x^5 + x^3 + 1, u = x^2 + 1, v = 1,
+        # D1 = D2 -- the input on which undispatched ADD divides by zero.
+        R = lambda cs: Poly.from_coeffs(F, [F(c) for c in cs])  # noqa: E731
+        f = R([1, 0, 0, 1, 0, 1])
+        h = R([0])
+        u = R([1, 0, 1])
+        v = R([1])
+
+        want_path = []
+        want = table["DBL"](u, v, f, h, path=want_path, funcs=table, F=F)
+
+        got_path = []
+        got = table["ADD"](u, v, u, v, f, h, path=got_path, funcs=table, F=F)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    if got != want:
+        rep.fail("dispatch", "ADD(D,D) with the injected guard disagrees with "
+                             "DBL: %r vs %r" % (got, want))
+        return
+    dbl_labels = [x for x in got_path if x.startswith("PRINT:DBL")]
+    if not dbl_labels:
+        rep.fail("dispatch", "ADD(D,D) matched DBL but no DBL branch label was "
+                             "recorded -- the call did not route through DBL")
+        return
+    rep.ok("dispatch", "ADD -> DBL -> %s resolves at depth 3 and matches DBL "
+                       "on errata E1's vector" % dbl_labels[0][6:])
+
+
+def section_equal_dispatch(rep, quick):
+    """ADD(D, D) returns the correct double, in every family, deterministically.
+
+    The random driver proves this at volume but is deliberately not in CI, so
+    without this section nothing in CI would exercise the equal-divisor route at
+    all. One curve and one pair per field through the driver's own machinery --
+    its pair modes include `equal` and `equal/swapped` -- with the two buckets
+    that hold equal-divisor failures required to be empty. Reverting any of the
+    dispatch commits fails this section; it is the lock on PR5.
+    """
+    fams, _excluded = D.discover_families()
+    res = D.Result()
+    fields = (2, 3, 4, 5) if quick else (2, 3, 4, 5, 7, 8, 9)
+    for fam in fams:
+        if fam.model.startswith("split"):
+            D.run_split_family(fam, fams, res, fields, 1, 1, 1105, False)
+        else:
+            D.run_family(fam, fams, res, fields, 1, 1, 1105, False)
+    equal_wrong = len(res.precondition)
+    equal_crash = sum(res.precondition_errors.values())
+    if equal_wrong or equal_crash:
+        first = (res.precondition[0]["family"] + " " + res.precondition[0]["op"]
+                 if res.precondition else
+                 next(iter(res.precondition_errors)))
+        rep.fail("equal_dispatch",
+                 "%d wrong and %d crashed where D1 = D2; first: %s"
+                 % (equal_wrong, equal_crash, first))
+        return
+    if res.mismatches:
+        rep.fail("equal_dispatch", "%d mismatch(es) on the documented domain"
+                 % len(res.mismatches))
+        return
+    if not res.compared:
+        rep.fail("equal_dispatch", "no comparison ran; the lock is vacuous")
+        return
+    rep.ok("equal_dispatch",
+           "%d comparisons across %d families, 0 wrong where D1 = D2"
+           % (res.compared, len(res.per_family)))
+
+
 def section_gate_guards(rep, quick):
     """Each guard on the whitebox gate is shown to FIRE, not merely to exist.
 
@@ -720,10 +906,19 @@ def section_gate_guards(rep, quick):
         u[0] = "ADD000"          # a label the corpus does cover
         pathlib.Path(W.BASELINE_FILE).write_text(json.dumps(d, indent=1))
 
-    def unpin_arity():
-        d = json.loads(baseline_src)
-        d["arity_anomalies"] = d["arity_anomalies"][1:]
-        pathlib.Path(W.BASELINE_FILE).write_text(json.dumps(d, indent=1))
+    # The pin set is empty since PR5 fixed E2, so "remove a pin and watch the
+    # shipped anomaly fail" no longer provokes anything. Inject the anomaly
+    # instead: every ramified decode reports a wrong arity, none of it pinned.
+    orig_decode = D.decode_divisor
+
+    def fake_arity():
+        def dec(F, genus, vals):
+            gu, gv, note = orig_decode(F, genus, vals)
+            return gu, gv, note or "returned 6 values, expected 5 (injected)"
+        D.decode_divisor = dec
+
+    def restore_decode():
+        D.decode_divisor = orig_decode
 
     def drift_case():
         d = json.loads(harvest_src)
@@ -747,7 +942,7 @@ def section_gate_guards(rep, quick):
 
     expect_fail("a new branch appears in a baselined file", add_branch,
                 lambda: setattr(D, "labels_in", orig_labels))
-    expect_fail("an arity anomaly is not pinned", unpin_arity, restore_baseline)
+    expect_fail("an arity anomaly is not pinned", fake_arity, restore_decode)
     expect_fail("a harvested case drifted from its record", drift_case,
                 restore_harvest)
 
@@ -780,6 +975,8 @@ SECTIONS = [
     ("repros", section_repros),
     ("swap", section_swap),
     ("whitebox", section_whitebox),
+    ("dispatch", section_dispatch),
+    ("equal_dispatch", section_equal_dispatch),
     ("gate_guards", section_gate_guards),
 ]
 
