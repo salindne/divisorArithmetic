@@ -248,7 +248,7 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, 
             dw0:= v2Plust1_0;
 
             // if gcd(u2,h+v2+v1) = u2
-            if (dw1 eq 0) then
+            if (dw1 eq 0 and dw0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(u2,u1) = u2
 				// gcd(u2,h+v2+v1) = u2
@@ -1206,7 +1206,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             dw0:= ht0;
 
             // if gcd(u2,h+v2+v1) = u2
-            if (dw2 eq 0 and dw1 eq 0) then
+            if (dw2 eq 0 and dw1 eq 0 and dw0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(u2,u1) = u2
                 // DB = P1+P2-P3, DA = P3-P1-P2
@@ -1234,7 +1234,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             dx0:= u2_0*ta - dw0*temp6;					//dw2^2
 
             // if gcd(u2,h+v2+v1) = dw
-            if (dx1 eq 0) then
+            if (dx1 eq 0 and dx0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(u2,u1) = u2
                 // DB = P1+P2+P3, DA = P1-P2-P3
