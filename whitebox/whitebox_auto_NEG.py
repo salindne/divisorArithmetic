@@ -20,8 +20,8 @@ anywhere as committed:
     logs/{arb,nch2}_splitG3_log.txt both begin mid-polynomial, which is that race;
   * the generators looped `while true`, terminating only by being killed;
   * it was hardcoded to one family, `FileInfo("nch2","split","2")`;
-  * and it stopped at `#Create Magma file` -- the emitter below was never called,
-    so a successful collection wrote nothing.
+  * and its module-level driver was hardcoded to one family, so `--from-log` and a
+    choice of budget did not exist.
 
 Now the generator carries its own trial bound (WB_TRIALS) and writes where it is
 told (WB_LOG), so this runs it once, waits, and parses the finished log. Anything
@@ -488,4 +488,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
-Magma(fileInfo, cases)
