@@ -40,30 +40,6 @@ latexTables/latexConverter.py::../g3/splitModel/g3Formulas/nch2_splitG3_ADD.mag
 latexTables/latexConverter.py::../g3/splitModel/g3Formulas/nch2_splitG3_DBL.mag
 
 # ---------------------------------------------------------------------------
-# The three genus-3 whitebox case generators. Two faults each: they load from
-# g3/splitModel/g3Formulas/, a directory that has never existed (the real one is
-# g3/splitModel/negReduced/g3Formulas/), and they want a copy of
-# poly_balanced_arithmetic.mag in whitebox/genFiles/, which is not there.
-#
-# This is why no ch2 genus-3 whitebox tester exists: the machinery to generate
-# one is broken, not merely unused. See README.md "Whitebox case generation".
-#
-# Owner: the verification-framework PR, which subsumes case generation.
-# ---------------------------------------------------------------------------
-whitebox/genFiles/arb_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/arb_splitG3_ADD.mag
-whitebox/genFiles/arb_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/arb_splitG3_DBL.mag
-whitebox/genFiles/arb_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/arb_splitG3_UTL.mag
-whitebox/genFiles/arb_splitG3_WB_gen.mag::genFiles/poly_balanced_arithmetic.mag
-whitebox/genFiles/ch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/ch2_splitG3_ADD.mag
-whitebox/genFiles/ch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/ch2_splitG3_DBL.mag
-whitebox/genFiles/ch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/ch2_splitG3_UTL.mag
-whitebox/genFiles/ch2_splitG3_WB_gen.mag::genFiles/poly_balanced_arithmetic.mag
-whitebox/genFiles/nch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/nch2_splitG3_ADD.mag
-whitebox/genFiles/nch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/nch2_splitG3_DBL.mag
-whitebox/genFiles/nch2_splitG3_WB_gen.mag::../g3/splitModel/g3Formulas/nch2_splitG3_UTL.mag
-whitebox/genFiles/nch2_splitG3_WB_gen.mag::genFiles/poly_balanced_arithmetic.mag
-
-# ---------------------------------------------------------------------------
 # g2/timings/arbitrary_implementation/ is a superseded fork. Both of its random
 # testers abort immediately on these missing loads, and nothing invokes them.
 # Recorded rather than deleted because the directory sits beside data behind
