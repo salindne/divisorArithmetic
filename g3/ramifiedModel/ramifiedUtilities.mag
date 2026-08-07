@@ -145,13 +145,15 @@ end function;
 // ========================== RANDALL'S FUNCTIONS =============================
 
 //-----------------------------------------------------------------------------
-// RandomG3Curve(q)   //adapted from RandomG2Curve
+// RandomG3Curve(q, char_type)   //adapted from RandomG2Curve
 //-----------------------------------------------------------------------------
 // Input:       q: field parameter.
+//              char_type: "odd" (h = 0 over an odd-characteristic field)
+//                         or "arb"; no "even" branch exists yet (TODO below).
 //     
 // Return: Random(ish) hyperelliptic polynomials of curve with one point at
-//         infinity f and h in GF(q)[x] where f is monic seperable of degree 
-//         5 and polynomial h of degree <= 2.
+//         infinity f and h in GF(q)[x] where f is monic separable of degree
+//         7 and polynomial h of degree <= 3.
 //-----------------------------------------------------------------------------
 RandomG3Curve := function(q, char_type)
     assert IsPrimePower(q);
@@ -225,12 +227,14 @@ end function;
 //               HyperellipticCurve(f,h).
 //          f,h: hyperelliptic polynomials corresponding to curve that D1 and  
 //               D2 are added over.
-//            g: genus
 // 
 // Return: Unique reduced divisor D3 ~ D1 + D2.
 //-----------------------------------------------------------------------------
 Nucomp_g3_RAM := function(D1,D2,f,h)
     
+    // A Nuduple_g3_RAM dispatch was sketched here but never written. The
+    // equal-divisor route now lives where callers actually enter: the ADD
+    // dispatchers in g3Formulas/ route D1 = D2 to DBL (PR5).
     //if D1 eq D2 then
     //    return Nuduple_g3_RAM(D1,f,h);
     //end if;
