@@ -805,13 +805,14 @@ def load_baseline():
 
 
 def known_arity_anomalies():
-    """Case identities allowed to return the wrong number of values: errata E2.
+    """Case identities allowed to return the wrong number of values.
 
-    Pinned by IDENTITY rather than by count, so a NEW anomaly fails even though the
-    three known ones do not. E2 is a recorded defect that PR5 owns -- one branch of
-    every genus-2 ramified ADD returns 6 values where 5 are expected -- and failing the
-    gate on it would leave CI red until PR5 lands, which teaches everyone to ignore it.
-    Reported loudly on every run regardless.
+    Pinned by IDENTITY rather than by count, so a NEW anomaly fails even when known
+    ones exist. The set is EMPTY since PR5 fixed errata E2 -- one branch of every
+    genus-2 ramified ADD returned 6 values where 5 are expected, and the three
+    tester cases reaching it were pinned here until the fix landed. The machinery
+    stays: it is what let the gate run green over a recorded defect without hiding
+    it, and the next such defect uses it the same way.
     """
     if not os.path.isfile(BASELINE_FILE):
         return set()
@@ -1101,9 +1102,9 @@ def report(res, testers, show_all, baseline=None):
         w("\n")
 
     if res.arity_known:
-        w("  WRONG RETURN ARITY, known and pinned (%d) -- errata E2, which PR5 owns.\n"
-          "  Not fatal, because the gate would then be red until PR5 lands. Pinned by\n"
-          "  case identity in coverage_baseline.json, so a NEW one still fails.\n"
+        w("  WRONG RETURN ARITY, known and pinned (%d).\n"
+          "  Not fatal while pinned by case identity in coverage_baseline.json; a\n"
+          "  NEW one still fails. (The E2 pins were removed when PR5 fixed it.)\n"
           % len(res.arity_known))
         for line in (res.arity_known if show_all else res.arity_known[:10]):
             w("    %s\n" % line)
@@ -1411,8 +1412,9 @@ def _record_baseline(res, allow_lower):
                  "`whitebox.py --record-baseline`, which refuses to grow an entry's "
                  "exempt set without --allow-lower."),
         "arity_anomalies": sorted(res.arity_seen),
-        "arity_note": ("Cases returning the wrong number of values: errata E2, which "
-                       "PR5 owns. Pinned by identity so a NEW anomaly still fails."),
+        "arity_note": ("Cases returning the wrong number of values, pinned by "
+                       "identity so a NEW anomaly still fails. Empty since PR5 "
+                       "fixed errata E2."),
         "files": new,
     }
     with open(BASELINE_FILE, "w") as fh:

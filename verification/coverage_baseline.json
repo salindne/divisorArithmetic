@@ -1,10 +1,6 @@
 {
- "arity_anomalies": [
-  "ramified/g2/arb #16 ADD",
-  "ramified/g2/ch2 #16 ADD",
-  "ramified/g2/nch2 #16 ADD"
- ],
- "arity_note": "Cases returning the wrong number of values: errata E2, which PR5 owns. Pinned by identity so a NEW anomaly still fails.",
+ "arity_anomalies": [],
+ "arity_note": "Cases returning the wrong number of values. Errata E2 was fixed in PR5, so nothing is pinned; ANY anomaly fails the run.",
  "files": {
   "g2/splitModel/negReduced/g2Formulas/ch2_splitG2_UTL.mag": {
    "of": 3,

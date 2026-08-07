@@ -92,7 +92,7 @@ just not in per-PR CI, where 37 seconds of sampling proves neither thing.
 | `maginterp.py` | executes `.mag` function bodies. `python3 maginterp.py` reports parse coverage |
 | `whitebox.py` | replays the frozen cases; **this is what CI gates on** |
 | `harvested_cases.json` | frozen cases for every branch no Magma tester reaches: the two genus-3 ramified families, which have no tester, plus the tail of genus-3 split `ch2`, whose tester's own search missed 58 of 413 |
-| `coverage_baseline.json` | the branches exempt from coverage, **as a named label set with a reason each** — everything else must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Also pins the three known errata-E2 arity anomalies by case identity, so a new one fails while the known ones stay reported-not-fatal until PR5 |
+| `coverage_baseline.json` | the branches exempt from coverage, **as a named label set with a reason each** — everything else must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Also pins any known arity anomalies by case identity, so a new one fails while known ones stay reported-not-fatal; the pin set is empty since PR5 fixed errata E2 |
 | `driver.py` | random differential testing, with per-branch coverage; not in CI |
 | `selftest.py` | checks the framework itself, ten sections |
 

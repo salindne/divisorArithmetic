@@ -376,8 +376,9 @@ def section_errata(rep, quick):
     """E1 and E2 as required test vectors."""
     problems, notes = [], []
 
-    # E2: exactly one 6-valued return among 5-valued ones, in each genus-2
-    # ramified ADD file. Static, so it is checked by reading the source.
+    # E2, fixed in PR5: no 6-valued return may remain in any genus-2 ramified
+    # ADD file. Static, so it is checked by reading the source; a reappearance
+    # is a regression of the fix, not a new pin.
     for fn in ("arb", "ch2", "nch2"):
         path = os.path.join(ROOT, "g2", "ramifiedModel", "g2Formulas",
                             "%s_ramifiedG2_ADD.mag" % fn)
@@ -387,11 +388,12 @@ def section_errata(rep, quick):
         for m in re.finditer(r"return\s+([^;]+);", src):
             k = len(M._split_top(m.group(1)))
             arities[k] = arities.get(k, 0) + 1
-        if arities.get(6, 0) != 1:
-            problems.append("%s: expected exactly one 6-valued return, found %d"
+        if arities.get(6, 0) != 0:
+            problems.append("%s: errata E2 was fixed in PR5, but %d 6-valued "
+                            "return(s) are back"
                             % (os.path.basename(path), arities.get(6, 0)))
         else:
-            notes.append("E2 %-4s one 6-valued return among %d 5-valued"
+            notes.append("E2 %-4s fixed: 0 6-valued returns among %d 5-valued"
                          % (fn, arities.get(5, 0)))
 
     # E1: the exact vector from the errata. GF(11), y^2 = x^5 + x^3 + 1,
@@ -469,8 +471,8 @@ def section_errata(rep, quick):
     if problems:
         rep.fail("errata", problems[0])
     else:
-        rep.ok("errata", "E1 dispatched around and still recorded; E2 arity "
-                         "confirmed")
+        rep.ok("errata", "E1 dispatched around and still recorded; E2 fixed, "
+                         "no 6-valued return remains")
 
 
 def _parse_prime_poly(F, text):
@@ -904,10 +906,19 @@ def section_gate_guards(rep, quick):
         u[0] = "ADD000"          # a label the corpus does cover
         pathlib.Path(W.BASELINE_FILE).write_text(json.dumps(d, indent=1))
 
-    def unpin_arity():
-        d = json.loads(baseline_src)
-        d["arity_anomalies"] = d["arity_anomalies"][1:]
-        pathlib.Path(W.BASELINE_FILE).write_text(json.dumps(d, indent=1))
+    # The pin set is empty since PR5 fixed E2, so "remove a pin and watch the
+    # shipped anomaly fail" no longer provokes anything. Inject the anomaly
+    # instead: every ramified decode reports a wrong arity, none of it pinned.
+    orig_decode = D.decode_divisor
+
+    def fake_arity():
+        def dec(F, genus, vals):
+            gu, gv, note = orig_decode(F, genus, vals)
+            return gu, gv, note or "returned 6 values, expected 5 (injected)"
+        D.decode_divisor = dec
+
+    def restore_decode():
+        D.decode_divisor = orig_decode
 
     def drift_case():
         d = json.loads(harvest_src)
@@ -931,7 +942,7 @@ def section_gate_guards(rep, quick):
 
     expect_fail("a new branch appears in a baselined file", add_branch,
                 lambda: setattr(D, "labels_in", orig_labels))
-    expect_fail("an arity anomaly is not pinned", unpin_arity, restore_baseline)
+    expect_fail("an arity anomaly is not pinned", fake_arity, restore_decode)
     expect_fail("a harvested case drifted from its record", drift_case,
                 restore_harvest)
 

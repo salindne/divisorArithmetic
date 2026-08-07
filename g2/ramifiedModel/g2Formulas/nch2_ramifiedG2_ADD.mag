@@ -284,7 +284,7 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f3,f2,f1)
             if IsZero(dw20) and IsZero(dw21) then
                 
                 if ADD_DEBUG then "ADD05"; end if;
-                return 0,0,1,0,0,1;
+                return 0,0,1,0,0;
             end if;//dw20dw21
             
             //b2 := LeadingCoefficient(dw2)^-1;

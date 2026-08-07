@@ -84,6 +84,12 @@ the thesis, which carries the same guard.
 
 ## E2: genus-2 ramified ADD: one 6-valued return among 5-valued returns
 
+**Status: FIXED (PR5).** The stray sixth value -- a balancing weight left over from the split-model
+version of the branch -- is deleted from the `ADD05` return in all three files; the branch now returns
+the 5-valued identity like every sibling. The three whitebox cases that were pinned for this in
+`coverage_baseline.json` are unpinned, so ANY arity anomaly now fails the gate, and `selftest.py`'s
+errata section asserts statically that no 6-valued return remains.
+
 **Severity:** latent. Three constructed whitebox cases now reach it (case 16 of each genus-2 ramified whitebox tester, branch ADD05, that branch's only coverage); the Python gate pins them by identity and reports them on every run.
 
 **Where:** the same branch as E1 in all three files. `return 0,0,1,0,0,1;` returns **six** values,
