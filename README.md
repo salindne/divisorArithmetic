@@ -358,7 +358,9 @@ The recorded pointer may lag the submodule's `main`.
 - **No positive-reduced basis at genus 3.**
 - **A Python verification framework is planned**, so the formulas can be checked without Magma and
   therefore in CI, which a licensed tool can never do. Until then, defects found are recorded in
-  [ERRATA.md](ERRATA.md) rather than fixed, because nothing would catch a regression.
+  [ERRATA.md](ERRATA.md) rather than fixed until an oracle can see the fix. The verification
+  framework is that oracle now -- the `ADD(D, D)` dispatch and E1's closure went through it --
+  and the remaining entries wait on the tooling their own text names.
 
 ---
 

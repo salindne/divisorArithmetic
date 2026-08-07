@@ -2,21 +2,20 @@
 
 Known defects in this repository and in material published from it, with reproducers.
 
-Nothing here is fixed yet, and that is deliberate, though the reason has narrowed.
+Most entries are still open, and that is deliberate: a fix waits until an oracle can see it.
 
-The whole suite now runs locally, so a formula change *can* be checked by hand; see
-[tools/magma-docker/](tools/magma-docker/). Two gaps remain, and they are why these still wait:
+That bar has now been met once. The two gaps that used to keep every entry frozen -- no tester
+exercised these inputs, and nothing gated a regression -- were closed by the Python verification
+framework (`verification/`, in CI since PR #3): its differential driver enumerates the `D1 = D2` region
+no Magma tester reaches, and its frozen-case gate fails a pull request that regresses a formula. PR5
+used that oracle to route `ADD(D, D)` to `DBL` in every dispatcher and to complete three short guards;
+E1's status below reflects it. Everything else here remains recorded-not-fixed, each waiting on the
+tooling its own entry names.
 
-- **The testers do not exercise these inputs.** All three genus-2 ramified random testers guard their
-  addition with `if D1 ne D2 then` (line 102 or 103), so they never call `ADD(D, D)` at all. E1's
-  reproducer has `D1 = D2`. The whitebox testers carry no such guard, but they run one constructed case
-  per branch and none targets E1's combination of `dw21 = 0` with `dw20 ≠ 0`. So the suite passing tells
-  you nothing about E1, and the testers need rebuilding before a fix can be demonstrated rather than
-  asserted.
-- **Nothing gates a regression.** Magma is licensed and cannot run on hosted CI, and it exits 0 even on
-  `Runtime error in assert: Assertion failed`, so it can never gate on exit status. Until an
-  exhaustively-enumerating, licence-free oracle exists, a formula edit is a change to published work
-  that no automation will re-check.
+Historical note, kept because the reasoning shaped the series: the genus-2 ramified random testers
+guard their addition with `if D1 ne D2 then`, so no Magma tester can ever demonstrate an `ADD(D, D)`
+fix -- which is why the framework, not a tester rebuild, was the prerequisite. And Magma exits 0 on
+`Runtime error in assert`, so it could never have gated this on exit status.
 
 Each entry records what is wrong, how to reproduce it, and what it affects.
 
@@ -30,7 +29,16 @@ rather than asserted early.
 
 ## E1: genus-2 ramified ADD: guard too narrow, evaluates `0⁻¹`
 
-**Severity:** correctness. Aborts with a Magma runtime error on reachable input.
+**Status: closed at the dispatcher (PR5), guard retained.** Every known firing of E1 has `D1 = D2` --
+validity of both divisors gives `(vp − v)(v + vp + h) ≡ 0 (mod u)`, and when `dw2` is a nonzero constant
+it is a unit mod `u`, forcing `vp = v` -- and the ADD dispatchers now route that case to `DBL` before any
+`Deg*` branch runs. The narrow guard inside `Deg2ADD` is unchanged and still divides by zero if called
+directly with these coefficients; `verification/selftest.py`'s errata section asserts both halves on
+every run (the dispatcher returns the reference double, the direct call still raises). Whether any
+`D1 ≠ D2` input can reach the guard is not proven impossible, only never observed -- 13,008 differential
+operations found none -- so the entry stays, demoted from live to latent.
+
+**Severity:** was correctness -- aborted with a Magma runtime error on reachable input. Now latent.
 
 **Where:** all three genus-2 ramified addition formulas, in the `IsZero(m3)` branch of `Deg2ADD`:
 
