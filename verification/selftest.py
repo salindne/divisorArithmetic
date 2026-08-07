@@ -396,6 +396,14 @@ def section_errata(rep, quick):
     # E1: the exact vector from the errata. GF(11), y^2 = x^5 + x^3 + 1,
     # u = x^2 + 1, v = 1, D1 = D2. The guard `IsZero(dw20) and IsZero(dw21)` is
     # too narrow, so dw21 = 0 with dw20 nonzero reaches `dw21^-1`.
+    #
+    # Two assertions since PR5, and both must hold:
+    #   1. ADD on this vector now returns the correct double -- the dispatcher
+    #      routes D1 = D2 to DBL before any Deg* case runs, which closes every
+    #      known firing of E1 (they all have D1 = D2, the unit-mod-u argument).
+    #   2. Deg2ADD called DIRECTLY with the same coefficients still divides by
+    #      zero. The narrow guard is retained and recorded, not repaired; this
+    #      is what keeps E1 an erratum rather than silently declaring it fixed.
     F = GF(11)
     f = Poly.from_coeffs_desc(F, [F.one, F.zero, F.one, F.zero, F.zero, F.one])
     h = Poly.zero(F)
@@ -404,16 +412,45 @@ def section_errata(rep, quick):
     if not ((v * v + v * h - f) % u).is_zero():
         problems.append("E1 vector is not a valid divisor; the vector is wrong")
     fams, _excluded = D.discover_families()
-    fired = []
+    dispatched, fired = [], []
+    want = None
     for name in ("ramified/g2/arb", "ramified/g2/nch2"):
         fam = [x for x in fams if x.name == name][0]
-        subs = M.discover(fam.add_path)
+        subs = dict(M.discover(fam.dbl_path))
+        subs.update(M.discover(fam.add_path))
         params, _body = D._dispatcher_body(fam.add_path, "ADD")
         cur = C.Curve(F, f, h, fam.kind, 2, "ramified")
+        if want is None:
+            want = R.add(cur, (u, v), (u, v))
+
+        # 1. through the dispatcher: correct, and equal to the reference double.
         try:
-            subs["ADD"](*D.build_args(params, cur, (u, v), (u, v)),
-                        funcs=subs, F=F)
-            problems.append("E1 did not reproduce in %s: no division by zero" % name)
+            got = subs["ADD"](*D.build_args(params, cur, (u, v), (u, v)),
+                              funcs=subs, F=F)
+            gu, gv, note = D.decode_divisor(F, 2, list(got))
+            if note:
+                problems.append("E1 dispatch in %s: %s" % (name, note))
+            elif (gu, gv) != want:
+                problems.append("E1 dispatch in %s returned the wrong double"
+                                % name)
+            else:
+                dispatched.append(name.split("/")[-1])
+        except Exception as exc:                            # noqa: BLE001
+            problems.append("E1 dispatch in %s raised %s, expected a clean "
+                            "double" % (name, type(exc).__name__))
+
+        # 2. the narrow guard itself, reached directly: still errata E1.
+        vals = {}
+        for base, poly in (("u", u), ("up", u), ("v", v), ("vp", v),
+                           ("f", f), ("h", h)):
+            for i2 in range(6):
+                vals["%s%d" % (base, i2)] = poly.coeff(i2)
+        deg2 = subs["Deg2ADD"]
+        try:
+            deg2(*[vals[k] for k in deg2.params], funcs=subs, F=F)
+            problems.append("E1 did not reproduce in %s: Deg2ADD returned "
+                            "cleanly -- the recorded erratum has silently "
+                            "disappeared" % name)
         except ZeroDivisionError:
             fired.append(name.split("/")[-1])
         except Exception as exc:                            # noqa: BLE001
@@ -422,14 +459,17 @@ def section_errata(rep, quick):
     # ch2 is deliberately not on that list: the vector is over GF(11) and the ch2
     # formulas require characteristic 2, so it is outside their domain. Their own
     # instance of E1 shows up in driver.py runs over GF(2) and GF(8).
-    notes.append("E1 reproduced in: %s (ch2 needs a char-2 vector, out of domain "
-                 "for this one)" % ", ".join(fired))
+    notes.append("E1: ADD(D,D) dispatches to the correct double in %s; Deg2ADD "
+                 "directly still divides by zero in %s (ch2 needs a char-2 "
+                 "vector, out of domain for this one)"
+                 % (", ".join(dispatched), ", ".join(fired)))
     for line in notes:
         rep.note(line)
     if problems:
         rep.fail("errata", problems[0])
     else:
-        rep.ok("errata", "E1 reproduces as a division by zero; E2 arity confirmed")
+        rep.ok("errata", "E1 dispatched around and still recorded; E2 arity "
+                         "confirmed")
 
 
 def _parse_prime_poly(F, text):

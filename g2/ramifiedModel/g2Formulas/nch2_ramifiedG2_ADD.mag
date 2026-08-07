@@ -458,6 +458,15 @@ end function;
 //              and D2.                    
 ///////////////////////////////////////////////////////////////////////////////
 ADD:= function(u,v,up,vp,f)//startIGNORE
+    // D1 = D2 is a doubling, not an addition: the Deg* cases below assume
+    // D1 != D2 (the thesis Require clause) and return wrong results without it.
+    // Dispatched here, where the algorithm is entered; the cases keep their
+    // assumption. This closes errata E1's known firings, whose inputs all have
+    // D1 = D2 -- the narrow guard inside Deg2ADD stays as recorded.
+    if u eq up and v eq vp then
+        return DBL(u,v,f);
+    end if;
+
     u2:= Coeff(u,2); u1:= Coeff(u,1); u0:= Coeff(u,0);
     v1:= Coeff(v,1); v0:= Coeff(v,0);
     up2:= Coeff(up,2); up1:= Coeff(up,1); up0:= Coeff(up,0);
