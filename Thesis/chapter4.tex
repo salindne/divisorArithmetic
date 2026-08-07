@@ -424,7 +424,7 @@ NUCOMP compute special cases identically.
 \caption{Genus 2 Split Model Addition (Positive Reduced Balanced NUCOMP)}
 \label{alg:g2balnucomp}
 \begin{algorithmic}[1]
-\Require $[u_1,v_1,n_1],$ $[u_2,v_2,n_2]$ where $[u_1,v_1,n_1] \neq [u_2,v_2,n_2]$$\deg(u_2) \leq \deg(u_1)$.
+\Require $[u_1,v_1,n_1],$ $[u_2,v_2,n_2]$ where $[u_1,v_1,n_1] \neq [u_2,v_2,n_2]$ and $\deg(u_2) \leq \deg(u_1)$.
 \Ensure $[u_n,v_n,n_n] = [u_1,v_1,n_1] + [u_2,v_2,n_2]$
 \If{$\deg(u_2) \leq 1$ and $n_1 = n_2 = 0$}
     \State $v_1 = -\Vp - h - [(-\Vp - h - v_1) \pmod{u_1}]$.
@@ -539,7 +539,7 @@ are presented in Algorithms~\ref{alg:g3balnucomp} and~\ref{alg:g3balnudupl}.
     \caption{Genus 3 Ramified Model Addition}
     \label{alg:g3nucomp}
     \begin{algorithmic}[1]
-    \Require $[u_1,v_1],$ $[u_2,v_2]$ where $\deg(u_2) \leq \deg(u_1)$.
+    \Require $[u_1,v_1],$ $[u_2,v_2]$ where $[u_1,v_1] \neq [u_2,v_2]$ and $\deg(u_2) \leq \deg(u_1)$.
     \Ensure $[u_n,v_n] = [u_1,v_1] + [u_2,v_2]$
 
     \State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
@@ -556,7 +556,7 @@ are presented in Algorithms~\ref{alg:g3balnucomp} and~\ref{alg:g3balnudupl}.
     \If{$\deg(u_1) + \deg(u_2) \leq 3$}
         \State $u_n = u_2u_1$.
         \State $v_n = (v_1 + u_1s) \pmod{u_n}]$.
-    \ElsIf{$\deg(s) \leq 2$}
+    \ElsIf{$\deg(s) < 2$}
         \State $z := -u_1s, \s\s \vt = z - v_1 - h$.
         \State $u_n = (s(\vt - v_1) + kS)/u_2 \s\s\s$. (exact division, made monic)
         \State $v_n = \vt \pmod{u_n}$.
@@ -643,7 +643,7 @@ omitted in this thesis due to such formulas being work in progress elsewhere.
 \caption{Genus 3 Split Model Addition (Negative Reduced Balanced NUCOMP)}
 \label{alg:g3balnucomp}
 \begin{algorithmic}[1]
-\Require $[u_1,v_1,n_1],$ $[u_2,v_2,n_2]$ where $\deg(u_2) \leq \deg(u_1)$.
+\Require $[u_1,v_1,n_1],$ $[u_2,v_2,n_2]$ where $[u_1,v_1,n_1] \neq [u_2,v_2,n_2]$ and $\deg(u_2) \leq \deg(u_1)$.
 \Ensure $[u_n,v_n,n_n] = [u_1,v_1,n_1] + [u_2,v_2,n_2]$
 \If{$\deg(u_1) + \deg(u_2) \leq 4$ and $n_1 = 3-\deg(u_1)$ and $n_2 = 3-\deg(u_2)$}
     \State $v_1 = -\Vn - h - [(-\Vn - h - v_1) \pmod{u_1}]$.
@@ -665,7 +665,7 @@ omitted in this thesis due to such formulas being work in progress elsewhere.
 \If{$D \leq 3$ and $(0 \leq n_n \leq 3 - D)$}
     \State $u_n = u_2u_1$.
     \State $v_n = \Vn - [(\Vn - v_1 - u_1s) \pmod{u_n}]$.
-\ElsIf{$\deg(s) \leq 2$}
+\ElsIf{$\deg(s) < 2$}
     \State $z := -u_1s, \s\s \vt = z - v_1 - h$.
     \State $u_n = (s(\vt - v_1) + kS)/u_2 \s\s\s$. (exact division, made monic)
     \State $v_n = \Vn - [(\Vn - \vt) \pmod{u_n}]$.
