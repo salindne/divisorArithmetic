@@ -794,6 +794,46 @@ def section_dispatch(rep, quick):
                        "on errata E1's vector" % dbl_labels[0][6:])
 
 
+def section_equal_dispatch(rep, quick):
+    """ADD(D, D) returns the correct double, in every family, deterministically.
+
+    The random driver proves this at volume but is deliberately not in CI, so
+    without this section nothing in CI would exercise the equal-divisor route at
+    all. One curve and one pair per field through the driver's own machinery --
+    its pair modes include `equal` and `equal/swapped` -- with the two buckets
+    that hold equal-divisor failures required to be empty. Reverting any of the
+    dispatch commits fails this section; it is the lock on PR5.
+    """
+    fams, _excluded = D.discover_families()
+    res = D.Result()
+    fields = (2, 3, 4, 5) if quick else (2, 3, 4, 5, 7, 8, 9)
+    for fam in fams:
+        if fam.model.startswith("split"):
+            D.run_split_family(fam, fams, res, fields, 1, 1, 1105, False)
+        else:
+            D.run_family(fam, fams, res, fields, 1, 1, 1105, False)
+    equal_wrong = len(res.precondition)
+    equal_crash = sum(res.precondition_errors.values())
+    if equal_wrong or equal_crash:
+        first = (res.precondition[0]["family"] + " " + res.precondition[0]["op"]
+                 if res.precondition else
+                 next(iter(res.precondition_errors)))
+        rep.fail("equal_dispatch",
+                 "%d wrong and %d crashed where D1 = D2; first: %s"
+                 % (equal_wrong, equal_crash, first))
+        return
+    if res.mismatches:
+        rep.fail("equal_dispatch", "%d mismatch(es) on the documented domain"
+                 % len(res.mismatches))
+        return
+    if not res.compared:
+        rep.fail("equal_dispatch", "no comparison ran; the lock is vacuous")
+        return
+    rep.ok("equal_dispatch",
+           "%d comparisons across %d families, 0 wrong where D1 = D2"
+           % (res.compared, len(res.per_family)))
+
+
 def section_gate_guards(rep, quick):
     """Each guard on the whitebox gate is shown to FIRE, not merely to exist.
 
@@ -925,6 +965,7 @@ SECTIONS = [
     ("swap", section_swap),
     ("whitebox", section_whitebox),
     ("dispatch", section_dispatch),
+    ("equal_dispatch", section_equal_dispatch),
     ("gate_guards", section_gate_guards),
 ]
 
