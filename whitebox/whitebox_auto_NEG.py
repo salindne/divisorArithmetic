@@ -105,12 +105,13 @@ class FileInfo(object):
 class CaseGen(object):
     """Runs a generator once, then parses its log into one case per branch."""
 
-    def __init__(self, fileInfo, magmaCmd=None, trials=400, seed=1, divisors=1):
+    def __init__(self, fileInfo, magmaCmd=None, trials=400, seed=1, pairs=4000, extra=None):
         self.file = fileInfo
         self.magmaCmd = magmaCmd or ["../tools/magma-docker/magma.sh"]
         self.trials = trials
         self.seed = seed
-        self.divisors = divisors
+        self.pairs = pairs
+        self.extra = extra or {}
 
     def expectedTags(self):
         """The branch labels a complete tester must hold.
@@ -128,15 +129,19 @@ class CaseGen(object):
         env = dict(os.environ)
         env["WB_TRIALS"] = str(self.trials)
         env["WB_SEED"] = str(self.seed)
-        env["WB_DIVISORS"] = str(self.divisors)
+        env["WB_PAIRS"] = str(self.pairs)
+        for name, val in self.extra.items():
+            env[name] = str(val)
         env["WB_LOG"] = logPath
-        env["MAGMA_ENV"] = "WB_TRIALS WB_SEED WB_LOG WB_DIVISORS"
+        env["MAGMA_ENV"] = ("WB_TRIALS WB_SEED WB_LOG WB_PAIRS "
+                            "WB_SWEEP WB_TDEG WB_CELL WB_FIELDS WB_WITNESS")
 
         if os.path.exists(logPath):
             os.remove(logPath)
 
-        print("running %s: %d trials, %d divisors/curve, seed %d"
-              % (self.file.GEN, self.trials, self.divisors, self.seed))
+        print("running %s: %d curves, %s pairs/curve, seed %d"
+              % (self.file.GEN, self.trials,
+                 "exhaustive" if self.pairs == 0 else self.pairs, self.seed))
         proc = subprocess.run(self.magmaCmd + [self.file.GEN], env=env,
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out = proc.stdout.decode("utf-8", "replace")
@@ -422,8 +427,22 @@ def main(argv=None):
                     help="random curves to try (default 400)")
     ap.add_argument("--seed", type=int, default=1,
                     help="Magma seed, so the search is reproducible (default 1)")
-    ap.add_argument("--divisors", type=int, default=1,
-                    help="divisor pairs per curve, minus one (default 1)")
+    ap.add_argument("--sweep", type=int, default=None,
+                    help="curves per deg(W0) class per field in the deliberate "
+                         "phase; 0 skips it")
+    ap.add_argument("--tdeg", type=int, default=None,
+                    help="max deg(u) of class targets for the class-targeted "
+                         "pair mode (0 = the u=1 classes)")
+    ap.add_argument("--cell", type=int, default=None,
+                    help="pairs per shape-matrix cell")
+    ap.add_argument("--witness", type=int, default=None,
+                    help="run the witness-curve phase (curves kept because a "
+                         "Precompute leaf they reach is too rare to sample)")
+    ap.add_argument("--fields", default=None,
+                    help="comma separated field sizes, overriding the generator's")
+    ap.add_argument("--pairs", type=int, default=4000,
+                    help="cap on ADD pairs per curve; 0 means exhaustive over the "
+                         "curve's whole divisor space (default 4000)")
     ap.add_argument("--out", help="where to write the tester (default testerFiles/)")
     ap.add_argument("--log", help="where the generator writes its log "
                                   "(default a scratch file beside logs/)")
@@ -440,7 +459,12 @@ def main(argv=None):
         fileInfo.OUT = args.out
 
     gen = CaseGen(fileInfo, magmaCmd=[args.magma], trials=args.trials,
-                  seed=args.seed, divisors=args.divisors)
+                  seed=args.seed, pairs=args.pairs,
+                  extra={k: v for k, v in
+                         (('WB_SWEEP', args.sweep), ('WB_TDEG', args.tdeg),
+                          ('WB_CELL', args.cell), ('WB_FIELDS', args.fields),
+                          ('WB_WITNESS', args.witness))
+                         if v is not None})
 
     if args.fromLog:
         logPath = args.fromLog
