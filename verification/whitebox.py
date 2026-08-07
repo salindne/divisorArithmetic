@@ -1436,9 +1436,12 @@ def _default_reason(rel):
     return ("coverage here comes from search -- a Magma tester's own generator and the "
             "Python harvester are both coverage-guided random searches -- and these "
             "branches were NOT reached by the recorded budget, which is not the same "
-            "as being unreachable. Each is guarded by a nested IsZero on an "
-            "intermediate value, so reaching it needs a coincidence rather than a "
-            "different kind of input")
+            "as being unreachable. Do not assume a nested IsZero guard means a "
+            "coincidence to wait for: several of these are selected by the CURVE, not "
+            "the divisors. z3 = W4*dn3 and dn3 collapses to exactly f3 in "
+            "characteristic 2, so z3 = 0 iff f3 = 0, and deg(f - Vp*h - Vp^2) "
+            "partitions the curves into four mutually exclusive classes that no single "
+            "curve can span. See verification/README.md")
 
 
 if __name__ == "__main__":

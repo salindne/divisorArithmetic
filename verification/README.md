@@ -158,26 +158,63 @@ domain rather than admitting a curve the group law fails on.
 
 ## Known limits
 
-- **`ch2_splitG3_ADD` sits at 339 of 350 branches.** The eleven that remain are each
-  guarded by a nested `IsZero` on an intermediate value (`z2`, `z3`, `z4`, `w2`, `k3`),
-  so reaching one needs an algebraic coincidence rather than a different kind of input.
-  They are named individually in `coverage_baseline.json`; the reason says *not reached
-  by the recorded budget*, which is not the same as unreachable.
+- **Why coverage of `ch2_splitG3_ADD` was hard, and what it took.** This is worth
+  recording because the obvious diagnosis was wrong twice.
 
-  Getting here needed two searches, and the cost difference is the point:
+  The generator's own divisor sampler, `RandomDivisorAB`, cannot produce most of the
+  divisors that exist. It demands `GCD(u, Derivative(u)) eq 1` and every factor of `u`
+  linear, and it requires each root to be the x-coordinate of an F_q-rational affine
+  point. Measured on one genus-3 split curve over GF(4): **39 of the 154 reduced
+  divisors, 25%**, and the sampled set is exactly the structurally reachable one, so no
+  number of draws widens it. It also takes the weight as `Random(g - Degree(u))`, so a
+  degree-3 divisor always gets weight 0, and two independent draws essentially never
+  share a `u` — which is what a guard like `ADD172`'s `IsZero(m3) //u = up` needs.
+  Enumerating every `v` for every monic `u` and testing divisibility admits all of it
+  and costs 0.2s per GF(4) curve.
 
-  | source | budget | branches of 405 |
+  That was still not enough, and the reason is the **curve**, not the divisors. Two of
+  the guarded intermediates are curve constants in disguise: `z3 = W4*dn3` where `dn3`
+  collapses to exactly `f3` in characteristic 2, so `z3 = 0` iff `f3 = 0`. The unifying
+  quantity is `W0 := f - Vp*h - Vp^2`, of degree at most `g`, and its degree partitions
+  the curves into **four mutually exclusive classes**:
+
+  | `deg W0` | condition | branches only this class can reach |
   |---|---|---|
-  | Magma generator | 400 trials | 179 |
-  | Magma generator | 12,000 trials (**committed tester**) | 347 |
-  | Magma generator | ~15,700 trials | 353 |
-  | `--harvest` on top of the 347 | `--harvest-curves 160 --harvest-pairs 40`, ~10 min | **401 of 413** |
+  | 3 | `f3 ≠ 0` | `ADD190`, `ADD255`, `ADD296` |
+  | 2 | `f3 = 0`, `k2 ≠ 0` | `ADD251`, `ADD267` |
+  | 1 | `f3 = 0`, `k2 = 0`, `k1 ≠ 0` | `ADD227`, `ADD247`, `ADD263` |
+  | ≤ 0 | `f3 = k2 = k1 = 0` | `Precompute`'s `UTL0` leaf |
 
-  The generator's last 14,750 blocks bought six branches; the harvester bought
-  forty-seven in ten minutes, because it varies degree combinations and pair modes
-  deliberately while the generator draws two `RandomDivisorAB` divisors. So the tester
-  supplies the bulk and the harvester the tail, and `--harvest` fills whatever no
-  extracted case reaches rather than only serving families with no tester at all.
+  No single curve spans them, and `RandomChar2G3SplitCurve` lands in the last two only
+  1/q² and 1/q³ of the time. That is why those branches never appeared, and why the
+  generator now sweeps curves by `deg W0` class instead of only drawing them.
+
+  The third piece: every one of the eleven hardest branches **returns the same divisor
+  class**, `T3 = [inf₊ - inf₋]` (one returns `-2·T3`). So their inputs are not rare
+  divisors, they are pairs whose class *sum* is forced — a solvable equation rather than
+  a coincidence to wait for. For each `D1` the only possible partner is `D2 := T - D1`,
+  one `Add` per divisor per target, which turns a coupon-collector search into an
+  enumeration of every pair that could ever reach them.
+
+  Cost, measured, for the same family:
+
+  | search | operations | branches of 405 |
+  |---|---|---|
+  | original sampler, 12,000 trials | 47,098 | 347 |
+  | original sampler, ~15,700 trials | 61,848 | 353 |
+  | enumerated divisors, 80 curves | 426,745 | 398 |
+  | + degree-stratified pairs, 4 curves | 17,368 | 305 |
+  | + curve sweep by `deg W0`, GF(4) only, 12 curves | 32,847 | **381** |
+  | full: sweep + random phase, both fields | 903,043 | **402** |
+
+  Read the last two rows together: steering curves reached 381 branches in 32,847
+  operations, where undirected search needed 426,745 to reach 398. Roughly 13× per
+  operation.
+
+  Every one of those operations is also a differential test — the generator emits a
+  case only when the formula agrees with Magma's own Cantor arithmetic — so the run
+  above is a **903,043-operation, zero-failure** check of these formulas over a domain
+  the previous sampler could not express.
 
 - **Random sampling alone plateaus near 87%**, which is why it is not the gate. The
   three genus-3 split ADD files carry 350 labelled branches each; raising volume moved
