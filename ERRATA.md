@@ -286,6 +286,29 @@ Recorded because a caller would hit two bugs, not one.
 
 ---
 
+## E10: an empty token in a `//Constant:` list corrupts every count, silently
+
+**Severity:** correctness of generated tables; same family as E5/E6 but a distinct mechanism.
+
+`latexConverter.py` parses the directive list as `line.split()[1].split(',')`, so a space after a
+comma or a trailing comma yields an empty-string token. An empty string enters the classified
+variable set, `startswith('')` is true at every position, and — measured on synthetic input — **every
+multiplication in the file is then charged 1C** regardless of its operands:
+
+```
+//Constant: f1,f2     ('z','=','a','*','a')        (1,0,0,0)   correct, 1M
+//Constant: f1, f2    ('z','=','a','*','','a','')  (0,0,0,1)   1C — silently wrong
+```
+
+The token-consumption loop (`temp.replace(term,'',1)`) also cannot consume an empty term, so some
+inputs hang rather than miscount. No committed directive currently contains an empty token — checked —
+so this is a trap for the next author, not a live corruption.
+
+**Affects:** any future operation-count row generated from a malformed directive. Belongs to PR9's
+repair list with E4–E6: the parser should reject empty tokens loudly.
+
+---
+
 ## Not defects
 
 Two things that look wrong and are not, recorded so they are not "fixed" by mistake:
