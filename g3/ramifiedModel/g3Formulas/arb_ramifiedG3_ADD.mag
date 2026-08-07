@@ -30,6 +30,30 @@
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg1ADD:= function(u1_0, v1_0, u2_0, v2_0)
+    /* //startIGNORE
+    //Poly Dev Testing
+    //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
+    //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
+    //No curve coefficients are needed: with u1 = u2 and D1 ne D2, the two
+    //v values are the two roots of y^2 + h(x0)y = f(x0), so D2 = -D1 and
+    //the sum is the neutral element.
+    FF := Parent(u1_0);
+    R<x> := PolynomialRing(FF);
+    u1 := x + u1_0;
+    v1 := R!v1_0;
+    u2 := x + u2_0;
+    v2 := R!v2_0;
+
+    d := u1 mod u2;
+    if IsZero(d) then
+        return 0, 0, 0, 1, 0, 0, 0;
+    end if;
+    s := (v2 - v1)*FF!Coeff(d,0)^-1 mod u2;
+    un := u1*u2;
+    vn := (v1 + u1*s) mod un;
+    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
+           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
     // 1) gcd(u1,u2) = 1	(typical)
     // 2) gcd(u1,u2) = u1	(DB = P1, DA = -P1, return P0)
@@ -88,6 +112,49 @@ end function;
 //              degree one divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, h3, h2, h1, h0)
+    /* //startIGNORE
+    //Poly Dev Testing
+    //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
+    //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
+    FF := Parent(u1_0);
+    R<x> := PolynomialRing(FF);
+    //f0 is not an argument (nor is f1): at every division below the absent
+    //coefficients have degree below the divisor's, so they stay in the
+    //discarded remainder; `div` makes that explicit.
+    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
+    h := h3*x^3 + h2*x^2 + h1*x + h0;
+    u1 := x^2 + u1_1*x + u1_0;
+    v1 := v1_1*x + R!v1_0;
+    u2 := x + u2_0;
+    v2 := R!v2_0;
+
+    k := (f - v1*(v1 + h)) div u1;
+
+    S, a1, b1 := XGCD(u1, u2);
+    if not IsOne(S) then
+        S, a2, b2 := XGCD(S, v2 + v1 + h);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1, S);
+            u2 := ExactQuotient(u2, S);
+        end if;
+        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+    else
+        s := a1*(v2 - v1) mod u2;
+    end if;
+
+    if Degree(u1) + Degree(u2) le 3 then
+        //composition only (a gcd case shrank the degrees)
+        un := u1*u2;
+        vn := (v1 + u1*s) mod un;
+    else
+        //one reduction: un = (k*S - s*(s*u1 + 2*v1 + h))/u2, monic
+        un := ExactQuotient(k*S - s*(s*u1 + 2*v1 + h), u2);
+        un := un/LeadingCoefficient(un);
+        vn := (-s*u1 - v1 - h) mod un;
+    end if;
+    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
+           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
     // 1) gcd(u1,u2) = 1	            (typical)
     // 2) gcd(u1,u2) = u2
@@ -216,6 +283,49 @@ end function;
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, f3, f2, h3, h2, h1, h0)
+    /* //startIGNORE
+    //Poly Dev Testing
+    //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
+    //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
+    FF := Parent(u1_0);
+    R<x> := PolynomialRing(FF);
+    //f0 is not an argument (nor is f1): at every division below the absent
+    //coefficients have degree below the divisor's, so they stay in the
+    //discarded remainder; `div` makes that explicit.
+    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
+    h := h3*x^3 + h2*x^2 + h1*x + h0;
+    u1 := x^2 + u1_1*x + u1_0;
+    v1 := v1_1*x + R!v1_0;
+    u2 := x^2 + u2_1*x + u2_0;
+    v2 := v2_1*x + R!v2_0;
+
+    k := (f - v1*(v1 + h)) div u1;
+
+    S, a1, b1 := XGCD(u1, u2);
+    if not IsOne(S) then
+        S, a2, b2 := XGCD(S, v2 + v1 + h);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1, S);
+            u2 := ExactQuotient(u2, S);
+        end if;
+        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+    else
+        s := a1*(v2 - v1) mod u2;
+    end if;
+
+    if Degree(u1) + Degree(u2) le 3 then
+        //composition only (a gcd case shrank the degrees)
+        un := u1*u2;
+        vn := (v1 + u1*s) mod un;
+    else
+        //one reduction: un = (k*S - s*(s*u1 + 2*v1 + h))/u2, monic
+        un := ExactQuotient(k*S - s*(s*u1 + 2*v1 + h), u2);
+        un := un/LeadingCoefficient(un);
+        vn := (-s*u1 - v1 - h) mod un;
+    end if;
+    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
+           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
     // 1) gcd(u1,u2) = 1
     //      1.1) DB = P1+P2, DA = P3+P4         (typical)
@@ -542,6 +652,49 @@ end function;
 //              degree one divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
+    /* //startIGNORE
+    //Poly Dev Testing
+    //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
+    //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
+    FF := Parent(u1_0);
+    R<x> := PolynomialRing(FF);
+    //f0 is not an argument: at every division below the absent
+    //coefficients have degree below the divisor's, so they stay in the
+    //discarded remainder; `div` makes that explicit.
+    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
+    h := h3*x^3 + h2*x^2 + h1*x + h0;
+    u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
+    v1 := v1_2*x^2 + v1_1*x + v1_0;
+    u2 := x + u2_0;
+    v2 := R!v2_0;
+
+    k := (f - v1*(v1 + h)) div u1;
+
+    S, a1, b1 := XGCD(u1, u2);
+    if not IsOne(S) then
+        S, a2, b2 := XGCD(S, v2 + v1 + h);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1, S);
+            u2 := ExactQuotient(u2, S);
+        end if;
+        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+    else
+        s := a1*(v2 - v1) mod u2;
+    end if;
+
+    if Degree(u1) + Degree(u2) le 3 then
+        //composition only (a gcd case shrank the degrees)
+        un := u1*u2;
+        vn := (v1 + u1*s) mod un;
+    else
+        //one reduction: un = (k*S - s*(s*u1 + 2*v1 + h))/u2, monic
+        un := ExactQuotient(k*S - s*(s*u1 + 2*v1 + h), u2);
+        un := un/LeadingCoefficient(un);
+        vn := (-s*u1 - v1 - h) mod un;
+    end if;
+    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
+           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
     // 1) gcd(u1,u2) = 1
     //      1.1) DB = P1, DA = P2+P3+P4     (typical)
@@ -681,6 +834,49 @@ end function;
 //              degree two divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
+    /* //startIGNORE
+    //Poly Dev Testing
+    //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
+    //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
+    FF := Parent(u1_0);
+    R<x> := PolynomialRing(FF);
+    //f0 is not an argument: at every division below the absent
+    //coefficients have degree below the divisor's, so they stay in the
+    //discarded remainder; `div` makes that explicit.
+    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
+    h := h3*x^3 + h2*x^2 + h1*x + h0;
+    u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
+    v1 := v1_2*x^2 + v1_1*x + v1_0;
+    u2 := x^2 + u2_1*x + u2_0;
+    v2 := v2_1*x + R!v2_0;
+
+    k := (f - v1*(v1 + h)) div u1;
+
+    S, a1, b1 := XGCD(u1, u2);
+    if not IsOne(S) then
+        S, a2, b2 := XGCD(S, v2 + v1 + h);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1, S);
+            u2 := ExactQuotient(u2, S);
+        end if;
+        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+    else
+        s := a1*(v2 - v1) mod u2;
+    end if;
+
+    if Degree(u1) + Degree(u2) le 3 then
+        //composition only (a gcd case shrank the degrees)
+        un := u1*u2;
+        vn := (v1 + u1*s) mod un;
+    else
+        //one reduction: un = (k*S - s*(s*u1 + 2*v1 + h))/u2, monic
+        un := ExactQuotient(k*S - s*(s*u1 + 2*v1 + h), u2);
+        un := un/LeadingCoefficient(un);
+        vn := (-s*u1 - v1 - h) mod un;
+    end if;
+    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
+           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
     // 1) gcd(u1,u2) = 1
     //      1.1) DB = P1+P2, DA = P3+P4+P5 and deg(s) = 1       (typical)
@@ -1161,6 +1357,59 @@ end function;
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v2_1, v2_0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
+    /* //startIGNORE
+    //Poly Dev Testing
+    //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
+    //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
+    FF := Parent(u1_0);
+    R<x> := PolynomialRing(FF);
+    //f0 is not an argument: at every division below the absent
+    //coefficients have degree below the divisor's, so they stay in the
+    //discarded remainder; `div` makes that explicit.
+    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
+    h := h3*x^3 + h2*x^2 + h1*x + h0;
+    u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
+    v1 := v1_2*x^2 + v1_1*x + v1_0;
+    u2 := x^3 + u2_2*x^2 + u2_1*x + u2_0;
+    v2 := v2_2*x^2 + v2_1*x + v2_0;
+
+    k := (f - v1*(v1 + h)) div u1;
+
+    S, a1, b1 := XGCD(u1, u2);
+    if not IsOne(S) then
+        S, a2, b2 := XGCD(S, v2 + v1 + h);
+        if not IsOne(S) then
+            u1 := ExactQuotient(u1, S);
+            u2 := ExactQuotient(u2, S);
+        end if;
+        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+    else
+        s := a1*(v2 - v1) mod u2;
+    end if;
+
+    if Degree(u1) + Degree(u2) le 3 then
+        //composition only (a gcd case shrank the degrees)
+        un := u1*u2;
+        vn := (v1 + u1*s) mod un;
+    elif Degree(s) lt 2 then
+        //one reduction: un = (k*S - s*(s*u1 + 2*v1 + h))/u2, monic
+        un := ExactQuotient(k*S - s*(s*u1 + 2*v1 + h), u2);
+        un := un/LeadingCoefficient(un);
+        vn := (-s*u1 - v1 - h) mod un;
+    else
+        //two reductions, the typical case: one continued-fraction step
+        //(reachable only with S = 1, as in Nucomp_g3_RAM)
+        q, r := Quotrem(u2, s);
+        M1 := ExactQuotient((v2 - v1)*q + u1*r, u2);
+        M2 := ExactQuotient(r*(v2 + v1 + h) + q*k, u2);
+        un := r*M1 - q*M2;
+        z := ExactQuotient(u1*r - un, q);
+        un := un/LeadingCoefficient(un);
+        vn := (z - v1 - h) mod un;
+    end if;
+    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
+           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
     // 1) gcd(u1,u2) = 1
     //      1.1) DB = P1+P2+P3, DA = P4+P5+P6 and deg(s) = 2        (typical)
