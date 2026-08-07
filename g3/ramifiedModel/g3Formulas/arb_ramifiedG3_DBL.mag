@@ -675,6 +675,7 @@ DBL:= function(D1, f, h)//startIGNORE
         
     end if;
         
+    "THIS SHOULD NEVER HAPPEN";
     return -1, -1, -1, -1, -1, -1, -1; 
     
 end function;//endIGNORE
