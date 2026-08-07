@@ -650,6 +650,86 @@ def section_whitebox(rep, quick):
                                             broken.replayed))
 
 
+def section_dispatch(rep, quick):
+    """A dispatcher can delegate to another dispatcher, three levels deep.
+
+    PR5 puts `if D1 eq D2 then return DBL(...); end if;` at the top of every ADD,
+    which makes ADD -> DBL -> Deg*DBL the first depth-three call chain in the
+    repository. `_bind` used to re-wrap an already-bound sibling table at each
+    level, and the second wrapper passed path=/funcs=/F= keywords into the first
+    wrapper's positional-only closure: TypeError. Latent until the dispatch
+    existed, which is exactly why this section injects the guard into a COPY and
+    exercises the chain now -- the oracle must be shown to see the change before
+    the change lands.
+    """
+    import maginterp as M                                       # noqa: PLC0415
+    from poly import Poly                                       # noqa: PLC0415
+
+    add_src = os.path.join(ROOT, "g2", "ramifiedModel", "g2Formulas",
+                           "arb_ramifiedG2_ADD.mag")
+    dbl_src = os.path.join(ROOT, "g2", "ramifiedModel", "g2Formulas",
+                           "arb_ramifiedG2_DBL.mag")
+
+    # The bound table must be recognised as its own output.
+    F = GF(11)
+    subs = dict(M.discover(dbl_src))
+    subs.update(M.discover(add_src))
+    b1 = M._bind(subs, [], F)
+    if M._bind(b1, [], F) is not b1:
+        rep.fail("dispatch", "_bind is not idempotent: re-binding a bound table "
+                             "produced a new table")
+        return
+
+    # Inject the PR5 guard into a copy of the ADD file, then run the full chain.
+    text = open(add_src).read()
+    sig = "ADD:= function(u,v,up,vp,f,h)//startIGNORE\n"
+    if sig not in text:
+        rep.skip("dispatch", "ADD dispatcher signature not found to inject after")
+        return
+    # Multi-line, matching the files' own block style -- the interpreter's
+    # statement splitter does not accept the one-line if-then-return form, so the
+    # real PR5 edits use this shape too.
+    guard = ("    if u eq up and v eq vp then\n"
+             "        return DBL(u,v,f,h);\n"
+             "    end if;\n")
+    mutated = text.replace(sig, sig + guard, 1)
+
+    tmp = tempfile.mkdtemp(prefix="selftest-dispatch-")
+    try:
+        tmp_add = os.path.join(tmp, "arb_ramifiedG2_ADD.mag")
+        open(tmp_add, "w").write(mutated)
+        table = dict(M.discover(dbl_src))
+        table.update(M.discover(tmp_add))
+
+        # Errata E1's own vector: GF(11), f = x^5 + x^3 + 1, u = x^2 + 1, v = 1,
+        # D1 = D2 -- the input on which undispatched ADD divides by zero.
+        R = lambda cs: Poly.from_coeffs(F, [F(c) for c in cs])  # noqa: E731
+        f = R([1, 0, 0, 1, 0, 1])
+        h = R([0])
+        u = R([1, 0, 1])
+        v = R([1])
+
+        want_path = []
+        want = table["DBL"](u, v, f, h, path=want_path, funcs=table, F=F)
+
+        got_path = []
+        got = table["ADD"](u, v, u, v, f, h, path=got_path, funcs=table, F=F)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    if got != want:
+        rep.fail("dispatch", "ADD(D,D) with the injected guard disagrees with "
+                             "DBL: %r vs %r" % (got, want))
+        return
+    dbl_labels = [x for x in got_path if x.startswith("PRINT:DBL")]
+    if not dbl_labels:
+        rep.fail("dispatch", "ADD(D,D) matched DBL but no DBL branch label was "
+                             "recorded -- the call did not route through DBL")
+        return
+    rep.ok("dispatch", "ADD -> DBL -> %s resolves at depth 3 and matches DBL "
+                       "on errata E1's vector" % dbl_labels[0][6:])
+
+
 def section_gate_guards(rep, quick):
     """Each guard on the whitebox gate is shown to FIRE, not merely to exist.
 
@@ -780,6 +860,7 @@ SECTIONS = [
     ("repros", section_repros),
     ("swap", section_swap),
     ("whitebox", section_whitebox),
+    ("dispatch", section_dispatch),
     ("gate_guards", section_gate_guards),
 ]
 
