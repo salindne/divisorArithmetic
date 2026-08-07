@@ -1,7 +1,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Author: Randall Apperley                                                       
 //	Modified by: Amir Abbas Asgari
-// Description:  
+// Description: Explicit divisor addition formulas for the 4 coordinate Mumford
+//              representation over arbitrary fields where:
+//
+//              h(x) = h3*x^3 + h2*x^2 + h1*x + h0 (deg h <= 3) and
+//              f(x) = x^7 + f6x^6 + f5x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0
 //
 //	General note: w(A) means weight of the poly A
 //
@@ -18,13 +22,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg1ADD():
+// Input: u1_0, v1_0: Mumford coordinates for degree 1 divisor D1
+//        u2_0, v2_0: Mumford coordinates for degree 1 divisor D2
 //
-// Input:
+// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
-// Output:         
-//
-// Description:
-//
+// Description: Computes the explicit formula for the addition of two degree one
+//              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg1ADD:= function(u1_0, v1_0, u2_0, v2_0)
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
@@ -75,13 +79,14 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg12ADD():
+// Input: u1_1..v1_0: Mumford coordinates for degree 2 divisor D1 (deg 2 first)
+//        u2_0, v2_0: Mumford coordinates for degree 1 divisor D2
+//        f6..f2, h3..h0: curve coefficients
 //
-// Input:
+// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
-// Output:
-//
-// Description:
-//
+// Description: Computes the explicit formula for the addition of a degree two and a
+//              degree one divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, h3, h2, h1, h0)
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
@@ -202,13 +207,14 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg22ADD():
+// Input: u1_1..v1_0: Mumford coordinates for degree 2 divisor D1
+//        u2_1..v2_0: Mumford coordinates for degree 2 divisor D2
+//        f6..f2, h3..h0: curve coefficients
 //
-// Input:
+// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
-// Output:
-//
-// Description:
-//
+// Description: Computes the explicit formula for the addition of two degree two
+//              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, f3, f2, h3, h2, h1, h0)
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
@@ -527,13 +533,14 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg13ADD():
+// Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1 (deg 3 first)
+//        u2_0, v2_0: Mumford coordinates for degree 1 divisor D2
+//        f6..f1, h3..h0: curve coefficients
 //
-// Input:
+// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
-// Output:
-//
-// Description:
-//
+// Description: Computes the explicit formula for the addition of a degree three and a
+//              degree one divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
@@ -665,13 +672,14 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg23ADD():
+// Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1 (deg 3 first)
+//        u2_1..v2_0: Mumford coordinates for degree 2 divisor D2
+//        f6..f1, h3..h0: curve coefficients
 //
-// Input:
+// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
-// Output:
-//
-// Description:
-//
+// Description: Computes the explicit formula for the addition of a degree three and a
+//              degree two divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
@@ -1144,13 +1152,14 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg3ADD():
+// Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1
+//        u2_2..v2_0: Mumford coordinates for degree 3 divisor D2
+//        f6..f1, h3..h0: curve coefficients
 //
-// Input:
+// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
-// Output:
-//
-// Description:
-//
+// Description: Computes the explicit formula for the addition of two degree three
+//              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
 Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v2_1, v2_0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
@@ -2140,13 +2149,14 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // ADD():
+// Input: D1, D2:     divisors as [u, v] polynomial pairs, any degrees
+//        f, h, h:    curve polynomials
 //
-// Input:
+// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
-// Output:
-//
-// Description:
-//
+// Description: Dispatches on the operand degrees to the Deg* cases above,
+//              normalising the larger-degree divisor first. D1 = D2 is routed
+//              to DBL, so the D1 != D2 assumption of the cases holds below.
 ///////////////////////////////////////////////////////////////////////////////
 ADD:= function(D1, D2, f, h)//startIGNORE
 

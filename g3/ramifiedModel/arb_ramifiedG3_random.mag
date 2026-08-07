@@ -8,8 +8,8 @@ clear;
 //-----------------------------------------------------------------------------
 // OVERVIEW
 //-----------------------------------------------------------------------------
-// This script tests divisor arithmetic functions from arb_ramifiedG2_DBL.m,
-// and arb_ramifiedG2_ADD.m.
+// This script tests divisor arithmetic functions from arb_ramifiedG3_DBL.mag,
+// and arb_ramifiedG3_ADD.mag.
 //
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -1,6 +1,6 @@
 clear;
 ///////////////////////////////////////////////////////////////////////////////
-////// TESTING RAMIFIED MODEL DIVISOR ARITHMETIC OVER ARBITRARY FIELDS ////////
+/// TESTING RAMIFIED MODEL DIVISOR ARITHMETIC OVER NOT CHAR TWO FIELDS ////////
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Sebastian Lindner, 2019
@@ -8,8 +8,8 @@ clear;
 //-----------------------------------------------------------------------------
 // OVERVIEW
 //-----------------------------------------------------------------------------
-// This script tests divisor arithmetic functions from arb_ramifiedG2_DBL.m,
-// and arb_ramifiedG2_ADD.m.
+// This script tests divisor arithmetic functions from arb_ramifiedG3_DBL.mag
+// (this family's own DBL is PR6), and nch2_ramifiedG3_ADD.mag.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -20,7 +20,7 @@ DBL_DEBUG:= false;
 ADD_DEBUG:= false;
 load "ramifiedUtilities.mag";
 load "g3Formulas/arb_ramifiedG3_DBL.mag";
-// TODO: temp; change to odd_ whenever double file is ready
+// The arb DBL stands in until PR6 derives nch2_ramifiedG3_DBL.mag.
 load "g3Formulas/nch2_ramifiedG3_ADD.mag";
 "     ";
 
