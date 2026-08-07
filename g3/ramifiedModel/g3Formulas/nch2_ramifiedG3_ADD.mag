@@ -164,7 +164,7 @@ Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2)
         vn1:= u1_1*s0 + v1_1;
         vn0:= u1_0*s0 + v1_0;
 
-		if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Case #2.2: gcd(u2,u1) = u2, gcd(u2,h+v2+v1) = 1"; end if;
+		if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Case #2.1: gcd(u2,u1) = u2, gcd(u2,h+v2+v1) = 1"; end if;
         return un3, un2, un1, un0, vn2, vn1, vn0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
@@ -1216,7 +1216,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
                 // DB = P1+P2-P3, DA = P3-P1-P2
                 // return P0
 
-				if (ADD_DEBUG) then "DEG33ADD: gcd(u2,u1) = u2, DB = P1+P2-P3, DA = P3-P1-P2"; end if;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = u2, DB = P1+P2-P3, DA = P3-P1-P2"; end if;
                 return 0, 0, 0, 1, 0, 0, 0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
@@ -1276,7 +1276,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
                 vn1:= s0 + v1_1 - un1*v1_2;
                 vn0:= u1_0*s0 + v1_0 - un0*v1_2;
 
-				if (ADD_DEBUG) then "DEG33ADD: gcd(u2,u1) = u2, DB = P1+P2+P3, DA = P1-P2-P3"; end if;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = u2, DB = P1+P2+P3, DA = P1-P2-P3"; end if;
                 return un3, un2, un1, un0, vn2, vn1, vn0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
@@ -1352,7 +1352,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             vn1:= un1*ta - temp8;
             vn0:= un0*ta - t1_0 - u1_0*s0;
 
-			if (ADD_DEBUG) then "DEG33ADD: gcd(u2,u1) = u2, DB = P1+P2+P3, DA = P3+P2-P1"; end if;
+			if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = u2, DB = P1+P2+P3, DA = P3+P2-P1"; end if;
             return un3, un2, un1, un0, vn2, vn1, vn0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
@@ -1412,7 +1412,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
                 vn1:= s0 + v1_1 - un1*v1_2;
                 vn0:= u1_0*s0 + v1_0 - un0*v1_2;
 
-				if (ADD_DEBUG) then "DEG33ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P4-P2-P1"; end if;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P4-P2-P1"; end if;
                 return un3, un2, un1, un0, vn2, vn1, vn0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
@@ -1509,7 +1509,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 				vn1:= un1*ta - t12;
 				vn0:= un0*ta - t1_0 - u1_0*s0;
 
-				if (ADD_DEBUG) then "DEG33ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P4-P1+P2"; end if;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P4-P1+P2"; end if;
                 return un3, un2, un1, un0, vn2, vn1, vn0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
@@ -1604,7 +1604,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
                     vn1:= 0;
                     vn0:= un0*(u1_1*s0 + t1_1 + un0*(s0*(un0 - u1_2) - t1_2)) - t1_0 - u1_0*s0;
 
-					if (ADD_DEBUG) then "DEG33ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 0"; end if;
+					if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 0"; end if;
                     return un3, un2, un1, un0, vn2, vn1, vn0;
                     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 end if;
@@ -1642,7 +1642,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
                 vn1:= -s1*(u1_0 + u1_1*sm0) - t1_1 - (un0 + un1)*(tc + ta) + tb + td;		// karatsuba
                 vn0:= -s1*(u1_0*sm0) - t1_0 - td;
 
-                if (ADD_DEBUG) then "DEG33ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 1"; end if;
+                if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 1"; end if;
                 return un3, un2, un1, un0, vn2, vn1, vn0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
@@ -1694,7 +1694,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             vn1:= r1*(u1_1 - un1) + tb - t1_1;
 			vn0:= r1*(u1_0 - un0) + u1_1*ta - q0*tb + un1*wi - t1_0;
 
-            if (ADD_DEBUG) then "DEG33ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 2"; end if;
+            if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 2"; end if;
             return un3, un2, un1, un0, vn2, vn1, vn0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
@@ -1789,7 +1789,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             vn1:= un1*ta - t10 - t11 - t1_1;
             vn0:= un0*ta - s0*u1_0 - t1_0;
 
-            //"DEG33ADD - gcd(u2,u1) = e, DB = P1+P2+P3, DA = P4-P1+P5";
+            //"Deg3ADD - gcd(u2,u1) = e, DB = P1+P2+P3, DA = P4-P1+P5";
             return un3, un2, un1, un0, vn2, vn1, vn0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
