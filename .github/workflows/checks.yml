@@ -139,7 +139,8 @@ jobs:
 
       - name: constructed whitebox cases, every developed formula
         working-directory: verification
-        # 1,682 deliberately constructed cases, one per computation path, replayed
+        # 1,802 frozen cases, one per computation path, found by coverage-guided
+        # search and then committed -- not hand-built. Replayed
         # through the interpreter and compared against reference.py. Deterministic and
         # about two seconds.
         #

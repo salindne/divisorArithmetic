@@ -18,6 +18,11 @@
 # Per-tester logs written by test_all.sh
 .test-logs/
 
+# Generator output from whitebox_auto_NEG.py. It writes beside the committed
+# whitebox/logs/*.txt rather than over them, because those are the residue of the
+# old orchestrator run and are the only record of how it behaved.
+whitebox/logs/*.new
+
 # macOS
 .DS_Store
 

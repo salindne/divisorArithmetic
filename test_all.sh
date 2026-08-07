@@ -202,11 +202,7 @@ pause 5
 cd "$ROOT/g3/splitModel/negReduced" || exit 1
 run_family "$ARB"  arb_splitG3_whitebox_tester.mag  arb_splitG3_random.mag
 
-# No ch2 genus-3 whitebox tester exists: the family has 405 labelled branches
-# and none of them is covered by a constructed case. The generator that would
-# produce it (whitebox/genFiles/ch2_splitG3_WB_gen.mag) has stale load paths.
-# Announced rather than silently omitted.
-run_family "$CH2"  -                                ch2_splitG3_random.mag
+run_family "$CH2"  ch2_splitG3_whitebox_tester.mag  ch2_splitG3_random.mag
 
 run_family "$NCH2" nch2_splitG3_whitebox_tester.mag nch2_splitG3_random.mag
 

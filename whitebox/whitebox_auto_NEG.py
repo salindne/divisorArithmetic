@@ -1,6 +1,41 @@
-import os, signal, sys
-from subprocess import Popen
-from time import sleep
+"""Generate a Magma whitebox tester from a case generator in genFiles/.
+
+A generator is a Magma script that loops over random curves and divisor pairs,
+prints a `@B` .. `@E` block for each operation whose result agrees with Magma's own
+Cantor arithmetic, and lets the formula's own ADD_DEBUG/DBL_DEBUG label name the
+branch. Collecting one block per distinct label yields a tester holding a frozen
+case for every branch. Coverage is therefore a random search, not a construction --
+what makes the result valuable is that it is complete and replayable, not that any
+case was hand-built.
+
+Rewritten from a version that could not run here, and in fact could not run
+anywhere as committed:
+
+  * it drove the generator as `Popen(["magma", ...])`, needing Magma on PATH, then
+    SIGSTOPped that pid every ten seconds to scrape the log and SIGCONTed it. Magma
+    runs in a container in this repository, where signalling the wrapper does not
+    pause Magma inside it;
+  * `f.truncate(0)` reset the log while Magma still held it open at its own write
+    offset, so the next block landed after a hole. The committed
+    logs/{arb,nch2}_splitG3_log.txt both begin mid-polynomial, which is that race;
+  * the generators looped `while true`, terminating only by being killed;
+  * it was hardcoded to one family, `FileInfo("nch2","split","2")`;
+  * and its module-level driver was hardcoded to one family, so `--from-log` and a
+    choice of budget did not exist.
+
+Now the generator carries its own trial bound (WB_TRIALS) and writes where it is
+told (WB_LOG), so this runs it once, waits, and parses the finished log. Anything
+the trials failed to reach is reported rather than looped on forever.
+
+Usage:
+    ./whitebox_auto_NEG.py ch2 split 3 --trials 400 --out ../g3/.../x.mag
+    ./whitebox_auto_NEG.py ch2 split 3 --from-log logs/ch2_splitG3_log.txt
+"""
+
+import argparse
+import os
+import subprocess
+import sys
 
 #fieldType = arb, ch2, nch2
 #curveType = ramified, split
@@ -8,7 +43,14 @@ from time import sleep
 #tagDigit  = (DBL_DEBUG digits, ADD_DEBUG digits)
 class FileInfo(object):
     def __init__(self,fieldType, curveType, genus):
-        self.PATH = "../g" + genus + "/" + curveType + "Model/" + "negReduced/"
+        # Only the split model has a reduced-basis subdirectory. This was
+        # unconditional, so every ramified path pointed at a
+        # ../g2/ramifiedModel/negReduced/ that has never existed -- which is most of
+        # why only one family was ever reachable.
+        if curveType == "split":
+            self.PATH = "../g" + genus + "/" + curveType + "Model/negReduced/"
+        else:
+            self.PATH = "../g" + genus + "/" + curveType + "Model/"
         self.GEN = "genFiles/" + fieldType + "_" + curveType + "G" + genus + "_WB_gen.mag"
         self.ADD = "g" + genus + "Formulas/" + fieldType + "_" + curveType + "G" + genus + "_ADD.mag"
         self.DBL = "g" + genus + "Formulas/" + fieldType + "_" + curveType + "G" + genus + "_DBL.mag"
@@ -16,12 +58,24 @@ class FileInfo(object):
         self.LOG = "logs/" + fieldType + "_" + curveType + "G" + genus + "_log.txt"
         self.OUT = "testerFiles/" + fieldType + "_" + curveType + "G" + str(genus) + "_whiteBox_tester.mag"
         self.GENUS = genus
-        self.FIELD = fieldType;    
-        
+        self.FIELD = fieldType;
+
         if curveType == "split":
             self.split = True
         else:
             self.split = False
+
+        # The shared polynomial-arithmetic file the tester must load. Genus 2 split
+        # keeps it in reduced_basis_arithmetic.mag; genus 3 split renamed it to
+        # poly_balanced_arithmetic.mag, which is what the deployed genus-3 testers
+        # load and what the emitter below had hardcoded wrongly.
+        if self.split:
+            if genus == "2":
+                self.ARITH = "reduced_basis_arithmetic.mag"
+            else:
+                self.ARITH = "poly_balanced_arithmetic.mag"
+        else:
+            self.ARITH = "ramifiedUtilities.mag"
 
         self.dblNum = 0
         #Counts DBL cases
@@ -49,114 +103,135 @@ class FileInfo(object):
 
 
 class CaseGen(object):
-    def __init__(self, fileInfo):
+    """Runs a generator once, then parses its log into one case per branch."""
+
+    def __init__(self, fileInfo, magmaCmd=None, trials=400, seed=1, pairs=4000, extra=None):
         self.file = fileInfo
-        self.secondInterval = 10
-        
-        
+        self.magmaCmd = magmaCmd or ["../tools/magma-docker/magma.sh"]
+        self.trials = trials
+        self.seed = seed
+        self.pairs = pairs
+        self.extra = extra or {}
 
-    def generateCases(self, DBLCases=[], ADDCases=[]):
-        cases = {}
+    def expectedTags(self):
+        """The branch labels a complete tester must hold.
 
-        if DBLCases == []:
-            i = 0
-            while i < self.file.dblNum:
-                DBLCases.append("DBL" + self.file.dblTag.format(i))
-                i = i+1
+        Derived the way the original did -- from the count of DEBUG lines in each
+        formula file, zero-padded -- because that is what the generators' labels
+        were numbered against.
+        """
+        dbl = ["DBL" + self.file.dblTag.format(i) for i in range(self.file.dblNum)]
+        add = ["ADD" + self.file.addTag.format(i) for i in range(self.file.addNum)]
+        return dbl, add
 
-        
-        if ADDCases == []:
-            i = 0
-            while i < self.file.addNum:
-                ADDCases.append("ADD" + self.file.addTag.format(i))
-                i = i+1
+    def runGenerator(self, logPath):
+        """Run the generator to completion, writing its log to logPath."""
+        env = dict(os.environ)
+        env["WB_TRIALS"] = str(self.trials)
+        env["WB_SEED"] = str(self.seed)
+        env["WB_PAIRS"] = str(self.pairs)
+        for name, val in self.extra.items():
+            env[name] = str(val)
+        env["WB_LOG"] = logPath
+        env["MAGMA_ENV"] = ("WB_TRIALS WB_SEED WB_LOG WB_PAIRS "
+                            "WB_SWEEP WB_TDEG WB_CELL WB_FIELDS WB_WITNESS")
 
+        if os.path.exists(logPath):
+            os.remove(logPath)
 
-        #Reset log file to empty
-        f = open(self.file.LOG, "w+")
-        f.truncate(0)                               
-        f.close() 
+        print("running %s: %d curves, %s pairs/curve, seed %d"
+              % (self.file.GEN, self.trials,
+                 "exhaustive" if self.pairs == 0 else self.pairs, self.seed))
+        proc = subprocess.run(self.magmaCmd + [self.file.GEN], env=env,
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out = proc.stdout.decode("utf-8", "replace")
+        if proc.returncode != 0:
+            sys.stderr.write(out)
+            raise SystemExit("magma exited %d" % proc.returncode)
+        # Magma exits 0 on a failed assertion, so the output must be read.
+        for marker in ("Runtime error", "User error", "Assertion failed"):
+            if marker in out:
+                sys.stderr.write(out)
+                raise SystemExit("magma reported %r" % marker)
+        if not os.path.exists(logPath):
+            sys.stderr.write(out)
+            raise SystemExit("generator produced no log at %s" % logPath)
 
-        #Start process for magma asynchronously
-        magmaProcess = Popen(["magma", self.file.GEN])
-        sleep(1)
+    def parseLog(self, logPath):
+        """Collect the first block for each branch label.
 
-        #Magma annoyingly takes a variable amount of time to load
-        loadingMagma = True
-        while loadingMagma:
-            sleep(1)
-            os.kill(magmaProcess.pid, signal.SIGSTOP) #pauses process
-            f = open(self.file.LOG, "r")
+        A `failed` line means the formula disagreed with Cantor. The generator
+        prints it instead of a block and carries on; here it is fatal, because a
+        tester must not be built from a run that contained a wrong answer.
+        """
+        dblCases, addCases = self.expectedTags()
+        wanted = set(dblCases) | set(addCases)
+        cases, failures, blocks = {}, 0, 0
 
-            if f.readline().strip() == "Loaded ...":
-                print("Loaded ...")
-                loadingMagma = False
-
-            f.close()    
-            os.kill(magmaProcess.pid, signal.SIGCONT)   #resumes process
-
-        #Keep while loop going until all cases are hit
-        testing = True
-        while testing:
-            sleep(self.secondInterval) #delay for 10 sec intervals
-            os.kill(magmaProcess.pid, signal.SIGSTOP) #pauses process
-            
-            #Open log file, seconds of accumulated trial cases
-            f = open(self.file.LOG, "r+")        
+        with open(logPath, "r") as f:
             raw = f.readlines()
-            processingCase = False
-            current = []
 
-            for line in raw:
-                if "failed" in line:
-                    magmaProcess.terminate()
-                    print("Testing Failed!!!\n")
-                    testing = False
-                if "@B" in line:
-                    processingCase = True
-                elif processingCase and "@E" in line:
-                    processingCase = False
-                    if current[0] in ADDCases:
-                        if self.file.split:
-                            cases[current[0]] = (current[1],[current[2],current[3],current[4],current[5]],[current[6].replace(' ','').replace('<','').replace('>','').split(','),current[7].replace(' ','').replace('<','').replace('>','').split(',')],current[8])
-                        else:
-                            cases[current[0]] = (current[1],[current[2],current[3]],[current[4].replace(' ','').replace('<','').replace('>','').split(','),current[5].replace(' ','').replace('<','').replace('>','').split(',')],current[6])
-                        ADDCases.remove(current[0])
-                    elif current[0] in DBLCases:
-                        
-                        if self.file.split:
-                            cases[current[0]] = (current[1],[current[2],current[3],current[4],current[5]],[current[6].replace(' ','').replace('<','').replace('>','').split(',')],current[8])
-                        else:
-                            
-                            cases[current[0]] = (current[1],[current[2],current[3]],[current[4].replace(' ','').replace('<','').replace('>','').split(',')],current[6])
-                        DBLCases.remove(current[0])
-                    current = []
-                elif processingCase:
-                    current.append(line.strip())
-                else:
-                    continue
+        processing, current = False, []
+        for line in raw:
+            if "failed" in line:
+                failures += 1
+            if "@B" in line:
+                processing, current = True, []
+            elif processing and "@E" in line:
+                processing = False
+                blocks += 1
+                self._takeCase(cases, current, wanted)
+                current = []
+            elif processing:
+                current.append(line.strip())
 
-            print(DBLCases)
-            print(ADDCases)
-            f.truncate(0)
-            f.close()
+        if failures:
+            raise SystemExit("generator reported %d failed comparison(s) in %s; "
+                             "refusing to build a tester from it"
+                             % (failures, logPath))
 
+        missing = sorted(t for t in (set(dblCases) | set(addCases)) if t not in cases)
+        print("%d blocks parsed, %d of %d branches covered"
+              % (blocks, len(cases), len(dblCases) + len(addCases)))
+        if missing:
+            print("%d branch(es) not reached by this search:" % len(missing))
+            print("  " + " ".join(missing))
+        return cases, missing
 
-            if len(DBLCases) == 0 and len(ADDCases) == 0:          
-                magmaProcess.terminate()
-                print("Testing complete. All cases computed. \n")
-                testing = False
-            else:
-                os.kill(magmaProcess.pid, signal.SIGCONT)   #Resumes process
+    def _takeCase(self, cases, current, wanted):
+        """Store one block, keyed by the label the formula printed.
 
-        os.remove(self.file.LOG)
-        return cases     
-    
-    def getDBLNum(self):
-        return self.dblNum
-    
-    def getADDNum(self):
-        return self.addNum
+        The label is the first line of the block because ADD_DEBUG/DBL_DEBUG print
+        it from inside the formula. It is compared stripped: ADD082 carries a
+        trailing space in all three genus-3 split ADD files.
+        """
+        if not current:
+            return
+        tag = current[0].strip()
+        if tag not in wanted or tag in cases:
+            return
+
+        def divisor(s):
+            return s.replace(' ', '').replace('<', '').replace('>', '').split(',')
+
+        if self.file.split:
+            # label, F, f, h, Vp, Vn, RD1, RD2, result
+            if len(current) < 9:
+                return
+            curve = [current[2], current[3], current[4], current[5]]
+            divs = [divisor(current[6]), divisor(current[7])]
+            result = current[8]
+        else:
+            # label, F, f, h, RD1, RD2, result
+            if len(current) < 7:
+                return
+            curve = [current[2], current[3]]
+            divs = [divisor(current[4]), divisor(current[5])]
+            result = current[6]
+
+        if tag.startswith("DBL"):
+            divs = divs[:1]
+        cases[tag] = (current[1], curve, divs, result)
 
 
 class Magma(object):
@@ -183,71 +258,66 @@ class Magma(object):
             self.magma.append('\n')
 
             
+            # Return list and the polynomials rebuilt from it. Every term carries
+            # an explicit *x^i, including x^1 and x^0, matching the deployed
+            # genus-3 testers so a regenerated file can be diffed against them.
             returned = 'un' + str(g)
-            polyU = 'un' + str(g) +'*x^' + str(g)
-            #if (g % 2) == 1:
-            polyV = 'Coeff(Vn,' + str(g+1) + ')*x^' + str(g+1) + ' + Coeff(Vn,' + str(g) + ')*x^' + str(g)
-            #else:
-            #    polyV = 'Coeff(V,' + str(g+1) + ')*x^' + str(g+1) + ' + Coeff(V,' + str(g) + ')*x^' + str(g)
-                
-            
+            polyU = 'un' + str(g) + '*x^' + str(g)
+            polyV = ('Coeff(Vn,' + str(g+1) + ')*x^' + str(g+1)
+                     + ' + Coeff(Vn,' + str(g) + ')*x^' + str(g))
 
-            i= g - 1
+            i = g - 1
             while i >= 0:
                 returned = returned + ',un' + str(i)
-                polyU = polyU + ' + un' + str(i) +'*x^' + str(i)
-                i = i-1
-            
-            i= g - 1
+                polyU = polyU + ' + un' + str(i) + '*x^' + str(i)
+                i = i - 1
+
+            i = g - 1
             while i >= 0:
                 returned = returned + ',vn' + str(i)
-                polyV = polyV + ' + vn' + str(i) +'*x^' + str(i)
-                i = i-1
+                polyV = polyV + ' + vn' + str(i) + '*x^' + str(i)
+                i = i - 1
 
-
-
+            # A split divisor is the 3-tuple <u, v, n>. The emitter used to write a
+            # 4-tuple <u, v, ExactQuotient(f - v*(v+h),u), n> and read n from
+            # index 3 of the parsed divisor, which is a stale generation: the
+            # generators print NegativeReducedBasis, which returns <D[1],vhat,D[3]>,
+            # and every deployed genus-3 tester writes <U1, V1, N1>. Reading index 3
+            # of a 3-element list is an IndexError, so this path could not have
+            # produced the deployed testers.
+            #
+            # AdaptedBasis inverts NegativeReducedBasis, recovering the divisor the
+            # generator actually handed to Cantor. Comparing in the reduced basis is
+            # what the deployed testers do, and it is also the only comparison the
+            # formulas' output supports: they return v only up to degree g-1, with
+            # the top two coefficients taken from Vn.
+            def _divisor(d, k):
+                self.magma.append('U' + k + ' := R! ' + d[0] + ';\n')
+                self.magma.append('V' + k + ' := R! ' + d[1] + ';\n')
+                self.magma.append('N' + k + ' := ' + d[2] + ';\n')
 
             if 'DBL' in case[0]:
-                self.magma.append('U1 := R! ' + case[1][2][0][0] + ';\n')
-                self.magma.append('V1 := R! ' + case[1][2][0][1] + ';\n')
-                self.magma.append('N1 := ' + case[1][2][0][3] + ';\n')
-                self.magma.append('D1 := <U1, V1, ExactQuotient(f - V1*(V1 + h),U1), N1>;\n')
+                _divisor(case[1][2][0], '1')
+                self.magma.append('D1 := <U1, V1, N1>;\n')
+                self.magma.append('AD1 := AdaptedBasis(D1,f,h);\n')
                 self.magma.append(returned + ',nN := DBL(U1,V1,N1,ccs);\n')
                 self.magma.append('nU:= R! ' + polyU + ';\n')
                 self.magma.append('nV:= R! ' + polyV + ';\n')
-
-                #if (g % 2) == 1:
-                self.magma.append('Cantor:= Double_SPLIT_NEG(D1,f,h,Vn,'+ str(g) +');\n')
-                #else:
-                #    self.magma.append('Cantor:= Double_SPLIT_NEG(D1,f,h,V,2);\n')
-
-                self.magma.append('assert <nU, nV, ExactQuotient(f - nV*(nV + h),nU), nN> eq Cantor;\n\n')
-
-                
+                self.magma.append('Cantor:= NegativeReducedBasis(Double(AD1,f,h,V),f,h);\n')
+                self.magma.append('assert <nU,nV,nN> eq Cantor;\n\n')
 
             else:
-                self.magma.append('U1 := R! ' + case[1][2][0][0] + ';\n')
-                self.magma.append('V1 := R! ' + case[1][2][0][1] + ';\n')
-                self.magma.append('N1 := ' + case[1][2][0][3] + ';\n')
-                self.magma.append('U2 := R! ' + case[1][2][1][0] + ';\n')
-                self.magma.append('V2 := R! ' + case[1][2][1][1] + ';\n')
-                self.magma.append('N2 := ' + case[1][2][1][3] + ';\n')
-                self.magma.append('D1 := <U1, V1, ExactQuotient(f - V1*(V1 + h),U1), N1>;\n')
-
-                self.magma.append('D2 := <U2, V2, ExactQuotient(f - V2*(V2 + h),U2), N2>;\n')
-
+                _divisor(case[1][2][0], '1')
+                _divisor(case[1][2][1], '2')
+                self.magma.append('D1 := <U1, V1, N1>;\n')
+                self.magma.append('AD1 := AdaptedBasis(D1,f,h);\n')
+                self.magma.append('D2 := <U2, V2, N2>;\n')
+                self.magma.append('AD2 := AdaptedBasis(D2,f,h);\n')
                 self.magma.append(returned + ', nN := ADD(U1,V1,N1,U2,V2,N2,ccs);\n')
                 self.magma.append('nU:= R! ' + polyU + ';\n')
                 self.magma.append('nV:= R! ' + polyV + ';\n')
-                
-                #if (g % 2) == 1:
-                self.magma.append('Cantor:= Add_SPLIT_NEG(D1,D2,f,h,Vn,'+ str(g) +');\n')
-                #else:    
-                #    self.magma.append('Cantor:= Add_SPLIT_NEG(D1,D2,f,h,V,2);\n')
-
-                self.magma.append('assert <nU,nV,ExactQuotient(f - nV*(nV + h),nU), nN> eq Cantor;\n\n')
-
-
+                self.magma.append('Cantor:= NegativeReducedBasis(Add(AD1,AD2,f,h,V),f,h);\n')
+                self.magma.append('assert <nU,nV,nN> eq Cantor;\n\n')
 
         else:
             self.magma.append('C:= HyperellipticCurve(f,h);\n')
@@ -319,17 +389,20 @@ class Magma(object):
 
         if self.file.split:
             self.magma.append('UTL_DEBUG := false;\n')
-            self.magma.append('load "reduced_basis_arithmetic.mag";\n')
+            self.magma.append('load "' + self.file.ARITH + '";\n')
             self.magma.append('load "' + self.file.UTL + '";\n')
         else:
-            self.magma.append('load "ramifiedUtilities.mag";\n')
+            self.magma.append('load "' + self.file.ARITH + '";\n')
 
         self.magma.append('load "' + self.file.DBL + '";\n')
         self.magma.append('load "' + self.file.ADD + '";\n')
         self.magma.append('"";' + '\n\n')
 
+        # Sorted by branch label rather than by the order the search happened to
+        # find them, so two runs that cover the same branches produce the same file
+        # and a regenerated tester can be diffed against its predecessor.
         totalCases = 0
-        for case in self.cases.items():
+        for case in sorted(self.cases.items()):
             totalCases = totalCases + 1
             self.generateCase(case)
 
@@ -344,16 +417,74 @@ class Magma(object):
             out.writelines(self.magma)
 
 
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("field", choices=["arb", "nch2", "ch2"])
+    ap.add_argument("curve", choices=["split", "ramified"])
+    ap.add_argument("genus")
+    ap.add_argument("--trials", type=int, default=400,
+                    help="random curves to try (default 400)")
+    ap.add_argument("--seed", type=int, default=1,
+                    help="Magma seed, so the search is reproducible (default 1)")
+    ap.add_argument("--sweep", type=int, default=None,
+                    help="curves per deg(W0) class per field in the deliberate "
+                         "phase; 0 skips it")
+    ap.add_argument("--tdeg", type=int, default=None,
+                    help="max deg(u) of class targets for the class-targeted "
+                         "pair mode (0 = the u=1 classes)")
+    ap.add_argument("--cell", type=int, default=None,
+                    help="pairs per shape-matrix cell")
+    ap.add_argument("--witness", type=int, default=None,
+                    help="run the witness-curve phase (curves kept because a "
+                         "Precompute leaf they reach is too rare to sample)")
+    ap.add_argument("--fields", default=None,
+                    help="comma separated field sizes, overriding the generator's")
+    ap.add_argument("--pairs", type=int, default=4000,
+                    help="cap on ADD pairs per curve; 0 means exhaustive over the "
+                         "curve's whole divisor space (default 4000)")
+    ap.add_argument("--out", help="where to write the tester (default testerFiles/)")
+    ap.add_argument("--log", help="where the generator writes its log "
+                                  "(default a scratch file beside logs/)")
+    ap.add_argument("--from-log", dest="fromLog",
+                    help="parse an existing log instead of running Magma")
+    ap.add_argument("--magma", default="../tools/magma-docker/magma.sh",
+                    help="Magma command (default the container wrapper)")
+    ap.add_argument("--allow-incomplete", action="store_true",
+                    help="write the tester even if some branch was never reached")
+    args = ap.parse_args(argv)
 
-#MAIN
-        
+    fileInfo = FileInfo(args.field, args.curve, args.genus)
+    if args.out:
+        fileInfo.OUT = args.out
 
-#Instantiate case generation object
-fileInfo = FileInfo("nch2","split","2")
-gen = CaseGen(fileInfo)
+    gen = CaseGen(fileInfo, magmaCmd=[args.magma], trials=args.trials,
+                  seed=args.seed, pairs=args.pairs,
+                  extra={k: v for k, v in
+                         (('WB_SWEEP', args.sweep), ('WB_TDEG', args.tdeg),
+                          ('WB_CELL', args.cell), ('WB_FIELDS', args.fields),
+                          ('WB_WITNESS', args.witness))
+                         if v is not None})
 
-#Generate cases
-cases = gen.generateCases()
+    if args.fromLog:
+        logPath = args.fromLog
+    else:
+        # Not fileInfo.LOG by default: whitebox/logs/ holds committed residue of the
+        # last orchestrator run, and regenerating should not overwrite it.
+        logPath = args.log or (fileInfo.LOG + ".new")
+        gen.runGenerator(logPath)
 
-#Create Magma file
-Magma(fileInfo, cases)
+    cases, missing = gen.parseLog(logPath)
+    if missing and not args.allow_incomplete:
+        raise SystemExit("refusing to write an incomplete tester; raise --trials, "
+                         "or pass --allow-incomplete to accept the gap")
+    if not cases:
+        raise SystemExit("no cases parsed from %s" % logPath)
+
+    Magma(fileInfo, cases)
+    print("wrote %s: %d cases" % (fileInfo.OUT, len(cases)))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,16 +1,31 @@
-"""whitebox.py -- replay the repository's constructed whitebox cases in Python.
+"""whitebox.py -- replay the repository's frozen whitebox cases in Python.
 
-The whitebox testers are generated files holding one deliberately constructed case
-per computation path: a curve, a basis, both divisors, both balancing weights. They
-already pass under Magma, so the inputs are vetted. This reads them, runs the real
-`.mag` formulas on those inputs through the interpreter, and compares against
-`reference.py`.
+The whitebox testers are generated files holding one case per computation path: a
+curve, a basis, both divisors, both balancing weights. They already pass under Magma,
+so the inputs are vetted. This reads them, runs the real `.mag` formulas on those
+inputs through the interpreter, and compares against `reference.py`.
 
-That gives what random sampling cannot: **deterministic** branch coverage. Coverage
-under sampling is coupon-collector -- measured across all fourteen families, 35% at 2
-curves, 54% at 4, 77% at 16, 84% at 30, then it stalls -- so 100% is not reachable in
-CI time and possibly not at all. One constructed case per branch reaches every branch
-by construction, in seconds.
+**Where those cases came from, precisely.** They were *found by random search*, not
+built by hand. `whitebox/genFiles/*_WB_gen.mag` loops over random curves and divisor
+pairs, prints a block for each operation that agrees with Magma's own Cantor
+arithmetic, and lets the formula's own ADD_DEBUG/DBL_DEBUG label name the branch;
+`whitebox/whitebox_auto_NEG.py` keeps the first block seen for each label until every
+label has one. So "constructed case" below means **frozen and committed**, as opposed
+to sampled afresh each run -- it does not mean anyone chose the inputs. That is worth
+being exact about, because the value of these cases rests on two properties that
+survive the correction and one claim that does not:
+
+  * they are **complete** -- every labelled branch has a case, which random sampling
+    in CI time does not achieve;
+  * they are **deterministic** -- the same inputs every run, so coverage is a fact
+    about the corpus rather than about this run's luck;
+  * they are *not* independently designed probes of each branch. A branch is covered
+    by whatever input the search happened to land on first.
+
+Coverage under sampling is coupon-collector -- measured across all fourteen families,
+35% at 2 curves, 54% at 4, 77% at 16, 84% at 30, then it stalls -- so 100% is not
+reachable in CI time and possibly not at all. A frozen corpus with one case per branch
+reaches every branch in seconds, every time.
 
 Usage:
 
@@ -29,17 +44,24 @@ directly cannot go stale, and parsing eleven files costs a fraction of a second.
 Cases come from two places, and which one is always visible in the report:
 
   **extracted** from a whitebox tester -- 11 families, 1,338 cases -- and held to
-  100% coverage, because a tester holds one case per branch by construction, so
-  anything less is a regression.
+  100% coverage. A tester was built by searching until every branch had a case, so a
+  file that now covers fewer branches than its tester holds is a regression.
 
-  **harvested** by `--harvest` for a family that has no tester -- genus-3 ramified,
-  and genus-3 split ch2, whose generator cannot run (nor can its two siblings; see
-  README). Search for an input reaching each labelled branch, then freeze it. Held to the coverage recorded when it was harvested,
-  since search cannot reach a branch needing an algebraic coincidence.
+  **harvested** by `--harvest`, for every branch no extracted case reaches: because
+  the family has no tester at all (genus-3 ramified), or because the tester's own
+  search missed it (genus-3 split ch2, whose regenerated tester reaches 347 of 413).
+  Search for an input reaching the branch, then freeze it. Held to the coverage
+  recorded when it was harvested, since search cannot be assumed to reach a branch
+  needing an algebraic coincidence.
 
-Harvesting uses the random generators, but **the result is a constructed case like any
-other**: this replays frozen inputs and never samples. Randomness builds the corpus
-once, offline; it is not part of the gate.
+**These two are the same kind of artefact.** Both are the frozen output of a
+coverage-guided random search; the difference is only which language ran the search
+and whether the result was committed as a Magma tester. That symmetry is the reason
+harvesting is an acceptable substitute where no tester exists, and it is why the
+report labels each case's provenance rather than implying one is sounder.
+
+Either way, this replays frozen inputs and never samples. Randomness builds the
+corpus once, offline; it is not part of the gate.
 
 Genus-3 ramified has only three developed files -- arb ADD, arb DBL and nch2 ADD --
 and all three are harvested at 100%. Its other three cells (nch2 DBL, ch2 ADD, ch2
@@ -65,9 +87,10 @@ from poly import Poly
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Constructed cases for families that have no whitebox tester. Committed, because
-# there is nothing to read them out of: the Magma generator does not exist yet.
-# Written by `--harvest`, replayed exactly like an extracted case.
+# Frozen cases for branches no Magma tester reaches. Committed, because there is
+# nothing to read them out of -- either no tester exists for the family, or its
+# search never landed on the branch. Written by `--harvest`, replayed exactly like an
+# extracted case.
 HARVEST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             "harvested_cases.json")
 
@@ -147,6 +170,19 @@ def _poly(F, text):
 # extraction
 # ---------------------------------------------------------------------------
 
+def tname(path):
+    """A tester label that is unambiguous in reports.
+
+    Basenames collide: nch2_splitG2_whiteBox_tester.mag exists under both
+    g2/splitModel/posReduced/ and negReduced/, and those are different algorithms
+    (which leading coefficient the reduce loop tests first). A failure reported as
+    the basename alone left the reader to guess which basis it came from. The parent
+    directory is enough to separate every collision in the tree.
+    """
+    return os.path.join(os.path.basename(os.path.dirname(path)),
+                        os.path.basename(path))
+
+
 class Case(object):
     """One constructed case, with where it came from."""
 
@@ -157,7 +193,7 @@ class Case(object):
 
     def __repr__(self):
         return "<Case %s #%d %s over GF(%d)>" % (
-            os.path.basename(self.tester), self.index, self.op, self.q)
+            tname(self.tester), self.index, self.op, self.q)
 
 
 def find_testers(root=ROOT):
@@ -180,6 +216,8 @@ def find_testers(root=ROOT):
 
 def family_of(tester):
     """(model, genus, kind, basis) for a tester path, matching driver.py's naming."""
+    # Basename, not tname(): the pattern below is anchored, and a parent directory
+    # in front of it would never match.
     name = os.path.basename(tester)
     m = re.match(r"(arb|nch2|ch2)_(ramified|split)G([23])_", name)
     kind, model, genus = m.group(1), m.group(2), int(m.group(3))
@@ -207,7 +245,7 @@ def extract(tester):
             cases.append(_one_case(tester, len(cases) + 1, q, body))
         except Exception as exc:                                # noqa: BLE001
             bad.append("%s block %d over GF(%d): %s: %s"
-                       % (os.path.basename(tester), (i + 1) // 2, q,
+                       % (tname(tester), (i + 1) // 2, q,
                           type(exc).__name__, str(exc)[:70]))
     return cases, bad
 
@@ -352,7 +390,7 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
     F = GF(case.q)
     fn = subs.get(case.op)
     if fn is None or case.op not in params:
-        res.errors["%s: no %s dispatcher" % (os.path.basename(case.tester),
+        res.errors["%s: no %s dispatcher" % (tname(case.tester),
                                              case.op)] += 1
         return
     src = add_path if case.op == "ADD" else dbl_path
@@ -361,7 +399,7 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         cur = C.Curve(F, case.f, case.h, kind_for(case, model), genus, model)
     except AssertionError as exc:
         res.errors["%s #%d: curve rejected: %s"
-                   % (os.path.basename(case.tester), case.index,
+                   % (tname(case.tester), case.index,
                       str(exc)[:50])] += 1
         return
 
@@ -383,7 +421,7 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
             ccs = raw[0] if len(raw) == 1 else list(raw)
         except Exception as exc:                                # noqa: BLE001
             res.errors["%s #%d: Precompute: %s: %s"
-                       % (os.path.basename(case.tester), case.index,
+                       % (tname(case.tester), case.index,
                           type(exc).__name__, str(exc)[:50])] += 1
             return
         finally:
@@ -392,7 +430,7 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         d2 = _split_divisor(cur, case.D2, basis_poly) if case.D2 else None
         if d1 is None or (case.op == "ADD" and d2 is None):
             res.errors["%s #%d: could not form a balanced divisor"
-                       % (os.path.basename(case.tester), case.index)] += 1
+                       % (tname(case.tester), case.index)] += 1
             return
         args = D.build_args_split(params[case.op], cur, ccs, d1, d2)
     else:
@@ -418,11 +456,11 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         if same:
             res.precondition.append(
                 "%s #%d %s raised %s where D1 == D2"
-                % (os.path.basename(case.tester), case.index, case.op,
+                % (tname(case.tester), case.index, case.op,
                    type(exc).__name__))
             return
         res.errors["%s #%d %s: %s: %s"
-                   % (os.path.basename(case.tester), case.index, case.op,
+                   % (tname(case.tester), case.index, case.op,
                       type(exc).__name__, str(exc)[:50])] += 1
         return
 
@@ -437,17 +475,17 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
     labels = [x[6:] for x in path
               if x.startswith("PRINT:") and x[6:] not in utl_labels]
     _note_sentinels(res, src, labels,
-                    "%s #%d %s" % (os.path.basename(case.tester), case.index,
+                    "%s #%d %s" % (tname(case.tester), case.index,
                                    case.op))
     if not labels:
         res.no_branch.append("%s #%d %s reached no branch label"
-                             % (os.path.basename(case.tester), case.index,
+                             % (tname(case.tester), case.index,
                                 case.op))
 
     if model == "split":
         gu, gv, gn, note = D.decode_split(F, genus, vals, basis_poly)
         if gu is None:
-            res.errors["%s #%d: %s" % (os.path.basename(case.tester),
+            res.errors["%s #%d: %s" % (tname(case.tester),
                                        case.index, note)] += 1
             return
         try:
@@ -472,7 +510,7 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
                 res.arity.append(line)
         if gu is None:
             res.errors["%s #%d: bad return arity"
-                       % (os.path.basename(case.tester), case.index)] += 1
+                       % (tname(case.tester), case.index)] += 1
             return
         try:
             want = (R.add(cur, d1, d2) if case.op == "ADD" else R.double(cur, d1))
@@ -496,10 +534,10 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         # case, not that the case is excused. Recorded and fatal.
         res.precondition.append(
             "%s #%d %s disagreed where D1 == D2"
-            % (os.path.basename(case.tester), case.index, case.op))
+            % (tname(case.tester), case.index, case.op))
         return
     res.mismatches.append(dict(
-        tester=os.path.basename(case.tester), index=case.index, op=case.op,
+        tester=tname(case.tester), index=case.index, op=case.op,
         field=case.q, f=str(case.f), h=str(case.h),
         got=", ".join(str(x) for x in got),
         want=", ".join(str(x) for x in exp),
@@ -565,7 +603,7 @@ def _de_poly(F, data):
         else Poly.zero(F)
 
 
-def harvest(families, seed=1, curves=40, pairs=12):
+def harvest(families, seed=1, curves=40, pairs=12, already=None):
     """Find one input per branch for families that have no whitebox tester.
 
     Genus-3 ramified is the reason this exists. It has no whitebox tester -- PR6
@@ -575,9 +613,18 @@ def harvest(families, seed=1, curves=40, pairs=12):
     then freeze it. The three undeveloped cells (nch2 DBL, ch2 ADD, ch2 DBL) have no
     files, so there is nothing to cover until PR6 through PR8 derive them.
 
-    The search uses the random generators, but **the result is a constructed case like
-    any other**: CI replays frozen inputs and never samples. Randomness builds the
-    corpus once, offline; it is not part of the gate.
+    The search uses the random generators, but **the result is a frozen case like any
+    other**: CI replays frozen inputs and never samples. Randomness builds the corpus
+    once, offline; it is not part of the gate. That is the same procedure the Magma
+    whitebox generators use, so an extracted case and a harvested one are the same kind
+    of artefact -- see the module docstring.
+
+    `already` maps a formula file to the labels an extracted tester case already
+    reaches, and those are skipped. This used to run only for families with no tester
+    at all, which left no way to fill a branch a tester's own search had missed: the
+    genus-3 split ch2 tester covers 347 of its 413 labels, and the remainder are
+    reachable but rare. Harvesting the difference makes the corpus the union of both
+    searches, and keeps working unchanged when PR6 adds the genus-3 ramified testers.
 
     For the split model the infinite-place root is pinned to the reference's own Vp, so
     Precompute's constants and the reference agree by construction rather than by
@@ -588,7 +635,7 @@ def harvest(families, seed=1, curves=40, pairs=12):
         for op, src in (("ADD", fam.add_path), ("DBL", fam.dbl_path)):
             if not src or not os.path.isfile(src):
                 continue
-            want = D.labels_in(src)
+            want = D.labels_in(src) - (already or {}).get(src, set())
             if not want:
                 continue
             subs = {}
@@ -712,7 +759,7 @@ def _try_pair(fam, cur, subs, params, op, mode, rng, basis_poly, ccs,
                basis=fam.basis or "", labels=labels,
                f=_ser_poly(cur.f), h=_ser_poly(cur.h),
                u1=_ser_poly(d1[0]), v1=_ser_poly(d1[1]),
-               source="harvested: no whitebox tester exists for this family")
+               source="harvested: no extracted whitebox case reaches this branch")
     if fam.is_split:
         rec["n1"] = d1[3]
     if op == "ADD":
@@ -1133,7 +1180,7 @@ def report(res, testers, show_all, baseline=None):
     # Nothing may pass by testing nothing.
     if res.replayed == 0:
         res.coverage_gaps.append("no case was replayed at all")
-    empty = [os.path.basename(t) for t, n in sorted(res.cases_per_tester.items())
+    empty = [tname(t) for t, n in sorted(res.cases_per_tester.items())
              if n == 0]
     if empty:
         res.coverage_gaps.append(
@@ -1171,12 +1218,17 @@ def report(res, testers, show_all, baseline=None):
 
 
 def _families_without_testers(testers):
+    """Families whose cases can only be harvested, because no tester exists.
+
+    The genus-3 split ch2 entry has been removed: its generator was repaired and its
+    tester regenerated, so it is extracted like every other split family. Harvest still
+    supplements it for the branches that tester's own search did not reach, which is a
+    different thing and is reported by file coverage rather than here.
+    """
     have = {family_of(t)[:3] + (family_of(t)[3],) for t in testers}
     known = [
         (("ramified", 3, "arb", None), "harvested at 100%; PR6 writes the tester"),
         (("ramified", 3, "nch2", None), "harvested at 100%; PR6 writes the tester"),
-        (("split", 3, "ch2", "neg"),
-         "harvested to a baseline; all three genus-3 split generators cannot run"),
     ]
     out = []
     for key, why in known:
@@ -1202,6 +1254,10 @@ def main(argv=None):
     ap.add_argument("--allow-lower", action="store_true",
                     help="with --record-baseline, permit lowering an entry. Say why in "
                          "the commit message")
+    ap.add_argument("--harvest-curves", type=int, default=40,
+                    help="curves per field when harvesting (default 40)")
+    ap.add_argument("--harvest-pairs", type=int, default=12,
+                    help="divisor pairs per curve when harvesting (default 12)")
     ap.add_argument("--harvest", action="store_true",
                     help="regenerate harvested_cases.json for the families that have "
                          "no whitebox tester. Offline and deliberately separate from "
@@ -1218,7 +1274,7 @@ def main(argv=None):
             cases, bad = extract(t)
             model, genus, kind, basis = family_of(t)
             print("    %-46s %4d cases  %s/g%d/%s%s"
-                  % (os.path.basename(t), len(cases), model, genus, kind,
+                  % (tname(t), len(cases), model, genus, kind,
                      "/" + basis if basis else ""))
             if bad:
                 print("        %d block(s) unparsed" % len(bad))
@@ -1251,19 +1307,31 @@ def main(argv=None):
 
     if a.harvest:
         fams, _excl = D.discover_families()
-        targets = [f for f in fams if not _has_tester(f, testers)]
-        if not targets:
-            print("every family has a whitebox tester; nothing to harvest")
-            return 0
-        print("\n  harvesting for %d family(ies) with no whitebox tester\n"
-              % len(targets))
-        records, found = harvest(targets)
+
+        # What the Magma testers already reach, so the harvest fills the difference
+        # instead of duplicating them. Every family is a candidate now, not just the
+        # ones with no tester: a tester is itself the product of a random search, so it
+        # can leave branches uncovered -- genus-3 split ch2 leaves 66 of 413 -- and
+        # there was previously no way to reach those without hand-writing cases.
+        extracted = Result()
+        for t_path in testers:
+            replay_tester(t_path, extracted, False)
+        print("\n  extracted cases already cover %d branch(es) across %d file(s)"
+              % (sum(len(v) for v in extracted.covered.values()),
+                 len(extracted.covered)))
+
+        targets = fams
+        print("  harvesting the remainder for %d family(ies)\n" % len(targets))
+        records, found = harvest(targets, already=extracted.covered,
+                                curves=a.harvest_curves,
+                                pairs=a.harvest_pairs)
         payload = {
-            "note": ("Constructed cases for families with no whitebox tester. "
-                     "Regenerate with `python3 whitebox.py --harvest`. CI replays "
-                     "these and never samples. Expected coverage lives in "
-                     "coverage_baseline.json, NOT here, so a worse harvest cannot "
-                     "lower its own bar."),
+            "note": ("Frozen cases filling the branches no Magma whitebox tester "
+                     "reaches -- either because the family has no tester, or because "
+                     "the tester's own random search missed them. Regenerate with "
+                     "`python3 whitebox.py --harvest`. CI replays these and never "
+                     "samples. Expected coverage lives in coverage_baseline.json, NOT "
+                     "here, so a worse harvest cannot lower its own bar."),
             "cases": records,
         }
         with open(HARVEST_FILE, "w") as fh:
@@ -1271,7 +1339,7 @@ def main(argv=None):
         print("\n  wrote %d cases to %s" % (len(records),
                                             os.path.basename(HARVEST_FILE)))
         print("  coverage reached: %s"
-              % ", ".join("%s=%d" % (os.path.basename(k), v)
+              % ", ".join("%s=%d" % (tname(k), v)
                           for k, v in sorted(found.items())))
         print("  run --record-baseline to accept these figures\n")
         return 0
@@ -1296,7 +1364,7 @@ def main(argv=None):
     res.expected_files |= expected
     for t in testers:
         n = replay_tester(t, res, a.show_all)
-        print("  %-46s %4d cases" % (os.path.basename(t), n))
+        print("  %-52s %4d cases" % (tname(t), n))
     n = replay_harvested(res, a.show_all, a.family)
     if n:
         print("  %-46s %4d cases" % ("harvested_cases.json", n))
@@ -1365,19 +1433,15 @@ def _default_reason(rel):
     if rel.endswith("_UTL.mag"):
         return ("Precompute's own exits; the whitebox testers were built to cover "
                 "ADD/DBL branches, not these")
-    return ("no whitebox tester exists, so cases are harvested by search; the "
-            "remaining branches were NOT reached by the recorded search budget, "
-            "which is not the same as being unreachable")
-
-
-def _has_tester(fam, testers):
-    """Whether a driver family is covered by one of the whitebox testers."""
-    for t in testers:
-        model, genus, kind, basis = family_of(t)
-        name = "%s%s/g%d/%s" % (model, basis or "", genus, kind)
-        if name == fam.name:
-            return True
-    return False
+    return ("coverage here comes from search -- a Magma tester's own generator and the "
+            "Python harvester are both coverage-guided random searches -- and these "
+            "branches were NOT reached by the recorded budget, which is not the same "
+            "as being unreachable. Do not assume a nested IsZero guard means a "
+            "coincidence to wait for: several of these are selected by the CURVE, not "
+            "the divisors. z3 = W4*dn3 and dn3 collapses to exactly f3 in "
+            "characteristic 2, so z3 = 0 iff f3 = 0, and deg(f - Vp*h - Vp^2) "
+            "partitions the curves into four mutually exclusive classes that no single "
+            "curve can span. See verification/README.md")
 
 
 if __name__ == "__main__":

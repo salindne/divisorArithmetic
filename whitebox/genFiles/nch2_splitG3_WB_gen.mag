@@ -15,7 +15,8 @@ clear;
 ///////////////////////////////////////////////////////////////////////////////
 //PRINT CASES FOR splitG2_tester.py SCRIPT
 ///////////////////////////////////////////////////////////////////////////////
-Write("logs/nch2_splitG3_log.txt", "Loaded ..."); 
+WB_LOG := GetEnv("WB_LOG") eq "" select "logs/nch2_splitG3_log.txt" else GetEnv("WB_LOG");
+Write(WB_LOG, "Loaded ...");
 
 ///////////////////////////////////////////////////////////////////
 UTL_DEBUG := false;
@@ -25,13 +26,13 @@ ADD_DEBUG := true;
 ///////////////////////////////////////////////////////////////////////////////
 //LOAD FILES
 ///////////////////////////////////////////////////////////////////////////////
-load "genFiles/poly_balanced_arithmetic.mag";
-load "../g3/splitModel/g3Formulas/nch2_splitG3_UTL.mag";
-load "../g3/splitModel/g3Formulas/nch2_splitG3_DBL.mag";
-load "../g3/splitModel/g3Formulas/nch2_splitG3_ADD.mag";
+load "../g3/splitModel/negReduced/poly_balanced_arithmetic.mag";
+load "../g3/splitModel/negReduced/g3Formulas/nch2_splitG3_UTL.mag";
+load "../g3/splitModel/negReduced/g3Formulas/nch2_splitG3_DBL.mag";
+load "../g3/splitModel/negReduced/g3Formulas/nch2_splitG3_ADD.mag";
 "     ";
 
-SetOutputFile("logs/nch2_splitG3_log.txt"); //Comment out if manually debugging
+SetOutputFile(WB_LOG); //Comment out if manually debugging
 SetAutoColumns(false);
 SetColumns(0);
 
@@ -40,66 +41,387 @@ SetColumns(0);
 ///////////////////////////////////////////////////////////////////////////////
 //Field sizes below 10 for auto gen cases
 //Split curves do not exist for FF(2)
+// WB_FIELDS overrides this, as a comma separated list: the exhaustive pair mode
+// (WB_PAIRS = 0) is affordable at q = 4 and not at q = 8, so proving one curve
+// has to be able to say `WB_FIELDS=4 WB_PAIRS=0`.
 FIELDS:= {3,5,7}; //,8,9,11};
-DIVISORS:= 1;
+if GetEnv("WB_FIELDS") ne "" then
+    FIELDS := { StringToInteger(s) : s in Split(GetEnv("WB_FIELDS"), ",") };
+end if;
 H_ZERO := false;
+GENUS  := 3;
+
+///////////////////////////////////////////////////////////////////////////////
+//TRIAL BOUND, SEED AND SEARCH BUDGET
+///////////////////////////////////////////////////////////////////////////////
+// The trial loop below was `while true do`, stoppable only from outside:
+// whitebox_auto_NEG.py ran this file with `magma` on PATH, then SIGSTOPped the
+// process every ten seconds to scrape the log and killed it once every branch tag
+// had been seen. Neither half survives Magma running in a container, so the bound
+// lives here now and the generator terminates on its own.
+//
+// SetSeed makes the search reproducible, so a regenerated tester is a function of
+// (seed, budget) rather than of the moment it happened to be interrupted.
+//
+// WB_TRIALS   random curves for PHASE 2, the old loop. 0 skips it entirely.
+// WB_SEED     Magma seed.
+// WB_PAIRS    per-curve budget for the two BULK pair modes (shared-factor
+//             biased and uniform). 0 means exhaustive: every ordered pair of
+//             the curve's reduced divisors, in both phases. WB_DIVISORS is
+//             accepted as a legacy spelling.
+// WB_SWEEP    curves per deg(W0) class per field in PHASE 1 (0 skips PHASE 1).
+// WB_TDEG     max deg(u) of the class targets used by the class-targeted pair
+//             mode. 0 means the four classes with u = 1, which is what the
+//             collapse branches need; 1 widens it at q times the cost.
+// WB_CELL     pairs per (shape,shape,gcd-kind) cell in the shape-matrix mode.
+// WB_FIELDS   comma separated field sizes, overriding FIELDS above.
+TRIALS := StringToInteger(GetEnv("WB_TRIALS") eq "" select "400" else GetEnv("WB_TRIALS"));
+SetSeed(StringToInteger(GetEnv("WB_SEED") eq "" select "1" else GetEnv("WB_SEED")));
+
+PAIRSTR := GetEnv("WB_PAIRS");
+if PAIRSTR eq "" then PAIRSTR := GetEnv("WB_DIVISORS"); end if;
+if PAIRSTR eq "" then PAIRSTR := "4000"; end if;
+PAIRS := StringToInteger(PAIRSTR);
+
+SWEEP := 0;   // no deliberate curve sweep in this family; see the note below
+TDEG  := StringToInteger(GetEnv("WB_TDEG")  eq "" select "0" else GetEnv("WB_TDEG"));
+CELL  := StringToInteger(GetEnv("WB_CELL")  eq "" select "1" else GetEnv("WB_CELL"));
+
+///////////////////////////////////////////////////////////////////////////////
+//DELIBERATE DIVISOR CONSTRUCTION
+///////////////////////////////////////////////////////////////////////////////
+// These live here rather than in poly_balanced_arithmetic.mag on purpose: that
+// file is loaded by the deployed arb and nch2 testers and by every genus-3 entry
+// in test_all.sh, and changing it would put two known-good 405-case artefacts at
+// risk to widen the search for a third.
+//
+// RandomDivisorAB, which this loop used to call twice per trial, cannot reach
+// most of its own input space: it demands GCD(u,Derivative(u)) eq 1 and every
+// factor of u linear, so it never produces a u that is inseparable or has an
+// irreducible factor of degree > 1. Measured on one genus-3 split curve over
+// GF(4): 39 of the 154 reduced divisors, 25%. It also draws the balancing weight
+// as Random(g-Degree(u)), and two independent draws essentially never share a u,
+// which is what branches like ADD172's `IsZero(m3) //u = up` require.
+//
+// Enumerating v and testing divisibility is fully general and admits all of
+// those. deg u <= g = 3 and #FF <= 8, so it is at most 8^3 candidates per u.
+
+// Every reduced divisor in the adapted basis with this exact monic u.
+DivisorsWithU := function(f,h,u,g)
+    R := Parent(f); FF := BaseRing(f); d := Degree(u); out := [];
+    if d eq 0 then
+        for n in [0..g] do Append(~out, <R!1, R!0, n>); end for;
+        return out;
+    end if;
+    for cs in CartesianPower(FF, d) do
+        v := R![cs[i] : i in [1..d]];
+        if IsDivisibleBy(v^2 + v*h - f, u) then
+            for n in [0..g-d] do Append(~out, <u,v,n>); end for;
+        end if;
+    end for;
+    return out;
+end function;
+
+// Every reduced divisor on the curve, over every u of degree 0..g and every legal
+// weight. Over GF(4) this is 0.2s and a few hundred divisors, so the divisor
+// space stops being sampled at all and becomes enumerated; the count is exactly
+// #Jacobian(HyperellipticCurve(f,h)).
+AllDivisors := function(f,h,g)
+    R := Parent(f); x := R.1; FF := BaseRing(f);
+    out := DivisorsWithU(f,h,R!1,g);
+    for d in [1..g] do
+        for cs in CartesianPower(FF, d) do
+            u := x^d;
+            for i in [1..d] do u := u + cs[i]*x^(i-1); end for;
+            out := out cat DivisorsWithU(f,h,u,g);
+        end for;
+    end for;
+    return out;
+end function;
+
+// The divisors grouped by <deg u, weight>, which is exactly what ADD dispatches
+// on: it computes n := n1 + n2 - Ceiling(g/2) and routes on (deg u1, deg u2, n).
+ShapeIndex := function(Ds)
+    A := AssociativeArray();
+    for k in [1..#Ds] do
+        key := <Degree(Ds[k][1]), Ds[k][3]>;
+        if IsDefined(A,key) then A[key] := Append(A[key],k); else A[key] := [k]; end if;
+    end for;
+    return A;
+end function;
+
+// The group inverse of a reduced divisor.
+//
+// NOT poly_balanced_arithmetic.mag's Negate: at odd genus that function returns
+// weight g-deg(u)-n-1, which is not an inverse (verified: Add(D,Negate(D)) is
+// never Neutral at g = 3, and for the divisors at maximum weight the result is
+// not even reduced). The correct weight is 2*Ceiling(g/2)-deg(u)-n, which agrees
+// with Negate's even-genus branch. Adjust cannot repair the wrong one because
+// Adjust preserves the divisor class. Kept local so this generator does not
+// depend on that bug being fixed, and so fixing it cannot change this file's
+// output.
+InverseD := function(D,f,h,Vp,g)
+    return Adjust(<D[1], -D[2] - (h mod D[1]),
+                   2*Ceiling(g/2) - Degree(D[1]) - D[3]>, f,h,Vp);
+end function;
+
+///////////////////////////////////////////////////////////////////////////////
+//PAIR MODES
+///////////////////////////////////////////////////////////////////////////////
+// Each mode returns a sequence of <D1,D2> pairs in the adapted basis. They exist
+// because ADD's remaining uncovered branches are not reached by *more* random
+// pairs; they are reached by pairs that are RELATED, and by pairs whose class sum
+// is forced. Two independent draws are related with probability O(1/q^k).
+
+// MODE 1 -- CLASS TARGET. The decisive one.
+//
+// Every branch this generator has been unable to reach returns u = 1: ten of the
+// eleven return <1,Vn,3>, the class T3 = [inf+ - inf-], and one (ADD291) returns
+// <1,Vn,0> = -2*T3. So their inputs are not rare *divisors*, they are pairs whose
+// CLASS SUM is a specific element of the Jacobian. That is a solvable equation,
+// not a coincidence to wait for: for each D1 and each target class T, the only
+// possible partner is D2 := T - D1. One Add and one Adjust per divisor per target
+// turns a coupon-collector search into an enumeration of every pair that could
+// ever reach those branches on this curve.
+//
+// TDEG = 0 gives the four targets <1,0,n>, n in [0..g], including Neutral (whose
+// partner is -D1, the D2 = -D1 degeneracies) and T3. Raising TDEG widens the
+// target set to every class with deg u <= TDEG at q^TDEG times the cost.
+PairsClassTarget := function(Ds,f,h,Vp,g,tdeg)
+    out := [];
+    Ts  := [D : D in Ds | Degree(D[1]) le tdeg];
+    for D1 in Ds do
+        M := InverseD(D1,f,h,Vp,g);
+        for T in Ts do
+            D2 := Add(T,M,f,h,Vp);
+            if D1 ne D2 then Append(~out, <D1,D2>); end if;
+        end for;
+    end for;
+    return out;
+end function;
+
+// MODE 2 -- EQUAL u. Cheap and exhaustive: only v and the weight vary within a u,
+// so this is a few hundred pairs. It is the d = 0, m3 = 0 / t7 = t4 = 0 case that
+// two independent draws never produce -- ADD172 (Deg22ADDUP2) and ADD276
+// (Deg3ADD) need u1 = u2 exactly, with one shared point flipped to its opposite.
+PairsEqualU := function(Ds)
+    out := [];
+    for i in [1..#Ds] do
+        for j in [1..#Ds] do
+            if Ds[i][1] eq Ds[j][1] and Ds[i] ne Ds[j] then
+                Append(~out, <Ds[i],Ds[j]>);
+            end if;
+        end for;
+    end for;
+    return out;
+end function;
+
+// MODE 3 -- SHARED FACTOR, including u2 | u1. The d = 0, m3 ne 0 case: gcd(u1,u2)
+// is a proper nontrivial divisor, so the two divisors share some but not all of
+// their x-coordinates. Needed by ADD247, ADD251, ADD255, ADD291, ADD296 (linear
+// gcd) and ADD227 (u2 | u1, D2 a sub-divisor of D1). Sampled by rejection rather
+// than enumerated, so the cost is O(cap) and not O(#Ds^2) -- at q = 8 the full
+// list would be 10^5 pairs.
+PairsSharedFactor := function(Ds,cap)
+    out := []; tries := 0;
+    while #out lt cap and tries lt 40*cap do
+        tries +:= 1;
+        i := Random(1,#Ds); j := Random(1,#Ds);
+        u1 := Ds[i][1]; u2 := Ds[j][1];
+        if u1 ne u2 and Degree(GCD(u1,u2)) ge 1 then
+            Append(~out, <Ds[i],Ds[j]>);
+        end if;
+    end while;
+    return out;
+end function;
+
+// MODE 4 -- SHAPE MATRIX: deliberate degrees and deliberate weights.
+//
+// One pair for every cell of ADD's dispatch table: both degrees over [0..g] in
+// every combination, and within a degree pair every legal weight pair. ADD routes
+// on n := n1 + n2 - Ceiling(g/2) = n1+n2-2, so within a cell (n1,n2) = (0,0) is
+// the most negative n available -- the ADDUP2 arms -- (max,max) is the largest,
+// the ADDDWN arms, and the values between cover ADDUP and the plain arms. The
+// legal range 0 <= n <= g-deg(u) is not enforced by the formulas, it IS the
+// branch selector, so walking it exhaustively is what forces every adjustment
+// path. Three kinds of pair are kept per cell (coprime, shared factor, equal u)
+// because the guard chains split on d = Res(u1,u2) immediately after the
+// dispatch. Roughly 10 x 10 x 3 x WB_CELL pairs, so a few hundred per curve, and
+// unlike a sample it guarantees that every cell is visited on EVERY curve.
+PairsShapeMatrix := function(Ds,g,perCell)
+    A := ShapeIndex(Ds); out := [];
+    for d1 in [0..g] do
+      for n1 in [0..g-d1] do
+        for d2 in [0..g] do
+          for n2 in [0..g-d2] do
+            k1 := <d1,n1>; k2 := <d2,n2>;
+            if IsDefined(A,k1) and IsDefined(A,k2) then
+              gotC := 0; gotS := 0; gotE := 0;
+              for i in A[k1] do
+                for j in A[k2] do
+                  if Ds[i] ne Ds[j] then
+                    u1 := Ds[i][1]; u2 := Ds[j][1];
+                    if u1 eq u2 then
+                      if gotE lt perCell then
+                        Append(~out, <Ds[i],Ds[j]>); gotE +:= 1;
+                      end if;
+                    elif Degree(GCD(u1,u2)) ge 1 then
+                      if gotS lt perCell then
+                        Append(~out, <Ds[i],Ds[j]>); gotS +:= 1;
+                      end if;
+                    else
+                      if gotC lt perCell then
+                        Append(~out, <Ds[i],Ds[j]>); gotC +:= 1;
+                      end if;
+                    end if;
+                  end if;
+                  if gotC ge perCell and gotS ge perCell and gotE ge perCell then
+                    break;
+                  end if;
+                end for;
+                if gotC ge perCell and gotS ge perCell and gotE ge perCell then
+                  break;
+                end if;
+              end for;
+            end if;
+          end for;
+        end for;
+      end for;
+    end for;
+    return out;
+end function;
+
+// MODE 5 -- UNIFORM. The old behaviour, kept for breadth: pairs drawn uniformly
+// from the whole enumerated divisor space. Drawn rather than scanned in order,
+// because AllDivisors returns divisors by ascending degree, so a capped
+// lexicographic scan would never let a degree-3 divisor be the first operand.
+PairsUniform := function(Ds,cap)
+    out := [];
+    for k in [1..cap] do
+        Append(~out, <Ds[Random(1,#Ds)], Ds[Random(1,#Ds)]>);
+    end for;
+    return out;
+end function;
 
 /////////////////////////////////////////////////////////
 ///////////////////// TEST LOOPS ////////////////////////
 /////////////////////////////////////////////////////////
-while true do
+// A case is a @B .. @E block whose FIRST line is the branch label the formula
+// printed itself, then F, f, h, Vp, Vn, RD1, RD2 and the result, one per line --
+// whitebox_auto_NEG.py parses that positionally. Nothing is emitted unless the
+// formula agrees with Magma's own Cantor arithmetic on this input; a disagreement
+// prints `failed` instead, which the runner treats as fatal.
+
+// FF is bound here for one reason: Magma prints a finite field generator using
+// whatever name is bound to the field IN THE CURRENT SCOPE. At top level, where
+// this loop used to print, `FF := GF(F)` makes GF(4)'s generator print as `FF.1`,
+// which is exactly what the emitter writes into a tester and what every deployed
+// tester contains. Inside a procedure with no such binding it prints `$.1`, and a
+// tester built from that log dies with `Bad dollar structure` on its first curve.
+// Verified both ways.
+EmitDBL := procedure(F,f,h,Vp,Vn,ccs,D1)
+    R := Parent(f); x := R.1; FF := BaseRing(R);
+    RD1 := NegativeReducedBasis(D1,f,h);
+    "@B";
+    nU3,nU2,nU1,nU0,nV2,nV1,nV0,nN := DBL(RD1[1],RD1[2],RD1[3],ccs);
+    nU := R ! nU3*x^3 + nU2*x^2 + nU1*x + nU0;
+    nV := R ! Coeff(Vn,4)*x^4 + Coeff(Vn,3)*x^3 + nV2*x^2 + nV1*x + nV0;
+    cantor := NegativeReducedBasis(Double(D1,f,h,Vp),f,h);
+    if <nU,nV,nN> eq cantor then
+        F; f, h, Vp, Vn, RD1, RD1, <nU,nV,nN>;
+        "@E";
+    else
+        "failed";
+    end if;
+end procedure;
+
+// Ordered pairs throughout, so both (small,large) and (large,small) degree orders
+// reach the mixed-degree dispatch. D1 eq D2 is skipped -- that is ADD's one
+// documented precondition, and it is DBL's job.
+EmitADD := procedure(F,f,h,Vp,Vn,ccs,D1,D2)
+    R := Parent(f); x := R.1; FF := BaseRing(R);   // see EmitDBL: FF.1 vs $.1
+    if D1 eq D2 then return; end if;
+    RD1 := NegativeReducedBasis(D1,f,h);
+    RD2 := NegativeReducedBasis(D2,f,h);
+    "@B";
+    nU3,nU2,nU1,nU0,nV2,nV1,nV0,nN := ADD(RD1[1],RD1[2],RD1[3],RD2[1],RD2[2],RD2[3],ccs);
+    nU := R ! nU3*x^3 + nU2*x^2 + nU1*x + nU0;
+    nV := R ! Coeff(Vn,4)*x^4 + Coeff(Vn,3)*x^3 + nV2*x^2 + nV1*x + nV0;
+    cantor := NegativeReducedBasis(Add(D1,D2,f,h,Vp),f,h);
+    if <nU,nV,nN> eq cantor then
+        F; f, h, Vp, Vn, RD1, RD2, <nU,nV,nN>;
+        "@E";
+    else
+        "failed";
+    end if;
+end procedure;
+
+// Every divisor of the curve doubled, then the pair modes. PAIRS = 0 replaces all
+// of the pair modes with every ordered pair of the curve's divisors, which is
+// their superset: on a GF(4) curve that is 40..200 divisors, so at most ~4*10^4
+// pairs, and coverage of that curve becomes a fact rather than a sample.
+SweepCurve := procedure(F,f,h,ccs,pairs,tdeg,cell,g)
+    Vp := ComputeVpl(f,h);
+    Vn := -Vp - h;
+    Ds := AllDivisors(f,h,g);
+
+    for D1 in Ds do
+        EmitDBL(F,f,h,Vp,Vn,ccs,D1);
+    end for;
+
+    if pairs eq 0 then
+        for i in [1..#Ds] do
+            for j in [1..#Ds] do
+                EmitADD(F,f,h,Vp,Vn,ccs,Ds[i],Ds[j]);
+            end for;
+        end for;
+    else
+        prs := PairsClassTarget(Ds,f,h,Vp,g,tdeg)
+           cat PairsEqualU(Ds)
+           cat PairsShapeMatrix(Ds,g,cell)
+           cat PairsSharedFactor(Ds, pairs div 2)
+           cat PairsUniform(Ds, pairs - (pairs div 2));
+        for pr in prs do
+            EmitADD(F,f,h,Vp,Vn,ccs,pr[1],pr[2]);
+        end for;
+    end if;
+end procedure;
+
+///////////////////////////////////////////////////////////////////////////////
+//NO DELIBERATE CURVE SWEEP IN THIS FAMILY
+///////////////////////////////////////////////////////////////////////////////
+// The ch2 generator additionally steers CURVES: some branches are selected by the
+// curve rather than by the divisors, and deg(f - Vp*h - Vp^2) partitions curves
+// into four mutually exclusive classes that random draws hit at rates down to
+// 1/q^3. Sweeping those classes took ch2 from 353 to 402 of its 405 branches.
+//
+// Not ported here because a sweep has to BUILD curves, which means hardcoding a
+// normal form -- ch2's is f = f8x^8 + f3x^3 + f2x^2 + f1x + f0 with
+// h = x^4 + h2x^2 + h1x + h0 -- and this family's is different. Everything above
+// this line is shared verbatim; adding a sweep means writing this family's
+// BuildCurve plus a classifier, and nothing else. WB_SWEEP is therefore ignored
+// here and defaults to 0.
+//
+// This matters only if this family's tester is ever regenerated, and it is not:
+// the deployed arb and nch2 genus-3 split testers hold 405 of 405 and pass, so
+// they are deliberately left alone.
+
+/////////////////////////////////////////////////////
+/// PHASE 2: random curves
+/////////////////////////////////////////////////////
+// Unchanged in intent -- breadth over the curve family, now with the pair modes
+// applied to each curve as well. WB_TRIALS = 0 skips it.
+trial:= 0;
+while trial lt TRIALS do
+  trial +:= 1;
   // Random finite field FF and polynomial ring over FF
   F:= Random(FIELDS);
   FF:=GF(F);
   R<x>:=PolynomialRing(FF);
   f:= RandomNotCh2SpG3Curve(F);
   h := R!0;
-  Vp:= ComputeVpl(f,h);
-  Vn:= -Vp - h;
-  curveConst:= Precompute(f,h,F); 
-  
-  divisor:= 0;
-  while divisor le DIVISORS do
-    divisor+:=1;
-
-    /////////////////////////////////////////////////////
-    ///RANDOM DIVISORS
-    /////////////////////////////////////////////////////
-    D1:= RandomDivisorAB(f,h);
-    RD1:= NegativeReducedBasis(D1,f,h);
-    U1:= RD1[1];
-    V1:= RD1[2];
-    N1:= RD1[3];
-
-    D2 := RandomDivisorAB(f,h);
-    RD2:= NegativeReducedBasis(D2,f,h);
-    U2:= RD2[1];
-    V2:= RD2[2];
-    N2:= RD2[3];
-
-    "@B";
-    nU3,nU2,nU1,nU0,nV2,nV1,nV0,nN := DBL(U1,V1,N1,curveConst);
-    nU:= R ! nU3*x^3 + nU2*x^2 + nU1*x + nU0;
-    nV:= R ! Coeff(Vn,4)*x^4 + Coeff(Vn,3)*x^3 + nV2*x^2 + nV1*x + nV0;
-    cantor:= NegativeReducedBasis(Double(D1,f,h,Vp),f,h);
-    if <nU,nV,nN> eq cantor then
-      F; f, h, Vp, Vn, RD1, RD2, <nU,nV,nN>;
-      "@E";
-    else
-      "failed";
-    end if;
-    if D1 ne D2 then
-      "@B";
-      nU3,nU2,nU1,nU0,nV2,nV1,nV0,nN := ADD(U1,V1,N1,U2,V2,N2,curveConst);
-      nU:= R ! nU3*x^3 + nU2*x^2 + nU1*x + nU0;
-      nV:= R ! Coeff(Vn,4)*x^4 + Coeff(Vn,3)*x^3 + nV2*x^2 + nV1*x + nV0;
-      cantor:= NegativeReducedBasis(Add(D1,D2,f,h,Vp),f,h);
-      if <nU,nV,nN> eq cantor then
-        F; f, h, Vp, Vn, RD1, RD2, <nU,nV,nN>;
-        "@E";
-      else
-        "failed";
-      end if;
-    end if;
-  end while; 
+  SweepCurve(F,f,h,Precompute(f,h,F),PAIRS,TDEG,CELL,GENUS);
 end while;
+
+UnsetOutputFile();
+quit;

@@ -49,23 +49,29 @@ expect 1 truncated 'whitebox tester stops early with no error message'
 echo
 
 # The pass run must also have actually run the testers rather than trivially
-# succeeding, and must report the known ch2 genus-3 whitebox gap as skipped.
+# succeeding, and must report the remaining whitebox gaps as skipped.
+#
+# 26 and 2, not 25 and 3: the ch2 genus-3 split whitebox tester now exists, so what
+# used to be announced as a deliberate skip is a passing tester. The two skips left
+# are the genus-3 ramified whitebox testers, which PR6 writes. These numbers are
+# meant to be updated when a tester is added -- that is the point of asserting them,
+# so a tester cannot quietly vanish.
 out=$(FAKE_MAGMA_MODE=pass MAGMA="$FAKE" SLEEP=0 LOGDIR="$WORK/verify" \
       "$ROOT/test_all.sh" 2>&1)
 npass=$(printf '%s\n' "$out" | sed -n 's/^  passed:  *\([0-9]*\)$/\1/p')
 nskip=$(printf '%s\n' "$out" | sed -n 's/^  skipped: *\([0-9]*\)$/\1/p')
 
-if [ "$npass" = "25" ]; then
-    printf 'ok    %-10s 25 testers passed, not a vacuous success\n' 'coverage'
+if [ "$npass" = "26" ]; then
+    printf 'ok    %-10s 26 testers passed, not a vacuous success\n' 'coverage'
 else
-    printf 'FAIL  %-10s expected 25 passing testers, got "%s"\n' 'coverage' "$npass"
+    printf 'FAIL  %-10s expected 26 passing testers, got "%s"\n' 'coverage' "$npass"
     fails=$((fails + 1))
 fi
 
-if [ "$nskip" = "3" ]; then
-    printf 'ok    %-10s all 3 whitebox gaps reported, not hidden\n' 'skip'
+if [ "$nskip" = "2" ]; then
+    printf 'ok    %-10s both whitebox gaps reported, not hidden\n' 'skip'
 else
-    printf 'FAIL  %-10s expected 3 skips, got "%s"\n' 'skip' "$nskip"
+    printf 'FAIL  %-10s expected 2 skips, got "%s"\n' 'skip' "$nskip"
     fails=$((fails + 1))
 fi
 
