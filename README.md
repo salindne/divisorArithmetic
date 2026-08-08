@@ -300,6 +300,9 @@ The script does not currently run: its input paths are stale and its output call
 the committed `.tex` files cannot be reproduced. Several counting faults are also known. Both are in
 [ERRATA.md](ERRATA.md).
 
+How the genus-3 ramified counts compare to the published literature — with every prior source's curve
+assumptions and the normalisation arithmetic stated — is in [RELATED_WORK.md](RELATED_WORK.md).
+
 ---
 
 ## Timing experiments

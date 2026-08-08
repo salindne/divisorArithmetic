@@ -149,10 +149,11 @@ jobs:
         # It could never gate on coverage without either failing honest runs or gating
         # on nothing.
         #
-        # 1,338 cases are read at run time out of the repository's own whitebox
+        # 1,742 cases are read at run time out of the repository's own whitebox
         # testers, so they cannot drift out of step with them, and those files are held
-        # to 100% coverage. The remaining 344 are for the three families that have no
-        # tester, harvested once offline into harvested_cases.json. Expected coverage
+        # to 100% coverage. The remaining 70 are for the two genus-3 ramified families
+        # that have no tester, harvested once offline into harvested_cases.json (the
+        # figures predating PR12 were 1,338 + 344 across three families). Expected coverage
         # lives in coverage_baseline.json as a NAMED label set -- what is exempt, with
         # the reason -- so a newly added branch fails by default and branches cannot
         # be traded one-for-one. All three developed genus-3 ramified files are at
