@@ -68,11 +68,26 @@ A or C.** So:
 **The measured counts for this repository** come from the audit harness
 (`/Users/s3b/Dev/divisor-audits/g3ram/harness/`), which executes the actual
 Magma source per branch and counts operations as they happen. It has **no C
-column** (coefficient products count as M) and reports executed counts; ranges
-are data-dependent short-circuits, not uncertainty. The audited snapshot is
+column** (coefficient products count as M). The audited snapshot is
 byte-identical to the imported formulas modulo the PR2 renames, PR4's
 comment-only pass and PR5's dispatch guard, none of which touch a formula
 statement.
+
+**Why our M and S are quoted as ranges but M+S is exact.** The harness decides
+squaring by object identity (`CNT["S" if o is self else "M"]`), and `ff.py`
+interns field elements — "for a given field there is at most one FFElement" per
+value. So a product whose two operands happen to be *equal at runtime* is the
+same object and is recorded as a squaring rather than a multiplication. The
+split therefore wobbles with the random data while the total does not: measured
+over every branch of both files, **M+S is exact in every case**, and the M and S
+ranges are exactly anti-correlated (nch2 `Deg3` generic is 62–65M and 12–15S,
+always summing to 77; arb `Deg3` generic is 64–75M and 12–23S, always 87).
+Addition counts are exact too. So **M+S combined is the figure to quote for this
+repository** — which is also the only unit comparable across the prior
+literature, two of whose four odd-characteristic sources report a combined M/S
+in the first place. An earlier draft of this document reported the combined
+figure as a range by adding the two endpoints independently; that was wrong, and
+it made this repository look both better and worse than it is.
 
 ---
 
@@ -146,24 +161,30 @@ uses**; its numbers are given as current state, not as a like-for-like row.
 |---|---|---|
 | Nyukai 2006, ADD 3+3 (best published) | 67 | 105 *(derived)* |
 | GKP 2004, ADD 3+3 | 70 | 105 *(derived)* |
-| our `nch2` ADD, Deg3 typical, today (f₆ live) | 74–80 | **79** |
+| our `nch2` ADD, Deg3 typical, today (f₆ live) | **77** | **79** |
 | Nyukai 2006, DBL deg 3 | 68 | 93 *(derived)* |
 | GKP 2004, DBL deg 3 | 70 | 90 *(derived)* |
 | our DBL (arb DBL borrowed — see lane 3) | 77 | 114 |
 
+All four of our figures are exact, not ranges — see the note on M/S splitting
+above.
+
 **The headline, which reverses the reading from M+S alone: this repository is
 behind on multiplications and well ahead on additions.** Our frequent-case
-addition spends 7–13 more combined M+S than Nyukai's and **26 fewer additions**
-(79 against 105). Under the thesis's own 1M : 3A trade rule those 26 additions
-are worth roughly 8.7M, so the two are within a multiplication or so of each
-other *today* — before any of the recorded efficiency work.
+addition spends exactly **10 more combined M+S than Nyukai's and 7 more than
+GKP's**, and **26 fewer additions** (79 against the 105 both of them cost).
+Under the thesis's own 1M : 3A trade rule those 26 additions are worth roughly
+8.7M, so against GKP we are already marginally ahead on balance, and against
+Nyukai within about a multiplication and a half — *today*, before any of the
+recorded efficiency work.
 
 That work is already itemised and, on this branch, worth **10M + 1S + 15A**:
 the f₆ depression (3M + 4A, measured by `opcount-odd-add.py`), ODDADD-19's two
 dead lines (6M + 1S + 11A, probe-validated), and ODDADD-20a's leftover h-term
 (1M). If all of it lands as recorded — PR14/PR15 must verify each item, that is
-their job — this lane's addition lands near 64–70 combined M+S with ~64A,
-against Nyukai's 67 and 105. The doubling comparison cannot be made until
+their job — this lane's addition reaches **66 combined M+S and 64A**, against
+Nyukai's 67 / 105 and GKP's 70 / 105: ahead on both axes, and by a wide margin
+on additions. The doubling comparison cannot be made until
 `nch2_ramifiedG3_DBL.mag` exists (merge-plan PR6); the borrowed arb DBL pays
 h-terms this lane's curves do not have.
 
@@ -279,14 +300,15 @@ specialises to Fp-with-h=0 or to a fixed char-2 shape of h. This repository's
 
 Measured today (audit harness, frequent case):
 
-| Operation | Measured |
-|---|---|
-| `arb` ADD, Deg3 typical | 64–75M, 12–23S, 1I, ~97A |
-| `arb` DBL, Deg3 typical | 72M, 5S, 1I, 114A (no variance over 150 samples) |
+| Operation | Measured | M+S | A |
+|---|---|---|---|
+| `arb` ADD, Deg3 typical | 64–75M, 12–23S, 1I | **87** | **97** |
+| `arb` DBL, Deg3 typical | 72M, 5S, 1I | **77** | **114** |
 
-Against the thesis's split Degree-3 DBL (73M + 3S + 101A), the ramified arb DBL
-at 72M + 5S + 114A is **not** clearly cheaper despite having strictly less work
-to do. That is the sanity flag firing, and it is the substance of PR14.
+Against the thesis's split Degree-3 DBL (73M + 3S + 101A, i.e. 76 combined),
+the ramified arb DBL at 77 combined + 114A is **not** cheaper at all despite
+having strictly less work to do — it is one operation worse on M+S and thirteen
+worse on A. That is the sanity flag firing, and it is the substance of PR14.
 
 ---
 
