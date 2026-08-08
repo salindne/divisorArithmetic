@@ -91,6 +91,45 @@ it made this repository look both better and worse than it is.
 
 ---
 
+## Summary
+
+The whole comparison in one table. Every entry is the **frequent case** (the
+only thing prior work prices) and every operation costs exactly **1I**, so the
+columns are combined **M+S** and **A**. Ours are exact, per the note above;
+prior-work A counts are derived here rather than published by their authors —
+`†` marks those.
+
+| Case | Previous best | Ours | Standing |
+|---|---|---|---|
+| **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | 77 M+S, 79A | −10 M+S, **+26 A**. Not yet the comparable curve form: `f₆` is still live (PR17) |
+| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 77 M+S, 114A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
+| **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | *none* | **Future work, PR7** |
+| **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | *none* | **Future work, PR8** |
+| **arb ADD** | **none** | 87 M+S, 97A | No published arbitrary-characteristic genus-3 ramified formulas exist |
+| **arb DBL** | **none** | 77 M+S, 114A | As above. Compare the thesis's *split* Degree-3 DBL at 76 M+S + 101A — ramified should be cheaper and is not (PR14) |
+
+Reading it:
+
+- **Only one of the six cells is a like-for-like race today**, and we lose it on
+  multiplications while winning it decisively on additions — which is the
+  thesis's own trade-off, and the reason A had to be derived for the prior work
+  at all. The recorded ledger (10M + 1S + 15A on that branch) would take us to
+  **66 M+S and 64A**, ahead of both published sources on both axes.
+- **Three cells are unbuilt** (`nch2 DBL`, `ch2 ADD`, `ch2 DBL`) and now have
+  real targets rather than guesses — in particular `ch2` at `deg h = 3`, this
+  repository's own derived normal form, turns out to be published by GKP, which
+  the project had assumed did not exist.
+- **Two cells have no competition at all.** The arb family is unique to this
+  repository, so it can only be judged internally and against the split-model
+  rows — where it currently looks worse than it should.
+
+The `ch2` rows are quoted at `deg h = 3` because that is this repository's
+target shape. Cheaper char-2 numbers exist at other h-shapes and are not
+comparable: Birkner's `h = 1` doubling is 21 M+S and 20A, but a constant `h`
+collapses most of the work. Full detail, per lane, below.
+
+---
+
 ## Lane 1 — Fp, odd characteristic, `h = 0` and `f₆ = 0`
 
 Every published odd-characteristic genus-3 formula set uses the depressed
