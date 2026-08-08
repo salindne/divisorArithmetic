@@ -74,9 +74,10 @@ just not in per-PR CI, where 37 seconds of sampling proves neither thing.
 
 `driver.py` flags worth knowing:
 
-- `--strict` additionally fails on wrong answers where `D1 == D2`. Today's formulas
-  are wrong there, so this fails until PR5 lands. It is how PR5 will be shown to
-  have worked.
+- `--strict` additionally fails on wrong answers where `D1 == D2`. The formulas used
+  to be wrong there; PR5's equal-divisor dispatch fixed it, and this flag is how that
+  was shown (695,888 compared, 695,888 matched, exit 0). It stays on in any run that
+  gates anything.
 - `--min-coverage PCT` turns coverage into a gate, default 0 (report only).
 - A selected family producing **no comparisons** always fails, deterministically:
   "nothing failed" must not be reachable by testing nothing.
@@ -94,7 +95,7 @@ just not in per-PR CI, where 37 seconds of sampling proves neither thing.
 | `harvested_cases.json` | frozen cases for every branch no Magma tester reaches -- currently 70 cases, all for the two genus-3 ramified families, which have no tester until PR6. The genus-3 split `ch2` entries left when PR12's regenerated tester made them redundant |
 | `coverage_baseline.json` | the branches exempt from coverage, **as a named label set with a reason each** — everything else must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Also pins any known arity anomalies by case identity, so a new one fails while known ones stay reported-not-fatal; the pin set is empty since PR5 fixed errata E2 |
 | `driver.py` | random differential testing, with per-branch coverage; not in CI |
-| `selftest.py` | checks the framework itself, ten sections |
+| `selftest.py` | checks the framework itself, twelve sections |
 
 ## Current state
 
@@ -106,7 +107,7 @@ Measured with `driver.py --curves 30 --pairs 16`:
 | operations compared | **674,528** |
 | wrong on the formulas' documented domains | **0** |
 | branch coverage | **86.9%** overall; **100% on all nine ramified files** |
-| `selftest.py` | 10 sections, 10 passing |
+| `selftest.py` | 12 sections, 12 passing |
 | parse coverage | 240 of 246 functions |
 
 The 6 functions not interpreted are `Random*Curve` generators, which are not formulas
@@ -119,12 +120,15 @@ branch, so neither can see the `D1 = D2` region at all. The driver reports it
 separately from failures on the documented domain:
 
 - **64,883 wrong sums where `D1 == D2`**, in the run above. The thesis assumes `D1 ≠ D2` and no file
-  checks it. A double-and-add ladder hits this. PR5 adds the dispatch that fixes it.
+  checked it. A double-and-add ladder hits this. **Fixed by PR5**: every ADD dispatcher now routes
+  `D1 = D2` to the doubling, and the same run under `--strict` is 695,888/695,888.
 - **Divisions by zero in the same region** — errata E1, where the guard
   `IsZero(dw20) and IsZero(dw21)` is too narrow, so `dw21 = 0` with `dw20` nonzero
-  reaches `dw21^-1`.
+  reaches `dw21^-1`. Every known firing has `D1 = D2`, so PR5's dispatch closes them
+  at the dispatcher; the narrow guard itself is still as published, by decision.
 
-Both are expected and are not counted as failures today. `--strict` makes them fail.
+Both figures describe the pre-PR5 state and are kept as the record of what the
+dispatch fixed.
 
 ## Design decisions worth knowing before changing anything
 
@@ -250,8 +254,8 @@ They are independent oracles and both are worth having. The Magma testers assert
 against Magma's own Jacobian arithmetic; this framework asserts against a
 from-scratch Cantor implementation, cross-checked three ways.
 
-They have been run against each other: the full Magma suite passes 25 testers with 0
-failures, and the driver reports 0 mismatches on the same families. Agreement is
+They have been run against each other: the full Magma suite passes 26 testers with 0
+failures (2 deliberate skips), and the driver reports 0 mismatches on the same families. Agreement is
 expected only where both can look, and the one asymmetry is the point — the driver
 sees the `D1 = D2` region and no Magma tester can.
 
