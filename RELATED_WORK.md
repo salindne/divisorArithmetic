@@ -93,27 +93,27 @@ arbitrary`), and the constant's cost is exactly the gap between them:
 So constant-multiplication is a doubling problem, not an addition problem, in
 characteristic 2 — and negligible in odd characteristic.
 
-**Our side is the opposite, and the reason is structural.** The audit harness
-folds coefficient products into M, but the `//Constant:` directives in every
-formula file declare exactly which identifiers are curve constants, so C is
-well-defined today. Counted statically per function from those declarations:
+**Our side is the opposite, and the reason is structural.** The `//Constant:`
+directives in every formula file declare exactly which identifiers are curve
+coefficients, and the interpreter charges C on that basis. Executed
+frequent-case counts:
 
 | file | function | C |
 |---|---|---|
-| `nch2_ramifiedG3_ADD` | `Deg3ADD` | **8** — and these are precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form |
-| `arb_ramifiedG3_ADD` | `Deg3ADD` / `Deg23ADD` / `Deg22ADD` / `Deg13ADD` / `Deg12ADD` | 72 / 35 / 22 / 8 / 6 |
-| `arb_ramifiedG3_DBL` | `Deg3DBL` / `Deg2DBL` / `Deg1DBL` | 41 / 25 / 9 |
+| `nch2_ramifiedG3_ADD` | `Deg3ADD` generic | **3** — precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form |
+| `arb_ramifiedG3_ADD` | `Deg3ADD` generic | **12** |
+| `arb_ramifiedG3_DBL` | `Deg3DBL` typical | **16** |
 
 The **arb** family cannot normalise — that is what "arbitrary characteristic"
 means — so it carries `h₃…h₀` and `f₆…f₀` live and pays C everywhere. This is
 the single biggest structural difference between our formulas and every
 published one, and it is why the arb lane can only be compared against the
-thesis's own split rows, which also carry C.
+thesis's own split rows, which also carry C — 12 for the Degree-3 addition and
+19 for the doubling, against our 12 and 16.
 
-Two caveats on those figures: they are **static whole-function counts covering
-every branch**, so they bound the frequent-case C from above rather than giving
-it, and a proper per-branch tally (harness split or `latexConverter.py`'s
-counting layer, cross-checked against each other) is merge-plan PR14's job.
+An earlier revision quoted static whole-function counts here (8 / 72 / 41 and
+the other case functions), which sum every branch and so bound the frequent
+case from well above. Those are superseded by the executed figures.
 
 **The measured counts for this repository** come from the audit harness
 (`/Users/s3b/Dev/divisor-audits/g3ram/harness/`), which executes the actual
@@ -123,21 +123,23 @@ byte-identical to the imported formulas modulo the PR2 renames, PR4's
 comment-only pass and PR5's dispatch guard, none of which touch a formula
 statement.
 
-**Why our M and S are quoted as ranges but M+S is exact.** The harness decides
-squaring by object identity (`CNT["S" if o is self else "M"]`), and `ff.py`
-interns field elements — "for a given field there is at most one FFElement" per
-value. So a product whose two operands happen to be *equal at runtime* is the
-same object and is recorded as a squaring rather than a multiplication. The
-split therefore wobbles with the random data while the total does not: measured
-over every branch of both files, **M+S is exact in every case**, and the M and S
-ranges are exactly anti-correlated (nch2 `Deg3` generic is 62–65M and 12–15S,
-always summing to 77; arb `Deg3` generic is 64–75M and 12–23S, always 87).
-Addition counts are exact too. So **M+S combined is the figure to quote for this
-repository** — which is also the only unit comparable across the prior
-literature, two of whose four odd-characteristic sources report a combined M/S
-in the first place. An earlier draft of this document reported the combined
-figure as a range by adding the two endpoints independently; that was wrong, and
-it made this repository look both better and worse than it is.
+**Every column is exact, per branch.** The interpreter classifies each operation
+structurally from the source — `^2` is an S, a product of two runtime values is
+an M, a product with a declared coefficient is a C, a `+`/`-` is an A, and `/`
+is an I plus an M — so M, S, A and C are each a single number for a given
+branch, not a range or an average.
+
+This is worth stating because an earlier revision of this document quoted M and
+S as ranges (`62–65M, 12–15S`). That was an artefact of a different, superseded
+counter, which decided squaring by *object identity* while `ff.py` interns field
+elements — so a product whose two operands happened to be equal at runtime was
+recorded as a squaring, making the M/S split wobble with the random data. That
+counter has other problems (see [which counter is
+authoritative](#which-counter-is-authoritative)); none of its figures are used
+here.
+
+M+S is still the unit quoted against prior work, since two of the four
+odd-characteristic sources publish only a combined M/S and none publishes a C.
 
 ---
 
@@ -151,12 +153,12 @@ prior-work A counts are derived here rather than published by their authors —
 
 | Case | Previous best | Ours | Standing |
 |---|---|---|---|
-| **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | 77 M+S, 79A | −10 M+S, **+26 A**. Not yet the comparable curve form: `f₆` is still live (PR17) |
-| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 77 M+S, 114A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
+| **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | **63 M+S, 3C, 77A** | **ahead on both axes**: 4 better than Nyukai and 7 better than GKP on M+S, 28 fewer additions. PR17 removes the 3 C (the `f₆` products) and puts us on their curve form |
+| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 61 M+S, 16C, 114A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
 | **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | *none* | **Future work, PR7** |
 | **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | *none* | **Future work, PR8** |
-| **arb ADD** | **none** | 87 M+S, 97A | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD it is **7–19 M+S and 10 A worse** under either C convention — the sanity flag, and PR14's primary target |
-| **arb DBL** | **none** | 77 M+S, 114A | As above. Against split Degree-3 DBL: inconclusive on M+S (18 better to 1 worse, depending on C) and 13 worse on A |
+| **arb ADD** | **none** | 64 M+S, 12C, 95A | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD (68 M+S, 12C, 87A): **4 better on M+S, identical C, 8 worse on A** |
+| **arb DBL** | **none** | 61 M+S, 16C, 114A | As above. Against split Degree-3 DBL (76 M+S, 19C, 101A): **15 better on M+S, 3 better on C, 13 worse on A** |
 
 **C is 0 in every "previous best" cell above** — the published normal forms
 leave no coefficient to multiply by. It is non-zero only for us, and only in the
@@ -165,18 +167,20 @@ include C; theirs have none to include. See [the C column](#the-c-column-and-why
 
 Reading it:
 
-- **Only one of the six cells is a like-for-like race today**, and we lose it on
-  multiplications while winning it decisively on additions — which is the
-  thesis's own trade-off, and the reason A had to be derived for the prior work
-  at all. The recorded ledger (10M + 1S + 15A on that branch) would take us to
-  **66 M+S and 64A**, ahead of both published sources on both axes.
+- **Only one of the six cells is a like-for-like race today, and we win it** —
+  63 M+S against Nyukai's 67 and GKP's 70, with 28 fewer additions. The recorded
+  efficiency ledger is upside on top of that, not catch-up. An earlier revision
+  of this document had this cell 10 M+S behind; that came from a broken counter,
+  see [the measurement note](#which-counter-is-authoritative).
 - **Three cells are unbuilt** (`nch2 DBL`, `ch2 ADD`, `ch2 DBL`) and now have
   real targets rather than guesses — in particular `ch2` at `deg h = 3`, this
   repository's own derived normal form, turns out to be published by GKP, which
   the project had assumed did not exist.
 - **Two cells have no competition at all.** The arb family is unique to this
   repository, so it can only be judged internally and against the split-model
-  rows — where it currently looks worse than it should.
+  rows — where it is now measurably *cheaper on multiplications*, as ramified
+  arithmetic should be, and dearer on additions. That asymmetry is the one open
+  efficiency question in the arb files.
 
 The `ch2` rows are quoted at `deg h = 3` because that is this repository's
 target shape. Cheaper char-2 numbers exist at other h-shapes and are not
@@ -251,36 +255,37 @@ The comparable family is **nch2** — but only in its post-depression form
 file keeps `f₆` live, so it implements a curve form **no published baseline
 uses**; its numbers are given as current state, not as a like-for-like row.
 
-| | M + S combined | A |
-|---|---|---|
-| Nyukai 2006, ADD 3+3 (best published) | 67 | 105 *(derived)* |
-| GKP 2004, ADD 3+3 | 70 | 105 *(derived)* |
-| our `nch2` ADD, Deg3 typical, today (f₆ live) | **77** | **79** |
-| Nyukai 2006, DBL deg 3 | 68 | 93 *(derived)* |
-| GKP 2004, DBL deg 3 | 70 | 90 *(derived)* |
-| our DBL (arb DBL borrowed — see lane 3) | 77 | 114 |
+| | M + S | C | A |
+|---|---|---|---|
+| Nyukai 2006, ADD 3+3 (best published) | 67 | 0 | 105 *(derived)* |
+| GKP 2004, ADD 3+3 | 70 | 0 | 105 *(derived)* |
+| **our `nch2` ADD, Deg3 generic, today (f₆ live)** | **63** | **3** | **77** |
+| Nyukai 2006, DBL deg 3 | 68 | 0 | 93 *(derived)* |
+| GKP 2004, DBL deg 3 | 70 | 0 | 90 *(derived)* |
+| our DBL (arb DBL borrowed — see lane 3) | 61 | 16 | 114 |
 
-All four of our figures are exact, not ranges — see the note on M/S splitting
-above.
+Our figures are exact per-branch counts, not ranges or averages — see
+[the measurement note](#which-counter-is-authoritative) for how they are
+obtained and why an earlier revision of this document had them wrong.
 
-**The headline, which reverses the reading from M+S alone: this repository is
-behind on multiplications and well ahead on additions.** Our frequent-case
-addition spends exactly **10 more combined M+S than Nyukai's and 7 more than
-GKP's**, and **26 fewer additions** (79 against the 105 both of them cost).
-Under the thesis's own 1M : 3A trade rule those 26 additions are worth roughly
-8.7M, so against GKP we are already marginally ahead on balance, and against
-Nyukai within about a multiplication and a half — *today*, before any of the
-recorded efficiency work.
+**The headline: this repository is ahead of the published state of the art on
+both axes.** Our frequent-case addition costs **63 M+S (66 counting its 3 C)
+against Nyukai's 67 and GKP's 70**, and **77 additions against the 105 both of
+them cost** — 28 fewer, worth a further ~9M at the thesis's own 1M : 3A rule.
+There is no trade-off to argue about here; it is cheaper in every column.
 
-That work is already itemised and, on this branch, worth **10M + 1S + 15A**:
-the f₆ depression (3M + 4A, measured by `opcount-odd-add.py`), ODDADD-19's two
-dead lines (6M + 1S + 11A, probe-validated), and ODDADD-20a's leftover h-term
-(1M). If all of it lands as recorded — PR14/PR15 must verify each item, that is
-their job — this lane's addition reaches **66 combined M+S and 64A**, against
-Nyukai's 67 / 105 and GKP's 70 / 105: ahead on both axes, and by a wide margin
-on additions. The doubling comparison cannot be made until
-`nch2_ramifiedG3_DBL.mag` exists (merge-plan PR6); the borrowed arb DBL pays
-h-terms this lane's curves do not have.
+An earlier revision of this document reported 77 M+S and 79 A for this row and
+concluded we were "exactly 10 combined M+S behind Nyukai". That figure came
+from a counter that runs a hand-written Python transcription of the formulas
+rather than the formulas themselves, and it over-counts. The row above is
+measured from the Magma source.
+
+The recorded efficiency ledger is therefore upside, not catch-up. Its largest
+item is the f₆ depression, which is exactly the 3 C in the row above: PR17
+removes them, taking this lane to **63 M+S and 0 C** on a curve form that
+finally matches every published baseline. The doubling comparison cannot be
+made until `nch2_ramifiedG3_DBL.mag` exists (merge-plan PR6); the borrowed arb
+DBL pays h-terms this lane's curves do not have, which is why its C is 16.
 
 ---
 
@@ -394,41 +399,59 @@ specialises to Fp-with-h=0 or to a fixed char-2 shape of h. This repository's
 
 Measured today (audit harness, frequent case):
 
-| Operation | Measured | M+S | A |
+| Operation | M | S | A | C | I | M+S |
+|---|---|---|---|---|---|---|
+| `arb` ADD, `Deg3ADD` generic | 60 | 4 | 95 | 12 | 1 | **64** |
+| `arb` DBL, `Deg3DBL` typical | 56 | 5 | 114 | 16 | 1 | **61** |
+
+### The sanity flag fires on additions, not multiplications
+
+Now that C is counted separately on both sides, the comparison against the
+thesis's own split-model Degree-3 rows is direct — no convention to choose:
+
+| vs split Degree-3, arbitrary | ours | split | verdict |
 |---|---|---|---|
-| `arb` ADD, Deg3 typical | 64–75M, 12–23S, 1I | **87** | **97** |
-| `arb` DBL, Deg3 typical | 72M, 5S, 1I | **77** | **114** |
+| **ADD** | 64 M+S, 12C, 95A | 68 M+S, 12C, 87A | **4 better on M+S, identical C, 8 worse on A** |
+| **DBL** | 61 M+S, 16C, 114A | 76 M+S, 19C, 101A | **15 better on M+S, 3 better on C, 13 worse on A** |
 
-### The sanity flag fires on the addition, not the doubling
+**Ramified is cheaper than split on multiplications, in both operations — which
+is what it should be**, having no balancing and no adjust steps. The anomaly is
+entirely in the additions, where ramified is dearer despite doing strictly less
+work. That is the sanity flag, and it points at A, not M.
 
-An earlier revision of this section compared our doubling's 77 against the
-split row's `73M + 3S = 76` and concluded the doubling "is not cheaper at all".
-That was wrong twice over: it compared against the wrong operation, and it
-dropped the split row's **19C**. Our harness folds coefficient products into M,
-so our figures already include C and the thesis's do not — the two are only
-comparable once the split row's C is either added to it or excluded from ours,
-and the conclusion differs by which:
+Two earlier revisions of this section got this wrong in opposite directions,
+both by trusting a per-branch count that had not been re-derived: the first
+compared the doubling against the wrong operation and dropped the split row's
+19C; the second used an arb-ADD figure of 87 M+S that is real but belongs to a
+**rare sub-branch reached on 2% of inputs**, not the frequent case. Both are
+corrected here from source-level measurement.
 
-| vs split Degree-3, arbitrary | ours (C included) | split, C free | split, C = M | verdict |
-|---|---|---|---|---|
-| **ADD** | 87 M+S, 97A | 68, 87A | 80, 87A | **worse by 7–19 on M+S and 10 on A — holds under either convention** |
-| **DBL** | 77 M+S, 114A | 76, 101A | 95, 101A | 18 better to 1 worse: **inconclusive** on M+S; 13 worse on A |
+**The C convention, stated once:** C is a multiplication whose operand is
+*itself* a declared curve coefficient, per the files' own `//Constant:`
+directives and matching `latexConverter.py`'s adjacent-token rule. Our counts
+and the thesis's rows now use the same definition, so they are quoted side by
+side without adjustment.
 
-So the flag fires on the **addition**, robustly and on both axes. The doubling
-is inconclusive on multiplications and adverse only on additions.
+### Which counter is authoritative
 
-That matches the structural finding independently on record in the merge plan:
-the genus-3 ramified **ADD** builds the full 9-entry adjugate with a 9M
-matrix–vector product, while the **DBL** in the same directory already uses the
-thesis's T13 first-column shape with Karatsuba twice. The doubling was ported
-with the technique; the addition was not. Ramified arithmetic ought to be
-cheaper than split at equal genus — no balancing, no adjust steps — and the
-addition is where it fails to be.
+Every figure for this repository in this document is measured by interpreting
+the **actual Magma source** per branch (`maginterp2.py` in the audit harness,
+driven by `c_baseline.py`). The other counters in that directory —
+`opcount.py`, `opcount-odd-add.py`, `drive-deg33add-opcount.py` — run
+hand-written Python transcriptions of the formulas instead, and **they
+over-count**. The clearest demonstration is small enough to check by eye: for
+nch2 `Deg12ADD`'s typical path they report `8M 3S 2I 8A`, claiming two
+inversions for an operation that provably needs one; the source, counted by
+hand and by two independent interpreters, is `6M 1S 8A 1I`. (`dbl_opcount.py`
+is the exception — it drives the interpreter, and reconciles exactly.)
 
-**The C convention, stated once so no later comparison repeats the error:** our
-measured M includes coefficient products; any thesis or published row quoted
-beside it must have its C added, or be marked as excluding it. Both readings are
-given wherever it changes the conclusion.
+The corrected figures were confirmed before being published here: a second,
+independently written counter — different parsing strategy, different branch
+identification — reproduced all three rows cell for cell across 2,400 paired
+calls with zero disagreements, a fresh line-by-line hand count of `Deg1DBL`
+(9M 2S 21A 6C 1I) matched both, and a coverage audit confirmed neither parser
+silently drops an executable statement. Every measured call is checked against
+Cantor's algorithm and discarded if it disagrees.
 
 ---
 
