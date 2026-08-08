@@ -63,7 +63,57 @@ A or C.** So:
 - **A is recoverable for any source that prints its formulas** — done below for
   all fifteen Fan–Wollinger–Gong appendix tables, including their reprint of
   Nyukai's frequent-case formulas, which is the best published count;
-- C cannot be separated in prior work and is folded into M throughout.
+- **C is recoverable too, and the answer is almost always zero** — see below.
+
+### The C column, and why prior work does not have one
+
+Measured rather than assumed. **In every published odd-characteristic
+formula set, C = 0**: after the `f₆` depression the surviving curve
+coefficients enter only *additively* (`u₃₁ = f₅ − (…)`, `u₃₀ = f₄ − (…)`) and
+are never multiplicands. Verified across Nyukai's addition and doubling, GKP's
+Appendices E and F, and FWG's five Fp low-degree tables. The same holds in
+characteristic 2 wherever the normal form drives the coefficients to 0 or 1 —
+FWG's `h = X³` and `h = h₀` addition rows.
+
+**Prior work has no C column because its normal forms leave almost nothing to
+multiply by.** That is a consequence of normalising hard, not an omission.
+
+Where a coefficient does survive, the authors price it — just not as a C
+column. FWG publish *variant columns* (`h₂ = 1` / `h₂⁻¹ small` / `h₂
+arbitrary`), and the constant's cost is exactly the gap between them:
+
+| FWG table | `h = 1` | `h` arbitrary | cost of the live constant |
+|---|---|---|---|
+| DBL, `h = h₂X²` | 1I + 24M + 12S | 1I + 36M + 10S | **+10** multiplicative ops |
+| DBL, `h = h₁X` | 1I + 13M + 13S | 1I + 20M + 12S | **+6** |
+| DBL, `h = h₀` | 1I + 10M + 11S | 1I + 15M + 11S | **+5** |
+| ADD, `h = h₂X²` | — (`small` 1I+58M+6S) | 1I + 60M + 5S | **+1** |
+| ADD, `h = h₁X` | — (`small` 1I+57M+6S) | 1I + 58M + 6S | **+1** |
+
+So constant-multiplication is a doubling problem, not an addition problem, in
+characteristic 2 — and negligible in odd characteristic.
+
+**Our side is the opposite, and the reason is structural.** The audit harness
+folds coefficient products into M, but the `//Constant:` directives in every
+formula file declare exactly which identifiers are curve constants, so C is
+well-defined today. Counted statically per function from those declarations:
+
+| file | function | C |
+|---|---|---|
+| `nch2_ramifiedG3_ADD` | `Deg3ADD` | **8** — and these are precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form |
+| `arb_ramifiedG3_ADD` | `Deg3ADD` / `Deg23ADD` / `Deg22ADD` / `Deg13ADD` / `Deg12ADD` | 72 / 35 / 22 / 8 / 6 |
+| `arb_ramifiedG3_DBL` | `Deg3DBL` / `Deg2DBL` / `Deg1DBL` | 41 / 25 / 9 |
+
+The **arb** family cannot normalise — that is what "arbitrary characteristic"
+means — so it carries `h₃…h₀` and `f₆…f₀` live and pays C everywhere. This is
+the single biggest structural difference between our formulas and every
+published one, and it is why the arb lane can only be compared against the
+thesis's own split rows, which also carry C.
+
+Two caveats on those figures: they are **static whole-function counts covering
+every branch**, so they bound the frequent-case C from above rather than giving
+it, and a proper per-branch tally (harness split or `latexConverter.py`'s
+counting layer, cross-checked against each other) is merge-plan PR14's job.
 
 **The measured counts for this repository** come from the audit harness
 (`/Users/s3b/Dev/divisor-audits/g3ram/harness/`), which executes the actual
@@ -105,8 +155,13 @@ prior-work A counts are derived here rather than published by their authors —
 | **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 77 M+S, 114A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
 | **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | *none* | **Future work, PR7** |
 | **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | *none* | **Future work, PR8** |
-| **arb ADD** | **none** | 87 M+S, 97A | No published arbitrary-characteristic genus-3 ramified formulas exist |
-| **arb DBL** | **none** | 77 M+S, 114A | As above. Compare the thesis's *split* Degree-3 DBL at 76 M+S + 101A — ramified should be cheaper and is not (PR14) |
+| **arb ADD** | **none** | 87 M+S, 97A | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD it is **7–19 M+S and 10 A worse** under either C convention — the sanity flag, and PR14's primary target |
+| **arb DBL** | **none** | 77 M+S, 114A | As above. Against split Degree-3 DBL: inconclusive on M+S (18 better to 1 worse, depending on C) and 13 worse on A |
+
+**C is 0 in every "previous best" cell above** — the published normal forms
+leave no coefficient to multiply by. It is non-zero only for us, and only in the
+arb family, which by definition cannot normalise. Our M+S figures already
+include C; theirs have none to include. See [the C column](#the-c-column-and-why-prior-work-does-not-have-one).
 
 Reading it:
 
@@ -344,10 +399,36 @@ Measured today (audit harness, frequent case):
 | `arb` ADD, Deg3 typical | 64–75M, 12–23S, 1I | **87** | **97** |
 | `arb` DBL, Deg3 typical | 72M, 5S, 1I | **77** | **114** |
 
-Against the thesis's split Degree-3 DBL (73M + 3S + 101A, i.e. 76 combined),
-the ramified arb DBL at 77 combined + 114A is **not** cheaper at all despite
-having strictly less work to do — it is one operation worse on M+S and thirteen
-worse on A. That is the sanity flag firing, and it is the substance of PR14.
+### The sanity flag fires on the addition, not the doubling
+
+An earlier revision of this section compared our doubling's 77 against the
+split row's `73M + 3S = 76` and concluded the doubling "is not cheaper at all".
+That was wrong twice over: it compared against the wrong operation, and it
+dropped the split row's **19C**. Our harness folds coefficient products into M,
+so our figures already include C and the thesis's do not — the two are only
+comparable once the split row's C is either added to it or excluded from ours,
+and the conclusion differs by which:
+
+| vs split Degree-3, arbitrary | ours (C included) | split, C free | split, C = M | verdict |
+|---|---|---|---|---|
+| **ADD** | 87 M+S, 97A | 68, 87A | 80, 87A | **worse by 7–19 on M+S and 10 on A — holds under either convention** |
+| **DBL** | 77 M+S, 114A | 76, 101A | 95, 101A | 18 better to 1 worse: **inconclusive** on M+S; 13 worse on A |
+
+So the flag fires on the **addition**, robustly and on both axes. The doubling
+is inconclusive on multiplications and adverse only on additions.
+
+That matches the structural finding independently on record in the merge plan:
+the genus-3 ramified **ADD** builds the full 9-entry adjugate with a 9M
+matrix–vector product, while the **DBL** in the same directory already uses the
+thesis's T13 first-column shape with Karatsuba twice. The doubling was ported
+with the technique; the addition was not. Ramified arithmetic ought to be
+cheaper than split at equal genus — no balancing, no adjust steps — and the
+addition is where it fails to be.
+
+**The C convention, stated once so no later comparison repeats the error:** our
+measured M includes coefficient products; any thesis or published row quoted
+beside it must have its C added, or be marked as excluding it. Both readings are
+given wherever it changes the conclusion.
 
 ---
 
@@ -440,6 +521,17 @@ inconsistency in the paper itself. Every `deg h = 3` addition row — the ones
 this repository needs — was agreed by both passes. One column, the `deg h = 1`
 doubling, is **underivable**: its 9M step is asserted in prose with no printed
 formula.
+
+**How C was derived.** Three routes, per source. Where formulas are printed, a
+curve coefficient is a C only when it is a *multiplicand*; standing alone
+between signs it is an additive term. Scanning the printed right-hand sides that
+way gives **0** for every odd-characteristic table and for the char-2 rows whose
+normal form fixes the coefficients at 0 or 1. Where a coefficient stays live,
+FWG write it in a vector notation (`(e₀, e₁) = h₂ · (v₁₂, v₁₀)`) that a naive
+scan misses, so C there is taken from **the authors' own variant columns** —
+the gap between `h = 1` and `h arbitrary` is precisely the constant's cost, and
+needs no re-derivation. For our files, C is counted statically per function from
+the committed `//Constant:` declarations.
 
 **Conventions that shift the GKP/Birkner numbers slightly**, disclosed so a
 reader can adopt their own: additions against an F₂ constant (`τ₃ + 1`,
