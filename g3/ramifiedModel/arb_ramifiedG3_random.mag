@@ -57,7 +57,7 @@ for F in FIELDS do
       FF:=GF(F);
       R<x>:=PolynomialRing(FF);
 
-      f,h:= RandomG3Curve(F, "arb");
+      f,h:= RandomG3Curve(F);
       C:= HyperellipticCurve(f,h);
       Jac:= Jacobian(C);
 
