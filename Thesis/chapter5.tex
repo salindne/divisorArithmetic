@@ -89,14 +89,20 @@ assume $h = 0$ whenever char($k) \neq 2$, but make no assumption about $f_4$.
 \subsubsection{char(k) = 2}
 If char($k$) = 2, then division by two is not
 possible and the transformation $$ y \rightarrow y - \frac{h(x)}{2}$$ cannot be
-made. In the genus 2 setting $h$ non-constant is guaranteed because otherwise
-the curve model is singular. The following isomorphism transforms a curve to
-one for which several coefficients of $h$ and $f$ are zero or one: $$ y
-\rightarrow h_2^5y + f_3h_2x + \frac{f_3(f_3 + h_1h_2 + f_4h_2^2 +
-f_2h_2^2)}{h_2^3}, \quad x\rightarrow h_2^2x + f_4.$$ Dividing the equation by
-$h_2^{10}$ results in $h_2 =1$ and $f_4 = f_3 = f_2 = 0$. This equation of the curve
-is assumed when counting operations in Section~\ref{sec:ramFieldCosts} over
-base field $k$ with char($k) = 2$. 
+made. Following~\cite{Lange_explicit_2005}, $h$ is taken to be non-constant,
+since a curve with $h$ constant is supersingular and the discrete logarithm
+problem on it is weaker than on an arbitrary curve. Attention is restricted
+further to $\deg h = 2$, which the transformation below requires. When $\deg h =
+2$ the
+following isomorphism transforms a curve to one for which several coefficients
+of $h$ and $f$ are zero or one: $$ y \rightarrow h_2^5y + f_3h_2x +
+\frac{f_3(f_3 + h_1h_2 + f_4h_2^2) + f_2h_2^2}{h_2^3}, \quad x\rightarrow
+h_2^2x + f_4.$$ Dividing the equation by $h_2^{10}$ results in $h_2 =1$ and $f_4
+= f_3 = f_2 = 0$. This equation of the curve is assumed when counting operations
+in Section~\ref{sec:ramFieldCosts} over base field $k$ with char($k) = 2$. Note
+that $\deg h = 2$ is required: the constant above is the only place the
+coefficient $a_0$ of the substitution enters, and it does so multiplied by
+$h_2$, so $f_2$ cannot be cleared when $h_2 = 0$. 
 
 \subsection{Prior Work}
 \label{sec:g2explRAMPriorWork}

@@ -21,8 +21,7 @@ that is stated plainly rather than left to the reader to assume.
 
 | | |
 |---|---|
-| files differing | **1** (`chapter4.tex`) |
-| lines differing | 5 |
+| files differing | **2** (`chapter4.tex`, `chapter5.tex`) |
 | published state | commit `399c817` |
 
 ---
@@ -87,6 +86,55 @@ this rests on the structural argument alone. Two supporting observations: its
 doubling counterpart at `:610` already uses `<`, as does the ramified one at
 `:520`.
 
+## E-T6 — the char-2 normalisation had a misplaced term, and unstated scope
+
+**`chapter5.tex`, subsection "char(k) = 2".** **Measured, three independent ways.**
+
+Three corrections in one passage, all of them in the *thesis*; the implementation was right
+throughout and needed no change.
+
+**(a) The transformation's constant term.** As printed, `f₃` was distributed over one term too many:
+
+```
+    printed:   f3*(f3 + h1*h2 + f4*h2^2 + f2*h2^2) / h2^3
+    corrected: (f3*(f3 + h1*h2 + f4*h2^2) + f2*h2^2) / h2^3
+```
+
+The `f₂h₂²` term must stand alone. The printed map is still a *valid isomorphism* — it lands on a
+genuine curve — but it leaves `f₂ ↦ f₂(f₃+1)/h₂⁶` rather than `0`, so it does not produce the normal
+form claimed beside it. This matches **Lange (2005)**, the source the passage cites, whose numerator
+is `f3(f3 + h1h2 + f4h2²) + f2h2²`; the error is a transcription slip.
+
+Evidence: symbolic substitution in characteristic 2 followed by division by `h₂¹⁰`; Magma over 269
+genus-2 curves on GF(4)/GF(8)/GF(16)/GF(32) where the printed map left `f₂ ≠ 0` on **229** of them
+and the corrected map on **none**, with zero point failures either way; and an independent
+homogeneity argument — under `x → α²x, y → α⁵y` every legitimate term of the constant must scale as
+`α⁻⁵`, and the stray `f₃f₂/h₂` scales as `α⁻⁹`, so it cannot belong.
+
+**(b) The scope.** `f₄ = f₃ = f₂ = 0` holds **only when `deg h = 2`**. The coefficient `a₀` of the
+`y`-substitution enters the degree-2 coefficient solely through `a₀h₂`, so when `h₂ = 0` it drops out
+and `f₂` is not clearable. Exhaustive search over the full automorphism group: `deg h = 2` reaches the
+form 25/25 of the time, `deg h = 1` 10/25, `deg h = 0` 3–4/25. Lange states the same restriction, and
+says plainly that for `h₂ = 0` "f2 cannot [be] assumed to be 0".
+
+**(c) The justification.** "h non-constant is guaranteed because otherwise the curve model is
+singular" is false. `y² + y = x⁵` over GF(2) is accepted by Magma as a genus-2 curve with one point
+at infinity, and a constant non-zero `h` gives a smooth affine model. Lange's actual reason is
+different and correct: such curves are **supersingular**, so the discrete logarithm problem on them
+is weaker. Corrected to say that.
+
+**Why the code was not wrong.** `ch2_ramifiedG2_{ADD,DBL}.mag` declare `h2 ∈ {0,1}`, spanning
+`deg h < 2` as well, and on that family `f₂` is provably not removable — so keeping `f₂` live was
+correct for the domain those files claim, not an oversight. An earlier reading of this repository had
+it backwards, treating the thesis sentence as evidence of a code defect.
+
+**What is changing, and why it is not a contradiction.** The formulas are being restricted to
+`deg h = 2` with `h₂ = 1`, so that `f₄ = f₃ = f₂ = 0` becomes true of the implementation rather than
+merely available to assume — the same normal form genus 3 uses, giving both genera one exposition.
+That narrows the declared domain rather than fixing an error: curves with `deg h < 2`, including the
+Koblitz/subfield family at `deg h = 1`, move to the arbitrary-characteristic formulas, which serve
+them correctly at higher cost. Once that lands, this entry's `f₂` discussion describes history.
+
 ---
 
 ## Known defects not yet corrected
@@ -102,6 +150,8 @@ corrected in `Thesis/` yet.
 | `chapter5.tex:1831` | unbalanced parenthesis: `-w_4(` is never closed |
 | `chapter5.tex:643` | dangling text: "where only the degree 2 coefficient `k_2 = ` of `k` is used" |
 | `chapter4.tex:545` vs `:547` | `alg:g3nucomp` assigns `(S,a_2,b_2)` then tests `S' \neq 1`; `S'` is never defined. `alg:g3balnucomp:651` gets this right |
+| `chapter5.tex`, char-2 subsection | the `f₄ = f₃ = f₂ = 0` assumption stated beside `tab:ramfcosts` is **not exploited by the counts**. Those counts are generated from the implementation, which computes `k0 := f2 + …` rather than dropping the term — verified by matching the code's additions, squarings and inversions against the published Degree-2 doubling row exactly (25A, 4S, 1I). So the assumption is real but unused, and a genuinely `f₂`-free derivation would count fewer additions. Being resolved in the implementation's favour: the formulas are being restricted to the full normal form so the assumption becomes true of the code, after which these rows need regenerating |
+| `g2/ramifiedModel/g2Formulas/ch2_*` (code, not thesis) | the assumed shape `f = x⁵ + f₂x² + f₁x + f₀` fixes `f₃ = 0`. For `deg h = 2` and `deg h = 1` that is reachable, but when `h` is **constant** `f₃` is an isomorphism invariant, so such curves cannot be brought into the shape at all. `RandomG2Char2Curve` hard-zeroes `f₃`, so the family is never generated and never flagged — a coverage gap, not a formula error |
 
 ## A notation inconsistency to resolve before the appendix is filled
 
