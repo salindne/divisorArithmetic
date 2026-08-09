@@ -98,11 +98,32 @@ directives in every formula file declare exactly which identifiers are curve
 coefficients, and the interpreter charges C on that basis. Executed
 frequent-case counts:
 
-| file | function | C |
-|---|---|---|
-| `nch2_ramifiedG3_ADD` | `Deg3ADD` generic | **3** — precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form |
-| `arb_ramifiedG3_ADD` | `Deg3ADD` generic | **12** |
-| `arb_ramifiedG3_DBL` | `Deg3DBL` typical | **16** |
+| file | function | C | of which `h₃` products |
+|---|---|---|---|
+| `nch2_ramifiedG3_ADD` | `Deg3ADD` generic | **3** — precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form | — (h = 0) |
+| `arb_ramifiedG3_ADD` | `Deg3ADD` generic | **12** → **4** | 8 |
+| `arb_ramifiedG3_DBL` | `Deg3DBL` typical | **16** → **4** | 12 |
+
+The arrow is the `h₃ ∈ {0,1}` convention: both arb files declare it in their
+banner and `//Ignore: h₃`, so products with `h₃` are free — the genus-2
+arbitrary files have done the same with `h₂` since they were written. The
+normalisation is always reachable (`x → α²x`, `y → α⁷y`, `α = h₃`, valid in
+every characteristic), which is what makes ignoring them sound.
+
+Worth recording that at genus 3 this is a *costing* convention and not a domain
+boundary — and that the difference from genus 2 is about how the formulas were
+derived, not about the mathematics. The same scaling makes `h` monic at genus 2,
+yet the genus-2 formulas were *written using* the assumption and are wrong for
+`h₂` outside {0,1} **in every characteristic tested** (2, 3, 5, 7, 11, 13 —
+measured by lifting the banner restriction and re-running the driver; the GF(4)
+example on record was simply the one that got written down, not a special case).
+The genus-3 formulas were written generically in `h₃` and measure **correct
+outside {0,1}** — 480 operations over four fields, zero wrong.
+
+So at genus 3 the assumption is currently **declared but unexploited**: it makes
+the `h₃` products free to *count*, while the code still computes them. Whether
+specialising on it removes real operations, as it evidently did at genus 2, is
+an open efficiency question and not yet answered.
 
 The **arb** family cannot normalise — that is what "arbitrary characteristic"
 means — so it carries `h₃…h₀` and `f₆…f₀` live and pays C everywhere. This is

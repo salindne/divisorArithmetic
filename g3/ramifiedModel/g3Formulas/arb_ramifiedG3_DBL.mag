@@ -1,17 +1,33 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Author: Randall Apperley                                                 
-//                                                   
+// Author: Randall Apperley, Sebastian Lindner
+//
 // Description: Explicit divisor doubling formulas for the 4 coordinate Mumford
 //              representation over arbitrary fields where:
 //
-//              h(x) = h3*x^3 + h2*x^2 + h1*x + h0 (deg h <= 3) and
+//              h(x) = h3*x^3 + h2*x^2 + h1*x + h0 (h3 in {0,1}) and
 //              f(x) = x^7 + f6x^6 + f5x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0
-//                                                                      
+//
+// On h3 in {0,1}: always reachable, and here a costing convention rather than a
+//              domain restriction. Reachable because x -> a^2*x, y -> a^7*y
+//              (dividing through by a^14) leaves f monic and sends h's leading
+//              coefficient to h3/a, so a = h3 makes h monic; no division by 2,
+//              3 or 7 is involved, so it holds in every characteristic. It is
+//              declared so h3 can be //Ignore'd, which is only sound when h3 is
+//              0 or 1. Note the contrast with genus 2, which is about how the
+//              formulas were derived and not about the mathematics: the same
+//              scaling makes h monic there too, but the genus-2 formulas were
+//              written using the assumption, so they are wrong for h2 outside
+//              {0,1} in every characteristic tested (char 2, 3, 5, 7, 11, 13 --
+//              not a GF(4) quirk). These genus-3 formulas were written
+//              generically in h3 and were measured correct outside {0,1}, so
+//              the declaration narrows what is claimed and tested, not what
+//              works -- and the assumption is so far declared but unexploited.
 ///////////////////////////////////////////////////////////////////////////////
 
 
 //Must keep next line in this format for latex conversion
-//Constant: f6,f5,f4,f3,f2,f1,f0,h3,h2,h1,h0
+//Constant: f6,f5,f4,f3,f2,f1,f0,h2,h1,h0
+//Ignore: h3
 
 
 ///////////////////////////////////////////////////////////////////////////////
