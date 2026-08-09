@@ -138,7 +138,8 @@ whole suite passes. Full diagnosis, and the list of approaches that do not work,
 | [generic/](generic/) | generic-genus Cantor and NUCOMP reference implementations, and timings |
 | [whitebox/](whitebox/) | whitebox test-case generator and its outputs |
 | [latexTables/](latexTables/) | operation-count table generator and generated `.tex` |
-| [Thesis/](Thesis/) | thesis LaTeX sources, see [Thesis](#thesis) |
+| [Thesis/](Thesis/) | thesis LaTeX sources, corrections applied, see [Thesis](#thesis) |
+| [ThesisPublished/](ThesisPublished/) | the same sources frozen as published, never edited, see [FROZEN.md](ThesisPublished/FROZEN.md) |
 | [test_all.sh](test_all.sh) | test entrypoint |
 | [1024bit_primes.mag](1024bit_primes.mag) | pre-generated 1024-bit primes for the timing experiments |
 | [rust/](rust/) | Rust port, a git submodule, see [Rust implementation](#rust-implementation) |
@@ -346,11 +347,23 @@ The recorded pointer may lag the submodule's `main`.
 
 ## Thesis
 
-`ucalgary_2020_lindner_sebastian.pdf` at the repository root is the built document.
+`ucalgary_2020_lindner_sebastian.pdf` at the repository root is the built document, as published and
+never modified.
 
-[Thesis/](Thesis/) holds the LaTeX sources, `frontmatter.tex`, `chapter1.tex` through `chapter7.tex` and
-`appendix.tex`, but not the master document that includes them. No `.tex` file here has a
-`\documentclass`, so the thesis cannot be rebuilt from this directory as it stands.
+The source exists in two copies, deliberately:
+
+| | |
+|---|---|
+| [ThesisPublished/](ThesisPublished/) | **frozen.** Byte-exact as submitted; never edited |
+| [Thesis/](Thesis/) | **evolving.** Corrections land here, each logged in [Thesis/ERRATA.md](Thesis/ERRATA.md) |
+
+Both hold `frontmatter.tex`, `chapter1.tex` through `chapter7.tex` and `appendix.tex`, but not the
+master document that includes them. No `.tex` file has a `\documentclass`, so the thesis cannot be
+rebuilt from either directory as it stands.
+
+Corrections are made only where they are justified, and
+[Thesis/ERRATA.md](Thesis/ERRATA.md) says for each one whether it was verified by measurement or
+rests on a structural argument. `diff -r ThesisPublished Thesis` shows the current divergence.
 
 ---
 
