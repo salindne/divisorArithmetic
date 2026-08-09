@@ -145,31 +145,30 @@ end function;
 // ========================== RANDALL'S FUNCTIONS =============================
 
 //-----------------------------------------------------------------------------
-// RandomG3Curve(q, char_type)   //adapted from RandomG2Curve
+// RandomG3Curve(q)
 //-----------------------------------------------------------------------------
 // Input:       q: field parameter.
-//              char_type: "odd" (h = 0 over an odd-characteristic field)
-//                         or "arb"; no "even" branch exists yet (TODO below).
-//     
+//
 // Return: Random(ish) hyperelliptic polynomials of curve with one point at
 //         infinity f and h in GF(q)[x] where f is monic separable of degree
-//         7 and polynomial h of degree <= 3.
+//         7 and polynomial h of degree <= 3 with h3 in {0,1}.
+//
+//         h3 is drawn from {0,1} rather than from the field because that is the
+//         domain the arb formulas declare, and every curve with deg(h) = 3 can
+//         be brought to it: x -> a^2*x, y -> a^7*y with a = h3 leaves f monic
+//         and makes h monic, in any characteristic. An implementer normalises
+//         once at setup; a generator that produced other h3 would be testing
+//         curves the formulas do not claim. RandomG2Curve has always done this
+//         (Random(0,1) for h2) -- genus 3 had it recorded as a TODO instead.
 //-----------------------------------------------------------------------------
-RandomG3Curve := function(q, char_type)
+RandomG3Curve := function(q)
     assert IsPrimePower(q);
     F:=GF(q);
     R<x>:=PolynomialRing(F);
     while true do
-        //Randomly generate f and h 
+        //Randomly generate f and h
         f:= x^7 + Random(F)*x^6 + Random(F)*x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
-        //h3 will be made Random(0,1) later
-
-        if char_type eq "odd" then
-            h:= 0*x^3 + 0*x^2 + 0*x + 0;
-        elif char_type eq "arb" then
-            h:= Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
-        end if;
-		// TODO: add the case for even char too
+        h:= Random(0,1)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
 
         //Check if f and h are hyperelliptic polynomials for a curve of genus g
         try
@@ -179,7 +178,7 @@ RandomG3Curve := function(q, char_type)
             isHC:= false;
         end try;
 
-        //If f and h correspond to a genus g hyperelliptic curve, check to see 
+        //If f and h correspond to a genus g hyperelliptic curve, check to see
         //if the curve has one point at infinity (our use case).
         if isHC then
             pointsAtInf:= PointsAtInfinity(C);
@@ -187,7 +186,117 @@ RandomG3Curve := function(q, char_type)
                 return f,h;
             end if;
         end if;
-        
+
+    end while;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// RandomG3NotChar2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter.
+//
+// Return: Random(ish) hyperelliptic polynomial of curve with one point at
+//         infinity f in GF(q)[x] where f is monic separable of degree 7.
+//         h is 0 and is not returned, as in RandomG2NotChar2Curve.
+//
+//         NOTE the one place this is not yet the exact analogue of genus 2:
+//         RandomG2NotChar2Curve omits the degree-4 term because the genus-2
+//         nch2 formulas apply the x -> x - f4/5 depression (char != 5). The
+//         genus-3 analogue is x -> x - f6/7 (char != 7), which the nch2
+//         formulas do NOT yet apply -- they still take f6 as a parameter. So f6
+//         is still drawn here. Dropping it belongs with the formula change, not
+//         ahead of it, or the generator would be testing a domain the formulas
+//         do not claim.
+//-----------------------------------------------------------------------------
+RandomG3NotChar2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f
+        f:= x^7 + Random(F)*x^6 + Random(F)*x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f is hyperelliptic polynomial for a curve
+        try
+            C:=HyperellipticCurve(f);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f corresponds to a genus g hyperelliptic curve, check to see
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 7) then
+                return f;
+            end if;
+        end if;
+
+    end while;
+end function;
+
+
+//-----------------------------------------------------------------------------
+// RandomG3Char2Curve(q)
+//-----------------------------------------------------------------------------
+// Input:       q: field parameter (a power of 2).
+//
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f and h in GF(q)[x] where f is monic separable of degree
+//         7 with the 6th, 5th, 4th and 3rd power terms 0, and h monic of
+//         degree exactly 3.
+//
+//         The derived char-2 normal form:
+//             h = x^3 + h2*x^2 + h1*x + h0,   f = x^7 + f2*x^2 + f1*x + f0
+//         reached by scaling x -> c^2x, y -> c^7y with c = h3 (making h monic),
+//         translating x -> x + f6 (kills f6 outright -- deg f is odd, so the
+//         x^6 coefficient of (x+b)^7 is b mod 2, no condition), then shifting
+//         y by a quadratic to clear f5, f4, f3. The shift has g = 3 free
+//         parameters and kills exactly 3 coefficients; the translation kills
+//         one more; g coefficients are left free. That is the whole reduction.
+//
+//         h is monic of degree EXACTLY 3, not h3 in {0,1}, matching the genus-2
+//         normal form the thesis derives ("results in h_2 = 1 and
+//         f_4 = f_3 = f_2 = 0", chapter5.tex). The scaling step divides by h3,
+//         so it needs h3 != 0, and at char 2 that is load-bearing twice over:
+//         the y-shift clears f5 through a2*h3, so h3 = 0 breaks the f reduction
+//         as well. deg h < 3 is therefore a different curve family with its own
+//         normal form, not a sub-case of this one.
+//
+//         The intent is that the char-2 formulas (not yet written) will still
+//         compute correctly on deg h < 3 curves, since the f normal form is the
+//         same and nothing in the reduction needs h3 != 0 once f is already in
+//         form -- but that is design intent, not a measured fact, and should be
+//         checked when those formulas exist rather than assumed here.
+//-----------------------------------------------------------------------------
+RandomG3Char2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h
+        f:= x^7 + Random(F)*x^2 + Random(F)*x + Random(F);
+        h:= x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f and h are hyperelliptic polynomials for a curve of genus g
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h correspond to a genus g hyperelliptic curve, check to see
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 7) then
+                return f,h;
+            end if;
+        end if;
+
     end while;
 end function;
 

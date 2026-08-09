@@ -58,7 +58,10 @@ for F in FIELDS do
       FF:=GF(F);
       R<x>:=PolynomialRing(FF);
 
-      f,h:= RandomG3Curve(F, "odd");
+      f:= RandomG3NotChar2Curve(F);
+      // h = 0 for this class; kept as a polynomial because the borrowed arb DBL
+      // and Nucomp_g3_RAM both take it (this family has no DBL of its own yet)
+      h:= R!0;
       C:= HyperellipticCurve(f,h);
       Jac:= Jacobian(C);
 
