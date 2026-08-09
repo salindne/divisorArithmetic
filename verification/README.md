@@ -95,6 +95,7 @@ just not in per-PR CI, where 37 seconds of sampling proves neither thing.
 | `harvested_cases.json` | frozen cases for every branch no Magma tester reaches -- currently 70 cases, all for the two genus-3 ramified families, which have no tester until PR6. The genus-3 split `ch2` entries left when PR12's regenerated tester made them redundant |
 | `coverage_baseline.json` | the branches exempt from coverage, **as a named label set with a reason each** — everything else must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Also pins any known arity anomalies by case identity, so a new one fails while known ones stay reported-not-fatal; the pin set is empty since PR5 fixed errata E2 |
 | `driver.py` | random differential testing, with per-branch coverage; not in CI |
+| `normal_form.py` | verifies the curve normal forms the formula banners declare, at both genera, including the negative controls. Standalone, no arguments, ~1 min; not in CI. Backs Part I of [`NEW_WORK.md`](../NEW_WORK.md) |
 | `selftest.py` | checks the framework itself, twelve sections |
 
 ## Current state
