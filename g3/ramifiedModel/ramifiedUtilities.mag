@@ -239,16 +239,66 @@ end function;
 
 
 //-----------------------------------------------------------------------------
-// RandomG3Char2Curve(q) -- NOT YET WRITTEN
+// RandomG3Char2Curve(q)
 //-----------------------------------------------------------------------------
-// The third member of the genus-2 trio (RandomG2Char2Curve) has no genus-3
-// counterpart yet, because the char-2 formulas it would serve do not exist.
-// It is deliberately not written here rather than guessed: the char-2 genus-3
-// normal form is deg h = 3 EXACTLY with h monic, not h3 in {0,1}. Copying
-// RandomG2Char2Curve's `Random(0,1)*x^2` would reproduce a known inconsistency
-// in the genus-2 char-2 files, which advertise h2 in {0,1} but at h2 = 0 are
-// valid only on curves that already happen to have f4 = f3 = 0.
+// Input:       q: field parameter (a power of 2).
+//
+// Return: Random(ish) hyperelliptic polynomials of curve with one point at
+//         infinity f and h in GF(q)[x] where f is monic separable of degree
+//         7 with the 6th, 5th, 4th and 3rd power terms 0, and h monic of
+//         degree exactly 3.
+//
+//         The derived char-2 normal form:
+//             h = x^3 + h2*x^2 + h1*x + h0,   f = x^7 + f2*x^2 + f1*x + f0
+//         reached by scaling x -> c^2x, y -> c^7y with c = h3 (making h monic),
+//         translating x -> x + f6 (kills f6 outright -- deg f is odd, so the
+//         x^6 coefficient of (x+b)^7 is b mod 2, no condition), then shifting
+//         y by a quadratic to clear f5, f4, f3. The shift has g = 3 free
+//         parameters and kills exactly 3 coefficients; the translation kills
+//         one more; g coefficients are left free. That is the whole reduction.
+//
+//         h is monic of degree EXACTLY 3, not h3 in {0,1}, matching the genus-2
+//         normal form the thesis derives ("results in h_2 = 1 and
+//         f_4 = f_3 = f_2 = 0", chapter5.tex). The scaling step divides by h3,
+//         so it needs h3 != 0, and at char 2 that is load-bearing twice over:
+//         the y-shift clears f5 through a2*h3, so h3 = 0 breaks the f reduction
+//         as well. deg h < 3 is therefore a different curve family with its own
+//         normal form, not a sub-case of this one.
+//
+//         The intent is that the char-2 formulas (not yet written) will still
+//         compute correctly on deg h < 3 curves, since the f normal form is the
+//         same and nothing in the reduction needs h3 != 0 once f is already in
+//         form -- but that is design intent, not a measured fact, and should be
+//         checked when those formulas exist rather than assumed here.
 //-----------------------------------------------------------------------------
+RandomG3Char2Curve := function(q)
+    assert IsPrimePower(q);
+    F:=GF(q);
+    R<x>:=PolynomialRing(F);
+    while true do
+        //Randomly generate f and h
+        f:= x^7 + Random(F)*x^2 + Random(F)*x + Random(F);
+        h:= x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+
+        //Check if f and h are hyperelliptic polynomials for a curve of genus g
+        try
+            C:=HyperellipticCurve(f,h);
+            isHC:= true;
+        catch e
+            isHC:= false;
+        end try;
+
+        //If f and h correspond to a genus g hyperelliptic curve, check to see
+        //if the curve has one point at infinity (our use case).
+        if isHC then
+            pointsAtInf:= PointsAtInfinity(C);
+            if (# pointsAtInf eq 1) and (Degree(f) eq 7) then
+                return f,h;
+            end if;
+        end if;
+
+    end while;
+end function;
 
 
 XGCD_PARTIAL := function(R2, R1, BOUND, flag)
