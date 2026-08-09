@@ -1,0 +1,1264 @@
+% This file contains CHAPTER FOUR
+
+\chapter{Towards Explicit Formulas}
+\label{cha:towardsExplicit}
+The goal of this chapter is to align improvements and specializations to generic
+polynomial-based algorithms for divisor class addition from previous works with
+those introduced in Chapter~\ref{cha:nucomp}, and to introduce the main
+techniques used in developing explicit formulas for computing divisor class
+arithmetic on genus 2 and 3 hyperelliptic curves. 
+
+A common featured from previous methods is that generic methods for improving
+Cantor's Addition algorithms are adapted to the most frequently occurring
+inputs where the input divisor classes have degree $g$, and $\gcd(u_1,u_2,v_1 +
+v_2 + h) = 1$ with input divisor classes $[u_1,v_1],[u_2,v_2]$
+(Section~\ref{sec:gcdoptimize}). These cases are denoted as the \emph{frequent
+case} for addition and doubling. If the field $k$ is sufficiently large, then
+with high probability~\cite{Lange_explicit_2005}, input divisor classes are in
+the frequent case. All other cases are denoted as \emph{special} in this work,
+as these cases occur infrequently. The main focus of this chapter is introducing
+a generic framework that combines both special and frequent cases, as most
+special cases have previously not been made explicit. 
+
+To align with previous
+work~\cite{Lange_explicit_2005,CostelloLauter_geo_2011,fan_g3_2006}, explicit
+techniques are described for ramified models in this chapter. Almost all
+techniques also apply to split models, the main difference being $\deg f =
+6$ not $5$ and $\deg h = 3$ not $2$ for genus 2 curves, and $\deg f = 8$ not
+$7$ and $\deg h = 4$ not $3$ for genus 3 curves. These differences
+complicate some explicit formula computations, and any discrepancies or additional
+techniques for split models are addressed in Chapters~\ref{cha:g2} for
+genus 2 and Chapter~\ref{cha:g3} for genus 3. 
+
+First, descriptions of the main generic methods from explicit formula literature
+for frequent case divisor class addition and doubling are presented. Comparisons
+are made with specializations of NUCOMP from Chapter~\ref{cha:nucomp} to genus
+2 and 3, concluding that the NUCOMP-based methods are better suited than the
+generic methods for basing explicit formulas on. Explicit formulas are then
+introduced and previous well known explicitization techniques, as well as some novel
+techniques, are presented.
+
+\section{Generic Methods}
+\label{sec:prevGenMethods}
+There are two main generic methods in previous literature; Harley's improvements
+to Cantor's algorithm~\cite{Harley_explicit_2000} and the linear algebra method
+due to Costello and Lauter~\cite{CostelloLauter_geo_2011}. Harley's method is a
+specialization of Cantor's algorithm for the frequent cases originally described
+for genus 2 curves, where the computations were broken up into certain
+sub-expressions allowing for reuse of those sub-expressions, saving on
+operations overall. On the other hand, the linear algebra method, described for
+the frequent cases over all genera, invokes linear algebra techniques to compute
+the polynomial that interpolates the support of the composed divisor class
+representative, ignoring Cantor's Composition (Algorithm~\ref{alg:cantorcomp}),
+but utilizing Cantor's Reduction (Algorithm~\ref{alg:cantorred}). 
+
+\subsection{Harley's Improvements in the Frequent Case} 
+\label{sec:harley}
+Harley reduced the cost of the group operations for Cantor's algorithm for
+genus 2 curves described by a ramified model by specializing to the most
+frequently-occurring cases of the input divisors~\cite{Harley_explicit_2000},
+omitting the explicit computation of the unreduced divisor class representation
+after composition and reusing computations from the composition portion in the
+reduction. This approach is precisely the approach borrowed from the binary
+quadratic form setting used to improve generic Cantor's
+Algorithm~\ref{alg:impcantoradd} in Chapter~\ref{cha:nucomp}, but only applied
+to frequent cases in genus 2.
+
+Consider a reduced divisor class in Mumford representation $[D_1] = [u_1,v_1]$
+in the genus 2 frequent case for doubling. The resulting polynomials from
+Cantor's composition Algorithm~\ref{alg:cantoradd} for doubling are $u' = u_1^2$
+and $v'$ of degree $\leq 3$ satisfying $u' \mid f - v'(v' + h)$. Harley noticed
+that $v_1$ is a square root of $f$ modulo $u_1$, and suggested that one can
+double the multiplicity of all points in the support of $[u_1,v_1]$ by using a
+Newton iteration to compute a square root modulo $u_1^2$. The general approach
+to doubling a divisor class is to use Newton iteration by setting $u' = u_1^2$,
+and $v' = v_1 - [(f - v_1(v_1 + h))/(h+2v_1)] \pmod{u'}$ to create an unreduced
+divisor class $[D'] = [u',v']$.
+
+Harley's method for divisor class addition is similar to doubling but the Newton
+iteration is replaced by a Chinese remainder calculation. In the genus 2
+frequent case for addition, the two divisor classes $[D_1] = [u_1, v_1],$ and
+$[D_2] = [u_2,v_2]$ to be added consist of four points different from one
+another and from one another's negatives. The resulting polynomials from Cantor's
+composition algorithm are $u' = u_1u_2$ and a polynomial $v'$ of degree $\leq 3$
+satisfying $u' \mid f - v'(v' + h)$. Notice the inputs $u_1$ and $u_2$ also have
+the properties $u_1 \mid f - v_1(v_1 + h)$ and $u_2 \mid f - v_2(v_2 + h)$,
+providing the relations $ f - v'(v' + h) = u_1u_2k$, $f - v_1(v_1 + h) = u_1m$
+and $f - v_2(v_2 + h) = u_2n$ for some polynomials $k,m,n$. The polynomial $v'$
+can be obtained by using Garner's Algorithm for the Chinese Remainder through
+the equations
+\begin{align*} v' &\equiv v_1 \pmod{u_1},\\
+v' &\equiv v_2 \pmod{u_2}, \nonumber
+\end{align*} to create $[D'] =[u',v']$ where $u' = u_1u_2$.
+
+At this point $[D'] = [u',v']$ corresponds to a representation of $[D] = 2[D_1]$
+or $[D] = [D_1] + [D_2]$ that is unreduced in both the doubling and addition
+steps presented. A reduction step is necessary to acquire the proper reduced
+Mumford representation of $[D]$. Cantor's reduction step goes as follows
+\begin{align} u &= \frac{f- v'(v' + h)}{u'} \mbox{ made monic}, \label{eq:red1} \\
+v &= (-h - v') \pmod{u} \label{eq:red2},
+\end{align} but this is not followed literally by Harley. 
+By using techniques such as Garner's Algorithm for the Chinese Remainder Theorem in
+the addition case and Newton iteration in the doubling case, values computed in
+the composition portion are reused in the reduction portion by polynomial
+manipulation tricks, resulting in Algorithms~\ref{alg:harleyadd} and
+\ref{alg:harleydouble}.
+
+\begin{figure}[ht]
+\noindent\makebox[\linewidth][c]{\begin{minipage}[t]{7.0cm}\centering
+\begin{algorithm}[H]
+\caption{Genus 2 Harley Addition}
+\label{alg:harleyadd}
+\begin{algorithmic}[1]
+\Require $[u_1,v_1],$ $[u_2,v_2]$
+\Ensure $[u,v] = [u_1,v_1] + [u_2,v_2]$
+\State $k = \frac{(f - hv_1 - v_1^2)}{u_1}$
+\State $s \equiv \frac{(v_2 - v_1)}{u_1} \pmod{u_2}$
+\State $l = su_1$
+\State $u = \frac{(k - s(h + l + 2v_1))}{u_2}$ made monic
+\State $v \equiv  - h - (l + v_1) \pmod{u}$
+\end{algorithmic}
+\end{algorithm} \end{minipage}
+\begin{minipage}[t]{7.0cm}\centering
+\begin{algorithm}[H]
+\caption{Genus 2 Harley Doubling}
+\label{alg:harleydouble}
+\begin{algorithmic}[1]
+\Require $[u_1,v_1]$
+\Ensure $[u,v] = 2[u_1,v_1]$
+\State $k = \frac{(f - hv_1 - v_1^2)}{u_1}$
+\State $s \equiv  \frac{k}{(h +2v_1)} \pmod{u_1}$
+\State $l = su_1$
+\State $u = s^2 - \frac{s(h+2v_1) - k}{u_1}$ made monic
+\State $v \equiv  - h - (l + v_1) \pmod{u}$ \label{alg:last-step}
+\vspace*{1pt}
+\end{algorithmic}
+\end{algorithm} \end{minipage}}
+\end{figure}
+
+In more recent expositions of Harley's method, $s$ is made monic at its creation
+rather than $u$ made monic. Making $s$ monic as soon as it is computed forces
+$l$ and $u$ to be monic at their creation and overall reduces the number of
+field operations required to compute monic $u$~\cite{Lange_explicit_2005}. Note
+that $v' = l+v$ is the unreduced $v'$ polynomial of the composed divisor class
+representative before reduction that interpolates the points of $u = u_1u_2$.
+
+For genus 3 curves, an additional reduction step is necessary to achieve a
+reduced divisor class representation. Therefore, extending Harley's method to
+genus 3 curves requires two additional steps, identical in both addition and
+doubling.
+
+\begin{center}
+  \begin{minipage}{0.60\textwidth}
+  \begin{algorithm}[H]
+      \caption{Harley's Method Continued for Genus 3}
+      \label{alg:harleyg3}
+      \centering
+      \begin{algorithmic}[1]
+        \setcounterref{ALG@line}{alg:last-step}
+          \vspace{5pt}
+          \Statex ...
+          \State $u = (f - v(v + h))/u \s\s\s$ (exact division). 
+          \State $v = (-h - v)\pmod{u}$.
+          \vspace{1pt}
+      \end{algorithmic}
+  \end{algorithm}
+  \end{minipage}
+\end{center}
+
+\subsection{Linear Algebra Techniques in the Frequent Case} \label{sec:geometric} 
+Recall that analogous to the elliptic curve chord and tangent method, divisor
+addition corresponds to the points in the support of the two input divisors,
+(counting multiplicity), being interpolated and intersected with the curve,
+resulting in new points corresponding to the support of the composed divisor.
+This is indeed true for Cantor's and Harley's methods if one considers the
+geometric meaning behind the Mumford representation as described in
+Section~\ref{sec:mumford}. 
+
+In the composition portion of Cantor's algorithm an alternate method that uses
+linear algebra i.e., solving a system of linear equations, can be used to
+compute the unreduced interpolating polynomial $v'$. This method has been
+presented for frequent case addition and doubling for arbitrary genus
+hyperelliptic curves described by a ramified model, where explicit formulas
+were developed based on this method for the genus 2
+case~\cite{CostelloLauter_geo_2011}.  In this section, a brief overview of the
+method in genus 2 is given. Explicit techniques in genus 2 utilized by this
+method are presented in Section~\ref{sec:explTechniques}.
+
+Consider the input divisor classes represented geometrically as $[D_1] = (x_1,
+y_1) + (x_2, y_2)$ and $[D_2] = (x_3, y_3) + (x_4, y_4)$, where $(x_i, y_i)$ are
+points in the respective supports on the ramified model
+hyperelliptic curve $C$. In the frequent case for addition, all four points are
+distinct as mentioned before. These four points uniquely determine a cubic
+polynomial $v'$ that interpolates them. The new unreduced divisor class in
+Mumford representation is $[D'] = [u',v']$ where $u' = (x-x_1) \cdot (x-x_2)
+\cdot (x-x_3) \cdot (x-x_4)$. In the frequent case for doubling i.e.; $[D]=
+2[D_1]$, the two points are not equal to each other's negative, and tangents of
+multiplicity two at the points are used to produce the cubic interpolating
+polynomial $v'$. The unreduced divisor class is $[D'] = [u',v']$ where $ u' =
+(x-x_1)^2 \cdot (x-x_2)^2$. 
+
+Just as in Harley's method, $[D']$ is computed first through the ``composition''
+step using linear algebra, and then Cantor's reduction step is used to compute
+the reduced representation $[D] \equiv [D']$. The composition step in both
+addition and doubling involves building a $2g$ by $2g$ linear system of
+equations, where the equations relate coefficients of $v'$. The system is then
+solved, producing the coefficients of $v'$. The highlight of the linear algebra
+method is that in the frequent cases the linear system of equations can be
+reduced to a $g$ by $g$ system. We give a brief overview on how to find the
+necessary equations in genus 2; more details can be found
+in~\cite{CostelloLauter_geo_2011}.
+
+
+For addition, let $v' = v'_3x^3 + v'_2x^2 + v'_1x + v'_0$ be the desired
+polynomial that interpolates the four finite points in the supports of
+$[D_1]=[x^2 + u_{11}x + u_{10}, v_{11}x + v_{10}]$ and $[D_2] =[x^2 + u_{21}x +
+u_{20}, v_{21}x + v_{20}]$ in Mumford representation. The identity 
+\begin{align}
+0 &\equiv (v' - v) \pmod{u} \nonumber\\
+0 &\equiv (v'_3x^3 + v'_2x^2 + v'_1x + v'_0 - v_{11}x - v_{10}) \pmod{x^2 + u_{11}x + u_{10}}, \label{eqn:geo1}  \\ 
+& = a_1x + a_0, & \nonumber
+\end{align} 
+where \begin{align}
+a_1 &= (v'_3(u_{11}^2 - u_{01}) - v'_2u_{11} + v'_1 - v_{11})  \nonumber\\
+a_0 &= (v'_3u_{11}u_{10} - v'_2u_{10} + v'_0 - v_{10}) \nonumber
+\end{align} 
+provides two relations, $(a_1 = 0 \mbox{ and } a_0 = 0)$ relating the four
+coefficients of $v'$ linearly. This identity comes from geometrically viewing
+both $v'$ and $v_1$ as interpolating polynomials for the two points in the
+support of $[D_1]$. A similar construction is used with $[D_2]$ to produce two
+more linear equations. The resulting four by four linear system of equations is
+\begin{equation*}
+\left( \begin{array}{cccc}
+1 & 0 & -u_{10} & u_{11}u_{10}   \\
+0 & 1 & -u_{11} & u_{11}^2 - u_{10} \\
+1 & 0 & -u_{20} & u_{21}u_{20}   \\
+0 & 1 & -u_{21} & u^2_{21} - u_{20}  \end{array} \right) \times \left( 
+  \begin{array}{c}
+v'_0 \\
+v'_1 \\
+v'_2 \\
+v'_3 \end{array} \right) = \left( \begin{array}{c}
+v_{10}   \\
+v_{11}   \\
+v_{20}  \\
+v_{21}  \end{array} \right) \label{eq:addsystem}
+\end{equation*} 
+Note that in the frequent input cases, the 4 by 4 system is reduced to a 2 by 2
+system by subtracting the first and second row from the third and fourth row
+respectively. Only $v'_2$ and $v'_3$ are solved for in this manner, and $v'_0$
+and $v'_1$ are instead found by equating coefficients of equation
+(\ref{eqn:geo1}) above.
+
+For doubling a divisor class $[u_1,v_1]$, equation (\ref{eqn:geo1}) immediately
+provides two linear relations. There are two possible approaches for obtaining
+the other two relations. The first is matching derivatives $$\frac{dy}{dx} =
+\frac{dv'}{dx}$$ point by point on the curve. This approach ensures multiplicity
+is accounted for and gives rise to two linear relations. The other way is to
+reduce the substitution of $v' = y$ into the curve $C$ modulo $u_1^2$ (reduction
+modulo  $u_1^2$ instead of $u_1$ ensures the zeros have multiplicity two) and
+then linearize the coefficients using relations that arise from substituting
+$v_1 = y$ into $C$ and reducing  modulo $u_1$. This approach results in four
+more equations. The second approach produces the simplest equations; details can
+be found in~\cite{CostelloLauter_geo_2011}. The relations are: 
+\begin{align} a_2
+&= v'_3(-3h_1u_{10} - 6u_{10}v_{11}) + v'_2(h_2u_{11}^2 + 2h_2u_{10} -
+2u_{11}v_{11} + h_0 +2v_{10}) \nonumber  \\ 
+&+ v'_1(2h_1 + 4v_{11} -h_1u_{11} - 2h_2u_{11})+ v'_0(-3h_2) \nonumber \\
+&+ 2h_2u_{11}v_{11} - 2u_{11}^3 - h_1v_{11} + 4h_2v_{10} -2u_{11}u_{10} - 3v_{11}^2 - f_2,  \nonumber \\ 
+a_3 &= v'_3(h_2u_{10} - 2h_1u_{11} - 4u_{11}v_{11} + h_0 + 2v_{10}) + v'_2(h_2u_{11} + h_1 + 2v_{11}) \nonumber \\  
+&+ v'_1(-2h_2) + 3h_2v_{11} - 3u_{11}^2 + 2u_{10} - f_3, \nonumber
+\end{align} 
+where $a_2 = a_3 = 0$. Similar to addition, a 4 by 4 system of equations can be
+set up from the 4 relations to solve for the coefficients of $v'$ directly and
+reduce to a 2 by 2 system.
+
+After $[D'] = [u',v']$ is computed via addition or doubling route, Cantor's
+reduction step 
+\begin{align*} u &= \frac{v'^2 + hv' - f}{u'}, \mbox{ made monic}\\
+v &= -h - v' \pmod{u}
+\end{align*} 
+is used to reduce $D'$ to a reduced divisor class representative $D$.
+Recall that $su_1 + v_1 = v' $ where $s$ is a sub-expression from Harley's
+Method. Relating Harley's method, the linear algebra method computes $v'$
+in a different way than computing $v' = su_1 + v_1$ but after those intermediate
+values are found, identical techniques can be used to compute the reduced
+divisor class $[D] = [u,v]$.
+
+
+
+\subsection{NUCOMP as Basis for Explicit Formulas}\label{sec:nucompbasis}
+\label{sec:comparisons}
+In this section, general methods based on NUCOMP in genus 2 and 3 are compared
+to previous methods in literature and presented as a basis for the development
+of explicit formulas in Chapters~~\ref{cha:g2} and~\ref{cha:g3}. The main
+benefits of using NUCOMP as the generic method is that NUCOMP captures Harley's
+techniques for both frequent and special cases, and the organization of steps in
+NUCOMP offers field operation savings over previous best when combined with
+certain explicit techniques described later in Section~\ref{sec:explTechniques}.
+Ramified model arithmetic is based on NUCOMP (Algorithm~\ref{alg:nucomp}) and
+split model arithmetic on Balanced NUCOMP (Algorithm~\ref{alg:balNucomp}). First
+the approach for genus 2 is described, then genus 3.
+
+
+\subsubsection{Genus 2}
+NUCOMP-based algorithms are presented as the basis for all explicit formulas in
+Chapter~\ref{cha:g2} in order to provide the best approach that reduces
+computational complexity in both special cases and frequent cases, as well as
+unifies frequent and special cases into one algorithm. Versions of NUCOMP
+specialized to genus 2 addition and doubling on ramified models are presented as
+Algorithms~\ref{alg:g2nucomp} and~\ref{alg:g2nudupl}. Specialized versions
+Balanced NUCOMP for addition and doubling on split models are given in
+Algorithms~\ref{alg:g2balnucomp} and~\ref{alg:g2balnudupl}. 
+
+
+
+\begin{algorithm}[htbp]
+    \caption{Genus 2 Ramified Model Double (NUDUPL)}
+    \label{alg:g2nudupl}
+    \begin{algorithmic}[1]
+    \Require $[u_1,v_1]$
+    \Ensure $[u_n,v_n] = 2[u_1,v_1]$
+    \State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
+    \State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,2v_1 + h)$.
+    \If{$S \not = 1$}
+        \State $u_1 = u_1/S. \s\s\s$ (exact division)
+    \EndIf
+    \State $s = b_1k \pmod{u_1}$.
+    \If{$\deg(u_1) \leq 1$}
+        \State $u_n = u_1^2$.
+        \State $v_n = (v_1 + u_1s) \pmod{u_n}$.
+    \Else
+        \State $M_2 = (s(2v_1 + h) - k)/u_1 \s\s\s $(exact division).
+        \State $u_n = s^2 + M_2, \s\s\s $ (made monic).
+        \State $v_n = (-su_1 - v_1 - h) \pmod{u_n}$.
+    \EndIf
+    \State \Return $[u_n,v_n]$.
+    \end{algorithmic}
+    \end{algorithm}
+
+\begin{algorithm}[htbp]
+\caption{Genus 2 Ramified Model Addition (NUCOMP)}
+\label{alg:g2nucomp}
+\begin{algorithmic}[1]
+\Require $[u_1,v_1],$ $[u_2,v_2]$ where $[u_1,v_1] \neq [u_2,v_2]$ and $\deg(u_2) \leq \deg(u_1)$.
+\Ensure $[u_n,v_n] = [u_1,v_1] + [u_2,v_2]$
+\State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
+\State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,u_2). \s\s\s  (S, a_1$ only)
+\If{$S \not = 1$}
+    \State $(S',a_2,b_2) = \mathrm{XGCD}(S,v_2 + v_1 + h)$.
+    \If{$S' \not = 1$}
+        \State $u_1 = u_1/S', \s\s u_2 = u_2/S'. \s\s\s$ (exact division)
+        \State $s = (a_2a_1(v_2 - v_1) + b_2k) \pmod{u_2}$.
+    \Else
+        \State $s = (a_2a_1(v_2 - v_1) + b_2k) \pmod{u_2}$.
+    \EndIf
+\Else
+    \State $ s = a_1(v_2 - v_1) \pmod{u_2}$.
+\EndIf
+\If{$\deg(u_2) + \deg(u_1) \leq 2$}
+    \State $u_n = u_2u_1$.
+    \State $v_n = (v_1 + u_1s) \pmod{u_n}$.
+\Else   
+    \State $\vt = -su_1 - v_1 - h$.
+    \State $u_n = (s(\vt - v_1) + k)/u_2 \s\s\s$ (exact division, made monic).
+    \State $v_n = \vt \pmod{u_n}$.
+\EndIf
+\State \Return $[u_n,v_n]$.
+\end{algorithmic}
+\end{algorithm}
+
+For genus 2 ramified models, improved Cantor's Addition, NUCOMP and
+Harley's method all result in similar formulations for frequent case input
+divisor classes that can be manipulated to be identical. Following the exact
+formulation from the NUCOMP-based Algorithms~\ref{alg:g2nucomp} and
+~\ref{alg:g2nudupl} performs the steps in such a way that when combining some
+previous explicit techniques with a novel one from this work
+(Section~\ref{sec:explTechniques}), field operation savings over previous best
+are introduced. Notice the composition portions of both
+Algorithms~\ref{alg:cantoradd} and~\ref{alg:nucomp} absorb one reduction, and
+thus in genus 2, neither the reduction nor continued fraction loop is ever
+entered. Moreover, both algorithms are more general than Harley's method and
+include improved special case computations, where improved Cantor's addition and
+NUCOMP compute special cases identically. 
+
+\begin{algorithm}[htbp]
+\caption{Genus 2 Split Model Double (Positive Reduced Balanced NUDUPL)}
+\label{alg:g2balnudupl}
+\begin{algorithmic}[1]
+\Require $[u_1,v_1,n_1]$
+\Ensure $[u_n,v_n,n_n] = 2[u_1,v_1,n_1]$
+\If{$\deg(u_1) \leq 1$ and $n_1 = 0$}
+    \State $v_1 = -\Vp - h - [-(\Vp - h - v_1) \pmod{u_1}]$.
+\EndIf
+\State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
+\State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,2v_1 + h)$.
+\State $n_n = 2n_1 + \deg(S) - 1$.
+\If{$S \not = 1$} 
+    \State $u_1 = u_1/S. \s\s\s$ (exact division)   
+\EndIf
+\State $s = b_1k \pmod{u_1}$.
+\State $D = 2\deg(u_1)$.
+\If{$D \leq 2$ and $(n_n \geq 0$ and $n_n \leq 2 - D)$} 
+    \State $u_n = u_1^2$.
+    \State $v_n = \Vp - [(\Vp - v_1 - u_1s) \pmod{u_n}]$.
+\Else
+    \State $M_2 = (s(2v_1 + h) - k)/u_1 \s\s\s $(exact division).
+    \State $u_n = s^2 + M_2 \s\s\s$(made monic).
+    \State $z = -u_1s$.
+    \State $v_n = \Vp - [(\Vp - z + v_1 + h) \pmod{u_n}]$.
+    \If{$\deg(z) < 3$}
+        \If{$\lcf(v_1) = \lcf(\Vp)$} $\s\s n_n = n_n + D - 3$ .
+        \Else \hspace{101pt} $\s\s n_n = n_n + 3 - \deg(u_n)$. 
+        \EndIf
+    \Else $\s\s n_n = n_n + \deg(u_1) + \deg(s) - \deg(u_n)$.
+    \EndIf
+\EndIf
+\State \Return $[u_n,v_n,n_n]$.
+\end{algorithmic}
+\end{algorithm}
+
+
+    
+\begin{algorithm}[htbp]
+\caption{Genus 2 Split Model Addition (Positive Reduced Balanced NUCOMP)}
+\label{alg:g2balnucomp}
+\begin{algorithmic}[1]
+\Require $[u_1,v_1,n_1],$ $[u_2,v_2,n_2]$ where $[u_1,v_1,n_1] \neq [u_2,v_2,n_2]$$\deg(u_2) \leq \deg(u_1)$.
+\Ensure $[u_n,v_n,n_n] = [u_1,v_1,n_1] + [u_2,v_2,n_2]$
+\If{$\deg(u_2) \leq 1$ and $n_1 = n_2 = 0$}
+    \State $v_1 = -\Vp - h - [(-\Vp - h - v_1) \pmod{u_1}]$.
+\EndIf
+\State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,u_2). \s\s\s  (S, a_1$ only)
+\State $s = (a_1(v_2 - v_1)) \pmod{u_2}$.
+\State $k = (f - v_1(v1 + h))/u_1. \s\s\s$ (exact division)
+\If{$S \not = 1$}
+    \State $(S',a_2,b_2) = \mathrm{XGCD}(S,v_2 + v_1 + h)$.
+    \If{$S' \not = 1$}
+        \State $u_1 = u_1/S, \s\s u_2 = u_2/S. \s\s\s$ (exact division)
+        \State $s = (a_2a_1(v_2 - v_1) + b_2k) \pmod{u_2}$.
+    \Else
+        \State $s = (a_2a_1(v_2 - v_1) + b_2k) \pmod{u_2}$.
+    \EndIf
+\Else
+    \State $s = a_1(v_2 - v_1) \pmod{u_2}$.
+\EndIf
+\State $n_n = n_1 + n_2 + \deg(S) - 1$.
+\State $D = \deg(u_2) + \deg(u_1)$.
+\If{$D \leq 2$ and $((0 \leq n_n \leq g - D)$}
+    \State $u_n = u_2u_1$.
+    \State $v_n = \Vp - [(\Vp - v_1 - u_1s) \pmod{u_n}]$.
+\Else
+    \State $z = -u_1s$.
+    \State $\vt = z - v_1 - h$.
+    \State $u_n = (s(\vt - v_1) + k)/u_2 \s\s\s$ (exact division, made monic).
+    \State $v_n = \Vp - [(\Vp - \vt) \pmod{u_n}]$.
+    \If{$\deg(z) < 3$}
+        \If{$\lcf(v_1) = \lcf(\Vp)$} $\s\s n_n = n_n + D - 3$ .
+        \Else \hspace{101pt} $\s\s n_n = n_n + 3 - \deg(u_n)$. 
+        \EndIf
+    \Else $\s\s n_n = n_n + \deg(u_1) + \deg(s) - \deg(u_n)$.
+    \EndIf
+\EndIf
+\State \Return $[u_n,v_n,n_n]$.
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+ 
+Over split models, Balanced NUCOMP (Algorithm~\ref{alg:balNucomp}) yields
+similar formulations to the improved Balanced Addition
+(Algorithm~\ref{alg:impbaladd}) and Harley's techniques in the frequent cases
+that can also be manipulated to be identical. Similarly to the ramified setting,
+Balanced NUCOMP and improved Balanced Addition produce identical formulations
+for special cases that do not require adjustments. If adjustments are required,
+Balanced NUCOMP yields greatly simplified formulations over improved Balanced
+Addition. This can be seen by recalling that for genus 2 curves described by
+a split model, at most one adjustment step is required, and since Balanced
+NUCOMP absorbs up to one adjustment, the use of Balanced Adjust
+(Algorithm~\ref{alg:baladjust}) can be completely omitted. Balanced NUCOMP
+incorporates the adjustment without computing the composed divisor class
+representative first, where in contrast improved Balanced Addition first
+computes the composition and reduction then calls Algorithm~\ref{alg:baladjust}
+for the final adjustment, requiring two field inversions. 
+
+\newpage
+
+
+\subsubsection{Genus 3}
+NUCOMP-based algorithms are presented as the basis for all explicit formulas in
+Chapter~\ref{cha:g3} in order to provide the best approach that unifies frequent
+and special cases. Previous work in genus 3 ramified and split model explicit
+formulas did not consider
+NUCOMP~\cite{fan_g3_2006,rad2019jacobian,Sutherland_g3_2019}, and therefore
+produced considerably slower explicit formula algorithms in all cases when
+compared to this work. Moreover, for genus 3 split models, the computational
+complexity of the frequent cases, and similarly special cases that require
+adjustments, greatly improve via the continued fraction step. Specialized
+versions of NUCOMP for genus 3 addition and doubling on ramified models are
+presented in Algorithms~\ref{alg:g3nucomp} and~\ref{alg:g3nudupl}. Specialized
+versions of Balanced NUCOMP for genus 3 addition and doubling on split models
+are presented in Algorithms~\ref{alg:g3balnucomp} and~\ref{alg:g3balnudupl}.
+
+
+\begin{algorithm}[htbp]
+\caption{Genus 3 Ramified Model Double}
+\label{alg:g3nudupl}
+\begin{algorithmic}[1]
+\Require $[u_1,v_1]$ 
+\Ensure $[u_n,v_n] = 2[u_1,v_1]$.
+\vspace{5pt}
+\State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
+\State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,2v_1 + h)$.
+\If{$S \not = 1$} 
+    \State $u_1 = u_1/S. \s\s\s$ (exact division)
+\EndIf
+\State $s = b_1k \pmod{u_1}$.
+\If{$2\deg(u_1) \leq 3$}
+    \State $u_n = u_1^2$.
+    \State $v_n = (v_1 + u_1s) \pmod{u_n}]$.
+\ElsIf{$\deg(s) < 2$}
+    \State $M_2 = (s(2v_1 + h) - kS)/u_1 \s\s\s $(exact division).
+    \State $u_n = s^2 + M_2 \s\s\s$(made monic).
+    \State $z = -u_1s$.
+    \State $v_n = (z - v_1 - h) \pmod{u_n}$.
+\Else \hspace{2pt} 
+    \State $(q,r) = \mathrm{DivRem}(u_1,s)$.
+    \State $\s M_2 = (r(v_1 + v_1 + h) + kq)/u_1 \s\s\s$ (exact division).
+    \State $\s u_n = r^2 - qM_2.$
+    \State $\s z = (u_1r - u_n)/q \s\s\s$ (exact division).
+    \State $\s u_n = \mathrm{monic}(u_n)$.
+    \State $\s v_n = (z - v_1 - h) \pmod{u_n}$.
+\EndIf
+\State \Return $[u_n,v_n]$.
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}[htbp]
+    \caption{Genus 3 Ramified Model Addition}
+    \label{alg:g3nucomp}
+    \begin{algorithmic}[1]
+    \Require $[u_1,v_1],$ $[u_2,v_2]$ where $\deg(u_2) \leq \deg(u_1)$.
+    \Ensure $[u_n,v_n] = [u_1,v_1] + [u_2,v_2]$
+
+    \State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
+    \State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,u_2). \s\s\s  (S, a_1$ only)
+    \If{$S \not = 1$}
+        \State $(S,a_2,b_2) = \mathrm{XGCD}(S,v_2 + v_1 + h)$.
+        \If{$S' \not = 1$}
+            \State $u_1 = u_1/S', \s\s u_2 = u_2/S'. \s\s\s$ (exact division)
+        \EndIf
+        \State $s = (a_2a_1(v_2 - v_1) + b_2k) \pmod{u_2}$.
+    \Else
+        \State $s = a_1(v_2 - v_1) \pmod{u_2}$.
+    \EndIf
+    \If{$\deg(u_1) + \deg(u_2) \leq 3$}
+        \State $u_n = u_2u_1$.
+        \State $v_n = (v_1 + u_1s) \pmod{u_n}]$.
+    \ElsIf{$\deg(s) \leq 2$}
+        \State $z := -u_1s, \s\s \vt = z - v_1 - h$.
+        \State $u_n = (s(\vt - v_1) + kS)/u_2 \s\s\s$. (exact division, made monic)
+        \State $v_n = \vt \pmod{u_n}$.
+    \Else\hspace{2pt} 
+        \State $(q,r) = \mathrm{DivRem}(u_2,s)$.
+        \State $\s M_1 = (q(v_2 - v_1) + ru_1)/u_2. \s\s\s$ (exact division).
+        \State $\s M_2 = (r(v_2 + v_1 + h) + qk)/u_2. \s\s\s$ (exact division).
+        \State $\s u_n = rM_1 - qM_2$.
+        \State $\s z = (u_1r - u_n)/q \s\s\s$ (exact division).
+        \State $\s u_n = \mathrm{monic}(u_n)$.
+        \State $\s v_n = (z - v_1 - h) \pmod{u_n}$.
+    \EndIf
+    \State \Return $[u_n,v_n]$
+    \end{algorithmic}
+    \end{algorithm}
+
+For genus 3 ramified models two reduction steps are required in the frequent
+cases, therefore in contrast to the genus 2 setting, the improved Cantor and
+NUCOMP algorithms compute one additional reduction in their reduction and
+continued fraction loops, respectively. Harley's method has been similarly
+adapted to genus 3 by computing an additional reduction step via
+Algorithm~\ref{alg:harleyg3}. Improved Cantor's addition and Harley's method
+produce equivalent frequent-case explicit formulas that can be found in previous
+best work~\cite{fan_g3_2006}. On the other hand, the second reduction step is
+vastly different in NUCOMP, and the explicit formulas that arise from NUCOMP
+on genus 3 curves are simpler. Note that explicit formulas on genus 3 curves
+described by a ramified model enjoy similar benefits from NUCOMP, but are
+omitted in this thesis due to such formulas being work in progress elsewhere.
+
+\begin{algorithm}[htbp]
+\caption{Genus 3 Split Model Double (Negative Reduced Balanced NUDUPL)}
+\label{alg:g3balnudupl}
+\begin{algorithmic}[1]
+\Require $[u_1,v_1,n_1]$ 
+\Ensure $[u_n,v_n,n_n] = 2[u_1,v_1,n_1]$.
+\vspace{5pt}
+\If{$\deg(u_1) \leq 2$ and $n_1 = 3-\deg(u_1)$}
+    \State $v_1 = -\Vn - h - [(-\Vn - h - v_1) \pmod{u_1}]$.
+\EndIf
+\State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
+\State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,2v_1 + h)$.
+\State $n_n = 2n_1 + \deg(S) - 2$.
+\If{$S \not = 1$} 
+    \State $u_1 = u_1/S. \s\s\s$ (exact division)
+\EndIf
+\State $s = b_1k \pmod{u_1}$.
+\State $D = 2\deg(u_1)$.
+\If{$D \leq 3$ and $(0 \leq n_n \leq 3 - D)$}
+    \State $u_n = u_1^2$.
+    \State $v_n = \Vn - [(\Vn - v_1 - u_1s) \pmod{u_n}]$.
+\ElsIf{$\deg(s) < 2$}
+    \State $M_2 = (s(2v_1 + h) - kS)/u_1 \s\s\s $(exact division).
+    \State $u_n = s^2 + M_2 \s\s\s$(made monic).
+    \State $z = -u_1s$.
+    \State $v_n = \Vn - [(\Vn - z + v_1 + h) \pmod{u_n}]$.
+    \If{ $\lcf(v_1) = \lcf(-\Vn - h)$} $\s\s n_n = n_n + D - 4$.
+    \Else
+        \If{$\deg(z) < 4$} $\s\s n_n = n_n + 4 - \deg(u_n)$ 
+        \Else \hspace{75pt} $\s n_n = n_n + \deg(u_1) - \deg(s)$.
+        \EndIf
+        \If{$n_n < 0$}
+            \State $u_n = (f - v_n(v_n + h)/u_n) \s\s\s$ (exact division, made monic)
+            \State $v_n = \Vn - [(\Vn + v_n + h) \pmod{u_n}]$.
+            \State $n_n = n_n + 4 - \deg(u_n)$.
+        \EndIf
+    \EndIf
+\Else \hspace{2pt} 
+    \State $(q,r) = \mathrm{DivRem}(u_1,s)$.
+    \State $\s M_2 = (r(v_1 + v_1 + h) + kq)/u_1 \s\s\s$ (exact division).
+    \State $\s u_n = r^2 - qM_2.$
+    \State $\s z = (u_1r - u_n)/q \s\s\s$ (exact division).
+    \State $\s u_n = \mathrm{monic}(u_n)$.
+    \State $\s v_n = \Vn - [(\Vn - z + v_1 + h) \pmod{u_n}]$.
+    \If{$\deg(z) < 4$} $\s\s n_n = n_n + \deg(u_1) - \deg(s) + 4 - \deg(u_n)$.
+    \Else \hspace{74pt} $\s n_n = n_n + \deg(u_1) - \deg(r)$.
+    \EndIf
+\EndIf
+\State \Return $[u_n,v_n,n_n]$.
+\end{algorithmic}
+\end{algorithm}
+    
+    
+\begin{algorithm}[htbp]
+\caption{Genus 3 Split Model Addition (Negative Reduced Balanced NUCOMP)}
+\label{alg:g3balnucomp}
+\begin{algorithmic}[1]
+\Require $[u_1,v_1,n_1],$ $[u_2,v_2,n_2]$ where $\deg(u_2) \leq \deg(u_1)$.
+\Ensure $[u_n,v_n,n_n] = [u_1,v_1,n_1] + [u_2,v_2,n_2]$
+\If{$\deg(u_1) + \deg(u_2) \leq 4$ and $n_1 = 3-\deg(u_1)$ and $n_2 = 3-\deg(u_2)$}
+    \State $v_1 = -\Vn - h - [(-\Vn - h - v_1) \pmod{u_1}]$.
+\EndIf
+
+\State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
+\State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,u_2). \s\s\s  (S, a_1$ only)
+\If{$S \not = 1$}
+\State $(S',a_2,b_2) = \mathrm{XGCD}(S,v_2 + v_1 + h)$.
+    \If{$S' \not = 1$}
+        \State $u_1 = u_1/S', \s\s u_2 = u_2/S'. \s\s\s$ (exact division)
+    \EndIf
+    \State $s = (a_2a_1(v_2 - v_1) + b_2k) \pmod{u_2}$.
+\Else
+    \State $s = a_1(v_2 - v_1) \pmod{u_2}$.
+\EndIf
+\State $n_n = n_1 + n_2 + \deg(S) - 2$.
+\State $D = \deg(u_2) + \deg(u_1)$.
+\If{$D \leq 3$ and $(0 \leq n_n \leq 3 - D)$}
+    \State $u_n = u_2u_1$.
+    \State $v_n = \Vn - [(\Vn - v_1 - u_1s) \pmod{u_n}]$.
+\ElsIf{$\deg(s) \leq 2$}
+    \State $z := -u_1s, \s\s \vt = z - v_1 - h$.
+    \State $u_n = (s(\vt - v_1) + kS)/u_2 \s\s\s$. (exact division, made monic)
+    \State $v_n = \Vn - [(\Vn - \vt) \pmod{u_n}]$.
+    \If{ $\lcf(v_1) = \lcf(-\Vn - h)$} $\s\s n_n = n_n + D - 4$.
+    \Else
+        \If{$\deg(z) < 4$} $\s\s n_n = n_n + 4 - \deg(u_n)$ 
+        \Else \hspace{75pt} $\s n_n = n_n + \deg(u_2) - \deg(s)$.
+        \EndIf
+        \If{$n_n < 0$}
+            \State $u_n = (f - v_n(v_n + h)/u_n) \s\s\s$ (exact division, made monic)
+            \State $v_n = \Vn - [(\Vn + v_n + h) \pmod{u_n}]$.
+            \State $n_n = n_n + 4 - \deg(u_n)$.
+        \EndIf
+    \EndIf
+\Else\hspace{2pt} 
+    \State $(q,r) = \mathrm{DivRem}(u_2,s)$.
+    \State $\s M_1 = (q(v_2 - v_1) + ru_1)/u_2. \s\s\s$ (exact division).
+    \State $\s M_2 = (r(v_2 + v_1 + h) + qk)/u_2. \s\s\s$ (exact division).
+    \State $\s u_n = rM_1 - qM_2$.
+    \State $\s z = (u_1r - u_n)/q \s\s\s$ (exact division).
+    \State $\s u_n = \mathrm{monic}(u_n)$.
+    \State $\s v_n = \Vn - [(\Vn - z + v_1 + h) \pmod{u_n}]$.
+    \If{$\deg(z) < 4$} $\s\s n_n = n_n + \deg(u_2) - \deg(s) + 4 - \deg(u_n)$.
+    \Else \hspace{74pt} $\s n_n = n_n + \deg(u_2) - \deg(r)$.
+    \EndIf
+\EndIf
+\State \Return $[u_n,v_n,n_n]$
+\end{algorithmic}
+\end{algorithm}
+
+Over split models, the frequent case for both addition and doubling requires an
+adjustment for the final reduction from degree $g+1$. The specialized
+formulation of Balanced NUCOMP absorbs this adjustment, and similarly the first
+of any other adjustments in special cases. Similar to the genus 2 setting, much
+simpler explicit formulas relative to Balanced Cantor's Addition are achieved by
+omitting one call to Balanced Adjust. 
+
+\subsubsection{Discussion}
+A few notes on the specialized genus 2 and 3 algorithms. For both ramified and
+split models, the extended Mumford representation used for generic genus
+divisor class arithmetic from Section~\ref{sec:tenner} provides no benefit to
+the development of explicit formulas and is not used. In the addition
+algorithms, the assumption that the input divisor classes are not equal is made
+in order to align with explicit formulas in the next chapter. For the balanced
+setting, a positive reduced basis is used for developing explicit formulas in
+genus 2 and therefore presented here. There is no advantage to using a negative
+reduced basis in genus 2 and working with a positive reduced basis aligns with
+previous work~\cite{EricksonJacobsonStein_realg2_2011}. In genus 3, a negative
+reduced basis is advantageous when paired with Balanced NUCOMP and therefore is
+used.
+
+Recall from the exposition of Balanced NUCOMP in Section~\ref{sec:balNUCOMP}
+that the choice of reduced basis dictates the adjustment direction. In some
+special cases, the choice to keep input and output divisor classes in negative
+(or positive) reduced basis unnecessarily requires extra adjustments if an
+adjustment in the opposite direction is required. In genus 2 and 3, no
+adjustments are ever required if $\deg(S) > 0$ (but this is not true for $g \geq
+4$), so one can accurately check for base change special cases with out any
+knowledge of $S$.  The explicit formulas in Chapter~\ref{cha:g2} and
+Chapter~\ref{cha:g3} take advantage of this, and efficiently determine and apply
+a change of basis when necessary. Split model genus 2 and 3  divisor class
+Addition and Doubling
+(Algorithms~\ref{alg:g2balnucomp},~\ref{alg:g2balnudupl},\ref{alg:g3balnucomp}
+and \ref{alg:g3balnudupl}) are presented to reflect this improvement. 
+
+
+\section{Explicit Formulations of Divisor Class Arithmetic}
+\label{sec:explicit}
+Explicit formulas are algorithms for divisor class arithmetic described by field
+operations instead of polynomial arithmetic. Unnecessary operations inherent in
+the polynomial arithmetic are eliminated and techniques that further reduce the required
+number of field operations can be used. The first step of converting an
+algorithm based on polynomial arithmetic to an explicit formula is to consider
+polynomials as sets of their respective coefficients, i.e., elements of the base
+field the polynomial is defined over. Polynomial operations then can be
+converted to finite field element operations by considering what happens to the
+coefficients of the polynomial during the polynomial operation.
+
+In practice, reduced divisor classes are represented in affine or projective
+coordinates. In affine coordinates, a divisor class $[D] = [u,v]$ is represented
+by $[u_{g-1},...,u_0, v_{g-1},...,v_0],$ where $u = x^g + u_{g-1}x^{g-1} + ... +
+u_0 \in k[x]$ and $v = v_{g-1}x^{g-1} + ... + v_0 \in k[x],$ with the addition
+of the balancing coefficient $n$ over split models. Similarly in either positive
+or negative reduced basis, $[D] = [u,v]$ is represented by $[u_{g-1},...,u_0,
+v_{g+1},...,v_0],$ where $u = x^g + u_{g-1}x^{g-1} + ... + u_0 \in k[x]$ and $v
+= v_{g+1}x^{g+1} + ... + v_0 \in k[x]$.  The resulting addition and doubling
+algorithms require at least one field inversion. In projective coordinates the
+same divisor is represented by $[u'_{g-1},...,u'_0, v'_{g-1},...,v'_0,z],$ or by
+$[u'_{g-1},...,u'_0, v'_{g+1},...,v'_0,z]$ for reduced basis where $u_i =
+u'_i/z,$ $v_i = v'_i/z,$ etc. The extra coordinate $z$ keeps track of values
+that would have been inverted and multiplied through in the affine setting,
+enabling the development of arithmetic formulas requiring no field inversions.
+For genus 2 curves described by a ramified model, more complicated projective
+coordinates requiring additional auxiliary field elements have been shown to
+produce efficient explicit formulas in certain
+cases~\cite{HisilCostello_jaccoord_2014}.
+
+Going forward, divisor classes represented in projective coordinates are not
+considered. In applications such as numerical experiments related to Sato-Tate
+distributions~\cite{Sutherland_sato_2016}, a primary motivation for the genus 2
+and 3 explicit formulas of this thesis, divisor class arithmetic occurs as part
+of a baby-steps giant-steps search in which field inversions can be easily
+combined by taking steps in parallel~\cite[\S~4.1]{Kedlaya_lseries_2008}. The
+cost of an inversion is reduced to about $3$ field multiplications, making
+projective coordinate divisor class arithmetic inadequate because significantly
+more than 3 field multiplications are required to eliminate the inversion.
+Furthermore,  as representations of group elements using projective coordinates
+are not unique, their use would incur a non-negligible computational cost per
+equality test, and precludes the use of more efficient searchable data
+structures for the baby steps such as hash tables.
+
+
+
+\section{Techniques to Improve Explicit Formulas} 
+\label{sec:explTechniques}
+Previous works such as in~\cite{Lange_explicit_2005}
+and~\cite{CostelloLauter_geo_2011} for genus 2 and~\cite{fan_g3_2006} for genus
+3, present improved divisor class arithmetic algorithms described in terms of
+explicit formulas based on the Harley and linear algebra divisor class addition.
+These algorithms use explicit versions of the Chinese remainder theorem, Newton
+iteration, Karatsuba multiplication and reduction, Montgomery's inversion trick,
+Cramer's rule for solving systems of linear equations, and the re-use of
+previously-computed sub-expressions, in order to minimize the number of field
+multiplications required. 
+
+The frequent case explicit formulas presented in Chapters~\ref{cha:g2}
+and~\ref{cha:g3} of this thesis use some of the techniques previously applied
+and also introduce some new techniques. In the genus 2 formulas of this work,
+the composition portion of addition (Algorithms~\ref{alg:g2nucomp}
+and~\ref{alg:g2balnucomp}) and doubling (Algorithms~\ref{alg:g2nudupl}
+and~\ref{alg:g2balnudupl}) computes $s$ by solving a linear system of equations,
+borrowed from the linear algebra method. Then the reduction part is computed via
+steps produced by specializing NUCOMP to the appropriate settings. Note that
+applying the equating coefficients trick (described in
+Section~\ref{sec:equatingcoeff}) as done in the linear algebra method
+\cite{CostelloLauter_geo_2011} produces the same explicit formulas in the
+frequent case, where computations from solving the linear system of equation are
+reused. 
+
+Special cases are generally simpler and some of the techniques for frequent case
+explicit formulas may not be required. A case by case analysis is provided in
+Chapters~\ref{cha:g2} and~\ref{cha:g3} where the basic formulations of the novel
+explicit formulas and techniques used in each case are described for genus 2 in
+Chapter~\ref{cha:g2} and for genus 3 in Chapter~\ref{cha:g3}. In the following,
+techniques used in previous works are described, beginning with a discussion on
+efficient field operations trades.
+
+
+\subsection{Field Operation Trade Threshold}\label{sec:trades} 
+
+There are many suggestions for the relative cost of a field addition compared to
+a field multiplication in previous works. These suggestions generally rely on
+properties of specific base fields over which the hyperelliptic curve is
+defined. The explicit formulas in Chapters~\ref{cha:g2} and~\ref{cha:g3} are
+designed to work efficiently over many fields, as is required for example, in
+applications such as numerical investigation of Sato-Tate
+distributions~\cite{Sutherland_sato_2016}. Aligning with the work of
+Sutherland~\cite{Sutherland_g3_2019,Sutherland_sato_2016}, the formulas in
+Chapters~\ref{cha:g2} and~\ref{cha:g3} never trade 1 field multiplication for
+more than 3 field additions.
+
+
+\subsection{Efficient Exact Division} 
+\label{sec:exactdiv}
+As described in \cite{MCA_2003} for example, the exact quotient of two
+polynomials (where one is known to divide the other) can be computed more
+efficiently by observing that computing the quotient of two polynomials of
+degree $d_1$ and $d_2$ with $d_1 > d_2$ only depends on the $d_1 - d_2 + 1$
+highest coefficients of the dividend.  So all the coefficients of
+the polynomials do not need to be considered. This observation is a perfect
+example of why explicit formulas given by field operations are more efficient
+than formulas based on polynomial arithmetic, as not all coefficients need to
+computed in every step.
+
+In almost all input cases for genus 2 and 3 curves with ramified and split
+models, the polynomial $k = (f - v(v +h))/u$ with degree $d_1$ for Mumford
+coefficients $u,v$ is computed, where $u$ is a monic degree $d_2$ polynomial.
+Only the highest $d_1 - d_2 + 1$ coefficients of $f - v(v + h)$ are required to
+compute the quotient. 
+
+
+\subsection{Karatsuba Multiplication} 
+\label{sec:karatsubamul}
+In 1963 Karatsuba introduced a novel algorithm for multiplication of polynomials
+\cite{KaratsubaOfman_polymul_1963}. Compared to the schoolbook method, the
+Karatsuba method saves field multiplications at the cost of extra field
+additions. Polynomial multiplication occurs regularly in divisor
+class addition using Mumford representation, so field operations are saved by
+taking advantage of this technique. Karatsuba multiplication can be applied,
+often more than once, to multiplying polynomials of any degree, and is used
+every time a multiplication of polynomials is required in the explicit
+formulas. Next, an example of multiplying two linear polynomials is provided.
+
+Given two polynomials $A(x) = a_1x + a_0$ and $B(x) = b_1x + b_0$, let $D_0 =
+a_0b_0$, $D_1 = a_1b_1$, and $D_{0,1} = (a_0 + a_1)(b_0 + b_1)$. The product of
+$A(x)$ and $B(x)$ can be given as  $$C(x) = D_1x^2 + (D_{0,1} - D_1 - D_0)x +
+D_0.$$ Notice that 
+\begin{align*} (D_{0,1} - D_1 - D_0) &= (a_0 +
+a_1)(b_0 + b_1) - a_1b_1 - a_0b_0\\
+                      &= a_0b_0 + a_0b_1 + a_1b_0 + a_1b_1 - a_1b_1 - a_0n_0\\
+                      &= a_0b_1 + a_1b_0,
+\end{align*} 
+as required by the schoolbook method. In this case one multiplication is traded
+for three additions.
+
+For genus 2, the largest polynomial degree multiplication required that is not
+part of an exact division  is a degree 2 monic polynomial multiplied with a
+linear polynomial. This effectively is the same as multiplying two linear
+polynomials. For genus 3 curves described by a split model, the largest degree
+multiplication is a monic degree 3 polynomial with a degree 2 polynomial. 
+
+The linear polynomial technique can be applied recursively to higher degree
+multiplications. Recursive applications are not applied directly in the explicit
+formulas of this work and instead all instances of the field multiplication
+patterns $$ac, \s\s\s ad + bc, \s\s\s bd,$$ for field elements $a,b,c,d$ are
+identified and replaced with $$ ac, \s\s\s bd, \s\s\s (a + b)(c + d) - ac -
+bd.$$ For genus 3 with a split model, this trade can occur up to two times for
+one polynomial multiplication. See for example, the computation of $s' = qk
+\pmod{u}$ in Section~\ref{sec:alternateharley}, where both $q$ and $k$ are
+non-monic degree 2 polynomials.
+
+
+\subsection{Karatsuba Modular Reduction} 
+\label{sec:karatsubared}
+The field multiplication pattern described in Section~\ref{sec:karatsubamul},
+where $ac, bd, ad + bc,$ for field elements $a,b,c,d$  is traded for $ ac, bd,
+(a + b)(c + d) - ac - bd,$ applies to modular reduction of a polynomial by a
+monic modulus with one degree difference, trading 1 multiplication for three
+additions.
+
+This trade is applied in every instance of a modular reduction by a monic
+modulus where the difference in degree is 1 in the explicit formulas. For genus
+2 curves, a polynomial of degree three modulo a monic polynomial of degree two
+is required in the addition and doubling formulations to obtain the reduced
+divisor class representative. For $v_1x + v_0 = l_3x^3 + l_2x^2 + l_1x + l_0
+\pmod{x^2 + u_1x + u_0}$, the schoolbook method results in 
+\begin{align*}
+t &= l_2 - u_1l_3\\
+v_1 &= l_1 - u_0l_3 - u_1t\\
+v_0 &= l_0 - u_0t.
+\end{align*}
+Applying, Karatsuba's technique results in
+\begin{align*}
+t_1 &= u_1l_3, \s\s\s t_2 = l_2 - t_1, \s\s\s t_3 = u_0t_2\\
+v_1 &= l_1 - (u_0 + u_1)(l_3 + t_2) + t_1 + t_3\\
+v_0 &= l_0 - t_3,
+\end{align*}
+trading 1 multiplication for 3 additions.
+
+
+For genus 3 curves, a polynomial of degree four modulo a monic polynomial of
+degree three is required in the addition and doubling formulations to obtain the
+reduced divisor class representative. For $v_2x^2 + v_1x + v_0 = l_4x^4 + l_3x^3
++ l_2x^2 + l_1x + l_0 \pmod{x^3 + u_2x^2 + u_1x + u_0}$, the schoolbook method results in 
+\begin{align*}
+t &= l_3 - u_2l_4\\
+v_2 &= l_2 - u_1l_4 - u_2t\\
+v_1 &= l_1 - u_0l_4 - u_1t\\
+v_0 &= l_0 - u_0t.
+\end{align*}
+There are two possibilities for applying the Karatsuba technique, either to
+$u_2l_4, u_1l_4, u_2t$ and $u_1t$ or to $u_1l_4, u_0l_4, u_1t$ and $u_0t$.
+Applying Karatsuba's technique to both is not possible as one of the
+multiplications omitted in one choice is always required in the other. For the
+explicit formulas, the second choice is chosen as follows
+\begin{align*}
+t_0 &= l_3 - u_2l_4, \s\s\s t_1 = u_1l_4, \s\s\s t_2 = u_0t_0\\
+v_2 &= l_2 - t_1 - u_2t_0\\
+v_1 &= l_1 - (u_0 + u_1)(l_4 + t) + t_1 + t_2\\
+v_0 &= l_0 - t_2,
+\end{align*}
+trading 1 multiplication for 3 additions.
+
+
+\subsection{Using `Almost Inverse'}\label{sec:almostinv} 
+
+The computation of the $s$ polynomial in all divisor class addition and
+doubling algorithms presented in Section~\ref{sec:nucompbasis} requires a
+polynomial inversion modulo another polynomial. 
+
+In the case that the modulus has degree 1, (required for special cases of both
+genus 2 and 3 explicit formulas),  the resulting $s$ polynomial has degree zero.
+The modular reduction is taken first and then the inversion is computed. For
+example, consider degree 1 addition for genus 2 curves described by a ramified model
+$$s = (v_2 - v_1)/u_1 \pmod{u_2},$$ where $[u_1,v_1]$ and $[u_2,v_2]$ are the
+input divisor classes with $\deg(u_1) = \deg(u_2) = 1$ and $\deg(v_1) =
+\deg(v_0) = 0$. The value $d = u_1 \pmod{u_2}$ is computed, followed by $w =
+d^{-1}$ and then $s = w(v_2 - v_1) \pmod{u_2}$.
+
+
+In the case that the modulus has degree 2 (or 3), the resulting $s$ polynomial
+has degree one (or two) and more sophisticated techniques are required to
+efficiently compute the polynomial inversion. Let $A(x)$ and $B(x)$ be two
+polynomials. In~\cite{MCA_2003}, the authors note that finding $ A(x)^{-1} $ mod
+$B(x)$ can be achieved by computing the resultant $r = \mathrm{res}(A(x), B(x))$
+via the determinant of a Sylvester matrix $M$. Once the determinant is found,
+Cramer's rule is used to solve for the coefficients of the polynomial $r/A(x)
+\pmod{B(x)}$ called the \emph{almost inverse} of $A(x) \pmod{B(x)}$.
+
+In previous works for genus 2~\cite{Lange_explicit_2005} and
+3~\cite{fan_g3_2006,Sutherland_g3_2019}, the division by $r$ is not computed
+leaving the result as $r/A(x)$. The extra copy of $r$ is removed later on
+through Montgomery's inversion trick (Section~\ref{sec:montgomery}). The other
+benefit of using this method is that if $r$ is non-zero, then there are no common
+factors between the two polynomials as described in~\cite{MCA_2003}, therefore
+testing for $r=0$ can be used to flag special cases.
+
+Next, the process for computing the resultant $r$ and $r/A(x) \pmod{B(x)}$ in
+genus 2 is described. Let $A(x) = a_1x + a_0$ and $B(x) = x^2 + b_1x + b_0$,
+where $\gcd (A(x),B(x)) = 1$. The usual way to compute the inverse of $A(x)$
+modulo $B(x)$ is to use the extended Euclidean algorithm to solve $$ S(x)B(x) +
+T(x)A(x) = 1$$ for some polynomials $T(x) = t_1x + t_0, \s S(x) = s_0$ (where
+$S(x)$ is not needed, and therefore the computation omitted), then $A^{-1}(x) =
+T(x) \pmod{B(x)}$.  Instead, to compute the almost inverse $rT(x) \pmod{B(X)}$,
+we first compute the resultant of $A(x)$ and $B(x)$. Let $M$ be the Sylvester
+matrix of $A(x)$ and $B(x)$ whose entries are coefficients of the two polynomials with dimensions
+$(\deg A + \deg B) \times (\deg A + \deg B$). If $\deg A = n$ and $\deg B =m$,
+then in general,
+$$ M =   \left( \begin{array}{cccccccccc}
+b_n     &         &        &        &a_m    &        &        &    	   &    	&		\\
+b_{n-1} & b_n     &        &        &a_{m-1}& a_m    &        &    	   &		&		\\
+\vdots  & b_{n-1} & \ddots &        &\vdots & \vdots & \ddots & 	   &		&		\\
+\vdots  & \vdots  &        & b_n    &a_1    & \vdots &        & \ddots &		&		\\
+\vdots  & \vdots  &		   & b_{n-1}&a_0    & \vdots &		  &		   & \ddots &		\\
+\vdots  & \vdots  &        & \vdots &		& a_0    &		  &		   &		& a_m	\\
+b_0     & \vdots  &		   & \vdots &		& 		 & \ddots &		   &		& \vdots\\
+        & b_0     &        & \vdots &		&		 &		  & \ddots & 		& \vdots\\
+        &         & \ddots & \vdots &		&		 &		  &        & \ddots & \vdots\\
+        &         &        & b_0    &		&		 &        &		   &		& a_0	\\
+\end{array} \right).$$ In our example, the Sylvester matrix of $A$ and $B$ is
+$$ M =   \left( \begin{array}{ccc}
+1   & a_1 & 0  \\
+b_1 & a_0 & a_1  \\
+b_0 & 0   & a_0  \end{array} \right),$$ and the resultant $r = \det (M).$ Solving 
+$$\left( \begin{array}{ccc}
+1   & a_1 & 0  \\
+b_1 & a_0 & a_1  \\
+b_0 & 0   & a_0  \end{array} \right) \cdot \left( \begin{array}{c}
+s_0     \\
+t_1   \\
+t_0   \end{array} \right) = \left( \begin{array}{c}
+0 \\
+0 \\
+1 \end{array} \right), $$ yields $t_1, t_0,s_0$, the Bezout coefficients one
+would acquire from using the extend Euclidean algorithm. 
+
+The most efficient way to find a solution to this system of equations is
+applying Cramer's rule. The values of $t_1, t_0$ can be found as 
+$$ t_1 = \frac{\det{M'}}{\det{M}}, \mbox{ and  } t_0 = \frac{\det{M''}}{\det{M}}, $$ where 
+$$ M' = \left( \begin{array}{ccc}
+1   & 0 & 0  \\
+b_1 & 0 & a_1  \\
+b_0 & 1 & a_0  \end{array} \right), \mbox{ and } M'' = \left( \begin{array}{ccc}
+1   & a_1 & 0  \\
+b_1 & a_0 & 0  \\
+b_0 & 0   & 1  \end{array} \right).$$  Instead of taking the inverse of $\det(M)
+= r$ and multiplying through to solve for $t_1$ and $t_0$, let $$  t'_1 =
+\det(M') \mbox{ and } t'_0 = \det(M''). $$ Then $t'_1 = rt_1$, $t'_0 =rt_0$ and
+$T'(x) = r/A(x) \pmod{B(x)}$, the almost inverse of $A(x) \pmod{B(x)}$. The only computations
+required are those involved in computing the determinant of $M$, as computing
+the determinant of $M'$ and $M''$ reuses computations.
+
+In summary, the resultant $\det(M) = r$ is computed first as
+\begin{align*} r &= b_0a_1 + a_0(a_0 - b_1a_1).
+\end{align*}  
+Then the almost inverse of $A(x) \pmod{B(x)}$ with weight (as described in Section~\ref{sec:montgomery}) of $r$ is computed as
+\begin{align*}
+t_1' = t_1r  &= -a_1, \\
+t_0' = t_0r  &= a_0 - a_1b_1, \end{align*} 
+resulting in $T' = t_1'x + t_0' = rT = rA(x) \pmod{B(x)}$. 
+
+For genus 3, the approach is identical and requires the use of matrices with
+larger dimensions. The explicit formulas in this work do not follow this
+approach directly, although the resulting ``almost inverse'' is the same. The
+approach used in this work is described next in Section~\ref{sec:alternateharley}.
+
+
+\subsection{Alternate Approach to Computing \texorpdfstring{$s$}{s}}
+\label{sec:alternateharley}
+In previous work on Addition and Doubling algorithms, a resultant is computed as
+part of the `almost' inverse technique (Section~\ref{sec:almostinv}), followed
+by a Karatsuba multiplication resulting in the $s$ polynomial.
+
+In genus 2, the author of~\cite{Balamohan_MSc_2009} instead sets up a system of
+equations for the coefficients of $s$ and then uses Cramer's rule to solve for
+$s$. This approach does not save field operations on its own, but saves one
+multiplication when combined with the novel technique introduced in
+Section~\ref{sec:vsave}. Note that the
+technique is not the same as the linear algebra approach for computing the
+intermediate interpolating $v'$ polynomial, nor the almost inverse technique
+where the resultant $r$ that $s$ is comprised of is computed by computing the
+determinant of a Sylvester matrix. Linear algebra is used to compute $s$, one of
+the sub-expressions from Addition and Doubling algorithms, directly.
+
+The approach is identical over split models, but working with a reduced basis
+changes the formulations in doubling. For the genus 2 ramified setting of doubling
+(Algorithm~\ref{alg:g2nudupl}), the computation of $$s = b_1k \pmod{u_1}$$ where
+$b_1 = \vt^{-1} \pmod{u_1}$ and $\vt = 2v_1 + h$ is required. This yields $$s =
+s_1x + s_0 = (k_1x + k_0)/(\vt_1x + \vt_0) \pmod{x^2 + u_{11}x + u_{10}}$$ where
+$\vt = 2v_1 + h \pmod{x^2 + u_{11}x + u_{10}}$. Multiplying through by $\vt$
+yields the polynomial representation $$ k_1x + k_0 = (\vt_1x + \vt_0)(s_1x +
+s_0) - s_1\vt_1(x^2 + u_{11}x + u_{10}).$$ By multiplying out the right hand
+side and equating coefficients the following equations linear in coefficients of
+$s$ arise:  
+\begin{align*} k_0 &=
+(\vt_0) \cdot s_0 + (-\vt_1u_{10}) \cdot s_1, \\
+k_1 &= (\vt_1) \cdot s_0 + (\vt_0 - \vt_1u_{11}) \cdot s_1.
+\end{align*} 
+It takes two multiplications to compute the coefficients. Once the system is set
+up, it takes six multiplications using Cramer's rule to solve the system for
+$s_1$, $s_0$ and the determinant as described later in Section~\ref{sec:g2RAMDBL}.
+
+For the ramified setting of addition (Algorithm~\ref{alg:g2nucomp}), the same technique
+is used but $s = s_1x + s_0 = (\vt_1x + \vt_0)/(x^2 + u_{11}x + u_{10})
+\pmod{x^2 + u_{21}x + u_{20}}$, where $\vt = v_2 - v_1$,  is computed instead.
+The polynomial representation is
+$$\vt_1x + \vt_0 = (s_1x + s_0)(x^2 + u_{11}x + u_{10}) - (s_1x + s_1(u_{11}
+-u_{21}) + s_0)(x^2 + u_{21}x + u_{20}),$$ and the linear equations are:
+\begin{align*} 
+    \vt_0 &= (u_{10} - u_{20}) \cdot s_0 + (u_{20}(u_{21} - u_{10})) \cdot s_1.\\
+    \vt_1 &= -(u_{21}- u_{11}) \cdot s_0 + (u_{10} - u_{20} + u_{21}(u_{21}-u_{11})) \cdot s_1. \\
+\end{align*}
+The determinant $d$ of the 2 by 2 system is exactly the resultant of the modulus
+and denominator polynomial.  Over fields with characteristic not equal to two,
+an alternate technique to Cramer's rule can be applied saving one multiplication
+at the cost of 13 additions, and has shown to be not as efficient when working
+over large finite fields \cite{BosCostelloHisilLauter_fastg2_2013} (see
+Section~\ref{sec:trades} as well.)
+
+The same idea can be applied to genus 3, but solving for the coefficients of $s$
+directly is in fact more costly than computing the resultant as in
+Section~\ref{sec:almostinv}. Here, the process of computing the resultant is
+alternatively presented using the system of equations for $s$, requiring the
+least number of field operations compared to previous work. In the genus 3 split
+setting of doubling (Algorithm~\ref{alg:g3balnudupl}), the computation of $$s =
+b_1k \pmod{u_1}$$ where $b_1 = \vt^{-1} \pmod{u_1}$ and $\vt = 2v_1 + h$ is also
+required. This yields $$s = s_2x^2 + s_1x + s_0 = (k_2x^2 + k_1x +
+k_0)/(\vt_2x^2 + \vt_1x + \vt_0) \pmod{x^3 + u_{12}x^2 + u_{11}x + u_{10}},$$
+where $\vt = 2v_1 + h \pmod{x^3 + u_{12}x^2 + u_{11}x + u_{10}}$.  Multiplying
+through by $\vt$ yields the polynomial representation $$ k_2x^2 + k_1x + k_0 =
+(\vt_2x^2 + \vt_1x + \vt_0)(s_2x^2 + s_1x + s_0) - s_2\vt_2(x^3 + u_{12}x^2 +
+u_{11}x + u_{10}).$$ The resulting 3x3 matrix $M$ is connected to the
+Sylvester matrix (described in Section~\ref{sec:almostinv}) in such a way that
+only certain coefficients of $M$ are required to compute the polynomial
+inversion of $\vt$ modulo $u_1$ where $$ t = m_7x^2 + m_4x + m_1 = \frac{d}{\vt}
+\pmod{u_1}$$ without the field inversion of $d = \det(M)$. The computation of
+$d$ is chosen to reuse the same coefficients. Since computing $s$ would require
+dividing by $d$ (i.e. an expensive field inversion) $s' = ds = kt \pmod{u_1}$ is
+computed instead, and as usual the inversion is deferred until later in the
+algorithm (see Section~\ref{sec:montgomery}.)
+
+One can apply Karatsuba multiplication twice, or use Toom style
+multiplication~\cite[p.294]{Knuth:vol2} to perform the required polynomial
+multiplication for $s'$. Toom style multiplications trades one field
+multiplication for five field additions and two field divisions by 2, when
+compared to applying Karatsuba multiplication twice, and cannot be applied over
+fields with characteristic 2. In order to keep the explicit formulas as simple
+as possible, (see Section~\ref{sec:trades}) Karatsuba is applied twice instead
+of Toom style multiplication in this work.  Genus 3 addition is similar to
+doubling, where $s = (v_2 - v_1)/u_1 \pmod{u_2}$ for $a_1 = 1/u_1$ in Addition
+Algorithm~\ref{alg:g3balnucomp} is setup as $su_1 = (v_2 - v_1) \pmod{u_2}$. $s
+= (v_2 - v_1)/u_1 \pmod{u_2}$.
+
+\subsection{Montgomery's Trick of Simultaneous Inversion}
+\label{sec:montgomery}
+The idea of Montgomery is trading costly field inversions for cheaper
+operations, e.g., field multiplications. Instead of computing inverses as
+needed, a 'copy' or 'weight' of the value to be inverted is left in the intermediate
+operands until the computation is at a point where all inverses can be found at
+once. This is described in more detail using an example below.
+
+The computation of the inverse of the determinant $d$ of the 2 by 2 linear
+system of equations when solving for $s$ in the typical genus 2 ramified model
+divisor addition and doubling (described in Section~\ref{sec:alternateharley})
+is required. The inverse of $s_1$ where $s = s_1x + s_0$ is also required to
+make $u$ monic when reordering the normalization step (described in
+Section~\ref{sec:reordering}). Instead of computing each inversion, a copy of
+$d$ is kept in $s_1$ as $s_1' = ds_1$ and $s_0$ as $s_0' = ds_0$ until $s_1$ and
+$s_0$ are computed. Then the inversion $w = (ds_1')^{-1}$ is computed, and
+$w_{s_1} = wd^2 = 1/s_1$ and $w_d = ws_1' = 1/d$ are extracted from $w$.
+Montgomery's inversion trick is similarly applied to the computation of $s$ in
+the genus 2 and 3 split settings, and in addition to the computation of the
+intermediate $u$ polynomial in any case where that requires an extra adjustment.
+
+
+\subsection{Reordering of the Normalization Step}
+\label{sec:reordering}
+Takahashi~\cite{Takahashi_inversiontrick_2002} noticed that at the end of
+composition in Harley addition and doubling the output $u$ polynomial needs to
+be normalized in order to make it monic. Reordering where the normalization
+happens i.e. normalizing polynomials that $u$ is composed of before computing
+$u$ has been shown to save one multiplication
+\cite{Takahashi_inversiontrick_2002}. Notice that the highest degree coefficient
+of $u$ in line~16 of Algorithm~\ref{alg:g2nucomp} or line~10
+of~\ref{alg:g2nudupl} solely comes from the highest degree coefficient of the
+intermediate polynomial $s$. By normalizing $s$ before computing $u$, $u$ is
+guaranteed to be monic. The obvious benefits are that working with monic
+polynomials uses fewer field operations. This trick directly applies to most
+explicit formulas described in Chapters~\ref{cha:g2} and~\ref{cha:g3}, where any
+omissions are explicitly stated in the descriptions of the explicit formulas. 
+
+\subsection{Equating Coefficients} \label{sec:equatingcoeff} One technique for
+computing polynomial operations that is sometimes advantageous over regular
+operations is equating coefficients between polynomial equalities. This
+technique can be used when computing the output Mumford polynomial $u$ in all
+doubling and addition algorithms (see~\cite{CostelloLauter_geo_2011} for the
+derivation of ramified model genus 2 addition and doubling formulas). The direct
+computation of NUCOMP methods described in Section~\ref{sec:nucompbasis} produce
+similar or better formulations.
+
+For example, on genus 2 ramified models consider $u$ the output
+polynomial of Cantor's reduction step within Cantor's Addition (Algorithm
+\ref{alg:cantoradd}) with inputs $[u_1,v_1]$ and $[u_2,v_2]$. Let $[u' = u_1u_2
+= x^4 + u'_3x^3 + u'_2x^2 + u'_1x + u'_0, v' = v'_3x^3 + v'_2x^2 + v'_1x +
+v'_0]$ be the unreduced intermediate Mumford polynomials to the reduction step
+after composition. Then the equality
+\begin{align*} 
+  u_nu' = u_nu_1u_2 &= \frac{f - v'(v' + h)}{v^{\prime 2}_3}.
+\end{align*} holds. Equating coefficients of $x^5$ and $x^4$ results in 
+$$u_{21} + u_{11} + u_{n_1} = \frac{2v'_2v'_3 + v'_3h_2 - f_5}{v^{\prime 2}_3},$$ and 
+$$ u_{n_0} + u_{11}u_{21} + u_{n_1}(u_{21} + u_{11}) = \frac{2v'_1v'_3 +
+v^{\prime 2}_2 + v'_2h_2 + v'_3h_1 - f_4}{v^{\prime 2}_3},$$ respectively.
+Manipulating the equations to solve for $u_1$ and $u_0$ produce identical
+formulas to those in the NUCOMP methods in the genus 2 ramified setting, but often worse
+formulas in the other settings.  Therefore the NUCOMP methods (described in
+Section~\ref{sec:nucompbasis}) are used in the description of the basic
+formulations in Chapters~\ref{cha:g2} and~\ref{cha:g3} instead.
+
+
+
+\section{Novel Techniques}
+In this section, descriptions of additional novel techniques developed in this
+work, that have not been used in previous work, are given.
+
+
+\subsection{Omitting  \texorpdfstring{$l'$}{l'} and the Alternate Computation of  \texorpdfstring{$v''$}{v''}} 
+\label{sec:vsave}
+The technique introduced here applies to formulations over genus 2 ramified
+models and saves one multiplication in the Addition and Doubling
+Algorithms~\ref{alg:g2nucomp} and~\ref{alg:g2nudupl} following the formulation
+of NUCOMP when specialized to genus 2. Let $l' = s_1(l'') + v_1$ be the
+unreduced representation of the output $v$ where $l'' = s''u_1$, $s'' =s/s_1$ and for
+example, $\vt = -l'-h$ in line~15 of Algorithm~\ref{alg:g2nucomp}.
+In~\cite{Lange_explicit_2005}, $l''$ is computed explicitly where $l''_1$,
+$l''_2$ are used in the computation of the output $u_0$ as well as reused in the
+computation of output $v$ by Karatsuba Reduction
+(Section~\ref{sec:karatsubared}). 
+
+When using the system of equations method for computing $s$ (Section
+\ref{sec:alternateharley}), one can reuse computations from setting up the
+system to simplify the equation that computes the output $u_{n_0}$ value and
+removing the need for computing $l'_1$ and $l'_2$. The only computation left
+that relies on $l'' = s''u_1$ is $$ v_n = -l' - h = (-s_1s''u_1 - v_1 - h)
+\pmod{u_n}. $$ The value $t_2$ is computed beforehand in the computation of the
+output polynomial $u_n = x^2 + u_{n_1}x + u_{n_0}$ in the frequent cases of
+degree 2 doubling and addition where $u_{n_1} = s_0'' - t_2$ and therefore
+$t_2 = s_0'' - u_{n_1}$. Then,
+
+\begin{align*}
+    v_{n_1} &= s_1(u_1s_0''+ u_1u_{11} - u_{n_1}^2 - s_0''u_{11}
+    + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_1\\
+            &= s_1((u_{n_1} - s_0'')(u_{11} - u_{n_1}) + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_1\\
+    v_{n_0} &= s_1(u_0s_0'' + u_{11}u_{n_0} - u_0u_1 -s_0''u_{10}) - v_{10} - h_0 + h_2u_0\\
+            &= s_1(s_0''(u_{n_0} - u_{10}) + u_{n_0}(u_{11} - u_{n_1})) - v_{10} - h_0 + h_2u_0.
+\end{align*} 
+Notice that $t_2 = u_{n_1} - s_0''$, then the explicit formulation for $v_n$ is 
+\begin{align*}  
+    t_0 &= u_{n_0} - u_{10},\\
+    t_1 &= u_{11} - u_{n_1},\\
+    v_{n_1} &= s_1(t_2t_1 + t_0) - v_{11} - h_1 + h_2u_{n_1}\\
+    v_{n_0} &= s_1(s_0''t_0 + u_{n_0}t_1) - v_{10} - h_0 + h_2u_{n_0}.
+\end{align*}
+
+The resulting representation of the equation requires seven multiplications and
+since the two multiplications needed to compute $l''$ are omitted,
+there is an overall savings of one multiplication.
+
+\subsection{Alternate computation of \texorpdfstring{$k$}{k}} 
+\label{sec:alternatek}
+The technique introduced here applies to all doubling and most addition
+formulas for split models of genus 2 and 3 hyperelliptic curves where the
+continued fraction loop in Steps~24--26 of Balanced NUCOMP
+(Algorithm~\ref{alg:balNucomp}) is not entered. 
+
+In these cases, the value $wc_3$ for genus 2 curves and $wc_4$ for genus 3
+curves for some $w$ is inverted in order to make $u$ monic and the explicit
+computation of $k = (f - v_1(v_1 + h))/u_1$ is required. New precomputed values
+are introduced in each genus case that are curve constants divided by $c_3$ or
+$c_4$. The multiplication of $w$ with $c_3$ or $c_4$ before inversion is omitted
+and $k/c_i$ for $i=3,4$ is computed instead of $k$. 
+
+Applying this technique reduces the number of multiplications by at least 1 in
+all aforementioned cases over arbitrary fields, saves several additions in those
+cases over fields with characteristic not equal to 2, but do not apply over
+characteristic 2 fields as $c_3 = c_4 = 1$ in that setting. 
+
