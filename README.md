@@ -303,6 +303,10 @@ the committed `.tex` files cannot be reproduced. Several counting faults are als
 How the genus-3 ramified counts compare to the published literature — with every prior source's curve
 assumptions and the normalisation arithmetic stated — is in [RELATED_WORK.md](RELATED_WORK.md).
 
+Efficiency findings for the arbitrary-characteristic genus-3 ramified formulas, each located,
+measured and adversarially verified, are in [EFFICIENCY_ARB_G3.md](EFFICIENCY_ARB_G3.md). That
+document changes no formula; it is the input to the implementation work.
+
 ---
 
 ## Timing experiments
