@@ -308,6 +308,13 @@ Efficiency findings for the arbitrary-characteristic genus-3 ramified formulas, 
 measured and adversarially verified, are in [EFFICIENCY_ARB_G3.md](EFFICIENCY_ARB_G3.md). That
 document changes no formula; it is the input to the implementation work.
 
+What this project contributes beyond the published thesis — every correction, completion and result,
+with the argument for why it is right and the measurement that establishes it — is in
+[NEW_WORK.md](NEW_WORK.md). It is written to be lifted into the next publication, and it is kept
+current as the work proceeds rather than reconstructed afterwards. Its Part I gives one account of
+the curve normal forms that produces all six declared banner shapes, uniform in the genus;
+[verification/normal_form.py](verification/normal_form.py) reproduces every claim in it.
+
 ---
 
 ## Timing experiments
