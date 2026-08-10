@@ -59,9 +59,14 @@ restating the detail.
 Every formula file in this repository declares a curve shape in its banner, and
 each declaration is a claim that an arbitrary curve can be brought to that shape
 by an isomorphism — so restricting to it costs no generality. Six such
-declarations exist across two genera and three characteristic classes. They were
-inherited piecemeal from different sources, justified differently in each place,
-and one of them is wrong in the published thesis (N3).
+forms exist across two genera and three characteristic classes. **Five are
+declared by a shipped ramified banner today, and only three of those
+declarations are already the form derived here** — the genus-2 characteristic-2
+banner still declares `h₂ ∈ {0,1}` with `f₂` live (PR27), the genus-3 `nch2`
+banner still carries `f₆` (PR15/PR17), and the genus-3 characteristic-2 banner
+does not exist yet (PR7/PR8). They were inherited piecemeal from different
+sources, justified differently in each place, and one of them is wrong in the
+published thesis (N3).
 
 What follows is **one account that produces all six**, uniform in the genus, and
 it is verified rather than argued: [`verification/normal_form.py`](verification/normal_form.py)
@@ -501,10 +506,14 @@ parameter.
 than smoothed over. `RandomG3NotChar2Curve` still draws `f₆`, because the
 genus-3 formulas do not yet apply the depression — dropping it belongs with the
 formula change, or the generator would again be testing a domain the formulas do
-not claim. And `RandomG3Char2Curve` constructs `f` in the normal form rather
-than normalising into it, so half its draws have `deg h < 3`, a region the
-normalisation does not reach. Self-consistent, but the caveat is in the banner
-where genus 2 leaves it implicit.
+not claim. And `RandomG3Char2Curve` constructs both `f` *and* `h`
+directly in the characteristic-2 normal form — `h` monic of degree exactly 3 —
+rather than normalising an arbitrary curve into it, so it never samples
+`deg h < 3`: that region has its own normal form and is served by the arb
+formulas. (`RandomG3Curve`, the *arb* generator, is the one that draws
+`h₃ ∈ {0,1}` and so puts half its curves at `deg h < 3` — which is exactly the
+domain its banner declares.) The genus-2 characteristic-2 generator still draws
+`h₂ ∈ {0,1}` and does sample `deg h < 2`; PR27 restricts it.
 
 **For the paper.** A generator that samples outside a formula's declared domain
 makes every passing test meaningless in the region that matters, and a generator
@@ -730,7 +739,7 @@ them early, and so each arrives here with its evidence when it lands.
 | Restrict genus-2 characteristic-2 to `h₂ = 1`, `f₄ = f₃ = f₂ = 0` | Decided. Makes the thesis's stated assumption *true of the implementation* rather than merely available, and makes both genera share one exposition. Costs the `deg h = 1` Koblitz family, which moves to the `arb` formulas — a real loss, accepted knowingly | PR27 |
 | Exploit `h₃ ∈ {0,1}` rather than merely declaring it | The assumption is currently free to *count* but still computed. Whether real work can be removed is unmeasured, and the genus-2 mechanism that would be the template is not yet understood (N6) | PR24 |
 | Implement the 27 confirmed efficiency findings | Report only so far; each must land with its own oracle run | PR16 |
-| Non-ordinary characteristic-2 curves (`deg h < 3`) | **Researched and declined.** Real uses exist — halving, Koblitz curves — but a curve is ordinary with probability `1 − O(1/q)`, there is no parameterised middle option (one file covering all four strata must keep `f₆…f₃` live, at which point it *is* the `arb` file), and the remaining prize is a doubling prize on the most saturated ground. The `arb` formulas serve these curves correctly today | — |
+| Non-ordinary characteristic-2 curves (`deg h < 3`) | **Researched and declined.** Real uses exist — halving, Koblitz curves — but a curve is ordinary with probability `1 − O(1/q)`, there is no parameterised middle option (one file covering all four strata must keep `f₅…f₃` live — `f₆` stays killable by the translation, unconditionally, per Part I step 2 — at which point it *is* the `arb` file), and the remaining prize is a doubling prize on the most saturated ground. The `arb` formulas serve these curves correctly today | — |
 
 ---
 

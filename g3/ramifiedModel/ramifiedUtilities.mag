@@ -27,120 +27,24 @@ Coeff := function(f,n)
 end function;
 
 //-----------------------------------------------------------------------------
-// RandomG2Curve(q)
+// The genus-2 generators are deliberately NOT here.
 //-----------------------------------------------------------------------------
-// Input:       q: field parameter.
-//     
-// Return: Random(ish) hyperelliptic polynomials of curve with one point at
-//         infinity f and h in GF(q)[x] where f is monic seperable of degree 
-//         5 and polynomial h of degree <= 2.
+// RandomG2Curve, RandomG2NotChar2Curve and RandomG2Char2Curve used to sit at
+// this point as verbatim copies inherited when this file was derived from
+// g2/ramifiedModel/ramifiedUtilities.mag.  Nothing under g3/ ever called them.
+//
+// They were removed on 2026-08-10 because a dead copy of DOMAIN-DECLARING code
+// is a trap, not redundancy: the char-2 generator's h draw is what states which
+// curves the ch2 formulas claim, and the copies would have gone stale the moment
+// the genus-2 domain was narrowed to h monic of degree exactly 2 -- leaving this
+// file asserting h2 in {0,1} with a live f2, directly contradicting the
+// RandomG3Char2Curve below.  That is the same failure already on record as
+// erratum E7, where a divergent second generation of the formulas under
+// timings/ may not measure the formulas of record.
+//
+// If anything under g3/ ever needs a genus-2 curve, load the genus-2 utilities
+// rather than copying them back.
 //-----------------------------------------------------------------------------
-RandomG2Curve := function(q)
-    assert IsPrimePower(q);
-    F:=GF(q);
-    R<x>:=PolynomialRing(F);
-    while true do
-        //Randomly generate f and h 
-        f:= x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
-        h:= Random(0,1)*x^2 + Random(F)*x + Random(F);
-
-
-        //Check if f and h are hyperelliptic polynomials for a curve of genus g
-        try
-            C:=HyperellipticCurve(f,h);
-            isHC:= true;
-        catch e
-            isHC:= false;
-        end try;
-
-        //If f and h correspond to a genus g hyperelliptic curve, check to see 
-        //if the curve has one point at infinity (our use case).
-        if isHC then
-            pointsAtInf:= PointsAtInfinity(C);
-            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
-                return f,h;
-            end if;
-        end if;
-        
-    end while;
-end function;
-
-//-----------------------------------------------------------------------------
-// RandomG2NotChar2Curve(q)
-//-----------------------------------------------------------------------------
-// Input:       q: field parameter.
-//        
-// Return: Random(ish) hyperelliptic polynomials of curve with one point at
-//         infinity f in GF(q)[x] where f is monic seperable of degree 
-//         5 and 4th power term is 0.
-//-----------------------------------------------------------------------------
-RandomG2NotChar2Curve := function(q)
-    assert IsPrimePower(q);
-    F:=GF(q);
-    R<x>:=PolynomialRing(F);
-    while true do
-        //Randomly generate f 
-        f:= x^5 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
-
-        //Check if f is hyperelliptic polynomial for a curve 
-        try
-            C:=HyperellipticCurve(f);
-            isHC:= true;
-
-        catch e
-            isHC:= false;
-        end try;
-
-        //If f corresponds to a genus 2 hyperelliptic curve, check to see 
-        //if the curve has one point at infinity (our use case).
-        if isHC then
-            pointsAtInf:= PointsAtInfinity(C);
-            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
-                return f;
-            end if;
-        end if;
-        
-    end while;
-end function;
-
-//-----------------------------------------------------------------------------
-// RandomG2Char2Curve(q)
-//-----------------------------------------------------------------------------
-// Input:       q: field parameter.
-//        
-// Return: Random(ish) hyperelliptic polynomials of curve with one point at
-//         infinity f and h in GF(q)[x] where f is monic seperable of degree 
-//         5 and 4th, and 3rd power terms are 0, h has degree 2 with the 2nd
-//         power coefficient in {0,1}.
-//-----------------------------------------------------------------------------
-RandomG2Char2Curve := function(q)
-    assert IsPrimePower(q);
-    F:=GF(q);
-    R<x>:=PolynomialRing(F);
-    while true do
-        //Randomly generate f and h 
-        f:= x^5 + Random(F)*x^2 + Random(F)*x + Random(F);
-        h:= Random(0,1)*x^2 + Random(F)*x + Random(F);
-
-        //Check if f and h are hyperelliptic polynomials for a curve of genus g
-        try
-            C:=HyperellipticCurve(f,h);
-            isHC:= true;
-        catch e
-            isHC:= false;
-        end try;
-
-        //If f and h correspond to a genus g hyperelliptic curve, check to see 
-        //if the curve has one point at infinity (our use case).
-        if isHC then
-            pointsAtInf:= PointsAtInfinity(C);
-            if (# pointsAtInf eq 1) and (Degree(f) eq 5) then
-                return f,h;
-            end if;
-        end if;
-        
-    end while;
-end function;
 
 // ========================== RANDALL'S FUNCTIONS =============================
 
@@ -158,8 +62,9 @@ end function;
 //         be brought to it: x -> a^2*x, y -> a^7*y with a = h3 leaves f monic
 //         and makes h monic, in any characteristic. An implementer normalises
 //         once at setup; a generator that produced other h3 would be testing
-//         curves the formulas do not claim. RandomG2Curve has always done this
-//         (Random(0,1) for h2) -- genus 3 had it recorded as a TODO instead.
+//         curves the formulas do not claim. RandomG2Curve (in the genus-2
+//         utilities) has always done this (Random(0,1) for h2) -- genus 3 had it
+//         recorded as a TODO instead.
 //-----------------------------------------------------------------------------
 RandomG3Curve := function(q)
     assert IsPrimePower(q);
@@ -198,10 +103,11 @@ end function;
 //
 // Return: Random(ish) hyperelliptic polynomial of curve with one point at
 //         infinity f in GF(q)[x] where f is monic separable of degree 7.
-//         h is 0 and is not returned, as in RandomG2NotChar2Curve.
+//         h is 0 and is not returned, as in RandomG2NotChar2Curve (genus-2
+//         utilities).
 //
 //         NOTE the one place this is not yet the exact analogue of genus 2:
-//         RandomG2NotChar2Curve omits the degree-4 term because the genus-2
+//         the genus-2 RandomG2NotChar2Curve omits the degree-4 term because
 //         nch2 formulas apply the x -> x - f4/5 depression (char != 5). The
 //         genus-3 analogue is x -> x - f6/7 (char != 7), which the nch2
 //         formulas do NOT yet apply -- they still take f6 as a parameter. So f6

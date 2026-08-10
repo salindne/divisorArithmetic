@@ -173,14 +173,20 @@ def random_curve(F, kind, rng=random, genus=3, model="ramified",
     """A candidate curve of the requested class (no validation performed).
 
     `normal_form=True` restricts to the characteristic-2 ramified normal form
-    that the ch2 genus-3 formulas are derived for and valid only on:
+    that the ch2 formulas at EVERY genus are derived for and valid only on
+    (genus 2: h = x^2 + h1 x + h0, f = x^5 + f1 x + f0; genus 3:
+    h = x^3 + h2 x^2 + h1 x + h0, f = x^7 + f2 x^2 + f1 x + f0).  The genus-3
+    ch2 files do not exist yet -- they arrive with PR7/PR8 -- and genus 2's
+    restriction to this domain lands with PR27; until then the shipped genus-2
+    ch2 banner declares the wider h2 in {0,1} with f2 live.
 
         h = x^g + h_{g-1} x^{g-1} + ... + h_0        (monic, deg h == g exactly)
         f = x^{2g+1} + f_2 x^2 + f_1 x + f_0         (f_{2g} ... f_3 all zero)
 
     Those formulas cannot be tested on anything else: outside this shape they
     are not claimed correct, so a mismatch there would be an artefact rather
-    than a bug. See divisor-audits/g3ram/CHAR2_NORMAL_FORM.md.
+    than a bug.  The derivation is in NEW_WORK.md Part I, machine-checked by
+    verification/normal_form.py.
 
     For the split model, `infinity_y` fixes the root of
     `x^2 + h_{g+1} x - f_{2g+2}` and `force_hlead` fixes h's leading coefficient.
@@ -203,7 +209,11 @@ def random_curve(F, kind, rng=random, genus=3, model="ramified",
                              "model only")
         # h monic of degree exactly g; f monic with f_{2g}..f_3 zero.
         h = Poly(F, [F.random(rng) for _ in range(genus)] + [F.one])
-        fc = [F.random(rng) for _ in range(3)] + [F.zero] * (df - 3) + [F.one]
+        # g free low coefficients, per the degree-g floor rule: f_{g-1}..f_0
+        # survive and f_{2g}..f_g are cleared.  Hardcoding 3 here was the
+        # genus-3 shape and left f2 live at genus 2, which the decision forbids.
+        fc = ([F.random(rng) for _ in range(genus)]
+              + [F.zero] * (df - genus) + [F.one])
         return Curve(F, Poly(F, fc), h, kind, genus=genus, model=model)
 
     if kind == "nch2":

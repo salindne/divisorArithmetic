@@ -311,8 +311,10 @@ document changes no formula; it is the input to the implementation work.
 What this project contributes beyond the published thesis — every correction, completion and result,
 with the argument for why it is right and the measurement that establishes it — is in
 [NEW_WORK.md](NEW_WORK.md). It is written to be lifted into the next publication, and it is kept
-current as the work proceeds rather than reconstructed afterwards. Its Part I gives one account of
-the curve normal forms that produces all six declared banner shapes, uniform in the genus;
+current as the work proceeds rather than reconstructed afterwards. Its Part I gives one account of the
+curve normal forms, uniform in the genus, producing all six ramified forms; five of the six have a
+formula banner today (the genus-3 characteristic-2 file arrives with PR7/PR8), and Part I marks in place
+the banners that have not yet caught up with the form it derives.
 [verification/normal_form.py](verification/normal_form.py) reproduces every claim in it.
 
 ---
