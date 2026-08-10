@@ -10,7 +10,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //Must keep next two lines in this format for latex conversion
-//Constant: f0,f1,f2,f3,f4,f5,f6,f7,f8,h0,h1,h2,h3,h4,y0,y1,-yn2,y3,y4,yn0,yn1,yn2,yn3,yn4,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,d0,d1,d2,d3,d4,d5,d6,d7,d8,d1,d0,d11,d12,d13,d14,dn0,dn1,dn2,dn3,dn4,f3,d6,d7,d8,d1,d0
+//Constant: f0,f1,f2,f3,f4,f5,f6,f7,f8,h0,h1,h2,h3,h4,y0,y1,y2,y3,y4,yn0,yn1,yn2,yn3,yn4,c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,d0,d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12,d13,d14,dn0,dn1,dn2,dn3,dn4,dn5,dn6,dn7,dn8,dn9,dn10
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg01ADDDWN():         

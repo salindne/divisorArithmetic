@@ -156,19 +156,40 @@ py3:  D = [u1,u0,v1,v0,up1,up0,vp1,vp0]   D' = []
 py2:  D = [u1,u0,v1,v0]                   D' = [up1,up0,vp1,vp0]
 ```
 
-**Affects:** every ADD table, if regenerated. The committed `.tex` files are correct because they were
-generated under Python 2, so the risk is regeneration, not the current content.
+**Affects: 18 of the 26 committed ADD tables, if regenerated** — corrected 2026-08-10 from "every ADD
+table". Measured: 26 ADD tables carry a `D'` row and 8 already show `D' = []` correctly, their sources
+taking a single divisor (four each in `split_ADD.tex` and `test.tex`). Those 8 are still wrong for an
+unrelated reason — they render `D` with undeclared `yn` names — so "already reproducing" is the wrong
+conclusion about them.
+
+**And the fault has a second effect, not previously recorded.** `set(d2Input)` is re-evaluated per
+element, so element 0 *is* tested against the fully populated set and every later element against an
+empty one. `D'` renders as `[]`, and `D` additionally keeps the primed names it should have excluded. No
+committed signature begins with a primed name, so in practice `d1Input` came out as the whole input list.
+
+The committed `.tex` are correct because they were generated under Python 2, where `filter` returned a
+list, so the risk is regeneration rather than the current content.
 
 ---
 
 ## E5: malformed `//Constant` directives understate three additions
 
-**Severity:** correctness of published operation counts.
+**Severity: downgraded 2026-08-10.** It was recorded as affecting published operation counts, and it did
+— but only through `latexConverter.py`, which is no longer the counter of record. The operation counts are
+now measured by [`verification/opcount.py`](verification/opcount.py), which **cannot have this defect**:
+it parses each expression rather than string-matching declared names against source text, so a declared
+name containing an operator has no way to swallow arithmetic.
+
+Measured: of the nine names the corrected directive adds (`y2`, `d9`, `d10`, `dn5`–`dn10`), **zero appear
+as a multiplicand anywhere in the file**, so the repair reclassifies no product and changes no count the
+interpreter produces. The directive is repaired as hygiene; nothing of record moves.
 
 **Where:** [g3/splitModel/negReduced/g3Formulas/nch2_splitG3_ADD.mag](g3/splitModel/negReduced/g3Formulas/nch2_splitG3_ADD.mag)
-line 13, duplicated verbatim in
+line **19** — corrected 2026-08-10 from "line 13", which is the line number in the
+`timings/` copy, not in the file of record — duplicated verbatim in
 [g3/timings/formulas/splitFormulas/nch2_splitG3_ADD.mag](g3/timings/formulas/splitFormulas/nch2_splitG3_ADD.mag)
-line 13. Compared against the `arb` sibling's line 13, which is well formed:
+at line 13. **Both directives were corrected on 2026-08-10**; what follows describes the defect and its
+now-limited reach. Compared against the `arb` sibling's directive, which is well formed:
 
 ```
 arb :  ...,y0,y1,y2,y3,y4,yn0,...,d8,d9,d10,d11,...,dn0,...,dn10
@@ -300,9 +321,29 @@ multiplication in the file is then charged 1C** regardless of its operands:
 //Constant: f1, f2    ('z','=','a','*','','a','')  (0,0,0,1)   1C — silently wrong
 ```
 
-The token-consumption loop (`temp.replace(term,'',1)`) also cannot consume an empty term, so some
-inputs hang rather than miscount. No committed directive currently contains an empty token — checked —
-so this is a trap for the next author, not a live corruption.
+**The "no committed directive contains an empty token" claim was wrong, and is corrected here
+(2026-08-10). Eleven lines across six files parse as a directive with an empty token**, because
+`__setupCode` calls `line.strip()` *before* testing the trigger, so an indented comment matches:
+
+```
+    //Ignore w, just need to work in my polynomial algorithms
+                 -> split()[1] = 'w,'  ->  ['w', '']
+```
+
+In `g2/splitModel/{neg,pos}Reduced/reduced_basis_arithmetic.mag` (:1843, :1920), the
+`g3/splitModel/negReduced/` and `generic/arbitrary/` copies (:1793, :1870),
+`whitebox/genFiles/reduced_basis_arithmetic.mag` (:1921, :1998), and
+`g3/ramifiedModel/ramifiedUtilities.mag:309`.
+
+These reach the **`//Ignore`** path rather than `//Constant`, so the corruption is the opposite of the one
+above: an ignored name costs nothing, so every multiplication becomes **free** instead of 1C. They are
+latent only because the converter's driver never opens those files.
+
+**A separate fault with the same symptom, recorded 2026-08-10.** The token-consumption loop makes no
+progress when *no* term matches the head of the string, not only on an empty term — so a character
+outside `OPERANDS` hangs it just as surely. `g3/timings/formulas/previousBest/rad_2019.mag` hangs the
+converter today, using Magma sequences, tuples and coercion (`[ ] < > ! ,` and bare `/`) that the tool
+never supported. So the hang is reachable by two doors and one is already open.
 
 **Affects:** any future operation-count row generated from a malformed directive. Belongs to PR9's
 repair list with E4–E6: the parser should reject empty tokens loudly.
