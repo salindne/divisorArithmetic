@@ -47,9 +47,42 @@ from poly import Poly
 # field division is one inversion plus one multiplication; squaring is S.
 COUNT = {}
 
+# Counting conventions, opted into by a caller. All three default to OFF, so the
+# interpreter counts exactly as it did before unless something sets them --
+# verification/opcount.py is what does, and it owns the thesis's conventions.
+# Set here rather than there because the multiplication and division sites are
+# inside `ev`, and monkeypatching an evaluator from outside is the kind of thing
+# that works until someone reorders a branch.
+#
+# CONSTS  names declared `//Constant:` in the file being counted. A product with
+#         one is a multiplication by a curve coefficient: C, not M.
+# IGNORED names declared `//Ignore:`. A product with one costs nothing, which is
+#         only sound on the domain the file's banner declares.
+# DIV_LITERAL_AS_ADD
+#         `x/2` is a halving, which this thesis counts as one addition
+#         (chapter6.tex:2333), and `1/x` is an inversion with no product. Without
+#         this every `/` is charged I+M, which is right for `sp0/dw0` and wrong
+#         for both of those.
+CONSTS = set()
+IGNORED = set()
+DIV_LITERAL_AS_ADD = False
+
 
 def _bump(k, n=1):
     COUNT[k] = COUNT.get(k, 0) + n
+
+
+def _leafname(node):
+    """The variable name a factor reduces to, seeing through unary minus.
+
+    `-yn2*W2` parses as ("*", ("neg", ("var","yn2")), ("var","W2")) because the
+    parser binds unary minus tighter than `*`. A bare node[1][0] == "var" test
+    therefore misses a declared constant behind a minus sign and charges M where
+    the cost is C.
+    """
+    while node[0] == "neg":
+        node = node[1]
+    return node[1] if node[0] == "var" else None
 
 
 # Magma builtins the cleaned formula bodies actually use. Measured: IsZero 1347,
@@ -369,9 +402,23 @@ def ev(node, env, F, funcs=None):
         if node[1][0] == "int" or node[2][0] == "int":
             _bump("A")
             return a * b
+        if CONSTS or IGNORED:
+            ln, rn = _leafname(node[1]), _leafname(node[2])
+            if (ln in IGNORED) or (rn in IGNORED):
+                return a * b                      # //Ignore: costs nothing
+            if (ln in CONSTS) or (rn in CONSTS):
+                _bump("C")
+                return a * b
         _bump("M")
         return a * b
     if k == "/":
+        if DIV_LITERAL_AS_ADD:
+            if node[2][0] == "int":
+                _bump("A")                        # x/2 is a halving
+                return a / b
+            if node[1][0] == "int":
+                _bump("I")                        # 1/x, no product
+                return a / b
         _bump("I")
         _bump("M")
         return a / b

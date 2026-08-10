@@ -51,6 +51,7 @@ restating the detail.
 | N12 | An independent reference implementation and differential oracle | **established**, in CI |
 | N13 | Three assumptions in one family were declared but never exploited | **established**, one now closed |
 | N14 | Two counting faults put eighteen published operation counts wrong | **established** by two independent counters |
+| N15 | Operation counts measured by execution, not by scanning text | **established**, in the repository |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -646,6 +647,71 @@ ours, each a few lines, moved eighteen numbers. The transferable claim is that a
 operation count is a *measurement* and deserves the same treatment as any other:
 a second method that shares no code. Here the second method also caught two
 errors in the first, in both directions.
+
+## N15 — Operation counts measured by execution rather than by scanning text
+
+**Status:** established, in the repository. `verification/opcount.py`.
+
+**What changed.** Published operation counts in this literature are produced by
+scanning formula source as text — one hand-written counter per author, with no
+second opinion. This project now counts by **executing** the formulas over a
+finite field and histogramming the result. The two methods agree on all 208
+published cells (N14), so the text scan is vindicated where it can be checked —
+but only one of the two can be checked at all, and it is not the text scan.
+
+**Three things follow that a text scan cannot deliver.**
+
+*Inversions are counted.* The converter has no inversion accounting whatsoever,
+so every `1I` in the thesis is hand-supplied. Measured, every published operation
+comes out at **exactly one inversion** — which is what chapter 5 asserts in prose
+and what nothing had ever verified.
+
+*The frequent case is measured, not inferred.* Every published row quotes the
+frequent case. A text scan must deduce which branch that is from the shape of the
+source; execution observes how often each is actually taken. On the 150 distinct
+published cells the two agree, so the inference is now **validated rather than
+assumed** — a claim that could not be made before, in either direction.
+
+*Formulas the scanner cannot read at all are now counted.* All three genus-3
+ramified files are unparseable to `latexConverter.py`: they write guards as
+`if (X eq 0) then`, a form it has no grammar for, so it yields no genus-3
+ramified figure whatsoever. Those nine operations are the family this whole
+project exists for.
+
+**And it corrected the figures it replaced, in two ways.**
+
+*One multiplication per operation.* The genus-3 ramified formulas write
+inversions as `1/dw1` — 97 times in one file alone — and the previous counter
+charged each an inversion **plus a multiplication**, counting a multiply by 1
+that nobody performs. Isolated by running with the rule disabled, which
+reproduces the old figures exactly, so the difference is attributed rather than
+asserted.
+
+*The C column.* PR20 declared `h3` `//Ignore:`, making its products free to
+count, and the recorded figures had not caught up: the arb addition falls from
+12C to 4C and the doubling from 16C to 4C — matching exactly the 8 and 12 `h3`
+products PR20 had recorded.
+
+**What that does to the standing comparison.** The `nch2` genus-3 addition's
+frequent case is **62 combined M+S, 3C, 77A** — 5 better than Nyukai and 8 better
+than GKP on M+S, with 28 fewer additions. And against the thesis's own
+split-model Degree-3 rows, ramified is now cheaper on **both** multiplications and
+constant multiplications, where the earlier reading had the addition's C as
+"identical". The sanity flag is unchanged and still points at additions.
+
+**A correction that ran the other way, and it matters.** The interpreter was
+initially *wrong* about division: it charged I+M for every `/`, where this thesis
+counts a halving as one addition (`chapter6.tex:2333`). There the **published
+convention was right and the measurement wrong** — which is why the adjudication
+rule for this project is to presume the published counts correct and hand-count
+any divergence, rather than to trust whichever tool is newest.
+
+**For the paper.** An operation count is a measurement, and in this literature it
+has never been treated as one: it is derived once, by hand, from formulas the
+reader cannot execute. Two independent methods agreeing on 208 cells is a
+stronger claim than any single count in the field, and the disagreements were
+informative in both directions — two faults in the text scanner, and one in the
+executor.
 
 ---
 
