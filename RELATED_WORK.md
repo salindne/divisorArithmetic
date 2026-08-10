@@ -174,12 +174,12 @@ prior-work A counts are derived here rather than published by their authors —
 
 | Case | Previous best | Ours | Standing |
 |---|---|---|---|
-| **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | **63 M+S, 3C, 77A** | **ahead on both axes**: 4 better than Nyukai and 7 better than GKP on M+S, 28 fewer additions. PR17 removes the 3 C (the `f₆` products) and puts us on their curve form |
-| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 61 M+S, 16C, 114A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
+| **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | **62 M+S, 3C, 77A** | **ahead on both axes**: 5 better than Nyukai and 8 better than GKP on M+S, 28 fewer additions. PR17 removes the 3 C (the `f₆` products) and puts us on their curve form |
+| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 60 M+S, 4C, 114A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
 | **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | *none* | **Future work, PR7** |
 | **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | *none* | **Future work, PR8** |
-| **arb ADD** | **none** | 64 M+S, 12C, 95A | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD (68 M+S, 12C, 87A): **4 better on M+S, identical C, 8 worse on A** |
-| **arb DBL** | **none** | 61 M+S, 16C, 114A | As above. Against split Degree-3 DBL (76 M+S, 19C, 101A): **15 better on M+S, 3 better on C, 13 worse on A** |
+| **arb ADD** | **none** | 63 M+S, 4C, 95A | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD (68 M+S, 12C, 87A): **5 better on M+S, 8 better on C, 8 worse on A** |
+| **arb DBL** | **none** | 60 M+S, 4C, 114A | As above. Against split Degree-3 DBL (76 M+S, 19C, 101A): **16 better on M+S, 15 better on C, 13 worse on A** |
 
 **C is 0 in every "previous best" cell above** — the published normal forms
 leave no coefficient to multiply by. It is non-zero only for us, and only in the
@@ -189,7 +189,7 @@ include C; theirs have none to include. See [the C column](#the-c-column-and-why
 Reading it:
 
 - **Only one of the six cells is a like-for-like race today, and we win it** —
-  63 M+S against Nyukai's 67 and GKP's 70, with 28 fewer additions. The recorded
+  62 M+S against Nyukai's 67 and GKP's 70, with 28 fewer additions. The recorded
   efficiency ledger is upside on top of that, not catch-up. An earlier revision
   of this document had this cell 10 M+S behind; that came from a broken counter,
   see [the measurement note](#which-counter-is-authoritative).
@@ -280,17 +280,17 @@ uses**; its numbers are given as current state, not as a like-for-like row.
 |---|---|---|---|
 | Nyukai 2006, ADD 3+3 (best published) | 67 | 0 | 105 *(derived)* |
 | GKP 2004, ADD 3+3 | 70 | 0 | 105 *(derived)* |
-| **our `nch2` ADD, Deg3 generic, today (f₆ live)** | **63** | **3** | **77** |
+| **our `nch2` ADD, Deg3 generic, today (f₆ live)** | **62** | **3** | **77** |
 | Nyukai 2006, DBL deg 3 | 68 | 0 | 93 *(derived)* |
 | GKP 2004, DBL deg 3 | 70 | 0 | 90 *(derived)* |
-| our DBL (arb DBL borrowed — see lane 3) | 61 | 16 | 114 |
+| our DBL (arb DBL borrowed — see lane 3) | 60 | 4 | 114 |
 
 Our figures are exact per-branch counts, not ranges or averages — see
 [the measurement note](#which-counter-is-authoritative) for how they are
 obtained and why an earlier revision of this document had them wrong.
 
 **The headline: this repository is ahead of the published state of the art on
-both axes.** Our frequent-case addition costs **63 M+S (66 counting its 3 C)
+both axes.** Our frequent-case addition costs **62 M+S (65 counting its 3 C)
 against Nyukai's 67 and GKP's 70**, and **77 additions against the 105 both of
 them cost** — 28 fewer, worth a further ~9M at the thesis's own 1M : 3A rule.
 There is no trade-off to argue about here; it is cheaper in every column.
@@ -303,7 +303,7 @@ measured from the Magma source.
 
 The recorded efficiency ledger is therefore upside, not catch-up. Its largest
 item is the f₆ depression, which is exactly the 3 C in the row above: PR17
-removes them, taking this lane to **63 M+S and 0 C** on a curve form that
+removes them, taking this lane to **62 M+S and 0 C** on a curve form that
 finally matches every published baseline. The doubling comparison cannot be
 made until `nch2_ramifiedG3_DBL.mag` exists (merge-plan PR6); the borrowed arb
 DBL pays h-terms this lane's curves do not have, which is why its C is 16.
@@ -418,12 +418,31 @@ specialises to Fp-with-h=0 or to a fixed char-2 shape of h. This repository's
 - **by the technique checklist** of `Thesis/chapter4.tex`, which is merge-plan
   PR14's method.
 
-Measured today (audit harness, frequent case):
+Measured today by [`verification/opcount.py`](verification/opcount.py), which
+executes the formulas rather than scanning them, frequent case identified by
+frequency:
 
 | Operation | M | S | A | C | I | M+S |
 |---|---|---|---|---|---|---|
-| `arb` ADD, `Deg3ADD` generic | 60 | 4 | 95 | 12 | 1 | **64** |
-| `arb` DBL, `Deg3DBL` typical | 56 | 5 | 114 | 16 | 1 | **61** |
+| `arb` ADD, `Deg3ADD` generic | 59 | 4 | 95 | 4 | 1 | **63** |
+| `arb` DBL, `Deg3DBL` typical | 55 | 5 | 114 | 4 | 1 | **60** |
+
+**These are one M and several C lower than the figures this document carried
+until 2026-08-10, and both differences are explained rather than absorbed.**
+
+*One M per operation* came from charging an inversion written `1/x` an inversion
+**plus a multiplication** — a multiply by 1 that nobody performs. The genus-3
+ramified files write inversions that way 97 times in one file alone. Isolated by
+running the counter with that rule off, which reproduces the old figures exactly.
+
+*The C column* fell because PR20 moved `h3` from `//Constant:` to `//Ignore:` in
+the arb files, making its products free to count: ADD 12C → 4C and DBL 16C → 4C,
+matching exactly the 8 and 12 `h3` products PR20 recorded. The table above had
+not caught up.
+
+Every figure here is now reproducible from this repository alone —
+`python3 verification/opcount.py --family ramified/g3/arb` — which was not true
+of the audit-harness numbers it replaces.
 
 ### The sanity flag fires on additions, not multiplications
 
@@ -432,13 +451,19 @@ thesis's own split-model Degree-3 rows is direct — no convention to choose:
 
 | vs split Degree-3, arbitrary | ours | split | verdict |
 |---|---|---|---|
-| **ADD** | 64 M+S, 12C, 95A | 68 M+S, 12C, 87A | **4 better on M+S, identical C, 8 worse on A** |
-| **DBL** | 61 M+S, 16C, 114A | 76 M+S, 19C, 101A | **15 better on M+S, 3 better on C, 13 worse on A** |
+| **ADD** | 63 M+S, 4C, 95A | 68 M+S, 12C, 87A | **5 better on M+S, 8 better on C, 8 worse on A** |
+| **DBL** | 60 M+S, 4C, 114A | 76 M+S, 19C, 101A | **16 better on M+S, 15 better on C, 13 worse on A** |
 
-**Ramified is cheaper than split on multiplications, in both operations — which
-is what it should be**, having no balancing and no adjust steps. The anomaly is
-entirely in the additions, where ramified is dearer despite doing strictly less
-work. That is the sanity flag, and it points at A, not M.
+**Ramified is cheaper than split on multiplications AND on constant
+multiplications, in both operations — which is what it should be**, having no
+balancing and no adjust steps. The anomaly is entirely in the additions, where
+ramified is dearer despite doing strictly less work. That is the sanity flag, and
+it points at A, not M.
+
+The C column widened in ramified's favour on 2026-08-10, when these figures were
+re-measured by execution: `h3` is declared `//Ignore:` since PR20, so its products
+are free, taking the arb ADD from 12C to 4C and the DBL from 16C to 4C. The
+earlier "identical C" verdict on the addition was reading a pre-PR20 number.
 
 Two earlier revisions of this section got this wrong in opposite directions,
 both by trusting a per-branch count that had not been re-derived: the first
@@ -455,9 +480,21 @@ side without adjustment.
 
 ### Which counter is authoritative
 
-Every figure for this repository in this document is measured by interpreting
-the **actual Magma source** per branch (`maginterp2.py` in the audit harness,
-driven by `c_baseline.py`). The other counters in that directory —
+Every figure for this repository in this document is measured by **executing the
+actual Magma source** — since 2026-08-10 by
+[`verification/opcount.py`](verification/opcount.py), which lives in this
+repository, so every number here is reproducible without the external audit
+harness that produced the earlier revisions:
+
+```
+python3 verification/opcount.py --family ramified/g3/nch2
+```
+
+It counts inversions, which no other counter here does, and it decides the
+frequent case by **measurement** — histogramming the operation tuples over many
+random valid divisor pairs and taking the mode — rather than by inferring it from
+the shape of the source. It samples only each family's declared domain, so a
+count cannot come from a curve the formulas do not claim. The other counters in that directory —
 `opcount.py`, `opcount-odd-add.py`, `drive-deg33add-opcount.py` — run
 hand-written Python transcriptions of the formulas instead, and **they
 over-count**. The clearest demonstration is small enough to check by eye: for
