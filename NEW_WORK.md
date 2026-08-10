@@ -49,6 +49,7 @@ restating the detail.
 | N10 | The project's own addition counts were over-stated by a broken counter | **established**, corrected |
 | N11 | The arbitrary-characteristic genus-3 formulas carry dead and duplicated work | **established**, not yet implemented |
 | N12 | An independent reference implementation and differential oracle | **established**, in CI |
+| N13 | Three assumptions in one family were declared but never exploited | **established**, one now closed |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -521,6 +522,79 @@ that samples *inside* a domain the formulas do not actually require hides the
 fact that the assumption is unused. Both happened here, in opposite directions,
 at the two genera.
 
+## N13 — Three assumptions in one family were declared but never exploited
+
+**Status:** established; the genus-2 characteristic-2 case is now closed. PR27,
+with `Thesis/ERRATA.md` E-T7.
+
+**The pattern, which is the finding.** A formula file's banner declares which
+curves it is valid for, and the operation-count tables are priced against that
+declaration. Three times in the ramified family, the declaration was real and
+the *code did not use it*:
+
+| where | declared | what the code did |
+|---|---|---|
+| genus-2 ch2, `f₂` | `f₄ = f₃ = f₂ = 0` beside `tab:ramfcosts` | computed `k0 := f2 + …` |
+| genus-2 ch2, `h₂` | `h₂ ∈ {0,1}`, with `//Ignore: h2` pricing its products at zero | computed all 43 of them |
+| genus-3 arb, `h₃` | `h₃ ∈ {0,1}`, with `//Ignore: h3` | computes all 187 of them |
+
+Each is individually defensible and none is a *correctness* defect — the
+formulas are right for the domain they claim. The pattern is what matters: an
+`//Ignore:` directive is a promise that a product is free, and a promise made in
+a table is not kept by the code that generates the table.
+
+**What closing the genus-2 case actually bought, measured.** Restricting to
+`h₂ = 1` and `f₄ = f₃ = f₂ = 0` moves **one cell** of `tab:ramfcosts` — the
+char-2 Degree-2 doubling, 25A → 24A. Of `f₂`'s five arithmetic sites only one is
+on a frequent path; the other four are special cases the table does not price.
+Measured across 2,514 operations against the pre-restriction formulas on
+identical curves:
+
+| | frequent A, before | after |
+|---|---|---|
+| Degree 1 doubling | 5 | 5 |
+| **Degree 2 doubling** | **25** | **24** |
+| Degree 1 and 2 addition | 19 | 19 |
+| Degree 2 addition | 26 | 26 |
+
+An earlier estimate of three changed cells was wrong, and the difference is
+instructive: the arithmetic sites were all located by hand and correctly
+counted, but *which branch is frequent* cannot be read off the source. Only a
+run tells you.
+
+**And the `h₂` half moves no published number at all** — 43 real multiplications
+disappear from the implementation, and every one was already priced at zero. So
+the change makes the *already-published* counts true of the code rather than
+reducing them.
+
+**Why do it, then.** Two reasons, neither of them speed. Both genera now share
+one characteristic-2 exposition — `h` monic of degree exactly `g`, `f` maximally
+depressed, exactly the Part I normal form — so the thesis derivation and the
+implementation describe the same curve. And the gap between what the tables
+claim and what the code does is closed in the code's favour.
+
+**What it costs, knowingly.** `deg h = 1` at genus 2 is the Koblitz/subfield
+family (Günther–Lange–Stein, SAC 2000; Lange, FFA 11 (2005) 200–229), which uses
+divisor addition directly via τ-NAF. Those curves move to the arbitrary-
+characteristic formulas, which serve them correctly at higher cost. A real loss
+of specialisation for a real user, recorded as a decision rather than an
+oversight — and the dispatchers now refuse them outright rather than returning
+quietly wrong answers.
+
+**Evidence.** 2,514 comparisons against the pre-restriction formulas on curves
+in the narrowed domain, **zero disagreements** — which is the whole correctness
+argument, since every curve the restricted formulas accept is one the old
+formulas accepted. Plus 1,428 comparisons against Cantor's algorithm, a
+regenerated whitebox corpus at 22 of 22 branches, and both Magma testers green.
+
+**For the paper.** Three times in one formula family, an assumption was declared
+in the banner, priced into the published operation counts, and then not used by
+the code — so the tables described a better implementation than the one that
+shipped. The genus-3 instance is still open. The general lesson is that a
+costing convention is a claim about the implementation and needs the same
+verification as a formula: nothing in the toolchain checked that an `//Ignore:`d
+coefficient was actually exploited.
+
 ---
 
 # Part IV — The comparison with prior work
@@ -736,7 +810,6 @@ them early, and so each arrives here with its evidence when it lands.
 |---|---|---|
 | Apply the depression `x → x − f₆/7` to the genus-3 `nch2` formulas | Mathematics verified (Part I, and 310 transported additions); the formulas still take `f₆`. Until then our odd-characteristic counts sit on a curve form no published baseline uses | PR15/PR17 |
 | Characteristic-2 genus-3 formulas at `deg h = 3` | Normal form established (Part I). Formulas not derived. Must reconcile explicitly against Birkner's Type Ia and GKP's two variants, and beat GKP's 1I+62M+5S/100A | PR7/PR8 |
-| Restrict genus-2 characteristic-2 to `h₂ = 1`, `f₄ = f₃ = f₂ = 0` | Decided. Makes the thesis's stated assumption *true of the implementation* rather than merely available, and makes both genera share one exposition. Costs the `deg h = 1` Koblitz family, which moves to the `arb` formulas — a real loss, accepted knowingly | PR27 |
 | Exploit `h₃ ∈ {0,1}` rather than merely declaring it | The assumption is currently free to *count* but still computed. Whether real work can be removed is unmeasured, and the genus-2 mechanism that would be the template is not yet understood (N6) | PR24 |
 | Implement the 27 confirmed efficiency findings | Report only so far; each must land with its own oracle run | PR16 |
 | Non-ordinary characteristic-2 curves (`deg h < 3`) | **Researched and declined.** Real uses exist — halving, Koblitz curves — but a curve is ordinary with probability `1 − O(1/q)`, there is no parameterised middle option (one file covering all four strata must keep `f₅…f₃` live — `f₆` stays killable by the translation, unconditionally, per Part I step 2 — at which point it *is* the `arb` file), and the remaining prize is a doubling prize on the most saturated ground. The `arb` formulas serve these curves correctly today | — |
