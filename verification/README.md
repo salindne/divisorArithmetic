@@ -96,7 +96,7 @@ just not in per-PR CI, where 37 seconds of sampling proves neither thing.
 | `coverage_baseline.json` | the branches exempt from coverage, **as a named label set with a reason each** — everything else must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Also pins any known arity anomalies by case identity, so a new one fails while known ones stay reported-not-fatal; the pin set is empty since PR5 fixed errata E2 |
 | `driver.py` | random differential testing, with per-branch coverage; not in CI |
 | `normal_form.py` | verifies the curve normal forms the formula banners declare, at both genera, including the negative controls. Standalone, no arguments, ~1 min; not in CI. Backs Part I of [`NEW_WORK.md`](../NEW_WORK.md) |
-| `selftest.py` | checks the framework itself, twelve sections |
+| `selftest.py` | checks the framework itself, thirteen sections |
 
 ## Current state
 
@@ -108,7 +108,7 @@ Measured with `driver.py --curves 30 --pairs 16`:
 | operations compared | **674,528** |
 | wrong on the formulas' documented domains | **0** |
 | branch coverage | **86.9%** overall; **100% on all nine ramified files** |
-| `selftest.py` | 12 sections, 12 passing |
+| `selftest.py` | 13 sections, 13 passing |
 | parse coverage | 240 of 246 functions |
 
 The 6 functions not interpreted are `Random*Curve` generators, which are not formulas
@@ -144,6 +144,36 @@ Cantor reduction needs only the quotient and the low coefficients land in the
 remainder. Domains are derived by *contrast* against the `arb` family of the same
 model and genus, which is the one valid on arbitrary curves: what the general family
 reads and a specialisation does not is what that specialisation assumed away.
+
+**But the contrast can only ever say ZERO, and two coefficients are not about
+that.** Ask for a domain through `family_domain`, never `domain_constraints`
+alone. Two things the contrast cannot express:
+
+- *`f_{2g+1}` is the model.* A ramified `f` is monic, so a characteristic-2
+  genus-3 dispatcher in the normal form reads only `Coeff(f,2..0)` — and the
+  contrast read the absent leading index as an assumption, zeroed it, and
+  `curves.Curve` raised an uncaught `AssertionError`. Filtered out for ramified
+  families, and deliberately **not** for split, where `f_{2g+2}` is a live
+  non-monic parameter.
+- *`h_g`'s value IS the domain*, 0-or-1 for `arb` and exactly 1 for `ch2`. Once a
+  `ch2` file stops extracting `Coeff(h,g)` — the point of exploiting the
+  assumption — the contrast reads that as "`h_g` is zero" and the tested domain
+  **inverts** onto `deg h < g`, exactly the family `ch2` excludes. Measured
+  before the fix: 40 draws, `deg h = 2` came up zero times.
+
+So **the banner wins over the contrast**: any coefficient a banner pins is
+removed from the zero-contrast and left to the members pass. `banner_members`
+reads both `(h2 in {0,1})` and the singleton `h2 = 1`, from the banner only — a
+formula body is full of derivation comments like `-h3 = 0;` that a whole-file
+scan would misread — and a **borrowed** file's banner is excluded, since the
+genus-3 `nch2` family borrows the `arb` DBL, whose banner would otherwise hand it
+`h₃ ∈ {0,1}` for formulas derived at `h = 0`.
+
+**An unreadable domain fails the run.** Every failure in this class was silent,
+so `require_leading_pin` refuses to run a ramified `arb` or `ch2` family whose
+banner pins no `h_g`, reporting through `res.errors` rather than `res.skipped`.
+`selftest.py`'s `domain` section provokes all seven mechanisms and each check has
+been shown to fail with its fix reverted.
 
 **Branch coverage is not optional output.** Several defects in this repository
 survived because a tester never reached the branch. An unexercised branch is

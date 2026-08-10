@@ -7,7 +7,7 @@
 #
 # Usage:
 #   ./test_all.sh                        # requires `magma` on PATH
-#   MAGMA=./run-magma.sh ./test_all.sh   # run Magma through the Docker wrapper
+#   MAGMA=tools/magma-docker/magma.sh ./test_all.sh    # through the patched container
 #   SLEEP=0 ./test_all.sh                # skip the decorative pauses
 #   LOGDIR=/somewhere ./test_all.sh      # where per-tester logs are written
 #
@@ -35,8 +35,8 @@ LOGDIR="${LOGDIR:-$ROOT/.test-logs}"
 
 # If MAGMA is given as a path rather than a bare command name, make it absolute.
 # This script cds into each formula directory, so a relative wrapper path such as
-# MAGMA=./run-magma.sh would resolve during preflight and then fail with exit 127
-# on every single tester.
+# MAGMA=tools/magma-docker/magma.sh would resolve during preflight and then fail
+# with exit 127 on every single tester.
 case "$MAGMA" in
     */*) MAGMA="$(cd "$(dirname "$MAGMA")" && pwd)/$(basename "$MAGMA")" ;;
 esac
@@ -46,12 +46,19 @@ if ! command -v "$MAGMA" >/dev/null 2>&1 && [ ! -x "$MAGMA" ]; then
 error: Magma not found as '$MAGMA'.
 
 Magma is commercial software and is not included in this repository. Either put
-it on your PATH, or build the local Docker image and run through the wrapper:
+it on your PATH, or build the container and run through its wrapper:
 
-    docker build -t magma-env .
-    MAGMA=./run-magma.sh ./test_all.sh
+    docker build -f tools/magma-docker/Dockerfile -t magma-qemufix .
+    MAGMA=tools/magma-docker/magma.sh ./test_all.sh
 
-See README.md "Requirements and how to run".
+Use that wrapper and no other. Magma here is a 32-bit i386 binary running under
+qemu-i386, and unpatched qemu relocates on MREMAP_MAYMOVE even when shrinking,
+where Linux does not -- Magma checks its blocks stayed put and aborts with
+"memi_reduce_block_mmap: block moved". An image built from a plain Dockerfile
+hits that on every genus-3 tester. tools/magma-docker/ carries the one-line
+emulator patch that fixes it.
+
+See README.md "Requirements and how to run", and tools/magma-docker/README.md.
 EOF
     exit 127
 fi

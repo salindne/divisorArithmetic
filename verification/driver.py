@@ -200,6 +200,49 @@ def read_support(path, op):
 
 _BANNER_MEMBER = re.compile(r"\(\s*([fh])(\d+)\s+in\s*\{([^}]*)\}\s*\)")
 
+# The set form above cannot express a coefficient pinned to ONE value. The char-2
+# decision of 2026-08-09 does exactly that -- `h2 = 1`, not `h2 in {0,1}` -- so a
+# banner written that way parsed as nothing at all, `members` came back empty, and
+# because the zero-contrast says nothing about h_g either, the tested domain
+# widened silently back to general h_g. Measured before this fix: 60 draws over
+# GF(8) spanning all eight field elements, including the h2 = t case behind the 36
+# wrong DBL4 doublings the restriction exists to exclude.
+_BANNER_EQ = re.compile(r"\b([fh])(\d+)\s*=\s*(\d+)\b")
+
+# `deg h = 2` states the degree exactly. Kept separate from the coefficient pins:
+# it is a statement about h, not a value for one coefficient, and it is what
+# `require_leading_pin` checks a ch2 banner for.
+_BANNER_DEG = re.compile(r"\bdeg\s+([fh])\s*=\s*(\d+)\b")
+
+
+def _banner_lines(path):
+    """The file's leading comment block -- its banner, and nothing after it.
+
+    Scope matters for the equality form. A formula body is full of derivation
+    comments like `//at1:= -h3 = 0;` (nch2_ramifiedG3_ADD.mag:1731), and a
+    whole-file scan would read that as a domain statement pinning h3 = 0. The set
+    form was safe whole-file only because `(h3 in {0,1})` is distinctive enough
+    not to occur by accident. Both are now read from the banner, which is where a
+    domain is actually declared. Verified to leave every shipped family's members
+    byte-identical -- see selftest's `domain` section.
+    """
+    out = []
+    for line in open(path):
+        if line.strip() == "" or line.lstrip().startswith("//"):
+            out.append(line)
+            continue
+        break
+    return out
+
+
+def banner_degrees(path):
+    """{'h': 2} from a banner that says `deg h = 2`."""
+    out = {}
+    for line in _banner_lines(path):
+        for m in _BANNER_DEG.finditer(line):
+            out[m.group(1)] = int(m.group(2))
+    return out
+
 
 def banner_members(path):
     """{('h', 2): {0, 1}} from a file's own banner.
@@ -215,7 +258,7 @@ def banner_members(path):
     `read_support` is: a table would silently keep passing after a banner changed.
     """
     out = {}
-    for line in open(path):
+    for line in _banner_lines(path):
         if "//" not in line:
             continue
         for m in _BANNER_MEMBER.finditer(line):
@@ -226,6 +269,9 @@ def banner_members(path):
                     vals.add(int(tok))
             if vals:
                 out[(m.group(1), int(m.group(2)))] = vals
+        # `h2 = 1`: a singleton, and the form the char-2 normal form uses.
+        for m in _BANNER_EQ.finditer(line):
+            out.setdefault((m.group(1), int(m.group(2))), set()).add(int(m.group(3)))
     return out
 
 
@@ -265,7 +311,91 @@ def domain_constraints(fam, families, op="ADD"):
     if ref_path is None:
         return None, "arb family has no %s file" % op
     theirs = read_support(ref_path, op)
-    return {"f": theirs["f"] - mine["f"], "h": theirs["h"] - mine["h"]}, None
+    cons = {"f": theirs["f"] - mine["f"], "h": theirs["h"] - mine["h"]}
+    # f_{2g+1} is the monic leading coefficient of a ramified f -- a property of
+    # the MODEL, not an assumption any specialisation makes, and the contrast
+    # cannot tell the difference: it only sees "arb extracted this, I did not".
+    # A ch2 genus-3 dispatcher in the decided normal form reads only
+    # Coeff(f,2..0), because f7 is 1 by definition, so the contrast put index 7
+    # in cons["f"], curve_in_domain zeroed the leading coefficient, and C.Curve
+    # raised an UNCAUGHT AssertionError ("f must be monic of degree 7 for genus 3
+    # ramified, got degree 2") -- the gate crashing rather than skipping. Genus 2
+    # escaped it only by accident, arb_ramifiedG2 never reading Coeff(f,5).
+    #
+    # Deliberately NOT done for split: there f_{2g+2} is a live non-monic
+    # parameter both Precompute functions read, and forcing it to 1 makes every
+    # characteristic-2 candidate unusable (see curves.Curve). Moot in practice --
+    # this function returns early for split families -- but stated so the
+    # symmetry is not "fixed" later.
+    if fam.model == "ramified":
+        cons["f"].discard(C.deg_f(fam.genus, "ramified"))
+    return cons, None
+
+
+def family_domain(fam, families, op="ADD"):
+    """(cons, members, why) -- the reconciled domain, and the only way to ask.
+
+    Two mechanisms describe a family's domain and they overlap on exactly one
+    coefficient, h_g:
+
+      * the zero-contrast (`domain_constraints`) can only ever say "this
+        coefficient is assumed ZERO", because all it observes is that arb
+        extracted a coefficient and the specialisation did not;
+      * the banner (`banner_members`) can say which VALUES are permitted.
+
+    h_g is where that gap bites. Its value IS the domain statement -- 0 or 1 for
+    arb, exactly 1 for ch2 under the 2026-08-09 decision -- and the moment a ch2
+    file stops extracting Coeff(h,g), which is the whole point of exploiting the
+    assumption, the contrast reads the absence as "h_g is zero" and the gate
+    inverts onto deg h < g: precisely the family ch2 excludes, and none of the
+    curves it claims. Measured before this fix, with cons={'f':{2,3,4},'h':{2}}
+    over GF(8): 40 draws gave deg h = 1 (37), deg h = 0 (3), deg h = 2 never.
+
+    So: THE BANNER WINS. Any coefficient the banner pins is removed from the
+    zero-contrast and left to the members pass. That is right in general, not a
+    special case for h_g -- a banner is a deliberate statement and the contrast
+    is an inference. It also leaves nch2 alone, whose banner pins nothing and
+    whose h really is identically zero.
+    """
+    cons, why = domain_constraints(fam, families, op)
+    if cons is None:
+        return None, None, why
+    members = banner_members(fam.add_path)
+    # A BORROWED file's banner describes its own family, not the borrower's.
+    # ramified/g3/nch2 has h = 0 and no DBL of its own, so it borrows the arb
+    # DBL -- whose banner says (h3 in {0,1}). Reading that as this family's
+    # domain, and then letting the banner win over the contrast, would leave h3
+    # free and hand h = x^3 to formulas derived for h = 0. The old code read it
+    # too, but the members skip happened to neutralise it; with that skip fixed
+    # the trap becomes live, so exclude it explicitly rather than relying on a
+    # second bug to cancel the first.
+    if fam.dbl_path and not getattr(fam, "dbl_borrowed", False):
+        members.update(banner_members(fam.dbl_path))
+    for (var, idx) in members:
+        cons[var].discard(int(idx))
+    return cons, members, None
+
+
+def require_leading_pin(fam, members):
+    """Why `fam`'s banner fails to pin h_g, or None if it does.
+
+    Every failure this PR fixed was SILENT -- a widening or an inversion that
+    left the gate green while it tested the wrong curves. The class is only
+    closed by refusing to run at all when the domain cannot be read, so this is
+    reported through res.errors rather than res.skipped.
+
+    Scoped to ramified arb and ch2, the two classes for which h_g's value is the
+    domain. nch2 is exempt: h is identically zero there, the contrast says so,
+    and its banner has nothing to pin.
+    """
+    if fam.model != "ramified" or fam.kind not in ("arb", "ch2"):
+        return None
+    if ("h", fam.genus) in (members or {}):
+        return None
+    return ("banner does not pin h%d: a ramified %s family must state either "
+            "(h%d in {0,1}) or h%d = 1, or the tested domain silently widens "
+            "to general h%d" % (fam.genus, fam.kind, fam.genus, fam.genus,
+                                fam.genus))
 
 
 def curve_in_domain(F, fam, cons, rng, attempts=300, members=None):
@@ -275,18 +405,37 @@ def curve_in_domain(F, fam, cons, rng, attempts=300, members=None):
         cur = C.random_curve(F, fam.kind, rng, genus=fam.genus,
                              model=fam.model.replace("pos", "").replace("neg", ""))
         f, h = cur.f, cur.h
+        # A leading coefficient is a model property, never an assumption --
+        # zeroing it drops the curve's degree and trips C.Curve's monic assertion
+        # as an uncaught AssertionError. domain_constraints already filters the
+        # ramified case; this makes a regression loud instead of a traceback.
+        if fam.model == "ramified" and C.deg_f(fam.genus, "ramified") in cons["f"]:
+            raise ValueError(
+                "refusing to zero f%d, the monic leading coefficient of a "
+                "ramified f: that is the model, not a domain assumption"
+                % C.deg_f(fam.genus, "ramified"))
         if cons["f"] and any(not f.coeff(i).is_zero() for i in cons["f"]):
             f = Poly.from_coeffs(F, [F.zero if i in cons["f"] else f.coeff(i)
                                      for i in range(f.deg + 1)])
         if cons["h"] and any(not h.coeff(i).is_zero() for i in cons["h"]):
             h = Poly.from_coeffs(F, [F.zero if i in cons["h"] else h.coeff(i)
                                      for i in range(max(h.deg + 1, 1))])
-        # Banner memberships such as (h2 in {0,1}). Only 0 and 1 are expressible,
-        # so a coefficient outside the set is redrawn from it rather than nudged.
+        # Banner memberships: (h2 in {0,1}) as a set, or h2 = 1 as a singleton.
+        # A coefficient outside the permitted values is redrawn from them rather
+        # than nudged, so only 0 and 1 are expressible as targets.
         if members:
             for (var, idx), allowed in members.items():
                 tgt = f if var == "f" else h
-                if int(idx) > (tgt.deg if tgt.deg >= 0 else 0) + 0 and \
+                # Leave an absent coefficient alone only when zero is actually
+                # permitted. This skip exists so a legal h_g = 0 is not forced
+                # up to 1 -- but with allowed = {1} it fired on precisely the
+                # curves that VIOLATE the pin, since deg h < g means index g is
+                # past the degree and reads as zero. The pin then did nothing:
+                # measured, narrowing {0,1} to {1} changed the draw distribution
+                # not at all. Gating on `0 in allowed` gives 60/60 draws at
+                # deg h = g with h_g = 1.
+                if 0 in allowed and \
+                        int(idx) > (tgt.deg if tgt.deg >= 0 else 0) and \
                         tgt.coeff(idx).is_zero():
                     continue
                 cur_c = tgt.coeff(idx)
@@ -839,9 +988,15 @@ def sentinel_labels(path):
 
 
 def run_family(fam, families, res, fields, n_curves, n_pairs, seed, verbose):
-    cons, why = domain_constraints(fam, families, "ADD")
+    cons, members, why = family_domain(fam, families, "ADD")
     if cons is None:
         res.skipped.append((fam.name + " ADD", why))
+        return
+    unpinned = require_leading_pin(fam, members)
+    if unpinned:
+        # Loud, not skipped: an unreadable domain is how this gate silently
+        # tested the wrong curves.
+        res.errors["%s domain: %s" % (fam.name, unpinned)] += 1
         return
     try:
         subs = M.discover(fam.add_path)
@@ -871,9 +1026,6 @@ def run_family(fam, families, res, fields, n_curves, n_pairs, seed, verbose):
             res.skipped.append((fam.name + " DBL",
                                 "cannot load: %s: %s" % (type(e).__name__, e)))
 
-    members = banner_members(fam.add_path)
-    if fam.dbl_path:
-        members.update(banner_members(fam.dbl_path))
     for q in fields:
         F = GF(q)
         if fam.kind == "ch2" and F.char != 2:
@@ -1443,7 +1595,7 @@ def main(argv=None):
                        if bits else "basis %s; arbitrary split curves" % fam.basis)
                 print("   %s %-22s %s" % ("*" if fam in sel else " ", fam.name, dom))
                 continue
-            cons, why = domain_constraints(fam, families, "ADD")
+            cons, members, why = family_domain(fam, families, "ADD")
             if cons is None:
                 dom = "unavailable: %s" % why
             else:
@@ -1453,6 +1605,14 @@ def main(argv=None):
                         bits.append("%s: %s = 0"
                                     % (v, ", ".join("%s%d" % (v, i)
                                                     for i in sorted(cons[v]))))
+                # Printing cons alone would announce "h: h2 = 0" for a ch2 family
+                # that pins h2 = 1 -- the exact opposite of its domain, which is
+                # worse than omitting it.
+                for (var, idx) in sorted(members or {}):
+                    vals = sorted(members[(var, idx)])
+                    bits.append("%s%d %s" % (var, idx,
+                                             "= %d" % vals[0] if len(vals) == 1
+                                             else "in {%s}" % ",".join(map(str, vals))))
                 dom = "; ".join(bits) if bits else "arbitrary curves"
             print("   %s %-22s %s" % ("*" if fam in sel else " ", fam.name, dom))
         if excluded:
