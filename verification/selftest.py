@@ -965,6 +965,174 @@ def section_gate_guards(rep, quick):
         rep.ok("gate_guards", "%d guards provoked, all fired" % len(shown))
 
 
+def section_domain(rep, quick):
+    """The harness can express `h_g = 1`, and every way it could not is provoked.
+
+    The char-2 decision of 2026-08-09 makes `h_g = 1` true of the implementation
+    rather than merely declared -- ch2 stops extracting Coeff(h,g) altogether.
+    Four independent mechanisms in driver.py could not represent that, and every
+    one of them failed SILENTLY: the gate stayed green while testing curves the
+    formulas do not claim. So each is provoked here, in the post-change shape,
+    and each check fails without its fix.
+
+    The shapes are simulated rather than waited for, on the PR3 principle that
+    an oracle must be shown to see a change before the change lands.
+    """
+    import collections                                          # noqa: PLC0415
+    import driver as D                                          # noqa: PLC0415
+
+    fams, _excluded = D.discover_families()
+    def fam(name):
+        return [f for f in fams if f.name == name][0]
+    ch2g2, arbg3, nch2g3 = fam("ramified/g2/ch2"), fam("ramified/g3/arb"), fam("ramified/g3/nch2")
+    real_rs, real_bm = D.read_support, D.banner_members
+    problems = []
+
+    try:
+        # (a) The banner must parse a singleton pin, not only a set.
+        for txt, want_eq in (
+                ("//   h(x) = h2*x^2 + h1*x + h0 (h2 in {0,1}) and", []),
+                ("//   h(x) = x^2 + h1*x + h0 (deg h = 2, h2 = 1) and", [("h", "2", "1")]),
+        ):
+            if D._BANNER_EQ.findall(txt) != want_eq:
+                problems.append("banner equality form: %r gave %r"
+                                % (txt.strip(), D._BANNER_EQ.findall(txt)))
+        if D._BANNER_DEG.findall("// (deg h = 2, h2 = 1)") != [("h", "2")]:
+            problems.append("banner `deg h = 2` did not parse")
+
+        # ...and banner_members must actually USE it. Testing the regex alone
+        # passed with the parse removed from the function -- the very flaw this
+        # section exists to catch, found by reverting the fix and watching this
+        # check stay green. So round-trip a real banner through the real reader.
+        tmpd = tempfile.mkdtemp(prefix="selftest-banner-")
+        try:
+            probe = os.path.join(tmpd, "ch2_ramifiedG2_ADD.mag")
+            with open(probe, "w") as fh:
+                fh.write("///////////////////////////////////\n"
+                         "// Description: y^2 + h*y = f where\n"
+                         "//   h(x) = x^2 + h1*x + h0 (deg h = 2, h2 = 1) and\n"
+                         "//   f(x) = x^5 + f1x + f0\n"
+                         "//Constant: f1,f0,h1,h0\n"
+                         "\n"
+                         "Deg1ADD:= function(u0,v0)\n"
+                         "    // a body comment that must NOT be read: h2 = 0\n"
+                         "    return 0;\n"
+                         "end function;\n")
+            got = D.banner_members(probe)
+            if got.get(("h", 2)) != {1}:
+                problems.append("banner_members did not read `h2 = 1` from a "
+                                "banner: got %r" % (got,))
+            if D.banner_degrees(probe).get("h") != 2:
+                problems.append("banner_degrees did not read `deg h = 2`")
+        finally:
+            shutil.rmtree(tmpd, ignore_errors=True)
+
+        # (b) Equality parsing must stay inside the banner. A formula body is
+        # full of derivation comments -- nch2_ramifiedG3_ADD.mag has `-h3 = 0;`
+        # -- and a whole-file scan would read one as a domain statement.
+        body_pins = D.banner_members(nch2g3.add_path)
+        if ("h", 3) in body_pins:
+            problems.append("banner_members read h3 out of a formula body comment")
+
+        # (c) A borrowed DBL's banner is not the borrower's domain. nch2/g3 has
+        # h = 0 and borrows the arb DBL, whose banner says (h3 in {0,1}).
+        cons, mem, _why = D.family_domain(nch2g3, fams, "ADD")
+        if ("h", 3) in (mem or {}) or 3 not in cons["h"]:
+            problems.append("nch2/g3 inherited h3 from the borrowed arb DBL banner "
+                            "(cons[h]=%s, members=%s)" % (sorted(cons["h"]), sorted(mem or {})))
+
+        # (d) A singleton pin must actually bite. Before the skip was gated on
+        # `0 in allowed`, narrowing {0,1} to {1} changed nothing at all.
+        cons, _mem, _why = D.family_domain(ch2g2, fams, "ADD")
+        seen = collections.Counter()
+        rng = random.Random(11)
+        for _ in range(30 if quick else 60):
+            cur = D.curve_in_domain(GF(8), ch2g2, cons, rng, members={("h", 2): {1}})
+            if cur is not None:
+                seen[cur.h.deg] += 1
+        if set(seen) != {2}:
+            problems.append("h2 = 1 did not force deg h = 2: %s" % dict(seen))
+
+        # (e) The leading coefficient of a ramified f is the MODEL, not a domain
+        # assumption. A ch2 genus-3 dispatcher reads only Coeff(f,2..0), so the
+        # zero-contrast used to put index 2g+1 in cons["f"], and curve_in_domain
+        # zeroed it -- an uncaught AssertionError out of C.Curve.
+        def rs_ch2g3(path, op="ADD"):
+            out = real_rs(path, op)
+            if out and "nch2_ramifiedG3" in path:
+                out = {"f": {0, 1, 2}, "h": {0, 1, 2, 3}}
+            return out
+        D.read_support = rs_ch2g3
+        cons, _mem, _why = D.family_domain(nch2g3, fams, "ADD")
+        if 7 in cons["f"]:
+            problems.append("cons[f] kept f7, the monic leading coefficient")
+        rng = random.Random(4)
+        for _ in range(10):
+            try:
+                D.curve_in_domain(GF(11), nch2g3, cons, rng, members={("h", 3): {1}})
+            except AssertionError as e:
+                problems.append("uncaught AssertionError from a zeroed leading "
+                                "coefficient: %s" % str(e)[:60])
+                break
+            except ValueError as e:
+                # the defensive guard in curve_in_domain, which means the
+                # domain_constraints filter above is gone
+                problems.append("leading coefficient reached curve_in_domain: "
+                                "%s" % str(e)[:60])
+                break
+        D.read_support = real_rs
+
+        # and the defensive guard, in case that filter is ever removed
+        try:
+            D.curve_in_domain(GF(11), nch2g3, {"f": {7}, "h": set()}, random.Random(1))
+            problems.append("no guard against zeroing a leading coefficient")
+        except ValueError:
+            pass
+
+        # (f) Post-PR27 end to end: no Coeff(h,2), banner pins h2 = 1.
+        def rs_no_h2(path, op="ADD"):
+            out = real_rs(path, op)
+            if out and "ch2_ramifiedG2" in path:
+                out = {"f": out["f"] - {2}, "h": out["h"] - {2}}
+            return out
+        D.read_support = rs_no_h2
+        D.banner_members = (lambda path: {("h", 2): {1}}
+                            if "ch2_ramifiedG2" in path else real_bm(path))
+        cons, mem, _why = D.family_domain(ch2g2, fams, "ADD")
+        seen, f2live = collections.Counter(), 0
+        rng = random.Random(3)
+        for _ in range(30 if quick else 60):
+            cur = D.curve_in_domain(GF(8), ch2g2, cons, rng, members=mem)
+            if cur is not None:
+                seen[cur.h.deg] += 1
+                if not cur.f.coeff(2).is_zero():
+                    f2live += 1
+        if set(seen) != {2} or f2live:
+            problems.append("post-restriction ch2/g2 inverted onto deg h < 2: "
+                            "%s, f2 live in %d" % (dict(seen), f2live))
+        D.read_support, D.banner_members = real_rs, real_bm
+
+        # (g) An unreadable domain must be loud, not silent.
+        D.banner_members = lambda path: {}
+        for f in (ch2g2, arbg3):
+            _c, mem, _w = D.family_domain(f, fams, "ADD")
+            if not D.require_leading_pin(f, mem):
+                problems.append("%s: no complaint when the banner pins nothing" % f.name)
+        _c, mem, _w = D.family_domain(nch2g3, fams, "ADD")
+        if D.require_leading_pin(nch2g3, mem):
+            problems.append("nch2/g3 wrongly required an h_g pin (its h is 0)")
+        D.banner_members = real_bm
+    finally:
+        D.read_support, D.banner_members = real_rs, real_bm
+
+    rep.note("    domain: 7 mechanisms provoked (banner set + singleton + scope, "
+             "borrowed banner, singleton bite, leading coefficient, loud failure)")
+    if problems:
+        rep.fail("domain", problems[0])
+    else:
+        rep.ok("domain", "7 mechanisms provoked, all correct")
+
+
 SECTIONS = [
     ("fields", section_fields),
     ("parse", section_parse),
@@ -978,6 +1146,7 @@ SECTIONS = [
     ("dispatch", section_dispatch),
     ("equal_dispatch", section_equal_dispatch),
     ("gate_guards", section_gate_guards),
+    ("domain", section_domain),
 ]
 
 
