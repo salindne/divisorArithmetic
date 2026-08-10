@@ -23,6 +23,12 @@
 # old orchestrator run and are the only record of how it behaved.
 whitebox/logs/*.new
 
+# Regeneration logs for the genus-2 ramified families. The committed logs in
+# whitebox/logs/ are 44K-616K; a full run for these families is ~42M, because the
+# generator's search loop keeps emitting long after it has covered every branch.
+# Too large to track, and reproducible from the generator.
+whitebox/logs/*_ramifiedG2_log.txt
+
 # macOS
 .DS_Store
 

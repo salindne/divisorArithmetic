@@ -263,6 +263,20 @@ cd whitebox
 ./whitebox_auto_NEG.py ch2 split 3 --from-log logs/ch2_splitG3_log.txt   # reparse, no Magma
 ```
 
+**`--from-log` is the reliable second step, not a fallback.** The generator's search loop is
+`while true`: it keeps emitting long after every branch is covered, so the run does not end on its own
+and the log grows without bound — a genus-2 ramified regeneration reached 42 MB, against 44K–616K for
+the committed logs. Killing the container is not a substitute for finishing, because the runner sees the
+non-zero exit (`magma exited 137`) and refuses to write a tester. Let it run until the log contains
+every label, stop it, then re-parse the log with `--from-log`, which writes the tester without Magma.
+Check coverage first, since the log is the only thing that carries it:
+
+```
+grep -oE '^(ADD|DBL)[0-9]+$' logs/<family>_log.txt | sort -u | wc -l
+```
+
+Regeneration logs for the genus-2 ramified families are gitignored for size.
+
 **How a case is chosen.** A generator loops over random curves and divisor pairs and prints a block for
 each operation whose result agrees with Magma's own Cantor arithmetic, letting the formula's own
 `ADD_DEBUG`/`DBL_DEBUG` label name the branch. The runner keeps the first block per label. So a whitebox
