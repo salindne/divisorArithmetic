@@ -4,8 +4,8 @@
 // Description: Explicit divisor addition formulas for the 4 coordinate
 //              Mumford representation over characteristic 2 fields where: 
 //                                
-//              h(x) = h2*x^2 + h1*x + h0 (h2 in {0,1}) and             
-//              f(x) = x^5 + f2x^2 + f1x + f0           
+//              h(x) = x^2 + h1*x + h0 (deg h = 2, h2 = 1) and             
+//              f(x) = x^5 + f1x + f0           
 //                                                                      
 //
 // Precondition: the Deg* cases below assume D1 != D2 (the thesis Require
@@ -13,9 +13,8 @@
 //               need not check; calling a Deg* case directly still requires it.
 ///////////////////////////////////////////////////////////////////////////////
 
-//Must keep next two lines in this format for latex conversion
-//Constant: f2,f1,h1,h0
-//Ignore: h2
+//Must keep next line in this format for latex conversion
+//Constant: f1,h1,h0
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg1ADD():         
@@ -32,8 +31,8 @@ Deg1ADD:= function(u0,v0,up0,vp0)
     //Poly Dev Testing
     FF:=Parent(u0);
     R<x>:=PolynomialRing(FF);
-    //f := x^5 + f2*x^2 + f1*x + f0;
-    //h := h2*x^2 + h1*x + h0;
+    //f := x^5 + f1*x + f0;
+    //h := x^2 + h1*x + h0;
     up := x + up0;
     vp := R!vp0;
     u := x + u0;
@@ -81,20 +80,20 @@ end function;
 // Input: u0, v0:             Mumford cooridnates for degree 1 divisor D1
 //        up1, up0, vp1, vp0: Mumford coordinates for degree 2 divisor D2
 //        f3,f2,f1,f0,     
-//        h2,h1,h0:           Curve constants of hyperelliptic polynomials f,h.
+//        h1,h0:           Curve constants of hyperelliptic polynomials f,h.
 //
 // Output: Mumford coordinates upp2, upp1, upp0, vpp1, vpp0 for D3 = D1 + D2
 //   
 // Description: Computes explicit formula for the addition of a degree one
 //              and degree 2 divisor.                     
 ///////////////////////////////////////////////////////////////////////////////
-Deg12ADD:= function(u0,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
+Deg12ADD:= function(u0,v0,up1,up0,vp1,vp0,f1,h1,h0)
      /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
     R<x>:=PolynomialRing(FF);
-    f := x^5 + f2*x^2 + f1*x + f0;
-    h := h2*x^2 + h1*x + h0;
+    f := x^5 + f1*x + f0;
+    h := x^2 + h1*x + h0;
     up := x^2 + up1*x + up0;
     vp := vp1*x + R!vp0;
     u := x + u0;
@@ -133,7 +132,7 @@ Deg12ADD:= function(u0,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
     if IsZero(d) then
         //dw := (v + vp + h) mod u; 
         vh1 := h1 + vp1;
-        dw := h0 + v0 + h2*u0^2 + u0*vh1 + vp0;
+        dw := h0 + v0 + u0^2 + u0*vh1 + vp0;
 
         if IsZero(dw) then
             //u := ExactQuotient(up,u);
@@ -147,8 +146,8 @@ Deg12ADD:= function(u0,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
 
         //k := ExactQuotient(f - vp*(vp + h),up);
         //k2 := up1;
-        k1 := vp1*h2  + up0 + up1^2;
-        k0 := f2 + vp1*vh1 + vp0*h2 + up1*(up0 + k1);
+        k1 := vp1  + up0 + up1^2;
+        k0 := vp1*vh1 + vp0 + up1*(up0 + k1);
 
         //s  := R!(Q!dw^-1)*k mod u;
         w1 := dw^-1;
@@ -157,12 +156,12 @@ Deg12ADD:= function(u0,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
         //upp  := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
         //upp  := upp/LeadingCoefficient(upp);
         t1   := s0*up1 + vh1;
-        upp1 := t0 + s0^2 + s0*h2;
+        upp1 := t0 + s0^2 + s0;
         upp0 := k1 + s0*(t1 + vp1) + u0*upp1;
 
         //vpp  := (-s*up - vp - h) mod upp;
-        vpp1 := upp1*h2 + s0*upp1 + t1;
-        vpp0 := upp0*h2 + s0*(upp0 + up0) + h0 + vp0;
+        vpp1 := upp1 + s0*upp1 + t1;
+        vpp0 := upp0 + s0*(upp0 + up0) + h0 + vp0;
 
         if ADD_DEBUG then "ADD03"; end if;
         return 1, upp1, upp0,vpp1, vpp0;
@@ -174,11 +173,11 @@ Deg12ADD:= function(u0,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
     //k := ExactQuotient(f - vp*(vp + h),up);
     //upp  := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
     //upp  := upp/LeadingCoefficient(upp);
-    upp1 := s0^2 + s0*h2 + t0;
-    upp0 := s0*(h2*up1 + h1) + h2*vp1 + up0 + up1*u0 + upp1*t0;
+    upp1 := s0^2 + s0 + t0;
+    upp0 := s0*(up1 + h1) + vp1 + up0 + up1*u0 + upp1*t0;
     
-    vpp1 := s0*(upp1 + up1) + h1 + vp1 + upp1*h2;
-    vpp0 := s0*(upp0 + up0) + h0 + vp0 + upp0*h2;
+    vpp1 := s0*(upp1 + up1) + h1 + vp1 + upp1;
+    vpp0 := s0*(upp0 + up0) + h0 + vp0 + upp0;
 
     if ADD_DEBUG then "ADD04"; end if;
     return 1, upp1, upp0, vpp1, vpp0;
@@ -190,20 +189,20 @@ end function;
 // Input: u1, u0, v1, v0:     Mumford cooridnates for degree 1 divisor D1
 //        up1, up0, vp1, vp0: Mumford coordinates for degree 2 divisor D2
 //        f3,f2,f1,f0,     
-//        h2,h1,h0:           Curve constants of hyperelliptic polynomials f,h.
+//        h1,h0:           Curve constants of hyperelliptic polynomials f,h.
 //
 // Output: Mumford coordinates upp2, upp1, upp0, vpp1, vpp0 for D3 = D1 + D2
 //   
 // Description: Computes explicit formula for the addition of two degree two
 //              divisors.                     
 ///////////////////////////////////////////////////////////////////////////////
-Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
+Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f1,h1,h0)
     /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
     R<x>:=PolynomialRing(FF);
-    f := x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x + f0;
-    h := h2*x^2 + h1*x + h0;
+    f := x^5 + f1*x + f0;
+    h := x^2 + h1*x + h0;
     up := x^2 + up1*x + up0;
     vp := vp1*x + vp0;
     u := x^2 + u1*x + u0;
@@ -280,8 +279,8 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
         if IsZero(m3) then
             //dw2 := (vp+v+h) mod u;// = (b2^-1)*S for S,a2,b2 = XGCD(u,v + vp + h);
             t1 := v1 + h1;
-            dw21:= vp1 + t1 + h2*u1;
-            dw20:= vp0 + h0 + v0 + h2*u0;
+            dw21:= vp1 + t1 + u1;
+            dw20:= vp0 + h0 + v0 + u0;
 
             if IsZero(dw20) and IsZero(dw21) then
                 
@@ -294,8 +293,8 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
             
             //k := ExactQuotient(f - v*(v + h),u);
             //k2 := u1;
-            k1 := v1*h2 + u0 + u1^2;
-            k0 := f2 + v1*t1 + v0*h2 + u1*(u0 + k1);
+            k1 := v1 + u0 + u1^2;
+            k0 := v1*t1 + v0 + u1*(u0 + k1);
 
             //u := ExactQuotient(u,dw2*b2);
             u0 := u1 + dw20*b2;
@@ -326,7 +325,7 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
         t0 := v0 + vp0;
         t1 := v1 + vp1;
         M3 := m3^2;
-        dw3 := M3*(t0 + h0) + m4*(m3*(t1 + h1) + m4*h2);
+        dw3 := M3*(t0 + h0) + m4*(m3*(t1 + h1) + m4);
         
         if IsZero(dw3) then
             //S,a2,b2 := XGCD(S1,vp+v + h);
@@ -360,8 +359,8 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
         //k := ExactQuotient(f - v*(v + h),u);
         //k2 := u1;
         vh1 := v1 + h1;
-        k1 := v1*h2 + u0 + u1^2;
-        k0 := f2 + v1*vh1 + v0*h2 + u1*(u0 +k1);
+        k1 := v1 + u0 + u1^2;
+        k0 := v1*vh1 + v0 + u1*(u0 +k1);
         
         //S,a2,b2 := XGCD(S1,vp+v + h);
         //S := 1;
@@ -369,7 +368,7 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
         //b2p := M3; //b2 with weight dw3
         //a2 := ExactQuotient(((1 - b2*(v + vp + h)) mod up),S1);
         //a12 = a1*a2;
-        a12 := M3*(h2*up1 + t1 + h1); // -a1*a2 with weight m3*dw3;
+        a12 := M3*(up1 + t1 + h1); // -a1*a2 with weight m3*dw3;
         
         //s  := (a2*a1*(vp - v) + b2*k) mod up; with weight m3*dw3;
         t3 := m3*M3;
@@ -383,9 +382,9 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
 
             w1    := d^-1;
             s0   := sp0*w1;
-            upp0 := m3 + s0^2 + s0*h2;
+            upp0 := m3 + s0^2 + s0;
 
-            t1   := s0*(u1 + upp0) + vh1 + h2*upp0;
+            t1   := s0*(u1 + upp0) + vh1 + upp0;
             vpp0 := upp0*t1 + s0*u0 + v0 + h0;
 
             if ADD_DEBUG then "ADD08"; end if; 
@@ -399,14 +398,14 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
         s1   := w1*(sp1^2);
         spp0 := sp0*w2;
 
-        upp1 := h2*w3 + m3 + w4;
-        upp0 := spp0^2 + m1 + w3*(h2*(spp0 + up1) + h1) + w4*m3;
+        upp1 := w3 + m3 + w4;
+        upp0 := spp0^2 + m1 + w3*(spp0 + up1 + h1) + w4*m3;
 
         t0   := upp0 + u0;
         t1   := u1 + upp1;
         t2   := (upp1 + spp0)*t1;
-        vpp1 := s1*(t2 + t0) + vh1 + h2*upp1;
-        vpp0 := s1*(spp0*t0 + upp0*t1) + v0 + h0 + h2*upp0;
+        vpp1 := s1*(t2 + t0) + vh1 + upp1;
+        vpp0 := s1*(spp0*t0 + upp0*t1) + v0 + h0 + upp0;
 
         if ADD_DEBUG then "ADD09"; end if;
         return 1,upp1,upp0,vpp1,vpp0;
@@ -421,9 +420,9 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
 
         z    := d^-1;
         s0   := sp0*z;
-        upp0 := m3 + s0^2 + s0*h2;
+        upp0 := m3 + s0^2 + s0;
 
-        t1   := s0*(u1 + upp0) + v1 + h1 + h2*upp0;
+        t1   := s0*(u1 + upp0) + v1 + h1 + upp0;
         vpp0 := upp0*t1 + s0*u0 + v0 + h0;
 
         if ADD_DEBUG then "ADD10"; end if; 
@@ -437,14 +436,14 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0)
     s1   := w1*(sp1^2);
     spp0 := sp0*w2;
 
-    upp1 := h2*w3 + m3 + w4;
-    upp0 := spp0^2 + m1 + w3*(h2*(spp0 + up1) + h1) + w4*m3;
+    upp1 := w3 + m3 + w4;
+    upp0 := spp0^2 + m1 + w3*(spp0 + up1 + h1) + w4*m3;
 
     t0   := upp0 + u0;
     t1   := u1 + upp1;
     t2   := (upp1 + spp0)*t1;
-    vpp1 := s1*(t2 + t0) + v1 + h1 + h2*upp1;
-    vpp0 := s1*(spp0*t0 + upp0*t1) + v0 + h0 + h2*upp0;
+    vpp1 := s1*(t2 + t0) + v1 + h1 + upp1;
+    vpp0 := s1*(spp0*t0 + upp0*t1) + v0 + h0 + upp0;
 
     if ADD_DEBUG then "ADD11"; end if;
     return 1,upp1,upp0,vpp1,vpp0;
@@ -463,11 +462,15 @@ end function;
 //              and D2.                    
 ///////////////////////////////////////////////////////////////////////////////
 ADD:= function(u,v,up,vp,f,h)//startIGNORE
+    // These formulas substitute h2 = 1. Curves with deg h < 2,
+    // including the deg h = 1 Koblitz/subfield family, are served correctly by
+    // the arbitrary-characteristic formulas. The Deg* cases do not take h2, so
+    // this is the only place the domain can be checked.
+    assert IsOne(Coeff(h,2));
+
     // D1 = D2 is a doubling, not an addition: the Deg* cases below assume
-    // D1 != D2 (the thesis Require clause) and return wrong results without it.
-    // Dispatched here, where the algorithm is entered; the cases keep their
-    // assumption. This closes errata E1's known firings, whose inputs all have
-    // D1 = D2 -- the narrow guard inside Deg2ADD stays as recorded.
+    // D1 != D2 and return wrong results without it.
+
     if u eq up and v eq vp then
         return DBL(u,v,f,h);
     end if;
@@ -477,16 +480,16 @@ ADD:= function(u,v,up,vp,f,h)//startIGNORE
     up2:= Coeff(up,2); up1:= Coeff(up,1); up0:= Coeff(up,0);
     vp1:= Coeff(vp,1); vp0:= Coeff(vp,0);
     //f3:= Coeff(f,3); f0:= Coeff(f,0);
-    f2:= Coeff(f,2); f1:= Coeff(f,1); 
-    h2:= Coeff(h,2); h1:= Coeff(h,1); h0:= Coeff(h,0);
+    f1:= Coeff(f,1); 
+    h1:= Coeff(h,1); h0:= Coeff(h,0);
 
 
     if IsOne(u2) then
         if IsOne(up2) then
-            return Deg2ADD(u1,u0,v1,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0);
+            return Deg2ADD(u1,u0,v1,v0,up1,up0,vp1,vp0,f1,h1,h0);
 
         elif IsOne(up1) then
-            return Deg12ADD(up0,vp0,u1,u0,v1,v0,f2,f1,h2,h1,h0);
+            return Deg12ADD(up0,vp0,u1,u0,v1,v0,f1,h1,h0);
 
         else
             
@@ -496,7 +499,7 @@ ADD:= function(u,v,up,vp,f,h)//startIGNORE
 
     elif IsOne(u1) then
         if IsOne(up2) then
-            return Deg12ADD(u0,v0,up1,up0,vp1,vp0,f2,f1,h2,h1,h0);
+            return Deg12ADD(u0,v0,up1,up0,vp1,vp0,f1,h1,h0);
 
         elif IsOne(up1) then
             return Deg1ADD(u0,v0,up0,vp0);

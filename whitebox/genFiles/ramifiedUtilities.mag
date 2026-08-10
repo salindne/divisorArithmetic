@@ -114,8 +114,18 @@ end function;
 //        
 // Return: Random(ish) hyperelliptic polynomials of curve with one point at
 //         infinity f and h in GF(q)[x] where f is monic seperable of degree 
-//         5 and 4th, and 3rd power terms are 0, h has degree 2 with the 2nd
-//         power coefficient in {0,1}.
+//         5 with the 4th, 3rd and 2nd power terms 0, and h monic of degree
+//         exactly 2.
+//
+//         h is MONIC of degree exactly 2: the char-2
+//         formulas substitute h2 = 1, and deg h < 2 is a separate curve
+//         family with its own normal form, served by the arb formulas.
+//         Reaching this form from a general curve: scale x -> c^2x,
+//         y -> c^5y with c = h2 to make h monic, translate x -> x + f4 to
+//         kill f4 (unconditional since deg f is odd, so the x^4 coefficient of
+//         (x+b)^5 is b mod 2), then shift y by a linear polynomial to clear
+//         f3 and f2. Every step needs deg h = 2 exactly: the y-shift reaches
+//         f2 only through a0*h2.
 //-----------------------------------------------------------------------------
 RandomG2Char2Curve := function(q)
     assert IsPrimePower(q);
@@ -123,8 +133,8 @@ RandomG2Char2Curve := function(q)
     R<x>:=PolynomialRing(F);
     while true do
         //Randomly generate f and h 
-        f:= x^5 + Random(F)*x^2 + Random(F)*x + Random(F);
-        h:= Random(0,1)*x^2 + Random(F)*x + Random(F);
+        f:= x^5 + Random(F)*x + Random(F);
+        h:= x^2 + Random(F)*x + Random(F);
 
         //Check if f and h are hyperelliptic polynomials for a curve of genus g
         try

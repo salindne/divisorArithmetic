@@ -4,32 +4,31 @@
 // Description: Explicit divisor doubling formulas for the 4 coordinate
 //              Mumford representation over characteristic 2 fields where: 
 //                                
-//              h(x) = h2*x^2 + h1*x + h0 (h2 in {0,1}) and             
-//              f(x) = x^5 + f2x^2 + f1x + f0           
+//              h(x) = x^2 + h1*x + h0 (deg h = 2, h2 = 1) and             
+//              f(x) = x^5 + f1x + f0           
 //                                                                      
 ///////////////////////////////////////////////////////////////////////////////
 
-//Must keep next two lines in this format for latex conversion
-//Constant: f2,f1,f0,h1,h0
-//Ignore: h2
+//Must keep next line in this format for latex conversion
+//Constant: f1,h1,h0
 
 ///////////////////////////////////////////////////////////////////////////////
 // deg1DBL():         
 // Input: u0, v0:         Mumford cooridnates for degree 1 divisor D
-//        f1,h2,h1,h0:    Curve constants of hyperelliptic polynomials f,h.
+//        f1,h1,h0:    Curve constants of hyperelliptic polynomials f,h.
 //
 // Output: Mumford coordinates upp2, upp1, upp0, vpp1, vpp0 for D2 = D + D           
 //   
 // Description: Computes explicit formula for the doubling of a degree one
 //              divisor.                  
 ///////////////////////////////////////////////////////////////////////////////
-Deg1DBL:= function(u0,v0,f1,h2,h1,h0)
+Deg1DBL:= function(u0,v0,f1,h1,h0)
     /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
     R<x>:=PolynomialRing(FF);
-    f := x^5 + f2*x^2 + f1*x + f0;
-    h := h2*x^2 + h1*x + h0;
+    f := x^5 + f1*x + f0;
+    h := x^2 + h1*x + h0;
     u := x + u0;
     v := R!v0;
     Q := quo<R | u>;
@@ -52,7 +51,7 @@ Deg1DBL:= function(u0,v0,f1,h2,h1,h0)
     upp0 := u0^2;
 
     //d := (v + v + h) mod u; 
-    d    := h2*upp0 + h1*u0 + h0;
+    d    := upp0 + h1*u0 + h0;
     
     if IsZero(d) then
         
@@ -78,20 +77,20 @@ end function;
 ///////////////////////////////////////////////////////////////////////////////
 // deg2DBL():         
 // Input: u0, v0:         Mumford cooridnates for degree 2 divisor D
-//        f2,f1,h2,h1,h0: Curve constants of hyperelliptic polynomials f,h.
+//        f2,f1,h1,h0: Curve constants of hyperelliptic polynomials f,h.
 //
 // Output: Mumford coordinates upp2, upp1, upp0, vpp1, vpp0 for D2 = D + D           
 //   
 // Description: Computes explicit formula for the doubling of a degree two
 //              divisor.                  
 ///////////////////////////////////////////////////////////////////////////////
-Deg2DBL:= function(u1,u0,v1,v0,f2,f1,h2,h1,h0)
+Deg2DBL:= function(u1,u0,v1,v0,f1,h1,h0)
     /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
     R<x>:=PolynomialRing(FF);
-    f := x^5 + f2*x^2 + f1*x + f0;
-    h := h2*x^2 + h1*x + h0;
+    f := x^5 + f1*x + f0;
+    h := x^2 + h1*x + h0;
     u := x^2 + u1*x + u0;
     v := v1*x + v0;
     Q := quo<R | u>;
@@ -123,8 +122,8 @@ Deg2DBL:= function(u1,u0,v1,v0,f2,f1,h2,h1,h0)
     */ //endIGNORE
 
     //d := Resultant(u,v+v+h) computed with 2x2 system
-    m3 := h1 + h2*u1;
-    m4 := h0 + h2*u0;
+    m3 := h1 + u1;
+    m4 := h0 + u0;
     m1 := m4 + m3*u1;
     m2 := m3*u0;
     d  := m4*m1 + m2*m3;
@@ -144,8 +143,8 @@ Deg2DBL:= function(u1,u0,v1,v0,f2,f1,h2,h1,h0)
 
         //k := ExactQuotient(f - v*(v + h),u);
         //k2 := u1;
-        k1 := v1*h2 + u0 + u1^2;
-        k0 := f2 + v1*(v1 + h1) + v0*h2 + u0*u1 + u1*k1;
+        k1 := v1 + u0 + u1^2;
+        k0 := v1*(v1 + h1) + v0 + u0*u1 + u1*k1;
 
         //u := ExactQuotient(u,dw1*b1);
         //s := b1*k mod u;
@@ -166,8 +165,8 @@ Deg2DBL:= function(u1,u0,v1,v0,f2,f1,h2,h1,h0)
 
     t0  := u1^2;
     vh1 := v1 + h1;
-    r1  := t0 + h2*v1;
-    r0  := u1*r1 + f2 + v1*vh1 + h2*v0;
+    r1  := t0 + v1;
+    r0  := u1*r1 + v1*vh1 + v0;
 
     sp0 := r0*m1 + r1*m2;
     sp1 := r0*m3 + r1*m4;
@@ -177,9 +176,9 @@ Deg2DBL:= function(u1,u0,v1,v0,f2,f1,h2,h1,h0)
         w1 := d^-1;
         s0 := sp0*w1;
   
-        upp0 := s0^2 + s0*h2;
+        upp0 := s0^2 + s0;
 
-        t1   := s0*(u1 + upp0) + h2*upp0 + v1 + h1;
+        t1   := s0*(u1 + upp0) + upp0 + v1 + h1;
         vpp0 := upp0*t1 + h0 + s0*u0 + v0;
 
         if DBL_DEBUG then "DBL4"; end if;
@@ -193,14 +192,14 @@ Deg2DBL:= function(u1,u0,v1,v0,f2,f1,h2,h1,h0)
     s1   := w1*(sp1^2);
     spp0 := sp0*w2;
 
-    upp1 := w4 + h2*w3;
-    upp0 := spp0^2 + w3*(h2*(spp0 + u1) + h1);
+    upp1 := w4 + w3;
+    upp0 := spp0^2 + w3*(spp0 + u1 + h1);
 
     t0   := upp0 + u0;
     t1   := u1 + upp1;
     t2   := t1*(upp1 + spp0);
-    vpp1 := s1*(t2 + t0) + vh1 + h2*upp1;
-    vpp0 := s1*(spp0*t0 + upp0*t1) + v0 + h0 + h2*upp0;
+    vpp1 := s1*(t2 + t0) + vh1 + upp1;
+    vpp0 := s1*(spp0*t0 + upp0*t1) + v0 + h0 + upp0;
 
     if DBL_DEBUG then "DBL5"; end if;
     return 1,upp1, upp0, vpp1, vpp0;
@@ -217,15 +216,21 @@ end function;
 // Description: Computes explicit formula for the doubling of divisor D.
 ///////////////////////////////////////////////////////////////////////////////
 DBL:= function(u,v,f,h)//startIGNORE
+    // These formulas substitute h2 = 1. Curves with deg h < 2,
+    // including the deg h = 1 Koblitz/subfield family, are served correctly by
+    // the arbitrary-characteristic formulas. The Deg* cases do not take h2, so
+    // this is the only place the domain can be checked.
+    assert IsOne(Coeff(h,2));
+
     u2:= Coeff(u,2); u1:= Coeff(u,1); u0:= Coeff(u,0);
     v1:= Coeff(v,1); v0:= Coeff(v,0);
-    f2:= Coeff(f,2); f1:= Coeff(f,1); //f0:= Coeff(f,0);
-    h2:= Coeff(h,2); h1:= Coeff(h,1); h0:= Coeff(h,0);
+    f1:= Coeff(f,1); //f0:= Coeff(f,0);
+    h1:= Coeff(h,1); h0:= Coeff(h,0);
     
     if IsOne(u2) then
-        return Deg2DBL(u1,u0,v1,v0,f2,f1,h2,h1,h0);
+        return Deg2DBL(u1,u0,v1,v0,f1,h1,h0);
     elif IsOne(u1) then
-        return Deg1DBL(u0,v0,f1,h2,h1,h0);
+        return Deg1DBL(u0,v0,f1,h1,h0);
     else
         if DBL_DEBUG then "DBL6"; end if;
         return 0,0,1,0,0;
