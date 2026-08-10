@@ -21,8 +21,8 @@ that is stated plainly rather than left to the reader to assume.
 
 | | |
 |---|---|
-| files differing | **2** (`chapter4.tex`, `chapter5.tex`) |
-| entries | **7** (E-T1 … E-T7) |
+| files differing | **3** (`chapter4.tex`, `chapter5.tex`, `chapter6.tex`) |
+| entries | **8** (E-T1 … E-T8) |
 | published state | commit `399c817` |
 
 ---
@@ -195,6 +195,74 @@ whitebox corpus at 22 of 22 branches; and both Magma testers green.
 `latexConverter.py`, which does not currently run, so they still describe the
 pre-restriction formulas. They are `\input` nowhere — `appendix.tex` holds empty
 stubs — so nothing in the document is inconsistent today.
+
+## E-T8 — eighteen split-model operation counts, from two counting faults
+
+**`chapter5.tex:2333, 2336, 2402`; `chapter6.tex:2380, 2422, 2431, 2440, 2452,
+2464, 2473, 2476, 2479, 2482, 2485, 2488`.** **Measured, by two independent
+counters that now agree on all 208 published cells.**
+
+Eighteen cells across four tables — `tab:splitfcosts`, `tab:splitfcomparisons`,
+`tab:g3splitfcostsADD`, `tab:g3splitfcostsDBL`. Aggregate correction
+**M +13, C −13, A −14**. Sixteen are distinct; two are the same operation
+restated in a comparison table.
+
+**Entirely split-model.** No ramified count moves, at either genus, so
+`tab:ramfcosts` and `tab:ramfcomparisons` are untouched by this entry.
+
+**Two faults in `latexTables/latexConverter.py`, which generated these numbers.**
+
+*A curve constant between two multiplications was charged twice.* The counter
+inspects only the tokens immediately flanking each `*`, so a constant at
+position *j* satisfies the left test of the `*` after it and the right test of
+the `*` before it. `w2*d5*(d2 - v1*t1)` was scored 2C where the cost is 1C + 1M:
+once a runtime value enters a multiplicative chain the accumulated left operand
+is runtime, and a product of two runtime values is a full multiplication. The
+diagnosis is confirmed by the cases that were already right — `f1*a*b` and
+`a*b*f1` both scored 1C + 1M before and after, and only the flanked arrangement
+changes.
+
+*A unary sign was charged as an addition.* Every `+` and `-` token cost 1A, with
+a single hard-coded exemption for one leading `-`. So a leading `+` was charged
+(`ch2_splitG3_ADD.mag:4173`, `vpp0 := +v0 + h0 + ...`), and so was every sign
+appearing inside an expression — `Deg23ADD` carries three internal negations and
+was over-counted by 3A. A sign is unary exactly when the token before it is an
+operator, an open parenthesis, or the assignment.
+
+**How the corrected values were established, and why they are trustworthy.**
+Two counters that share no code now agree on **every one of the 208** published
+own-work quadruples:
+
+| | |
+|---|---|
+| the static token scan, with both faults fixed | 208 / 208 |
+| an interpreter executing the formulas over a finite field | 208 / 208 |
+| the corrected tables here, read back from the `.tex` | 208 / 208 |
+
+The interpreter identifies the frequent case by *measurement* — histogramming
+many random valid divisor pairs and taking the modal operation tuple — where the
+static counter infers it from the source structure. On the eighteen corrected
+cells the modal share is 0.80 to 0.99, and every execution contributing to a
+count was cross-checked against an independent Cantor implementation.
+
+Two corrections were needed on the measuring side before the counts could be
+trusted, and both are recorded because they show what the agreement is worth:
+the interpreter charged an inversion and a multiplication for division by two,
+where this thesis states plainly that halving is counted as an addition
+(`chapter6.tex:2333`); and its constant-detection missed a constant reached
+through a unary minus, since `-yn2*W2` parses with the negation bound tighter
+than the product. Six of the twenty-four cells first flagged were that second
+fault, not a defect in the tables.
+
+**Not corrected here, and worth being exact about.** Both counting faults are
+still present in `latexTables/latexConverter.py` as committed — they were fixed
+in a working copy to establish these numbers, and repairing the tool itself is
+separate work. So the corrected values in the tables above cannot yet be
+reproduced by running anything in this repository; they are reproduced by the
+interpreter, which can. The generated tables under `latexTables/` likewise still
+carry the old numbers, and are `\input` nowhere — the appendix holds empty
+section stubs — so no document is inconsistent. The converter additionally does
+not run at all in its committed state, for reasons unrelated to counting.
 
 ---
 
