@@ -52,6 +52,7 @@ restating the detail.
 | N13 | Three assumptions in one family were declared but never exploited | **established**, one now closed |
 | N14 | Two counting faults put eighteen published operation counts wrong | **established** by two independent counters |
 | N15 | Operation counts measured by execution, not by scanning text | **established**, in the repository |
+| N16 | A declared domain was masking a transcription slip, not buying anything | **established**; defect recorded, not yet fixed |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -712,6 +713,55 @@ reader cannot execute. Two independent methods agreeing on 208 cells is a
 stronger claim than any single count in the field, and the disagreements were
 informative in both directions — two faults in the text scanner, and one in the
 executor.
+
+## N16 — A declared domain was masking a transcription slip, not buying anything
+
+**Status:** established. Defect recorded as `ERRATA.md` E11, not yet fixed.
+
+**The question.** Both arbitrary-characteristic families declare `h_g ∈ {0,1}`, and at genus 2 that
+restriction is *load-bearing*: lift it and the doubling returns wrong answers. The natural reading is that
+genus 2 exploits the assumption to save work, in which case the exploitation sites would be a template to
+copy to genus 3, where the same assumption is declared and demonstrably not used.
+
+**The answer is that nothing is being bought.** Genus 2's dependence is one squared symbol.
+
+`arb_ramifiedG2_DBL.mag:189` computes `t1 := s0*(u1 - upp0) - h2^2*upp0 + vh1`, and the following line
+multiplies `t1` by `upp0`, so the `h₂` term contributes `h₂²·upp0²`. Deriving the branch instead of reading
+it: reduction modulo the monic linear `upp = x + upp0` is evaluation at `x = −upp0`, and `v'' = −(h + v')`
+there, so the coefficient of `upp0²` is `h₂ + s₀` — giving `h₂·upp0²`. The exponent is a slip.
+
+On `{0,1}` it cannot be detected, because `h₂² = h₂` exactly there. **Measured, 3,600 doublings per
+variant over four fields against an independent Cantor implementation:**
+
+| `t1` reads | on-domain | off-domain |
+|---|---|---|
+| `- h2^2*upp0` as shipped | 0 wrong | **166 wrong** |
+| `- h2*upp0` the derivation | **0 wrong** | **0 wrong** |
+| `- h2*upp0^2` | **136 wrong** | 150 wrong |
+
+**And the third row is the methodological point.** That substitution had been tried before and recorded as
+refuted, which is what made the whole thing look mysterious. It *is* refuted — but because it breaks the
+formulas **on** their declared domain, since the outer multiply already supplies the second `upp0`. A
+candidate that changes on-domain behaviour was never a candidate at all, and noticing that is what turned
+an open puzzle into a one-symbol answer. The prior work was right about the substitution and wrong about
+what its failure implied.
+
+**So there is no template, and genus 3 does not need one.** The genus-3 arbitrary formulas are already
+correct with `h₃` unrestricted — **0 wrong in 1,333 operations** off-domain — and no `h₃` power occurs
+anywhere in either file. Their `h₃ ∈ {0,1}` declaration is a costing convention and nothing else, which is
+what PR20 recorded and this confirms from the opposite direction.
+
+**The prize, measured rather than estimated, is zero in every counted column.** The `h₃` products were
+already free to count once PR20 declared `h₃` `//Ignore:` — that is what took the arbitrary addition to 4C
+and the doubling to 4C (N15). So exploiting the assumption cannot reduce C further, and the only remaining
+yield is real runtime, obtainable by branching on `h₃` and doubling the code paths in both files. That is a
+maintenance decision, not an optimisation with a number attached.
+
+**For the paper.** A restriction that is load-bearing is usually assumed to be earning its keep. Here one
+was masking a transcription slip, at both a cost and a benefit of exactly zero: `h₂` is `//Ignore:`d and
+precomputable, so `h₂` versus `h₂²` changes no operation count, and the one-symbol correction restores full
+generality for free. The transferable habit is deriving the branch rather than reading it — the slip is
+invisible in the source and obvious in the algebra.
 
 ---
 

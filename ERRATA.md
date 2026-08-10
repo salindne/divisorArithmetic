@@ -350,6 +350,64 @@ repair list with E4–E6: the parser should reject empty tokens loudly.
 
 ---
 
+## E11: genus-2 arbitrary doubling squares `h2` where it should not
+
+**Severity:** correctness, but **only outside the declared domain**. The formulas declare
+`h2 in {0,1}`, and on that domain `h2^2 = h2`, so nothing they claim is wrong. What is wrong is that the
+restriction is doing work nobody intended it to do.
+
+**Where:** [g2/ramifiedModel/g2Formulas/arb_ramifiedG2_DBL.mag:189](g2/ramifiedModel/g2Formulas/arb_ramifiedG2_DBL.mag),
+in the `IsZero(sp1)` branch that returns a degree-1 divisor (labelled `DBL4`):
+
+```magma
+t1   := s0*(u1 - upp0) - h2^2*upp0 + vh1;
+vpp0 := upp0*t1 - vh0 - s0*u0;
+```
+
+The outer `upp0*t1` supplies a second factor of `upp0`, so the `h2` term contributes `h2^2 * upp0^2`.
+
+**What it should be.** Reducing modulo the monic linear `upp = x + upp0` is evaluation at
+`x = -upp0`, and `v'' = -(h + v')` there. With `v' = v + s0*u`:
+
+```
+h + v' = (h2 + s0)x^2 + (h1 + v1 + s0*u1)x + (h0 + v0 + s0*u0)
+v''    = -(h2 + s0)*upp0^2 + (vh1 + s0*u1)*upp0 - vh0 - s0*u0
+```
+
+so the coefficient of `upp0^2` is `h2 + s0`, giving `h2 * upp0^2` and not `h2^2 * upp0^2`. The single
+symbol `h2^2` should read `h2`.
+
+**Reproducer, and it separates three candidates.** 3,600 degree-2 doublings per variant over
+GF(9), GF(25), GF(27) and GF(49), compared against `verification/reference.py`, with the domain
+restriction lifted by setting `driver.banner_members` to `{}`:
+
+| `t1` reads | on-domain | off-domain |
+|---|---|---|
+| `- h2^2*upp0` — as shipped | 0 wrong | **166 wrong** |
+| `- h2*upp0` — **the derivation** | **0 wrong** | **0 wrong** |
+| `- h2*upp0^2` | **136 wrong** | 150 wrong |
+
+The third row matters: it is the substitution an earlier investigation tried and recorded as refuted. It
+breaks the formulas **on** their declared domain, so it could never have been a candidate — the outer
+multiply already supplies the second `upp0`. That refutation was sound about the substitution and
+misleading about the conclusion, and it is what made this look like a mystery rather than a transcription
+slip.
+
+**Affects:** nothing published. It costs nothing either — `h2` is declared `//Ignore:` in this file, and
+`h2^2` is a product of two curve constants, precomputable once per curve, so `h2` versus `h2^2` changes no
+operation count. The one-symbol correction restores full generality in `h2` for free.
+
+**Not fixed here** — recorded with its reproducer, per the standing rule that a formula edit waits for
+the PR that can gate it.
+
+**And the wider conclusion, which is why this was worth chasing.** The `h2 in {0,1}` declaration was
+suspected of being *exploited* — of buying something that a genus-3 analogue could copy. It is not: it is
+masking a transcription artifact. There is no template. Genus 3 needs no such assumption at all, being
+already correct with `h3` unrestricted: 0 wrong in 1,333 operations off-domain, and no `h3` power occurs
+anywhere in either arb genus-3 file.
+
+---
+
 ## Not defects
 
 Two things that look wrong and are not, recorded so they are not "fixed" by mistake:
