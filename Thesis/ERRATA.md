@@ -140,8 +140,18 @@ them correctly at higher cost. Once that lands, this entry's `f₂` discussion d
 
 **`chapter5.tex:900`, `tab:ramfcosts`, char$(k) = 2$ column.** **Measured.**
 
-`21&4&25&0` becomes `21&4&24&0`. One addition, in one cell; every other cell in
-the table is unchanged.
+`21&4&25&0` becomes `21&4&24&0`, in **both** tables that quote this operation:
+`tab:ramfcosts` at `chapter5.tex:901` and the `char(k) = 2` "A4 -- This work"
+row of `tab:ramfcomparisons` at `:985`. One addition, in two cells; every other
+cell in both tables is unchanged.
+
+The comparison table was missed on the first pass, which left the working thesis
+quoting 24A and 25A for the same operation eighty lines apart. Found by running
+the operation counter over all seven op-count tables: it reproduces 207 of the
+208 published own-work quadruples, and the single exception was this cell. Worth
+recording as a method — a table that is *not* generated has no other guard
+against this, and searching one table for the changed value is not enough when a
+second table quotes the same row.
 
 The implementation's char-2 genus-2 formulas were restricted to the full normal
 form — `h` monic of degree exactly 2 and `f = x^5 + f_1x + f_0` — which is the
