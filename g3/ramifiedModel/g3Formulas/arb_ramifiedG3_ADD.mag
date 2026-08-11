@@ -1452,9 +1452,11 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 	t1_2:= h2 + v1_2;
 
 	// ht = t1 + v2
+	// Only ht2 is needed on the generic path -- it is read at the resultant
+	// below. ht1 and ht0 are read solely inside the `det eq 0` branch, so they
+	// are formed there instead; the special cases pay the same two additions,
+	// just later.
 	ht2:= t1_2 + v2_2;
-	ht1:= t1_1 + v2_1;
-	ht0:= t1_0 + v2_0;
 
     // dw1 = u1 mod u2
     dw1_2:= u1_2 - u2_2;
@@ -1489,6 +1491,9 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
     // if gcd(u1,u2) != 1
     if (det eq 0) then
+
+		ht1:= t1_1 + v2_1;
+		ht0:= t1_0 + v2_0;
 
         // if gcd(u1,u2) = u2
         if (dw1_2 eq 0 and dw1_1 eq 0) then
@@ -2273,13 +2278,18 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
     // w1 = (f - v1*h - v1^2)/u1
 	ta:= h3*v1_2;
-	tb:= h2*v1_1;
-	
+
     //w1_4:= 1;
     w1_3:= f6 - u1_2;
     w1_2:= f5 - u1_1 - f6*u1_2 - ta + u1_2^2;
-    w1_1:= f4 - u1_0 - f6*u1_1 - (h3 + h2)*(v1_2 + v1_1) + ta + tb - v1_2^2 - u1_2*(w1_2 - u1_1);                      // karatsuba, use u1_2 multiplication
-    w1_0:= f3 - f6*u1_0 - h3*v1_0 - tb - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*(h1 + 2*v1_1);
+    // w1_1 and w1_0 are not formed here. Only the top two coefficients of the
+    // quotient (f - v1*h - v1^2)/u1 are used on this path -- w1_3 and w1_2 feed
+    // the resultant below -- and the thesis's efficient exact division
+    // (sec:exactdiv) says only the highest d1 - d2 + 1 are ever needed. Their
+    // former definitions read:
+    //   w1_1:= f4 - u1_0 - f6*u1_1 - (h3 + h2)*(v1_2 + v1_1) + ta + tb - v1_2^2 - u1_2*(w1_2 - u1_1);
+    //   w1_0:= f3 - f6*u1_0 - h3*v1_0 - tb - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*(h1 + 2*v1_1);
+    // and tb := h2*v1_1 existed only to serve them.
 
 
     //vt = v2 - v1

@@ -53,6 +53,7 @@ restating the detail.
 | N14 | Two counting faults put eighteen published operation counts wrong | **established** by two independent counters |
 | N15 | Operation counts measured by execution, not by scanning text | **established**, in the repository |
 | N16 | A declared domain was masking a transcription slip, not buying anything | **established**; defect recorded, not yet fixed |
+| N17 | The genus-3 ramified addition now beats the split-model one in every column | **implemented**, three of the findings applied |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -762,6 +763,86 @@ was masking a transcription slip, at both a cost and a benefit of exactly zero: 
 precomputable, so `h₂` versus `h₂²` changes no operation count, and the one-symbol correction restores full
 generality for free. The transferable habit is deriving the branch rather than reading it — the slip is
 invisible in the source and obvious in the algebra.
+
+## N17 — The arbitrary genus-3 addition now beats the split-model one in every column
+
+**Status:** three findings implemented and measured. The rest of the ledger is
+still open.
+
+**The anomaly this closes.** Ramified arithmetic has strictly less to do than
+split — no balancing, no adjust steps — so it should be cheaper in every column.
+It was not: the addition was dearer on additions than the thesis's own
+split-model Degree-3 row, which is what N11's vetting set out to explain.
+
+**The explanation was dead and duplicated work, and removing it is enough.**
+
+| | before | after |
+|---|---|---|
+| `Deg3ADD` generic | 59M 4S 95A 4C | **54M 3S 74A 1C** |
+| `Deg3DBL` typical | 55M 5S 114A 4C | **55M 5S 111A 4C** |
+| split Degree-3 ADD, for comparison | 65M 3S 87A 12C | — |
+
+So the addition goes from **64 M+S, 12C, 95A** as first recorded to **57 M+S, 1C,
+74A**, against the split addition's 68 M+S, 12C, 87A. Better on every axis, and
+the anomaly is gone rather than explained away.
+
+Three changes, each its own commit, each measured on its own and Magma-verified on
+its own. What follows is the correctness argument for each, because in every case
+the argument is a **liveness** argument — which reads exist, and where — and that
+is precisely what an operation count cannot see.
+
+**A1 — two quotient coefficients nothing reads.** `arb_ramifiedG3_ADD.mag`'s
+generic `Deg3ADD` path computes the exact division `w1 = (f − v1h − v1²)/u1` in
+full, all four coefficients. Only `w1_3` and `w1_2` are ever read: they feed the
+resultant immediately below, and the remaining reads of `w1_2`/`w1_3` — three of
+them further down the same path — are what stop the deletion cascading. `w1_1`
+and `w1_0` are read nowhere on any path. `tb := h2*v1_1` existed solely to serve
+them and dies with them; `ta` survives, because `w1_2` still needs it.
+
+This is the thesis's own technique applied to the thesis's own code: **efficient
+exact division** (`sec:exactdiv`) states that only the highest `d1 − d2 + 1`
+coefficients of `f − v(v+h)` are required. Here that count is two, and four were
+being formed. The deleted definitions are kept verbatim in a comment, because a
+reader who wonders what the quotient's low coefficients *were* should not have to
+reconstruct them from the division.
+
+**−5M −1S −19A −3C**, the single largest item in the ledger.
+
+**A2 — two temporaries formed before the only branch that consumes them.**
+`ht = t1 + v2` is formed coefficient-wise on entry. `ht2` is read on the generic
+path; `ht1` and `ht0` are read **only** inside the `det eq 0` branch, which is
+where a non-trivial gcd is handled. Establishing that took an if/end-if depth walk
+over the whole function rather than a grep: a grep finds the readers, but only a
+scope walk establishes there are no *others*, and the claim being made is about
+absence. Moved into the branch that reads them. The special cases pay the same two
+additions, just later; the generic path stops paying them at all. **−2A.**
+
+**B1 — `h + v1`, formed twice on one path.** In `Deg3DBL`, `d = (2v1 + h) mod u1`
+is built as `h_i + 2*v1_i − …`, and then the typical case's `vn_i` subtracts
+`h_i + v1_i` again. Forming `hv_i = h_i + v1_i` once serves both — `d_i` becomes
+`hv_i + v1_i − …`, and `vn_i` subtracts `hv_i` directly. What makes this a real
+saving rather than a reshuffle is that both sites are on the **same** path: `d` is
+computed before any branch, and `vn` sits in the unguarded TYPICAL CASE, so every
+typical doubling previously formed the sum twice. **−3A.**
+
+**What re-vetting the ledger cost, and why it was worth it.** The report was
+written against a baseline that has since moved twice — PR35 corrected inversions
+written `1/x`, and PR20's `//Ignore: h3` made those products free — so its
+absolute figures no longer applied, and **every line number in it was stale by
+about nineteen**. One documented delta was simply wrong afterwards: A1's `−4C` is
+`−3C`, because one of the products it deletes had already become free.
+
+The predictions that held were the ones expressed as *deltas in A and S*, which
+survived both corrections untouched. The ones that broke were absolute counts and
+positions. That is a useful thing to know about how to write such a report: record
+what a change removes, not what the total will be.
+
+**For the paper.** The interesting claim is not the improvement but its cause. Two
+formula families written by different people for the same curve model differed by
+21 additions, and the difference was not algorithmic — it was quotient
+coefficients computed past the point the thesis's own exact-division technique
+says they are needed, and temporaries formed before the branch that uses them.
+Neither is visible in a count; both are visible in a liveness analysis.
 
 ---
 
