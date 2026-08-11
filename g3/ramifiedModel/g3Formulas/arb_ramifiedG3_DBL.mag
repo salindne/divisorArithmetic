@@ -525,9 +525,9 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
 			t05:= t02 - t03;
 			t06:= f5 - t04;
 
-			k2:= f5 + t02 - t04 - 2*(u1_1 - t05);
-			k1:= f4 - h2*v1_2 - h3*v1_1 - v1_2^2 - 2*(u1_0 + f6*u1_1) + u1_2*(4*u1_1 - t05 - t06);
-			k0:= f3 - h1*v1_2 - h3*v1_0 - 2*f6*u1_0 + u1_1*(u1_1 + t02 - t06) + u1_2*(2*u1_0 - k1) - v1_1*(h2 + 2*v1_2);		// convenient precomputation
+			k2:= t06 + t02 - 2*(u1_1 - t05);
+			k1:= f4 - v1_2*hv2 - h3*v1_1 - 2*(u1_0 + f6*u1_1) + u1_2*(4*u1_1 - t05 - t06);
+			k0:= f3 - h1*v1_2 - h3*v1_0 - 2*f6*u1_0 + u1_1*(u1_1 + t02 - t06) + u1_2*(2*u1_0 - k1) - v1_1*(hv2 + v1_2);		// convenient precomputation
 
 			// a1 = 2va+h^-1 wrt u1
 			//    = 1/d2
@@ -645,10 +645,10 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
 	t05:= t02 - t03;
 	t06:= f5 - t04;
 	
-	k2:= f5 + t02 - t04 - 2*(u1_1 - t05);
-	k1:= f4 - h2*v1_2 - h3*v1_1 - v1_2^2 - 2*(u1_0 + f6*u1_1) + u1_2*(4*u1_1 - t05 - t06);
-	k0:= f3 - h1*v1_2 - h3*v1_0 - 2*f6*u1_0 + u1_1*(u1_1 + t02 - t06) + u1_2*(2*u1_0 - k1) - v1_1*(h2 + 2*v1_2);     // convenient precomputation
-	// 4m 2s 32a
+	k2:= t06 + t02 - 2*(u1_1 - t05);
+	k1:= f4 - v1_2*hv2 - h3*v1_1 - 2*(u1_0 + f6*u1_1) + u1_2*(4*u1_1 - t05 - t06);
+	k0:= f3 - h1*v1_2 - h3*v1_0 - 2*f6*u1_0 + u1_1*(u1_1 + t02 - t06) + u1_2*(2*u1_0 - k1) - v1_1*(hv2 + v1_2);     // convenient precomputation
+	// 5m 1s 29a
 
     // adapted from Lindner's arb_splitG3_ADD
 	// the two adjugate entries the determinant did not need
