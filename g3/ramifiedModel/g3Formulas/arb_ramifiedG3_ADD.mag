@@ -2295,23 +2295,31 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
     vt1:= v2_1 - v1_1;
     vt0:= v2_0 - v1_0;
 
-    // m6 and m4 close the adjugate. They are read only by the sp1 row below, on
-    // the gcd(u1,u2) = 1 path, so they are formed here rather than above the
-    // `det eq 0` test: every special case used to pay 2M 2A for them and then
-    // return without reading them. Each folds in a term that is identically zero
-    // so that tf, m8 and m7 can stand in for products the plain cofactor needs.
-    // The reuse-free forms, from quantities already in hand, are
+    // m6 and m4 close the adjugate. The sp1 row below is their only reader, and
+    // it is on the gcd(u1,u2) = 1 path, so they belong here rather than above the
+    // `det eq 0` test -- the special cases all return without reading them.
+    //
+    // Each is the plain cofactor with a term that is identically zero folded in,
+    // which is what lets tf, m8 and m7 stand in for products the cofactor would
+    // otherwise need. The zero terms are tc*(tb + temp2 - dw1_0) for m6 and
+    // temp1*temp2 - temp2*temp1 for m4. Both entries are ordinary adjugate
+    // values, nonzero for essentially every curve, and the reuse-free forms are
     //   m6 = dw1_0*tc + u2_1*temp5 - u2_0*temp4            (adj_23)
     //   m4 = u2_2*temp4 - dw1_1*temp2 - temp3 - temp1*tb   (adj_21)
-    m6:= tf - u2_1*m8;		// zero term folded in, not a zero value
-    m4:= m8 + u2_2*m7;		// zero term folded in, not a zero value
+    //
+    // `tf` is assigned once above the `det eq 0` test and reassigned inside it at
+    // the dw3_1^2*dw1_2^2 block. This read is safe only because every path in
+    // that block returns, so the reassignment can never reach here. Preserve that
+    // property or move tf's definition down.
+    m6:= tf - u2_1*m8;
+    m4:= m8 + u2_2*m7;
 
 	// partially solve system to get sp = s*det
     sp0:= vt0*m1 + vt1*m2 + vt2*m3;
     sp1:= vt0*m4 + vt1*m5 + vt2*m6;
     sp2:= vt0*m7 + vt1*m8 + vt2*m9;
-	// 9m 0s 6a
-	// top: 18m 0s 11a
+	// 11m 0s 8a
+	// top: 16m 0s 9a
 	// total: 27m 0s 17a (equivalent 98a)
 
 
