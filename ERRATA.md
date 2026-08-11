@@ -408,6 +408,53 @@ anywhere in either arb genus-3 file.
 
 ---
 
+## E12: the random testers print a green summary when they executed nothing
+
+**Found 2026-08-11**, while verifying a formula change under real Magma. The run was launched from the
+repository root instead of `g3/ramifiedModel/`, so every `load` failed, and the tester printed:
+
+```
+User error: Identifier 'RandomG3Curve' has not been declared or assigned
+///////////////////////////////////////////////////////////////////////
+TEST_ADD:  true
+TEST_DBL:  true
+// No errors.
+Total time: 0.469 seconds
+```
+
+**That is an affirmative pass report from a run that compared nothing.** Two independent causes:
+
+1. **`TEST_ADD` and `TEST_DBL` are configuration switches, not results.** They are set `true` at
+   `arb_ramifiedG3_random.mag:35-36` to select which operations to exercise, and echoed verbatim at
+   `:199-200`. Nothing ever assigns them again. So `TEST_ADD: true` reads as a verdict and is in fact a
+   restatement of the input. The actual verdict is `errorFlag`, declared at `:49`.
+2. **`No errors` is true by vacuity.** `errorFlag` starts `false` and is only ever set `true` by a
+   mismatch inside the trial loop, so a run whose loop body never executes reports no errors correctly
+   and uselessly.
+
+**Scope, measured across all 16 `*_random.mag` testers:** the misleading echo is confined to the two
+genus-3 ramified files (the imported ones) — the other fourteen print only the `errorFlag` verdict. But
+**not one of the sixteen reports how many comparisons it performed**, so in every family a run that did
+nothing is indistinguishable from a run that verified everything, except by reading the per-trial
+progress lines *above* the summary.
+
+**Affects:** any verification claim resting on a tester's summary rather than on its trial output. In
+this instance the tells were the runtime — 0.469s against the 107–227s a real run takes — and the error
+text, both of which the summary actively contradicted. A correct run of the same tester reports
+`Trial # 10 over FF(16)` lines and takes about two minutes.
+
+**Relation to the existing gate findings.** `test_all.sh` cannot gate on exit status because Magma exits
+0 on `Assertion failed`, which is why it parses stdout instead. E12 is the next layer down: the stdout it
+parses is itself green in the vacuous case. Both are the same class — a signal that reports success
+because nothing contradicted it.
+
+**Not fixed here.** The fix wants a comparison counter printed by every tester and asserted non-zero,
+which touches all sixteen files plus `test_all.sh`'s parser, and belongs with the tester rework (PR6)
+rather than inside a formula PR. Recorded with its reproducer: run any tester from the repository root
+instead of its own directory.
+
+---
+
 ## Not defects
 
 Two things that look wrong and are not, recorded so they are not "fixed" by mistake:
