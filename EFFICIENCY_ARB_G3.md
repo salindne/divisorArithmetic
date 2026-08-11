@@ -88,28 +88,32 @@ The sanity flag this vetting existed to explain is closed.
 
 Both found by re-measurement, and both in our favour:
 
-- **ARBDBL-06 is at least −4M −1S −3A**, not the re-counted −2M −1S −2A, and see
-  the deferral below for why the true figure is larger still. `dw2`'s only two
-  readers are the lines being rewritten, so it dies with them.
+- **ARBDBL-06 is −6M −1S −4A**, not the re-counted −2M −1S −2A. Measured after
+  implementation; see below for why both earlier figures were short.
 - **D33-07 touches 12 return sites in each file**, not "7 in arb, 8 in nch2".
 
-### Two findings are open rather than applied
+### ARBDBL-06: applied, and worth more than the ledger recorded twice over
 
-**ARBDBL-06 — deferred, and worth more than recorded.** C2 rewrote the Sylvester
-block it borrows from, so its edit needs re-pointing. The identities, against the
-new code:
+The `dw` block inside `det eq 0` recomputed what the Sylvester block above already
+holds — `dw` is the third row of the adjugate up to sign:
 
     dw2 = u1_2*d2 - d1   = -t8
     dw1 = m7                                    (the expensive line: 3M 2A)
     dw0 = d0*t8 - t2*d2  = temp5 + temp3 = -m8
 
-All three are already computed above the `det eq 0` test, so the whole `dw` block
-— `t02`, `dw2`, `dw1`, `dw0` — collapses to aliases. That is **−6M −1S −4A**, not
-the −4M −1S −3A measured for the partial form: an earlier note named `t8` and `m7`
-as the survivors without stating that `dw1` *is* `m7`, which is the expensive half.
-Off the frequent path, and never adversarially verified, so it waits.
+`dw2` is not formed at all, its only readers having been the other two lines, and
+`t02 = d2²` dies with it. **Measured −6M −1S −4A** on the `det = 0` path
+(57M 4S 95A 3C → 51M 3S 91A 3C); the frequent case does not move.
 
-**ARBDBL-09 — applied, then REVERTED, and back on the open list.** Horner-nesting
+The ledger recorded "~4M" with a flag to re-count, and the re-count gave
+−2M −1S −2A. **Both missed that `dw1` is exactly `m7`**, which is the expensive
+half. It was also deferred out of the first part-2 pass because C2 had rewritten
+the block it borrows from — the re-pointing above is the whole of the extra work
+that needed.
+
+### One finding is open, having been applied and reverted
+
+**ARBDBL-09.** Horner-nesting
 `k0` in `Deg1DBL` measured −1S and is honestly **+3M −3C −1S**: the old form
 multiplies by `4*f4`, `5*f5` and `6*f6`, all precomputable per curve and therefore
 C, and Horner replaces them with three genuine `u1_0*(variable)` products. The
@@ -142,29 +146,24 @@ at the same total of eight. **Recorded, not fixed** — teaching the counter to 
 constant subexpressions reclassifies M as C in published counts and needs its own
 adjudication under the presume-the-published-correct rule.
 
-### Four findings this document did not have, located but NOT applied
+### Four findings this document did not have, three of them now applied
 
-Turned up by implementing the rest, and left for a later pass rather than folded
-in silently:
+Turned up by implementing the rest:
 
-- **B5's technique was never swept, unlike B6's.** `h2 + 2*v1_2` costs two
-  additions where a live temporary makes `hv2 + v1_2` (doubling) or
-  `t1_2 + v1_2` (addition) cost one; likewise `h1 + 2*v1_1` against `hv1`/`t1_1`.
-  **Seven live sites survive at −1A each** — `DBL:203, :583, :624, :625, :720` and
-  `ADD:2086, :2109, :2208, :2370` minus those with no temporary in scope. The
-  closest miss is `ADD:2109`, the line immediately below one the fusion commit
-  rewrote. B6's identical-shape finding was swept across every site; B5's was
-  applied only where the report named it, which is an inconsistency in this
-  branch's own standard.
-- **`dw2 := u1_2*d2 - d1` is exactly `-t8`** (`DBL:511`), and `t8` is live there
-  from the Sylvester block above. A free 1M 1A on the `det = 0` paths. C2
-  introduced `t8` and did not reuse it here; it sits inside the block ARBDBL-06
-  rewrites, so the two should land together.
-- **C3 is half done.** The doubling's two author questions became statements; the
-  addition's `// SWAPPING st WITH w1 ALSO WORKS????` at `ADD:446` did not, though
-  this document answers it in the affirmative with no op-count consequence. It is
-  the only remaining `????` in either file.
-- **The counter's integer-multiple blind spot** is itself a tooling finding, above.
+- **B5's technique, swept — APPLIED.** `h2 + 2*v1_2` costs two additions where a
+  live temporary makes `hv2 + v1_2` (doubling) or `t1_2 + v1_2` (addition) cost
+  one; likewise `h1 + 2*v1_1`. Applied at **nine live sites**, measured −4A on the
+  DBL `det = 0` path and −1A each on three more buckets. B6's identical-shape
+  finding had been swept across every site while B5's was applied only where the
+  report named it; that inconsistency is gone. Deg2DBL's `d1` is deliberately left
+  — no such temporary is in scope there, so fusing would have to create one.
+- **`dw2` is exactly `-t8` — APPLIED**, inside ARBDBL-06 above, which is where it
+  belonged.
+- **C3's other half — APPLIED.** `// SWAPPING st WITH w1 ALSO WORKS????` is now a
+  statement: reducing `w1` instead of `st` costs the same, the two differing by a
+  multiple of `u1` that the reduction removes. **No `????` remains in either file.**
+- **The counter's integer-multiple blind spot** is a tooling finding and stays
+  open, above.
 
 ### What whitebox.py can and cannot gate here
 

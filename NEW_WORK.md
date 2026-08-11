@@ -869,9 +869,10 @@ Neither is visible in a count; both are visible in a liveness analysis.
 
 ## N18 — The doubling: twenty-two additions for one multiplication
 
-**Status:** implemented and measured, 2026-08-11. The genus-3 ramified efficiency
-ledger is closed apart from two open items and four findings located during
-implementation — see [`EFFICIENCY_ARB_G3.md`](EFFICIENCY_ARB_G3.md).
+**Status:** implemented and measured, 2026-08-11. **Every finding in the genus-3
+ramified efficiency ledger is now applied**, except one that was applied and
+reverted, and two that belong to other files by scope — see
+[`EFFICIENCY_ARB_G3.md`](EFFICIENCY_ARB_G3.md).
 
 **The result.** Six further findings landed, each its own commit, each measured and
 confirmed under real Magma. A seventh was applied and then reverted; see the
@@ -888,6 +889,15 @@ M+S+C holding at 64. Under the thesis's own 1M:3A rule that is a decisive win, a
 it is worth stating as the trade it is rather than as a free saving: an earlier
 draft of this entry called it "removed for nothing", which is true only under the
 M+S+C aggregate and false on the M+S figure the project usually quotes.
+
+**The rare branches were finished too, not just the frequent case.** Special-case
+inputs are `O(1/q)`, so none of this moves a published figure, but leaving them
+would have meant shipping known waste: the `det = 0` doubling path alone dropped
+**−8M −1S −8A** across three findings (`m6`/`m4` deferred past the test, the `dw`
+block read off the adjugate, B5's fusion swept). The `dw` case is the sharpest —
+the block recomputed the third row of the adjugate that the code above it had
+already built, and the ledger had costed it at "~4M" and then at −2M −1S −2A,
+missing both times that its expensive line *is* the cofactor `m7`.
 
 **Where they were.** One structural finding and several small ones.
 
