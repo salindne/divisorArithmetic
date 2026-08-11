@@ -899,14 +899,81 @@ the block recomputed the third row of the adjugate that the code above it had
 already built, and the ledger had costed it at "~4M" and then at −2M −1S −2A,
 missing both times that its expensive line *is* the cofactor `m7`.
 
-**Where they were.** One structural finding and several small ones.
+### The findings, one by one
 
-*The structural one (C2).* The doubling took only the **first column** of the
-adjugate — the thesis's own T13 recipe — and then recovered the rest with two
-Karatsuba multiplications. Building all nine adjugate entries and solving by
-matrix-vector product costs one more multiplication and twelve fewer additions.
-The addition in the same directory already had that shape, so the two files now
-agree and land on the same annotation for the same job, `27m 0s 17a`.
+Each is stated as what it removes, with the argument that makes it safe. In every
+case that argument is about **liveness or an algebraic identity**, never about the
+count — which is why an operation counter can confirm a saving but never find one.
+
+**C2 — solve by matrix-vector product, not Karatsuba twice.** `+1M −12A`, frequent
+case. `Deg3DBL` built only the **first column** of the adjugate — `m1`, `m4`, `m7`
+plus the determinant, the thesis's own T13 recipe — and then recovered `s = k·q mod u₁`
+with two Karatsuba multiplications. Building all nine entries and solving by
+matrix-vector product is cheaper. The nine entries are not nine minors: column 3 of
+the Sylvester matrix is `x·`(column 2) reduced mod `u₁`, so six of them are *shifts*
+of the bottom row at one multiplication each. `m4` and `m6` are the only two the
+determinant does not read, so they are formed below the `det = 0` test and the rare
+paths pay one multiplication and no additions. The addition in the same directory
+already had this shape; both files now land on `27m 0s 17a` for the same job.
+
+**D33-06 — use the cheap `vn` tail in all three gcd families.** `−1M −3A`, frequent
+case. `Deg3ADD` repeats its closing formulas once per gcd family. `CASE #3.1`
+precomputes `ty = (u₁₂−q₀)·tx + (un₂−q₀)·s₂⁻¹` and reads it twice — whole in `vn₁`,
+times `−q₀` in `vn₀`. The other two copies distribute that quantity and then
+re-derive `q₀·ty·tx` and `(un₂−q₀)·q₀·s₂⁻¹`. Hand count: 13M 22A distributed against
+12M 19A shared. Transplanted into both expensive copies, keeping the names `tx`/`ty`
+those lines already used so no identifier is introduced and `tb` — the name A1
+deleted from this path — is not resurrected.
+
+**B2, B3 — reuse `d₂` and `t06` in the doubling's `M20`.** `−4A`, frequent case. `M20`
+wrote out `h₂ + 2v₁₂ − h₃u₁₂` inline; that is exactly `d₂`, formed at the head of the
+function. And `f₅ + h₃(r₀ − v₁₂)` is `t06 + h₃r₀` by distributivity, `t06` being
+`f₅ − h₃v₁₂`. **`t06` has three assignments in the function, so proximity proves
+nothing**: the other two sit inside blocks that always return before this line, which
+is established by an if/end-if depth walk rather than by reading nearby code. B2 also
+survived B1 intact — B1 changed how `d₂` is *spelled*, not what it holds.
+
+**B4, B5, B6 — the `k` block.** `+1M −1S −3A −1C`, frequent case, applied to the
+typical path and its byte-identical twin. `k2` re-derived `f₅ − t04` which is `t06` on
+the line above; `k0` re-derived `h₂ + 2v₁₂` where `hv₂ + v₁₂` costs one addition
+instead of two; `k1` computed `h₂v₁₂` and `v₁₂²` separately where they combine into
+`v₁₂·hv₂`. That last trades a squaring and a constant-multiply for a general
+multiplication — neutral on M+S, one addition off.
+
+**The fusion family — the same combination wherever the sum is in hand.** Off the
+frequent path. `−h₂v₁₂ − v₁₂²` is `−v₁₂(h₂ + v₁₂)`, and `h₂ + v₁₂` is already live as
+`t1_2` in the addition and `hv₂` in the doubling. Applied at four sites. One of them
+also carried a Karatsuba in the losing direction: `−(h₃+h₂)(v₁₂+v₁₁) + ta + tb` is
+exactly `−h₃v₁₁ − h₂v₁₂`, since `ta = h₃v₁₂` and `tb = h₂v₁₁` two lines above, so the
+`+ta+tb` cancels the diagonal products and leaves the cross terms. Both `ta` and `tb`
+remain read elsewhere, so no dead store appears. Case #2.4 already held the unfused
+direct form, so the file had been contradicting itself.
+
+**D33-07 — form `m6` and `m4` below the test that makes them useless.** `0` on the
+frequent case, `−2M −2A` on each of twelve `det = 0` return sites. Unlike A1 these
+values are *live* on the generic path, so deleting them would be a correctness bug;
+this is A2's pattern with the direction reversed — the reading side is the generic
+path, so the move is downward past `end if;`. The two `// convenient zero` comments
+were also false as claims about the values: both entries are ordinary adjugate
+entries feeding `sp1`, nonzero in 19,997 of 20,000 random draws. What is true is
+nearly the opposite — a term that is *identically zero* has been folded into each so
+that `tf`, `m8` and `m7` can stand in for products the plain cofactor needs.
+
+**ARBDBL-06 — read `dw` off the adjugate instead of recomputing it.** `−6M −1S −4A`
+on the `det = 0` path. The block recomputed `dw = d mod u₁` from scratch when the
+Sylvester block directly above already held it: `dw` is the third row of the adjugate
+up to sign, so `dw₂ = −t8`, `dw₁ = m7`, `dw₀ = −m8` as polynomial identities in
+`d₂,d₁,d₀,u₁₂,u₁₁,u₁₀` rather than as coincidences of the branch. `dw₂` is not formed
+at all, its only two readers having been the other two lines, and `t02 = d₂²` dies
+with it. **The ledger had costed this at "~4M" and then at −2M −1S −2A; both missed
+that `dw₁` is exactly the cofactor `m7`** — the expensive line at 3M 2A — so both
+priced only the cheap half.
+
+**B5's sweep, and C3.** Nine sites where `h_i + 2v₁ᵢ` costs two additions and the live
+temporary makes it one; `−4A` on the doubling's `det = 0` path and `−1A` each on three
+more branches. And the two questions the original authors left in the files —
+`use my determinant calculation??` and `SWAPPING st WITH w1 ALSO WORKS????` — become
+statements, the first answered by C2 and the second in the affirmative at no cost.
 
 **The direction is the opposite of what was assumed, and that is the publishable
 part.** The project's own merge plan recorded a suspicion that the *addition* was
@@ -918,12 +985,12 @@ suspicion of the form "these two differ, so one is unfinished" gets the asymmetr
 right and the direction backwards half the time, and only measurement distinguishes
 the halves.
 
-*Three-way duplication is not free (D33-06).* `Deg3ADD` repeats its closing
-formulas once per gcd family, and the three copies were **not equivalent**: one
-precomputes a quantity and reads it twice, the other two distribute it and re-derive
-it. So the duplication had already cost a multiplication and three additions on the
-frequent path. Duplication is usually filed as a maintenance problem; here it was an
-efficiency problem, and the cheap copy was sitting in the same function.
+*Three-way duplication is not free.* D33-06 above is usually the kind of thing filed
+as a maintenance problem — three copies of one computation. Here it was an
+**efficiency** problem: the copies had diverged, so two of them were paying for
+something the third had already avoided, and the cheap version was sitting in the
+same function all along. Worth diffing duplicated formula code, not merely
+deduplicating it.
 
 *One temporary enables a family of savings.* N17's `h + v1` — introduced purely to
 avoid forming a sum twice — turned out to unlock the same fusion at four further
