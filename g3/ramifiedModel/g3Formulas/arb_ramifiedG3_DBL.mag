@@ -506,12 +506,16 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		end if;
 
-		// dw = d mod u1
-		t02:= d2^2;
-		dw2:= u1_2*d2 - d1;					//d2
-
-		dw1:= u1_1*t02 - d0*d2 - d1*dw2;		//d2^2
-		dw0:= u1_0*t02 - d0*dw2;				//d2^2
+		// dw = d mod u1. The Sylvester block above already holds it: dw is the
+		// third row of the adjugate up to sign, so
+		//   dw2 = u1_2*d2 - d1               = -t8
+		//   dw1 = u1_1*d2^2 - d0*d2 - d1*dw2 =  m7
+		//   dw0 = u1_0*d2^2 - d0*dw2         = -m8
+		// Polynomial identities in d2,d1,d0,u1_2,u1_1,u1_0, not coincidences of
+		// this branch. dw2 is not formed at all: its only readers were the two
+		// lines below.
+		dw1:= m7;								//d2^2
+		dw0:= -m8;								//d2^2
 
 		// if gcd(u1,2va+h) = d
 		if (dw1 eq 0) then
@@ -580,7 +584,7 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
 		k2:= kp2 - u1_1 - t04 + 2*t03;
 		k1:= kp1 - u1_0 - u1_1*(kp3 - u1_2);
 		//k0:= kp0 - u1_0*k3;
-		k0:= f3 - 2*f6*u1_0 - h3*v1_0 - h2*v1_1 - u1_2*(kp1 - 3*u1_0) - u1_1*(kp2) - v1_2*(h1 + 2*v1_1);
+		k0:= f3 - 2*f6*u1_0 - h3*v1_0 - h2*v1_1 - u1_2*(kp1 - 3*u1_0) - u1_1*(kp2) - v1_2*(hv1 + v1_1);
 
 		// dm = dw/dw1, w1 = 1/dw1
 		w1:= 1/dw1;
@@ -621,8 +625,8 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
 		// M2 = (s*(2va + h) - kt)/u1
 		//M23:= -1;
 		M22:= h3*s1 - kt4 + u1_1;
-		M21:= s1*(h2 + 2*v1_2) + h3*s0 - kt3 + u1_0 - u1_1*M22;
-		M20:= s1*(h1 + 2*v1_1) + s0*(h2 + 2*v1_2) - kt2 - u1_1*M21 - u1_0*M22;
+		M21:= s1*(hv2 + v1_2) + h3*s0 - kt3 + u1_0 - u1_1*M22;
+		M20:= s1*(hv1 + v1_1) + s0*(hv2 + v1_2) - kt2 - u1_1*M21 - u1_0*M22;
 
 		// un = s^2 + M2	(made monic)
 		un3:= 1;
@@ -717,7 +721,7 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
 		t06:= wi^2;
 
 		M21:= h3*wi - t06;
-		M20:= (h2 + 2*v1_2 + h3*(sm0 - u1_2) - (f6 - 2*u1_2)*wi)*wi;
+		M20:= (hv2 + v1_2 + h3*(sm0 - u1_2) - (f6 - 2*u1_2)*wi)*wi;
 
 		// un = s^2 + M2	(made monic)
 		un3:= 0;
