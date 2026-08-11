@@ -875,8 +875,9 @@ reverted, and two that belong to other files by scope — see
 [`EFFICIENCY_ARB_G3.md`](EFFICIENCY_ARB_G3.md).
 
 **The result.** Six further findings landed, each its own commit, each measured and
-confirmed under real Magma. A seventh was applied and then reverted; see the
-honesty note at the end of this entry, which is the most transferable thing here.
+confirmed under real Magma. A seventh was implemented, measured, and then dropped
+before it shipped; see the honesty note at the end of this entry, which is the most
+transferable thing here.
 
 | | pre-PR16 | now |
 |---|---|---|
@@ -1007,14 +1008,16 @@ constant-detection resolves a name only through a unary minus, never through a
 composite expression. So N17's A1 is honestly **−4M −4C** rather than −5M −3C, at
 the same total of eight.
 
-**Then the same gap produced a change that had to be reverted, which is the part
-worth writing up.** Horner-nesting the degree-1 doubling's `k0` measured a clean
+**Then the same gap produced a change that had to be abandoned, which is the part
+worth writing up.** (Recorded as ERRATA E13, with the scope measured at six live
+sites.) Horner-nesting the degree-1 doubling's `k0` measured a clean
 −1S. Honestly it is **+3M −3C −1S**: the original multiplies by `4f₄`, `5f₅` and
 `6f₆` — all fixed per curve, hence C — and Horner replaces them with three genuine
 `u₁₀·(variable)` products. The counter reported no change in M because it charges
 both shapes the same. The measurement was reproduced, the algebra was verified, the
 formulas were correct, and the change was still the wrong direction under the
-thesis's own cost model.
+thesis's own cost model. It never shipped — there is no revert to find in the
+history, because it was removed from the branch before that branch was pushed.
 
 **The lesson is that a verified measurement is not a verified improvement.** Both
 the finding and its refutation came from the same instrument, and the instrument

@@ -436,6 +436,13 @@ frequency:
 | `arb` ADD, `Deg3ADD` generic | 53 | 3 | 71 | 1 | 1 | **56** |
 | `arb` DBL, `Deg3DBL` typical | 57 | 4 | 92 | 3 | 1 | **61** |
 
+**One caveat on the doubling row, `ERRATA.md` E13.** The counter charges `2*f6*u1_0`
+as an M where it is honestly a C — `2*f6` is fixed per curve — so this row's honest
+split is `56M 4S 92A 4C`, i.e. 60 M+S rather than 61. The total multiplicative work is
+64 either way. The counted figures are kept because every other number in this
+document comes from the same tool, and mixing conventions inside one table is worse
+than a documented offset. Measured scope: six sites, all in that one file.
+
 **Updated 2026-08-11 after PR16.** The pre-PR16 figures were 59M 4S 95A 4C
 (63 M+S) and 55M 5S 114A 4C (60 M+S); the efficiency findings took the addition to
 53M 3S 71A 1C and the doubling to 57M 4S 92A 3C. Note the doubling gained a

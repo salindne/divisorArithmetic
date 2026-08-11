@@ -111,15 +111,19 @@ half. It was also deferred out of the first part-2 pass because C2 had rewritten
 the block it borrows from — the re-pointing above is the whole of the extra work
 that needed.
 
-### One finding is open, having been applied and reverted
+### One finding is open: implemented, measured, and dropped before it shipped
 
-**ARBDBL-09.** Horner-nesting
+**ARBDBL-09.** Note there is no revert commit to look for — it was built on a branch,
+measured, found to be a loss, and removed from the history before that branch was
+pushed. `Deg1DBL` is byte-identical to what it was before PR16.
+
+Horner-nesting
 `k0` in `Deg1DBL` measured −1S and is honestly **+3M −3C −1S**: the old form
 multiplies by `4*f4`, `5*f5` and `6*f6`, all precomputable per curve and therefore
 C, and Horner replaces them with three genuine `u1_0*(variable)` products. The
-counter could not see the difference for the same reason as below. The ledger's
-original −1M −1S was measured against a counter with the same gap, so this entry
-has never had a trustworthy figure.
+counter could not see the difference for the same reason as below — recorded as
+**ERRATA E13**. The ledger's original −1M −1S was measured against a counter with the
+same gap, so this entry has never had a trustworthy figure.
 
 Its second half — hoisting the scalars for a further −5A — was rejected on a false
 ground when the change landed (the claim was that they depend on the divisor; they
@@ -141,10 +145,16 @@ M, even when it is precomputable per curve. Two shapes occur here:
   These are still live, including on the frequent `Deg3DBL` path, so **the gap is
   narrowed, not closed.** It is what made ARBDBL-09 look like a win.
 
-Consequence for the record: A1's honest split is **−4M −4C** rather than −5M −3C,
-at the same total of eight. **Recorded, not fixed** — teaching the counter to fold
-constant subexpressions reclassifies M as C in published counts and needs its own
-adjudication under the presume-the-published-correct rule.
+Now recorded as **ERRATA E13**, with the scope measured: **six live sites, all in
+`arb_ramifiedG3_DBL.mag`**, and none of the parenthesised-sum shape left anywhere.
+Consequences for the figures in this document: A1's honest split is **−4M −4C**
+rather than −5M −3C at the same total of eight; and one site sits on the frequent
+`Deg3DBL` path, so that row's honest split is **56M 4S 92A 4C** where the counter
+says 57M 4S 92A 3C — 64 multiplicative operations either way. The counted figures are
+what this document quotes, because every other number here comes from the same tool
+and mixing conventions inside one table is worse than a documented offset.
+**Recorded, not fixed** — the reclassification falls under the
+presume-the-published-correct rule and needs its own gate.
 
 ### Four findings this document did not have, three of them now applied
 
