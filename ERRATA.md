@@ -408,6 +408,123 @@ anywhere in either arb genus-3 file.
 
 ---
 
+## E12: the random testers print a green summary when they executed nothing
+
+**Found 2026-08-11**, while verifying a formula change under real Magma. The run was launched from the
+repository root instead of `g3/ramifiedModel/`, so every `load` failed, and the tester printed:
+
+```
+User error: Identifier 'RandomG3Curve' has not been declared or assigned
+///////////////////////////////////////////////////////////////////////
+TEST_ADD:  true
+TEST_DBL:  true
+// No errors.
+Total time: 0.469 seconds
+```
+
+**That is an affirmative pass report from a run that compared nothing.** Two independent causes:
+
+1. **`TEST_ADD` and `TEST_DBL` are configuration switches, not results.** They are set `true` at
+   `arb_ramifiedG3_random.mag:35-36` to select which operations to exercise, and echoed verbatim at
+   `:199-200`. Nothing ever assigns them again. So `TEST_ADD: true` reads as a verdict and is in fact a
+   restatement of the input. The actual verdict is `errorFlag`, declared at `:49`.
+2. **`No errors` is true by vacuity.** `errorFlag` starts `false` and is only ever set `true` by a
+   mismatch inside the trial loop, so a run whose loop body never executes reports no errors correctly
+   and uselessly.
+
+**Scope, measured across all 16 `*_random.mag` testers:** the misleading echo is confined to the two
+genus-3 ramified files (the imported ones) — the other fourteen print only the `errorFlag` verdict. But
+**not one of the sixteen reports how many comparisons it performed**, so in every family a run that did
+nothing is indistinguishable from a run that verified everything, except by reading the per-trial
+progress lines *above* the summary.
+
+**Affects:** any verification claim resting on a tester's summary rather than on its trial output. In
+this instance the tells were the runtime — 0.469s against the 107–227s a real run takes — and the error
+text, both of which the summary actively contradicted. A correct run of the same tester reports
+`Trial # 10 over FF(16)` lines and takes about two minutes.
+
+**Relation to the existing gate findings.** `test_all.sh` cannot gate on exit status because Magma exits
+0 on `Assertion failed`, which is why it parses stdout instead. E12 is the next layer down: the stdout it
+parses is itself green in the vacuous case. Both are the same class — a signal that reports success
+because nothing contradicted it.
+
+**Not fixed here.** The fix wants a comparison counter printed by every tester and asserted non-zero,
+which touches all sixteen files plus `test_all.sh`'s parser, and belongs with the tester rework (PR6)
+rather than inside a formula PR. Recorded with its reproducer: run any tester from the repository root
+instead of its own directory.
+
+---
+
+## E13: the interpreter charges C as M when the coefficient is inside a subexpression
+
+**Found 2026-08-11** while implementing the genus-3 arbitrary efficiency findings, by two
+independent measurements disagreeing with a hand count. Affects
+`verification/maginterp.py`, which is **the counter of record** since PR35 — so this is the
+same class as E4–E6 and E10, but in the tool that replaced the one those describe.
+
+**The mechanism.** `maginterp._leafname` (`:75-85`) resolves a factor to a name only when
+the node is a bare `var`, seeing through unary minus and nothing else:
+
+```python
+while node[0] == "neg":
+    node = node[1]
+return node[1] if node[0] == "var" else None
+```
+
+A product whose factor is any **composite expression over curve constants** therefore
+matches neither `CONSTS` nor `IGNORED` and is charged a full `M`, even though it is a
+multiplication by a quantity fixed once per curve — a `C` under the thesis's own
+definition (`chapter6.tex`, Field Operation Costs). Two shapes occur:
+
+| shape | example | charged | honest |
+|---|---|---|---|
+| integer multiple of a coefficient | `2*f6*u1_0`, `5*f5*t01` | M | C |
+| parenthesised sum of coefficients | `(h3 + h2)*(v1_2 + v1_1)` | M | C |
+
+**Scope, measured across every formula file** (excluding the `timings/` and `whitebox/`
+trees): **six live sites, all in `g3/ramifiedModel/g3Formulas/arb_ramifiedG3_DBL.mag`.**
+The parenthesised-sum shape has **zero** live sites — PR16 removed the last one. So the
+genus-2 families, both split models and the genus-3 split families are unaffected, and no
+*published* operation count is wrong: the genus-3 ramified counts were deferred in the
+thesis and appear only in this repository's own documents.
+
+| site | function / branch | products |
+|---|---|---|
+| `:116` | `Deg1DBL`, typical | `4*f4*u1_0`, `5*f5*t01`, `6*f6*t02` |
+| `:656` | `Deg3DBL`, **typical** | `2*f6*u1_0` |
+| `:536` | `Deg3DBL`, `dw1 = 0` branch | `2*f6*u1_0` |
+| `:587` | `Deg3DBL`, CASE #2.1 | `2*f6*u1_0` |
+
+**Consequence for the figures this repository quotes.** The M/C split is wrong on two
+frequent cases; the total multiplicative work is right in both:
+
+| | as counted | honest split | total |
+|---|---|---|---|
+| `Deg3DBL` typical | 57M 4S 92A 3C | **56M 4S 92A 4C** | 64, unchanged |
+| `Deg1DBL` typical | 9M 2S 21A 4C | **6M 2S 21A 7C** | 21, unchanged |
+
+`Deg3ADD` is unaffected. `RELATED_WORK.md` and `EFFICIENCY_ARB_G3.md` state the counted
+figures with this entry cited, rather than silently substituting the honest ones, because
+every other figure in those documents comes from the same tool and mixing conventions
+inside one table is worse than a documented offset.
+
+**Why it mattered beyond the split.** It produced a change that had to be abandoned.
+Horner-nesting `Deg1DBL`'s `k0` (ledger item ARBDBL-09) *measured* a clean −1S, because
+the counter charged the old form's three constant products and the new form's three
+general products identically. Honestly the rewrite is **+3M −3C −1S** — it buys three
+general multiplications with one squaring and three constant multiplies, the wrong
+direction under the 1M:3A rule. The finding was implemented, measured, verified for
+correctness, and then dropped once the classification was done by hand. **A verified
+measurement is not a verified improvement.**
+
+**Not fixed.** Teaching `_leafname` to fold constant subexpressions reclassifies M as C in
+counts this project has already published elsewhere, so it falls under the standing
+adjudication rule — presume the published figure correct, hand-count each moved cell, and
+decide per cell. That is its own change with its own gate, not a one-line patch. Recorded
+here so the register carries it rather than only a findings report.
+
+---
+
 ## Not defects
 
 Two things that look wrong and are not, recorded so they are not "fixed" by mistake:

@@ -9,33 +9,196 @@ bisectable.
 Companion to [RELATED_WORK.md](RELATED_WORK.md), which establishes what the
 published state of the art costs and what these files cost today.
 
-## Re-vetted and partly implemented, 2026-08-10
+## Re-vetted and fully implemented, 2026-08-10 and 2026-08-11
 
-**The findings hold. Two things in this document do not.**
+**Every finding in this document held.** Two things about *this document* did not,
+and one of the two turns out not to be an error at all.
 
-*Every line number is stale by roughly nineteen* — A1 cites `:2262, :2267-2268`,
-where the code now sits at `:2276, :2281-2282`; B1 cites `:411-413, :750-752`,
-now `:427-429, :766-768`. PR20's justification block and earlier insertions moved
-them. **Locate these findings by content, not by line.**
+*Every line number in this document is stale, and no single offset corrects them.*
+A1 cited `:2262, :2267-2268`; C2 cited `:428-443, :606-619`, which had drifted +22
+before it was applied. PR20's justification block moved them once, and then each
+implemented finding moved everything below it again, by a different amount per
+file. Worked example of the failure mode: section E's `ADD:1467, :1469` now land on
+unrelated live code. **Locate everything by content, never by line** — and do not
+try to apply a fixed offset, which is what the earlier "stale by about nineteen"
+note invited. This is not a precaution against a future rename: the positions were
+already unusable before anyone renamed anything.
 
-*The baseline moved, and one delta with it.* PR35 corrected inversions written
-`1/x` (one M per operation) and PR20's `//Ignore: h3` made those products free to
-count. So the true starting point is `59M 4S 95A 4C` for the addition and
-`55M 5S 114A 4C` for the doubling, not the figures below. A1's `−4C` is really
-**−3C**: one of the products it deletes is `h3*v1_0`, which is already free.
+*The C figures are SUPERSEDED, not wrong.* When this report was measured, `h3` was
+a declared `//Constant:` in both arb files, so every `h3*X` product cost 1C. PR20
+(`0d0c70d`) moved it to `//Ignore:`, making them free. Three deltas here were read
+as errors on that account and none of them is one:
 
-**A1, A2 and B1 are implemented.** Measured with `verification/opcount.py`:
+| | as reported | today | the product that became free |
+|---|---|---|---|
+| A1 | −4C | −3C | `h3*v1_0` |
+| B2 | −1C | −0C | `h3*u1_2` |
+| E-Karatsuba | +2C | +1C | `h3*v1_1` |
 
-| | before | after |
-|---|---|---|
-| `Deg3ADD` generic | 59M 4S 95A 4C | **54M 3S 74A 1C** |
-| `Deg3DBL` typical | 55M 5S 114A 4C | **55M 5S 111A 4C** |
+Reproduced in both directions: restoring `h3` to `//Constant:` in both files
+recovers this report's C column exactly, including its `16C` doubling baseline,
+and its A and S columns too. Its M comes back one short in each operation --
+that difference is PR35's separate inversion fix, so the reproduction is exact
+for C and not for M. An independent cross-check needs no measurement at all — PR20 recorded
+that the directive freed "8 of the addition's 12 C, 12 of the doubling's 16", and
+12−8 = 4 and 16−12 = 4 are exactly the two baselines below. **One convention
+change, not three defects.** Read `RELATED_WORK.md`'s measurement note before
+filing any future C discrepancy as an error; it already explained this.
 
-A and S land exactly as this document predicted. The remaining findings — B2–B6
-and C2 — are not yet applied, and should be re-located by content and re-measured
-against the corrected baseline in the same way.
+*The baseline also moved for M*, because PR35 stopped charging an inversion
+written `1/x` an inversion plus a multiplication. True starting point:
+`59M 4S 95A 4C` for the addition, `55M 5S 114A 4C` for the doubling.
+
+### What landed
+
+Part 1 (A1, A2, B1) and part 2 (C2, D33-06, B2–B6, D33-07 and the fusion family)
+are implemented, one commit each, every one measured with
+`verification/opcount.py` and confirmed under real Magma.
+
+| | pre-PR16 | now | removed |
+|---|---|---|---|
+| `Deg3ADD` generic | 59M 4S 95A 4C | **53M 3S 71A 1C** | 5M 1S 24A 4C |
+| `Deg3DBL` typical | 55M 5S 114A 4C | **57M 4S 92A 3C** | 1S 22A 1C, +2M |
+
+The addition's removals are stated on the honest classification, not the counter's:
+one of the six M it appears to remove is a multiply by a precomputable constant
+sum — see the blind spot below. Total multiplicative work removed is nine either
+way.
+
+Against the thesis's own split-model Degree-3 rows, stated per column rather than
+in aggregate, because the aggregate hides the one column that got worse:
+
+| | M+S | S alone | C | A |
+|---|---|---|---|---|
+| `Deg3ADD` ours / split | **56 / 68** | 3 / 3, a tie | **1 / 12** | **71 / 87** |
+| `Deg3DBL` ours / split | **61 / 76** | **4 / 3, one worse** | **3 / 19** | **92 / 101** |
+
+So the addition wins on M+S, C and A and ties on S; the doubling wins on M+S, C
+and A and loses one squaring. "Better in every column" is true of the addition
+only if S is read inside M+S, which is why it is broken out here.
+
+**The doubling's own before/after is a trade, not a free win.** On M+S it went
+60 → 61, one worse; on the wider M+S+C it is 64 → 64. Twenty-two additions came
+off, and one multiplication went on. Under the thesis's 1M:3A rule that is a
+clear win, but it is a *trade* and should be described as one.
+
+The sanity flag this vetting existed to explain is closed.
+
+### Two figures in this document were too SMALL
+
+Both found by re-measurement, and both in our favour:
+
+- **ARBDBL-06 is −6M −1S −4A**, not the re-counted −2M −1S −2A. Measured after
+  implementation; see below for why both earlier figures were short.
+- **D33-07 touches 12 return sites in each file**, not "7 in arb, 8 in nch2".
+
+### ARBDBL-06: applied, and worth more than the ledger recorded twice over
+
+The `dw` block inside `det eq 0` recomputed what the Sylvester block above already
+holds — `dw` is the third row of the adjugate up to sign:
+
+    dw2 = u1_2*d2 - d1   = -t8
+    dw1 = m7                                    (the expensive line: 3M 2A)
+    dw0 = d0*t8 - t2*d2  = temp5 + temp3 = -m8
+
+`dw2` is not formed at all, its only readers having been the other two lines, and
+`t02 = d2²` dies with it. **Measured −6M −1S −4A** on the `det = 0` path
+(57M 4S 95A 3C → 51M 3S 91A 3C); the frequent case does not move.
+
+The ledger recorded "~4M" with a flag to re-count, and the re-count gave
+−2M −1S −2A. **Both missed that `dw1` is exactly `m7`**, which is the expensive
+half. It was also deferred out of the first part-2 pass because C2 had rewritten
+the block it borrows from — the re-pointing above is the whole of the extra work
+that needed.
+
+### One finding is open: implemented, measured, and dropped before it shipped
+
+**ARBDBL-09.** Note there is no revert commit to look for — it was built on a branch,
+measured, found to be a loss, and removed from the history before that branch was
+pushed. `Deg1DBL` is byte-identical to what it was before PR16.
+
+Horner-nesting
+`k0` in `Deg1DBL` measured −1S and is honestly **+3M −3C −1S**: the old form
+multiplies by `4*f4`, `5*f5` and `6*f6`, all precomputable per curve and therefore
+C, and Horner replaces them with three genuine `u1_0*(variable)` products. The
+counter could not see the difference for the same reason as below — recorded as
+**ERRATA E13**. The ledger's original −1M −1S was measured against a counter with the
+same gap, so this entry has never had a trustworthy figure.
+
+Its second half — hoisting the scalars for a further −5A — was rejected on a false
+ground when the change landed (the claim was that they depend on the divisor; they
+do not, the hoistable quantities are the integer multiples `i·f_i`). It is real,
+and it needs the caller to supply them, so it is an interface change rather than a
+formula rewrite. Open, not refuted.
+
+### A tooling blind spot, narrowed but NOT closed
+
+`maginterp._leafname` returns a name only for a `var` node, seeing through unary
+minus and nothing else. So a product whose factor is any *composite* expression
+over curve constants matches neither `CONSTS` nor `IGNORED` and is charged a full
+M, even when it is precomputable per curve. Two shapes occur here:
+
+- `(h3 + h2)*(v1_2 + v1_1)` — a parenthesised **sum**. This was the last live
+  instance of that shape in the whole g2+g3 corpus, and the fusion commit removed
+  it (A1 removed the other).
+- `2*f6*u1_0`, `4*f4*u1_0`, `5*f5*t01` — an integer **multiple** of a coefficient.
+  These are still live, including on the frequent `Deg3DBL` path, so **the gap is
+  narrowed, not closed.** It is what made ARBDBL-09 look like a win.
+
+Now recorded as **ERRATA E13**, with the scope measured: **six live sites, all in
+`arb_ramifiedG3_DBL.mag`**, and none of the parenthesised-sum shape left anywhere.
+Consequences for the figures in this document: A1's honest split is **−4M −4C**
+rather than −5M −3C at the same total of eight; and one site sits on the frequent
+`Deg3DBL` path, so that row's honest split is **56M 4S 92A 4C** where the counter
+says 57M 4S 92A 3C — 64 multiplicative operations either way. The counted figures are
+what this document quotes, because every other number here comes from the same tool
+and mixing conventions inside one table is worse than a documented offset.
+**Recorded, not fixed** — the reclassification falls under the
+presume-the-published-correct rule and needs its own gate.
+
+### Four findings this document did not have, three of them now applied
+
+Turned up by implementing the rest:
+
+- **B5's technique, swept — APPLIED.** `h2 + 2*v1_2` costs two additions where a
+  live temporary makes `hv2 + v1_2` (doubling) or `t1_2 + v1_2` (addition) cost
+  one; likewise `h1 + 2*v1_1`. Applied at **nine live sites**, measured −4A on the
+  DBL `det = 0` path and −1A each on three more buckets. B6's identical-shape
+  finding had been swept across every site while B5's was applied only where the
+  report named it; that inconsistency is gone. Deg2DBL's `d1` is deliberately left
+  — no such temporary is in scope there, so fusing would have to create one.
+- **`dw2` is exactly `-t8` — APPLIED**, inside ARBDBL-06 above, which is where it
+  belonged.
+- **C3's other half — APPLIED.** `// SWAPPING st WITH w1 ALSO WORKS????` is now a
+  statement: reducing `w1` instead of `st` costs the same, the two differing by a
+  multiple of `u1` that the reduction removes. **No `????` remains in either file.**
+- **The counter's integer-multiple blind spot** is a tooling finding and stays
+  open, above.
+
+### What whitebox.py can and cannot gate here
+
+**Stated because four commit messages in this branch initially cited it wrongly.**
+`whitebox.py`'s corpus and its coverage denominator are keyed on
+`ADD_DEBUG`/`DBL_DEBUG` label strings. Every region edited in `Deg3ADD` — the
+generic `CASE #1.1` path included — carries **no label**, so the frozen corpus
+holds no case that reaches them and its 1,812/1,812 says nothing about them.
+
+Demonstrated rather than assumed: sabotaging the frequent-path `vn1` with a
+`+ 12345` leaves `whitebox.py` at **1812/1812 PASS**, while `driver --strict`
+reports 2 mismatches and real Magma drops its `No errors` line.
+
+So for these files the gates are **`driver --strict` and Magma**. This is the same
+gap the merge plan records as "15 missing branch labels … `Deg3ADD`'s 100% is
+really 8 of ~15 live returns"; it is now demonstrated with a tripwire rather than
+inferred, and it is the strongest argument for adding those labels.
 
 ## Baseline
+
+**Everything below this line is the report as first written**, measured against the
+directive set of 2026-08-09 where `h3` was a `//Constant:` and inversions written
+`1/x` were over-charged. Its `12C`/`16C` and its M figures are correct *for that
+convention* and are left as measured; see the re-vet above for the translation and
+for what was actually implemented. Read "today" throughout as 2026-08-09.
 
 Frequent case, measured from the Magma source per branch (see
 [Method](#method)). Every operation costs exactly one inversion.
@@ -62,11 +225,16 @@ Cantor's algorithm across all reachable branches before the finding counted.
 The answer to the additions question is mostly **dead and duplicated work**, not
 a wrong algorithm:
 
-| | ADD | DBL |
+
+| | ADD (2026-08-09) | DBL (2026-08-09) |
 |---|---|---|
-| today | 60M 4S 95A 12C | 56M 5S 114A 16C |
+| then | 60M 4S 95A 12C | 56M 5S 114A 16C |
 | after the confirmed findings | **55M 3S 74A 8C** | **≈58M 4S 92A 14C** |
 | thesis split, same degree | 65M 3S 87A 12C | 73M 3S 101A 19C |
+
+The predicted DBL additions, 92A, are exactly what the implementation measured —
+the A column of this report survived every convention change intact, which is the
+lesson recorded in the re-vet.
 
 The ADD figure is a measured composite of two independent, non-overlapping
 edits. The DBL figure sums seven separately measured edits and is marked

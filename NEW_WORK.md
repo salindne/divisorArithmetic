@@ -53,7 +53,8 @@ restating the detail.
 | N14 | Two counting faults put eighteen published operation counts wrong | **established** by two independent counters |
 | N15 | Operation counts measured by execution, not by scanning text | **established**, in the repository |
 | N16 | A declared domain was masking a transcription slip, not buying anything | **established**; defect recorded, not yet fixed |
-| N17 | The genus-3 ramified addition now beats the split-model one in every column | **implemented**, three of the findings applied |
+| N17 | The genus-3 ramified addition now beats the split-model one on M+S, C and A | **implemented**; superseded by N18 |
+| N18 | The doubling trades one multiplication for twenty-two additions; the ledger is closed but for two open items | **implemented**, measured, Magma-verified |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -766,8 +767,9 @@ invisible in the source and obvious in the algebra.
 
 ## N17 — The arbitrary genus-3 addition now beats the split-model one in every column
 
-**Status:** three findings implemented and measured. The rest of the ledger is
-still open.
+**Status:** three findings implemented and measured. **Superseded by N18**, which
+closed the rest of the ledger; this entry is kept as the dated record of the first
+pass and its figures are that pass's, not the current ones.
 
 **The anomaly this closes.** Ramified arithmetic has strictly less to do than
 split — no balancing, no adjust steps — so it should be cheaper in every column.
@@ -829,13 +831,32 @@ typical doubling previously formed the sum twice. **−3A.**
 written against a baseline that has since moved twice — PR35 corrected inversions
 written `1/x`, and PR20's `//Ignore: h3` made those products free — so its
 absolute figures no longer applied, and **every line number in it was stale by
-about nineteen**. One documented delta was simply wrong afterwards: A1's `−4C` is
-`−3C`, because one of the products it deletes had already become free.
+about nineteen**.
 
 The predictions that held were the ones expressed as *deltas in A and S*, which
 survived both corrections untouched. The ones that broke were absolute counts and
 positions. That is a useful thing to know about how to write such a report: record
 what a change removes, not what the total will be.
+
+**A correction to this entry, made 2026-08-11 — the C figures were superseded, not
+wrong, and the distinction matters.** An earlier revision of this paragraph said
+"one documented delta was simply wrong afterwards: A1's `−4C` is `−3C`". That
+misattributes a convention change as a mistake in the report. When the report was
+measured, `h3` was a declared `//Constant:`, so `h3*v1_0` genuinely cost 1C and
+`−4C` was genuinely right; PR20 moved `h3` to `//Ignore:` and made it free. The
+same single event accounts for two further apparent errors found later, in B2 and
+in the E-Karatsuba finding — **one cause, three symptoms, zero defects.**
+Reproduced in both directions by restoring the old directive, which recovers the
+report's original figures exactly.
+
+The durable lesson is not about arithmetic. `RELATED_WORK.md` already carried the
+correct explanation — *"the C column fell because PR20 moved `h3` from
+`//Constant:` to `//Ignore:` … the table above had not caught up"* — while this
+entry was calling the same discrepancy an error two files away. So: **before
+filing a discrepancy as a defect in someone's work, check whether the repository
+already explains it.** Under this project's own adjudication rule the published
+figure is presumed correct until a hand count says otherwise, and that rule
+protects prior work from exactly this kind of drive-by attribution.
 
 **For the paper.** The interesting claim is not the improvement but its cause. Two
 formula families written by different people for the same curve model differed by
@@ -843,6 +864,179 @@ formula families written by different people for the same curve model differed b
 coefficients computed past the point the thesis's own exact-division technique
 says they are needed, and temporaries formed before the branch that uses them.
 Neither is visible in a count; both are visible in a liveness analysis.
+
+---
+
+## N18 — The doubling: twenty-two additions for one multiplication
+
+**Status:** implemented and measured, 2026-08-11. **Every finding in the genus-3
+ramified efficiency ledger is now applied**, except one that was applied and
+reverted, and two that belong to other files by scope — see
+[`EFFICIENCY_ARB_G3.md`](EFFICIENCY_ARB_G3.md).
+
+**The result.** Six further findings landed, each its own commit, each measured and
+confirmed under real Magma. A seventh was implemented, measured, and then dropped
+before it shipped; see the honesty note at the end of this entry, which is the most
+transferable thing here.
+
+| | pre-PR16 | now |
+|---|---|---|
+| `Deg3ADD` generic | 59M 4S 95A 4C | **53M 3S 71A 1C** |
+| `Deg3DBL` typical | 55M 5S 114A 4C | **57M 4S 92A 3C** |
+
+The doubling is the interesting one. **Twenty-two additions came off and one
+multiplication went on** — 114A → 92A, with M+S rising 60 → 61 and the wider
+M+S+C holding at 64. Under the thesis's own 1M:3A rule that is a decisive win, and
+it is worth stating as the trade it is rather than as a free saving: an earlier
+draft of this entry called it "removed for nothing", which is true only under the
+M+S+C aggregate and false on the M+S figure the project usually quotes.
+
+**The rare branches were finished too, not just the frequent case.** Special-case
+inputs are `O(1/q)`, so none of this moves a published figure, but leaving them
+would have meant shipping known waste: the `det = 0` doubling path alone dropped
+**−8M −1S −8A** across three findings (`m6`/`m4` deferred past the test, the `dw`
+block read off the adjugate, B5's fusion swept). The `dw` case is the sharpest —
+the block recomputed the third row of the adjugate that the code above it had
+already built, and the ledger had costed it at "~4M" and then at −2M −1S −2A,
+missing both times that its expensive line *is* the cofactor `m7`.
+
+### The findings, one by one
+
+Each is stated as what it removes, with the argument that makes it safe. In every
+case that argument is about **liveness or an algebraic identity**, never about the
+count — which is why an operation counter can confirm a saving but never find one.
+
+**C2 — solve by matrix-vector product, not Karatsuba twice.** `+1M −12A`, frequent
+case. `Deg3DBL` built only the **first column** of the adjugate — `m1`, `m4`, `m7`
+plus the determinant, the thesis's own T13 recipe — and then recovered `s = k·q mod u₁`
+with two Karatsuba multiplications. Building all nine entries and solving by
+matrix-vector product is cheaper. The nine entries are not nine minors: column 3 of
+the Sylvester matrix is `x·`(column 2) reduced mod `u₁`, so six of them are *shifts*
+of the bottom row at one multiplication each. `m4` and `m6` are the only two the
+determinant does not read, so they are formed below the `det = 0` test and the rare
+paths pay one multiplication and no additions. The addition in the same directory
+already had this shape; both files now land on `27m 0s 17a` for the same job.
+
+**D33-06 — use the cheap `vn` tail in all three gcd families.** `−1M −3A`, frequent
+case. `Deg3ADD` repeats its closing formulas once per gcd family. `CASE #3.1`
+precomputes `ty = (u₁₂−q₀)·tx + (un₂−q₀)·s₂⁻¹` and reads it twice — whole in `vn₁`,
+times `−q₀` in `vn₀`. The other two copies distribute that quantity and then
+re-derive `q₀·ty·tx` and `(un₂−q₀)·q₀·s₂⁻¹`. Hand count: 13M 22A distributed against
+12M 19A shared. Transplanted into both expensive copies, keeping the names `tx`/`ty`
+those lines already used so no identifier is introduced and `tb` — the name A1
+deleted from this path — is not resurrected.
+
+**B2, B3 — reuse `d₂` and `t06` in the doubling's `M20`.** `−4A`, frequent case. `M20`
+wrote out `h₂ + 2v₁₂ − h₃u₁₂` inline; that is exactly `d₂`, formed at the head of the
+function. And `f₅ + h₃(r₀ − v₁₂)` is `t06 + h₃r₀` by distributivity, `t06` being
+`f₅ − h₃v₁₂`. **`t06` has three assignments in the function, so proximity proves
+nothing**: the other two sit inside blocks that always return before this line, which
+is established by an if/end-if depth walk rather than by reading nearby code. B2 also
+survived B1 intact — B1 changed how `d₂` is *spelled*, not what it holds.
+
+**B4, B5, B6 — the `k` block.** `+1M −1S −3A −1C`, frequent case, applied to the
+typical path and its byte-identical twin. `k2` re-derived `f₅ − t04` which is `t06` on
+the line above; `k0` re-derived `h₂ + 2v₁₂` where `hv₂ + v₁₂` costs one addition
+instead of two; `k1` computed `h₂v₁₂` and `v₁₂²` separately where they combine into
+`v₁₂·hv₂`. That last trades a squaring and a constant-multiply for a general
+multiplication — neutral on M+S, one addition off.
+
+**The fusion family — the same combination wherever the sum is in hand.** Off the
+frequent path. `−h₂v₁₂ − v₁₂²` is `−v₁₂(h₂ + v₁₂)`, and `h₂ + v₁₂` is already live as
+`t1_2` in the addition and `hv₂` in the doubling. Applied at four sites. One of them
+also carried a Karatsuba in the losing direction: `−(h₃+h₂)(v₁₂+v₁₁) + ta + tb` is
+exactly `−h₃v₁₁ − h₂v₁₂`, since `ta = h₃v₁₂` and `tb = h₂v₁₁` two lines above, so the
+`+ta+tb` cancels the diagonal products and leaves the cross terms. Both `ta` and `tb`
+remain read elsewhere, so no dead store appears. Case #2.4 already held the unfused
+direct form, so the file had been contradicting itself.
+
+**D33-07 — form `m6` and `m4` below the test that makes them useless.** `0` on the
+frequent case, `−2M −2A` on each of twelve `det = 0` return sites. Unlike A1 these
+values are *live* on the generic path, so deleting them would be a correctness bug;
+this is A2's pattern with the direction reversed — the reading side is the generic
+path, so the move is downward past `end if;`. The two `// convenient zero` comments
+were also false as claims about the values: both entries are ordinary adjugate
+entries feeding `sp1`, nonzero in 19,997 of 20,000 random draws. What is true is
+nearly the opposite — a term that is *identically zero* has been folded into each so
+that `tf`, `m8` and `m7` can stand in for products the plain cofactor needs.
+
+**ARBDBL-06 — read `dw` off the adjugate instead of recomputing it.** `−6M −1S −4A`
+on the `det = 0` path. The block recomputed `dw = d mod u₁` from scratch when the
+Sylvester block directly above already held it: `dw` is the third row of the adjugate
+up to sign, so `dw₂ = −t8`, `dw₁ = m7`, `dw₀ = −m8` as polynomial identities in
+`d₂,d₁,d₀,u₁₂,u₁₁,u₁₀` rather than as coincidences of the branch. `dw₂` is not formed
+at all, its only two readers having been the other two lines, and `t02 = d₂²` dies
+with it. **The ledger had costed this at "~4M" and then at −2M −1S −2A; both missed
+that `dw₁` is exactly the cofactor `m7`** — the expensive line at 3M 2A — so both
+priced only the cheap half.
+
+**B5's sweep, and C3.** Nine sites where `h_i + 2v₁ᵢ` costs two additions and the live
+temporary makes it one; `−4A` on the doubling's `det = 0` path and `−1A` each on three
+more branches. And the two questions the original authors left in the files —
+`use my determinant calculation??` and `SWAPPING st WITH w1 ALSO WORKS????` — become
+statements, the first answered by C2 and the second in the affirmative at no cost.
+
+**The direction is the opposite of what was assumed, and that is the publishable
+part.** The project's own merge plan recorded a suspicion that the *addition* was
+an unfinished port and should be brought to the T13 shape. Measured, that costs
+**−1M for +12A** — the losing side of the thesis's 1M:3A rule — while the reverse,
+bringing the *doubling* to the adjugate shape, is **+1M for −12A**. Same rule, same
+twelve additions, opposite signs. The full adjugate wins in both files. A structural
+suspicion of the form "these two differ, so one is unfinished" gets the asymmetry
+right and the direction backwards half the time, and only measurement distinguishes
+the halves.
+
+*Three-way duplication is not free.* D33-06 above is usually the kind of thing filed
+as a maintenance problem — three copies of one computation. Here it was an
+**efficiency** problem: the copies had diverged, so two of them were paying for
+something the third had already avoided, and the cheap version was sitting in the
+same function all along. Worth diffing duplicated formula code, not merely
+deduplicating it.
+
+*One temporary enables a family of savings.* N17's `h + v1` — introduced purely to
+avoid forming a sum twice — turned out to unlock the same fusion at four further
+sites, because wherever `h₂v₁₂ + v₁₂²` appears it is `v₁₂(h₂ + v₁₂)` and the sum is
+now already in hand. Before that temporary existed the fusion bought a multiplication
+and saved nothing. **A cheap change can convert an unprofitable technique into a
+profitable one, and a findings report written before it cannot see that.**
+
+**A counter blind spot, and the reverted finding it produced.** Two independent
+measurements said a Karatsuba removal saved a multiplication. It does not: the
+factor is `(h₃ + h₂)`, a **precomputable sum of two curve coefficients**, and under
+`h₃ ∈ {0,1}` literally `h₂` or `h₂+1`. The counter charges it a full M because its
+constant-detection resolves a name only through a unary minus, never through a
+composite expression. So N17's A1 is honestly **−4M −4C** rather than −5M −3C, at
+the same total of eight.
+
+**Then the same gap produced a change that had to be abandoned, which is the part
+worth writing up.** (Recorded as ERRATA E13, with the scope measured at six live
+sites.) Horner-nesting the degree-1 doubling's `k0` measured a clean
+−1S. Honestly it is **+3M −3C −1S**: the original multiplies by `4f₄`, `5f₅` and
+`6f₆` — all fixed per curve, hence C — and Horner replaces them with three genuine
+`u₁₀·(variable)` products. The counter reported no change in M because it charges
+both shapes the same. The measurement was reproduced, the algebra was verified, the
+formulas were correct, and the change was still the wrong direction under the
+thesis's own cost model. It never shipped — there is no revert to find in the
+history, because it was removed from the branch before that branch was pushed.
+
+**The lesson is that a verified measurement is not a verified improvement.** Both
+the finding and its refutation came from the same instrument, and the instrument
+could not distinguish a multiplication by a curve constant from a general one in the
+one syntactic shape that mattered. What caught it was reading the expression and
+asking which factors are fixed once per curve — an argument no counter makes.
+Anyone quoting operation counts from a tool should know which classifications it
+cannot make; ours cannot fold constant subexpressions, and that is now recorded
+beside the counts rather than in its source only.
+
+**For the paper.** Three things generalise past this curve model. Structural
+asymmetry between two implementations of the same operation identifies *where* to
+look and not *which way to go*, and the cost of guessing is a rule violation in the
+wrong direction. Duplicated code in explicit formulas should be diffed rather than
+merely deduplicated, because divergent copies mean one of them is paying for
+nothing. And a shared temporary changes the economics of every technique downstream
+of it, so an efficiency ledger is not a set of independent line items — it has to be
+re-derived as items land, which is why every delta here was re-measured against the
+tree as it actually stood rather than trusted from the report.
 
 ---
 

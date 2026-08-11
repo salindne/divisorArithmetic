@@ -175,11 +175,20 @@ prior-work A counts are derived here rather than published by their authors —
 | Case | Previous best | Ours | Standing |
 |---|---|---|---|
 | **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | **62 M+S, 3C, 77A** | **ahead on both axes**: 5 better than Nyukai and 8 better than GKP on M+S, 28 fewer additions. PR17 removes the 3 C (the `f₆` products) and puts us on their curve form |
-| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 60 M+S, 4C, 114A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
+| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 61 M+S, 3C, 92A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
 | **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | *none* | **Future work, PR7** |
 | **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | *none* | **Future work, PR8** |
-| **arb ADD** | **none** | 63 M+S, 4C, 95A | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD (68 M+S, 12C, 87A): **5 better on M+S, 8 better on C, 8 worse on A** |
-| **arb DBL** | **none** | 60 M+S, 4C, 114A | As above. Against split Degree-3 DBL (76 M+S, 19C, 101A): **16 better on M+S, 15 better on C, 13 worse on A** |
+| **arb ADD** | **none** | **56 M+S, 1C, 71A** | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD (68 M+S, 12C, 87A): **12 better on M+S, 11 better on C, 16 better on A**, and a tie on S alone (3 vs 3) |
+| **arb DBL** | **none** | **61 M+S, 3C, 92A** | As above. Against split Degree-3 DBL (76 M+S, 19C, 101A): **better on M+S, C and A; one squaring worse on S alone** |
+
+**A temporary inversion worth knowing about, 2026-08-11.** The arb addition
+(56 M+S, 1C, 71A) is currently *cheaper than the nch2 addition* (62 M+S, 3C, 77A),
+which is backwards — nch2 is arb specialised to `h = 0` and can only be cheaper on
+a correct accounting. The cause is scheduling, not mathematics: PR16 applied the
+efficiency findings to the arb files, and the identical findings in the nch2
+addition are PR15/PR17's. Two of them are measured and waiting — the dead quotient
+coefficients (−4M −1S −11A) and the `vn`-tail port (−1M −3A). Do not quote the nch2
+row as this project's best odd-characteristic figure until PR17 lands.
 
 **C is 0 in every "previous best" cell above** — the published normal forms
 leave no coefficient to multiply by. It is non-zero only for us, and only in the
@@ -424,11 +433,26 @@ frequency:
 
 | Operation | M | S | A | C | I | M+S |
 |---|---|---|---|---|---|---|
-| `arb` ADD, `Deg3ADD` generic | 59 | 4 | 95 | 4 | 1 | **63** |
-| `arb` DBL, `Deg3DBL` typical | 55 | 5 | 114 | 4 | 1 | **60** |
+| `arb` ADD, `Deg3ADD` generic | 53 | 3 | 71 | 1 | 1 | **56** |
+| `arb` DBL, `Deg3DBL` typical | 57 | 4 | 92 | 3 | 1 | **61** |
 
-**These are one M and several C lower than the figures this document carried
-until 2026-08-10, and both differences are explained rather than absorbed.**
+**One caveat on the doubling row, `ERRATA.md` E13.** The counter charges `2*f6*u1_0`
+as an M where it is honestly a C — `2*f6` is fixed per curve — so this row's honest
+split is `56M 4S 92A 4C`, i.e. 60 M+S rather than 61. The total multiplicative work is
+64 either way. The counted figures are kept because every other number in this
+document comes from the same tool, and mixing conventions inside one table is worse
+than a documented offset. Measured scope: six sites, all in that one file.
+
+**Updated 2026-08-11 after PR16.** The pre-PR16 figures were 59M 4S 95A 4C
+(63 M+S) and 55M 5S 114A 4C (60 M+S); the efficiency findings took the addition to
+53M 3S 71A 1C and the doubling to 57M 4S 92A 3C. Note the doubling gained a
+multiplication and lost twenty-two additions — a trade the 1M:3A rule accepts, not
+a free win — so its M+S went **up** by one while its total multiplicative work
+(M+S+C) held at 64.
+
+**The pre-PR16 pair was itself one M and several C lower than the figures this
+document carried until 2026-08-10, and both of those differences are explained
+rather than absorbed.**
 
 *One M per operation* came from charging an inversion written `1/x` an inversion
 **plus a multiplication** — a multiply by 1 that nobody performs. The genus-3
@@ -451,14 +475,27 @@ thesis's own split-model Degree-3 rows is direct — no convention to choose:
 
 | vs split Degree-3, arbitrary | ours | split | verdict |
 |---|---|---|---|
-| **ADD** | 63 M+S, 4C, 95A | 68 M+S, 12C, 87A | **5 better on M+S, 8 better on C, 8 worse on A** |
-| **DBL** | 60 M+S, 4C, 114A | 76 M+S, 19C, 101A | **16 better on M+S, 15 better on C, 13 worse on A** |
+| **ADD** | **56 M+S, 1C, 71A** | 68 M+S, 12C, 87A | **12 better on M+S, 11 on C, 16 on A**; S ties at 3 |
+| **DBL** | **61 M+S, 3C, 92A** | 76 M+S, 19C, 101A | **better on M+S, C and A; one squaring worse on S alone** |
 
-**Ramified is cheaper than split on multiplications AND on constant
-multiplications, in both operations — which is what it should be**, having no
-balancing and no adjust steps. The anomaly is entirely in the additions, where
-ramified is dearer despite doing strictly less work. That is the sanity flag, and
-it points at A, not M.
+**Ramified is now cheaper than split on M+S, on constant multiplications AND on
+additions, in both operations — which is what it should be**,
+having no balancing and no adjust steps.
+
+**The sanity flag is CLOSED, updated 2026-08-11.** It fired for as long as ramified
+was dearer on additions despite doing strictly less work, and PR16 established that
+the cause was neither algorithmic nor a measurement artefact: dead quotient
+coefficients, temporaries formed before the branch that consumes them, duplicated
+closing formulas whose copies were not equivalent, and a doubling that recovered the
+adjugate by Karatsuba where the matrix-vector product is cheaper. The addition went
+95A → 71A and the doubling 114A → 92A, the latter at **zero net multiplicative
+cost** (64 before and after, counting M + S + C together).
+
+The figures above are the frequent case, reproducible from this repository —
+`python3 verification/opcount.py --family ramified/g3/arb`. Earlier revisions of
+this table read `63 M+S, 4C, 95A` and `60 M+S, 4C, 114A`; those are the pre-PR16
+numbers and the table had not caught up, the same lag its own measurement note
+records for the C column.
 
 The C column widened in ramified's favour on 2026-08-10, when these figures were
 re-measured by execution: `h3` is declared `//Ignore:` since PR20, so its products
