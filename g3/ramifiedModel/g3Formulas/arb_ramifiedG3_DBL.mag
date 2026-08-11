@@ -416,9 +416,17 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
     //      4.1) DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = 0 & 2P3 = 0	(return P0)
     // ++++++++++++++++++++++++++++ /CASES +++++++++++++++++++++++++++++++
 	
-	// QUESTIONS
-	// use sebastian's k calculations???
-	// use my determinant calculation??
+	// ANSWERED, by measurement (verification/opcount.py, ramified/g3/arb).
+	// NOT sebastian's k calculations: taking only the first column of the
+	// adjugate out of Lindner's arb_splitG3_ADD and forming s = k*q mod u1 with
+	// Karatsuba twice costs 11m 20a here, which is 12 additions more than the
+	// matrix-vector product for one multiplication less -- the losing side of
+	// sec:trades' 1M:3A rule.
+	// USE the determinant calculation: build all nine adjugate entries and
+	// solve by matrix-vector product, exactly as arb_ramifiedG3_ADD does.
+	// Measured +1M -12A on the typical case; the rare det = 0 paths pay one
+	// multiplication and no additions, because m4 and m6 are deferred past the
+	// branch that does not read them.
 	
 	
     // d = (2va + h) mod u1
@@ -450,19 +458,36 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
     //t1 := d0;
     //t4 := d1;
     //t7 := d2;
-    t2 := -u1_0*d2;
-    t5 := d0 - u1_1*d2;
-    t8 := d1 - u1_2*d2;
-    //t3 := -u1_2*t8;
-    t6 := t2 - u1_1*t8;
-    t9 := t5 - u1_2*t8;
-    
-    m1 := t5*t9 - t6*t8;
-    m4 := t6*d2 - d1*t9;
-    m7 := d1*t8 - t5*d2;
-    
-    det := d0*m1 + t2*m4 - u1_0*t8*m7; //Determinant of T = d0*m1 + t2*m4 + t3*m7
-	// 15m 0s 9a
+	ta := u1_2*d2;
+	tb := u1_1*d2;
+	tc := u1_0*d2;
+    t5 := d0 - tb;
+    t8 := d1 - ta;
+    //t2 := -tc;
+    //t3 := -u1_0*t8;
+    //t6 := t2 - u1_1*t8;
+    //t9 := t5 - u1_2*t8;
+	temp3 := d2*tc;
+	temp4 := d1*t8;
+	temp5 := d0*t8;
+
+	// Bottom row of the adjugate needs only columns 1 and 2 of T.
+	m9 := d0*t5 + d1*tc;
+	m8 := -temp5 - temp3;
+	m7 := temp4 - d2*t5;
+
+	// Column 3 of T is x*(column 2) reduced mod u1, so the remaining six
+	// adjugate entries are shifts of the bottom row -- one multiplication each,
+	// not a 2x2 minor. m4 and m6 are the only two the determinant does not
+	// read, so they wait until the generic path below.
+	tf := -u1_0*m7;
+	m5 := m9 + u1_2*m8;
+	m3 := -u1_0*m8;
+	m2 := tf;
+	m1 := m5 + u1_1*m7;
+
+    det := d0*m1 + d1*m2 + d2*m3; //Determinant of T = t1*m1 + t4*m2 + t7*m3
+	// 16m 0s 9a
 
 	// if gcd(u1,2va+h) != 1
 	if (det eq 0) then
@@ -626,19 +651,18 @@ Deg3DBL:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, f6, f5, f4, f3, f2, f1, h
 	// 4m 2s 32a
 
     // adapted from Lindner's arb_splitG3_ADD
-    //First column of M corresponds to polynomial q = m7x^2 + m4x + m1 = det/u1 mod u2.
-    //Compute s = k*q mod u2 using Karatsuba twice
-    t0 := k0*m1;
-    t1 := k1*m4;
-    t2 := k2*m7;
-    t3 := (m4 + m7)*(k1 + k2) - t2 - t1 - u1_2*t2;
-    t4 := u1_1*t2;
-    t5 := t4 - t1;
-	
-    sp0 := t0 - u1_0*t3;
-    sp1 := (m1 + m4)*(k0 + k1) - sp0 - (u1_0 + u1_1)*(t2 + t3) + t5;
-    sp2 := (m1 + m7)*(k0 + k2) - t0 - t2 - t5 - u1_2*t3;
-	// 11m 0s 20a
+	// the two adjugate entries the determinant did not need
+	m4 := m8 + u1_2*m7;
+	m6 := tf - u1_1*m8;
+
+	// sp = s*det = M*k as a matrix-vector product. M is multiplication by
+	// q = det/(2va+h) mod u1, so this is the same map as k*q mod u1; having all
+	// nine entries costs 2 fewer multiplications and 14 fewer additions than the
+	// two Karatsubas the first column alone needed.
+    sp0 := k0*m1 + k1*m2 + k2*m3;
+    sp1 := k0*m4 + k1*m5 + k2*m6;
+    sp2 := k0*m7 + k1*m8 + k2*m9;
+	// 11m 0s 8a
 
 	if (sp2 eq 0) then
 		if (sp1 eq 0) then
