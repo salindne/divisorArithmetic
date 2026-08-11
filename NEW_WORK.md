@@ -780,7 +780,7 @@ split-model Degree-3 row, which is what N11's vetting set out to explain.
 
 | | before | after |
 |---|---|---|
-| `Deg3ADD` generic | 59M 4S 95A 4C | **54M 3S 74A 1C** |
+| `Deg3ADD` typical | 59M 4S 95A 4C | **54M 3S 74A 1C** |
 | `Deg3DBL` typical | 55M 5S 114A 4C | **55M 5S 111A 4C** |
 | split Degree-3 ADD, for comparison | 65M 3S 87A 12C | — |
 
@@ -881,7 +881,7 @@ transferable thing here.
 
 | | pre-PR16 | now |
 |---|---|---|
-| `Deg3ADD` generic | 59M 4S 95A 4C | **53M 3S 71A 1C** |
+| `Deg3ADD` typical | 59M 4S 95A 4C | **53M 3S 71A 1C** |
 | `Deg3DBL` typical | 55M 5S 114A 4C | **57M 4S 92A 3C** |
 
 The doubling is the interesting one. **Twenty-two additions came off and one
@@ -1130,9 +1130,9 @@ Corrected frequent-case baseline, source-level, with C split per the committed
 
 | function | M | S | A | C | I | M+S |
 |---|---|---|---|---|---|---|
-| arb `Deg3ADD` generic | 60 | 4 | 95 | 12 | 1 | 64 |
+| arb `Deg3ADD` typical | 60 | 4 | 95 | 12 | 1 | 64 |
 | arb `Deg3DBL` typical | 56 | 5 | 114 | 16 | 1 | 61 |
-| nch2 `Deg3ADD` generic | 59 | 4 | 77 | 3 | 1 | 63 |
+| nch2 `Deg3ADD` typical | 59 | 4 | 77 | 3 | 1 | 63 |
 
 **Both comparisons invert.** Against published work we are ahead on both axes.
 Against the thesis's own *split* rows, ramified is cheaper on multiplications in

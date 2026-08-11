@@ -57,7 +57,7 @@ are implemented, one commit each, every one measured with
 
 | | pre-PR16 | now | removed |
 |---|---|---|---|
-| `Deg3ADD` generic | 59M 4S 95A 4C | **53M 3S 71A 1C** | 5M 1S 24A 4C |
+| `Deg3ADD` typical | 59M 4S 95A 4C | **53M 3S 71A 1C** | 5M 1S 24A 4C |
 | `Deg3DBL` typical | 55M 5S 114A 4C | **57M 4S 92A 3C** | 1S 22A 1C, +2M |
 
 The addition's removals are stated on the honest classification, not the counter's:
@@ -156,6 +156,20 @@ and mixing conventions inside one table is worse than a documented offset.
 **Recorded, not fixed** — the reclassification falls under the
 presume-the-published-correct rule and needs its own gate.
 
+### A naming note, and the defect behind it
+
+This document once called the addition's frequent path "generic" and the doubling's
+"typical". They are the same notion — trivial gcd, `deg s = 2`, full-degree result, one
+inversion — and the source calls it **`TYPICAL CASE`** in both files, for every function
+but one. Unified on the source's word.
+
+The exception is the reason the drift happened: **`Deg3ADD` has no `TYPICAL CASE` banner
+and no `Typical` label.** All eight of its labels name degenerate gcd cases, so its
+frequent path is the only one with no word in the source to quote. That is the same
+missing-label defect that makes `whitebox.py` blind to this function, seen from the
+naming side rather than the coverage side — one fix closes both, and it belongs with the
+branch-label work.
+
 ### Four findings this document did not have, three of them now applied
 
 Turned up by implementing the rest:
@@ -205,7 +219,7 @@ Frequent case, measured from the Magma source per branch (see
 
 | function | M | S | A | C | M+S |
 |---|---|---|---|---|---|
-| `Deg3ADD`, generic (`gcd(u₁,u₂) = 1`, `det ≠ 0`, `deg s = 2`) | 60 | 4 | 95 | 12 | 64 |
+| `Deg3ADD`, typical (`gcd(u₁,u₂) = 1`, `det ≠ 0`, `deg s = 2`) | 60 | 4 | 95 | 12 | 64 |
 | `Deg3DBL`, typical (`gcd(u₁, 2v+h) = 1`, `deg s = 2`) | 56 | 5 | 114 | 16 | 61 |
 
 For scale, the thesis's own **split-model** Degree-3 arbitrary rows

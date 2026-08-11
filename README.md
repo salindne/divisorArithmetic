@@ -66,8 +66,13 @@ gate reporting a clean pass. For those files the gates that bite are the differe
 
 | operation | M | S | A | C | I |
 |---|---|---|---|---|---|
-| `Deg3ADD`, generic | 53 | 3 | 71 | 1 | 1 |
+| `Deg3ADD`, typical | 53 | 3 | 71 | 1 | 1 |
 | `Deg3DBL`, typical | 57 | 4 | 92 | 3 | 1 |
+
+"Typical" throughout means the non-degenerate path: trivial gcd, `deg s = 2`, a
+full-degree result, one inversion. The conditions differ per operation — coprime input
+supports for an addition, no ramification point in the support for a doubling — but the
+role is the same, and it is the case the published tables price.
 
 Both now beat the thesis's own split-model Degree-3 rows on M+S, C and A. See
 [Operation-count tables](#operation-count-tables) for the counter of record and the one known

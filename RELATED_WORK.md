@@ -100,8 +100,8 @@ frequent-case counts:
 
 | file | function | C | of which `h₃` products |
 |---|---|---|---|
-| `nch2_ramifiedG3_ADD` | `Deg3ADD` generic | **3** — precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form | — (h = 0) |
-| `arb_ramifiedG3_ADD` | `Deg3ADD` generic | **12** → **4** | 8 |
+| `nch2_ramifiedG3_ADD` | `Deg3ADD` typical | **3** — precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form | — (h = 0) |
+| `arb_ramifiedG3_ADD` | `Deg3ADD` typical | **12** → **4** | 8 |
 | `arb_ramifiedG3_DBL` | `Deg3DBL` typical | **16** → **4** | 12 |
 
 The arrow is the `h₃ ∈ {0,1}` convention: both arb files declare it in their
@@ -433,7 +433,7 @@ frequency:
 
 | Operation | M | S | A | C | I | M+S |
 |---|---|---|---|---|---|---|
-| `arb` ADD, `Deg3ADD` generic | 53 | 3 | 71 | 1 | 1 | **56** |
+| `arb` ADD, `Deg3ADD` typical | 53 | 3 | 71 | 1 | 1 | **56** |
 | `arb` DBL, `Deg3DBL` typical | 57 | 4 | 92 | 3 | 1 | **61** |
 
 **One caveat on the doubling row, `ERRATA.md` E13.** The counter charges `2*f6*u1_0`
