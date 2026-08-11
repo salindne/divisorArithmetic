@@ -443,7 +443,10 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, 
             // u1 = u1/dm
             u1_0:= u1_1 - dm_0;
 
-            // SWAPPING st WITH w1 ALSO WORKS????
+            // Reducing w1 here rather than st gives the same result at the same
+            // cost -- the two differ by a multiple of u1, which this reduction
+            // removes. Measured: no change in any column. w1 is used because it
+            // is already in hand.
             // sp = st mod u1
             //sp5:= 1;
             sp4:= w1_4 - u1_0;
@@ -2083,7 +2086,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             un3:= 1;
             un2:= ta + em_0 - h3*s1 - s1^2;
             un1:= w1_2 - u2_0 - ta*(u2_1 - em_0) - s1*(h2 + 2*(v1_2 + s0) - h3*u2_1 + s1*(u1_1 - u2_1)) - h3*s0;
-            un0:= w1_1 - u2_1*(un1) - u2_0*(un2) - s1*(h1 + 2*(v1_1 + t10) + t11) + em_0*w1_2 - s0*(h2 + 2*v1_2 + s0);
+            un0:= w1_1 - u2_1*(un1) - u2_0*(un2) - s1*(h1 + 2*(v1_1 + t10) + t11) + em_0*w1_2 - s0*(t1_2 + v1_2 + s0);
 
             // vn = -h - v1 - u1*s mod un
 			ta:= h3 + s1;
@@ -2106,7 +2109,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
         w1_3:= f6 - u1_2;
         w1_2:= f5 - u1_1 - f6*u1_2 - ta + u1_2^2;
         w1_1:= f4 - u1_0 - f6*u1_1 - h3*v1_1 - v1_2*t1_2 - u1_2*(w1_2 - u1_1);                      // no karatsuba, use u1_2 multiplication
-        w1_0:= f3 - f6*u1_0 - h3*v1_0 - tb - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*(h1 + 2*v1_1);
+        w1_0:= f3 - f6*u1_0 - h3*v1_0 - tb - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*(t1_1 + v1_1);
 
         // vt = v2 - v1
         vt2:= v2_2 - v1_2;
@@ -2205,7 +2208,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             un3:= 0;
             un2:= 1;
             un1:= dw1_2 + h3*s1Inv + 2*sm0 - s1Inv^2;
-            un0:= (sm0 - u2_2)*(un1 - sm0) + tsb + dw1_1 + (h2 + 2*v1_2 + (sm0 - w1_3)*s1Inv)*s1Inv;
+            un0:= (sm0 - u2_2)*(un1 - sm0) + tsb + dw1_1 + (t1_2 + v1_2 + (sm0 - w1_3)*s1Inv)*s1Inv;
 
             // vn = -h - v1 - u1*s mod un
             ta:= s1*(un1 - u1_2 - sm0) - h3;
@@ -2367,7 +2370,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
         un3:= 0;
         un2:= 1;
         un1:= dw1_2 + h3*s1Inv + 2*sm0 - s1Inv^2;
-        un0:= (sm0 - u2_2)*(un1 - sm0) + tsb + dw1_1 + (h2 + 2*v1_2 + (sm0 - w1_3)*s1Inv)*s1Inv;
+        un0:= (sm0 - u2_2)*(un1 - sm0) + tsb + dw1_1 + (t1_2 + v1_2 + (sm0 - w1_3)*s1Inv)*s1Inv;
 
         // vn = -h - v1 - u1*s mod un
         tn3:= s1*(un1 - u1_2 - sm0) - h3;
