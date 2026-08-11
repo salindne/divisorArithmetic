@@ -9,6 +9,32 @@ bisectable.
 Companion to [RELATED_WORK.md](RELATED_WORK.md), which establishes what the
 published state of the art costs and what these files cost today.
 
+## Re-vetted and partly implemented, 2026-08-10
+
+**The findings hold. Two things in this document do not.**
+
+*Every line number is stale by roughly nineteen* — A1 cites `:2262, :2267-2268`,
+where the code now sits at `:2276, :2281-2282`; B1 cites `:411-413, :750-752`,
+now `:427-429, :766-768`. PR20's justification block and earlier insertions moved
+them. **Locate these findings by content, not by line.**
+
+*The baseline moved, and one delta with it.* PR35 corrected inversions written
+`1/x` (one M per operation) and PR20's `//Ignore: h3` made those products free to
+count. So the true starting point is `59M 4S 95A 4C` for the addition and
+`55M 5S 114A 4C` for the doubling, not the figures below. A1's `−4C` is really
+**−3C**: one of the products it deletes is `h3*v1_0`, which is already free.
+
+**A1, A2 and B1 are implemented.** Measured with `verification/opcount.py`:
+
+| | before | after |
+|---|---|---|
+| `Deg3ADD` generic | 59M 4S 95A 4C | **54M 3S 74A 1C** |
+| `Deg3DBL` typical | 55M 5S 114A 4C | **55M 5S 111A 4C** |
+
+A and S land exactly as this document predicted. The remaining findings — B2–B6
+and C2 — are not yet applied, and should be re-located by content and re-measured
+against the corrected baseline in the same way.
+
 ## Baseline
 
 Frequent case, measured from the Magma source per branch (see
