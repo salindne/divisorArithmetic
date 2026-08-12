@@ -100,7 +100,7 @@ frequent-case counts:
 
 | file | function | C | of which `h₃` products |
 |---|---|---|---|
-| `nch2_ramifiedG3_ADD` | `Deg3ADD` typical | **3** — precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form | — (h = 0) |
+| `nch2_ramifiedG3_ADD` | `Deg3ADD` typical | **0** — the `f₆` depression landed, removing the three `f₆` products, so this now matches every published form | — (h = 0) |
 | `arb_ramifiedG3_ADD` | `Deg3ADD` typical | **12** → **4** | 8 |
 | `arb_ramifiedG3_DBL` | `Deg3DBL` typical | **16** → **4** | 12 |
 
@@ -174,7 +174,7 @@ prior-work A counts are derived here rather than published by their authors —
 
 | Case | Previous best | Ours | Standing |
 |---|---|---|---|
-| **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | **62 M+S, 3C, 77A** | **ahead on both axes**: 5 better than Nyukai and 8 better than GKP on M+S, 28 fewer additions. PR17 removes the 3 C (the `f₆` products) and puts us on their curve form |
+| **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | **56 M+S, 0C, 59A** | **ahead on both axes, and now on the same curve form**: 11 better than Nyukai and 14 better than GKP on M+S, 46 fewer additions. The `f₆` depression landed, so C is 0 and the comparison is apples-to-apples |
 | **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 61 M+S, 3C, 92A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
 | **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | *none* | **Future work, PR7** |
 | **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | *none* | **Future work, PR8** |
@@ -187,14 +187,13 @@ which is backwards — nch2 is arb specialised to `h = 0` and can only be cheape
 a correct accounting. The cause is scheduling, not mathematics: the efficiency
 findings landed in the arb files first.
 
-**Now vetted and measured**, in [`EFFICIENCY_NCH2_G3.md`](EFFICIENCY_NCH2_G3.md):
-four findings take the nch2 addition to **56 M+S, 0C, 59A** — twelve additions and
-one C below arb at identical M and S. One of the four is the `f₆ = 0` depression,
-after which this row is on the same curve form as every published
-odd-characteristic source and the lane-1 comparison becomes apples-to-apples for
-the first time. **Not yet implemented**, so the table below still shows today's
-figures. Do not quote the nch2 row as this project's best odd-characteristic result
-until it is.
+**Resolved 2026-08-12.** The findings landed: the nch2 addition is now
+**56 M+S, 0C, 59A** — twelve additions and one C below arb at identical M and S, so
+the specialisation is cheaper than the general case again. One of them is the
+`f₆ = 0` depression, so this row is on the same curve form as every published
+odd-characteristic source and the lane-1 comparison is apples-to-apples for the
+first time. `verification/selftest.py` now asserts the child never exceeds its parent
+in any column, so the inversion cannot recur unnoticed.
 
 **C is 0 in every "previous best" cell above** — the published normal forms
 leave no coefficient to multiply by. It is non-zero only for us, and only in the
@@ -305,10 +304,16 @@ Our figures are exact per-branch counts, not ranges or averages — see
 obtained and why an earlier revision of this document had them wrong.
 
 **The headline: this repository is ahead of the published state of the art on
-both axes.** Our frequent-case addition costs **62 M+S (65 counting its 3 C)
-against Nyukai's 67 and GKP's 70**, and **77 additions against the 105 both of
-them cost** — 28 fewer, worth a further ~9M at the thesis's own 1M : 3A rule.
-There is no trade-off to argue about here; it is cheaper in every column.
+both axes, and since 2026-08-12 on the same curve form.** Our frequent-case
+addition costs **56 M+S against Nyukai's 67 and GKP's 70**, with **0 C**, and
+**59 additions against the 105 both of them cost** — 46 fewer, worth a further
+~15M at the thesis's own 1M : 3A rule. There is no trade-off to argue about
+here; it is cheaper in every column.
+
+The `f₆` depression is what makes it a like-for-like comparison rather than an
+approximate one: until it landed, this file implemented a curve form no published
+source uses, so the figures were not strictly comparable in the direction that
+flatters nobody.
 
 An earlier revision of this document reported 77 M+S and 79 A for this row and
 concluded we were "exactly 10 combined M+S behind Nyukai". That figure came
@@ -316,12 +321,12 @@ from a counter that runs a hand-written Python transcription of the formulas
 rather than the formulas themselves, and it over-counts. The row above is
 measured from the Magma source.
 
-The recorded efficiency ledger is therefore upside, not catch-up. Its largest
-item is the f₆ depression, which is exactly the 3 C in the row above: PR17
-removes them, taking this lane to **62 M+S and 0 C** on a curve form that
-finally matches every published baseline. The doubling comparison cannot be
-made until `nch2_ramifiedG3_DBL.mag` exists (merge-plan PR6); the borrowed arb
-DBL pays h-terms this lane's curves do not have, which is why its C is 16.
+The recorded efficiency ledger has since been implemented in full, and it was
+upside rather than catch-up throughout. Its largest single item was the `f₆`
+depression, which was exactly the 3 C this row used to carry. The doubling
+comparison still cannot be made until `nch2_ramifiedG3_DBL.mag` exists
+(merge-plan PR6); the borrowed arb DBL pays h-terms this lane's curves do not
+have.
 
 ---
 

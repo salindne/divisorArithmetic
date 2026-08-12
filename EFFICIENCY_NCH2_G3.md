@@ -1,8 +1,11 @@
 # Efficiency vetting: the odd-characteristic genus-3 ramified addition
 
 A findings report on `g3/ramifiedModel/g3Formulas/nch2_ramifiedG3_ADD.mag`.
-**No formula is changed by this document.** Each finding is located, measured,
-argued for correctness, and left for implementation one commit at a time.
+
+**Implemented 2026-08-12.** The report is kept as the record of how each finding was
+established; every frequent-case figure below was reproduced by the implementation,
+and the two places the implementation learned something the report did not know are
+marked **[ON LANDING]**.
 
 Companion to [`EFFICIENCY_ARB_G3.md`](EFFICIENCY_ARB_G3.md), which did the same
 for the arbitrary-characteristic pair and whose findings are now implemented.
@@ -10,7 +13,20 @@ That matters here: **this file is the arb addition specialised to `h = 0`**, so
 the arb work is not merely a precedent, it is the source this one should have
 been derived from.
 
-## The situation, and why it is backwards
+## Outcome
+
+`Deg3ADD` typical went **58M 4S 77A 3C → 53M 3S 59A 0C**, and the addition is now
+cheaper than the arb it specialises on every shared operation shape — equal M+S,
+strictly fewer additions. `verification/selftest.py` asserts that relationship now,
+so the drift described below cannot recur unnoticed.
+
+**[ON LANDING] Two findings existed only because the others landed first.** Eleven of
+the seventeen disguised squarings are available only once `f₆ = 0` makes the leading
+quotient coefficient a bare negation of a `u1` coefficient — they are not in the list
+below, because they could not be seen from the un-depressed file. A ledger has to be
+re-derived as items land, not replayed.
+
+## The situation, and why it was backwards
 
 The arbitrary formulas received ten efficiency findings. This one received none.
 So the *general* addition is currently cheaper than the *specialised* one, which
