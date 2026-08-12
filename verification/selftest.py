@@ -1133,6 +1133,74 @@ def section_domain(rep, quick):
         rep.ok("domain", "7 mechanisms provoked, all correct")
 
 
+def section_specialisation(rep, quick):
+    """A specialisation may never cost more than the family it specialises.
+
+    PR15 found that the odd-characteristic genus-3 addition had become MORE
+    expensive than the arbitrary-characteristic addition it is a specialisation
+    of -- 62 M+S against 56, and 77 additions against 71. That cannot be right:
+    nch2 is arb with `h = 0` substituted, so it does strictly less work.
+
+    Nothing caught it, and no existing gate could have. Every check in this
+    repository verifies a file against a reference implementation; none compares
+    a specialisation against its PARENT. The drift happened because ten
+    efficiency findings landed in the parent and none in the child, and each was
+    verified against the file it was found in.
+
+    So the relationship is asserted here directly. For every operation shape the
+    two families share, the child's cost must not exceed the parent's in M+S, in
+    A, or in C. M and S individually are allowed to trade -- several of the
+    child's savings turn a multiplication into a squaring -- which is why the
+    multiplicative comparison is on the sum.
+    """
+    import opcount as O                                         # noqa: PLC0415
+    import driver as D                                          # noqa: PLC0415
+
+    PAIRS = [("ramified/g3/nch2", "ramified/g3/arb")]
+
+    fams, _excluded = D.discover_families()
+    by_name = {f.name: f for f in fams}
+    target = 400 if quick else 1500
+
+    for child_name, parent_name in PAIRS:
+        child, parent = by_name.get(child_name), by_name.get(parent_name)
+        if child is None or parent is None:
+            rep.skip("specialisation", "%s or %s not discovered" % (child_name, parent_name))
+            continue
+        field = 31
+        kid, why_kid = O.count_family(child, fams, field, target=target)
+        par, why_par = O.count_family(parent, fams, field, target=target)
+        if kid is None or par is None:
+            rep.skip("specialisation", "not measurable: %s / %s" % (why_kid, why_par))
+            continue
+
+        shared = sorted(set(kid) & set(par))
+        if not shared:
+            rep.fail("specialisation",
+                     "%s and %s share no operation shape" % (child_name, parent_name))
+            continue
+        bad = []
+        for shape in shared:
+            # The child borrows the parent's doubling outright, so those rows are
+            # the same code and carry no information about drift.
+            if shape.endswith("DBL") and child.dbl_path == parent.dbl_path:
+                continue
+            cm, cs, ca, cc, _ci = kid[shape]["modal"]
+            pm, ps, pa, pc, _pi = par[shape]["modal"]
+            for col, cv, pv in (("M+S", cm + cs, pm + ps), ("A", ca, pa), ("C", cc, pc)):
+                if cv > pv:
+                    bad.append("%s %s: child %s %d > parent %d" % (child_name, shape, col, cv, pv))
+        if bad:
+            rep.fail("specialisation", "; ".join(bad[:4]))
+            for b in bad:
+                rep.note("    " + b)
+        else:
+            rep.ok("specialisation",
+                   "%s never exceeds %s on %d shared shape(s)"
+                   % (child_name, parent_name, len(shared)))
+
+
+
 SECTIONS = [
     ("fields", section_fields),
     ("parse", section_parse),
@@ -1147,6 +1215,7 @@ SECTIONS = [
     ("equal_dispatch", section_equal_dispatch),
     ("gate_guards", section_gate_guards),
     ("domain", section_domain),
+    ("specialisation", section_specialisation),
 ]
 
 

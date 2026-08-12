@@ -78,7 +78,7 @@ Highest-degree typical case per family, `M / S / A / C`:
 | **g2 split** nch2 | 26 / 2 / 36 / 0 | 29 / 3 / 39 / 0 | published |
 | **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | published |
 | **g3 ramified** arb | **53 / 3 / 71 / 1** | **57 / 4 / 92 / 3** | measured |
-| **g3 ramified** nch2 | 58 / 4 / 77 / 3 | *borrows arb* | measured |
+| **g3 ramified** nch2 | **53 / 3 / 59 / 0** | *borrows arb* | measured |
 | **g3 split** arb | 65 / 3 / 87 / 12 | 73 / 3 / 101 / 19 | published |
 | **g3 split** nch2 | 65 / 3 / 85 / 0 | 72 / 4 / 97 / 0 | published |
 | **g3 split** ch2 | 65 / 3 / 80 / 0 | 71 / 4 / 86 / 1 | published |
@@ -97,9 +97,11 @@ two methods sharing no code, same answer. That agreement is the evidence for tru
 genus-3 ramified figures, which have no published counterpart at all: the thesis deferred genus-3
 ramified entirely (`chapter6.tex:15`, "ramified models are developed by another student").
 
-The genus-3 ramified **arb** row now beats the thesis's own split Degree-3 rows on M+S, C and A.
-The **nch2** row is *behind its own arb parent*, which is backwards and is being fixed — see
-[Known gaps](#known-gaps-and-roadmap) and [EFFICIENCY_NCH2_G3.md](EFFICIENCY_NCH2_G3.md).
+Both genus-3 ramified rows beat the thesis's own split Degree-3 rows on M+S, C and A. And
+`nch2` is now cheaper than the `arb` it specialises on every shared operation — equal M+S,
+strictly fewer additions — which `verification/selftest.py` asserts rather than assumes, so
+the drift that once let the child overtake its parent cannot recur silently. See
+[EFFICIENCY_NCH2_G3.md](EFFICIENCY_NCH2_G3.md).
 
 See [Operation-count tables](#operation-count-tables) for the counter of record and the one
 known misclassification in it.
@@ -211,7 +213,7 @@ Formula files live in a `g2Formulas/` or `g3Formulas/` subdirectory of each mode
 | token | meaning |
 |---|---|
 | `arb` | arbitrary characteristic, no assumption on the field |
-| `nch2` | characteristic not 2, so `h = 0` |
+| `nch2` | odd characteristic, so `h = 0`, plus the `f` depression its genus allows: genus 2 `f4 = 0` (needs char != 5), genus 3 `f6 = 0` (needs char != 7) |
 | `ch2` | characteristic 2 |
 | `ADD` / `DBL` | divisor addition / doubling |
 | `UTL` | utilities, split model only, for the two places at infinity |
@@ -474,10 +476,6 @@ rests on a structural argument. `diff -r ThesisPublished Thesis` shows the curre
   double.
 - **No whitebox testers for genus 3 ramified.** Its branches are covered by harvested cases at 100%, but
   the two Magma random testers are transitional imports and there is no Magma whitebox tester.
-- **The `nch2` genus-3 addition is behind its own `arb` parent.** The efficiency findings landed in the
-  `arb` files first, so `arb`'s addition is currently *cheaper* than `nch2`'s — which is backwards, since
-  `nch2` is `arb` specialised to `h = 0`. Three measured findings are waiting to transfer. Do not quote
-  the `nch2` row as this project's best odd-characteristic figure until they do.
 - **`verification/opcount.py` cannot measure split families**, so no split-model operation count can be
   quoted from it yet. The split figures in [RELATED_WORK.md](RELATED_WORK.md) come from an external
   harness.

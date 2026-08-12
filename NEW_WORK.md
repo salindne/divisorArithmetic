@@ -55,7 +55,7 @@ restating the detail.
 | N16 | A declared domain was masking a transcription slip, not buying anything | **established**; defect recorded, not yet fixed |
 | N17 | The genus-3 ramified addition now beats the split-model one on M+S, C and A | **implemented**; superseded by N18 |
 | N18 | The doubling trades one multiplication for twenty-two additions; the ledger is closed but for two open items | **implemented**, measured, Magma-verified |
-| N19 | The specialised odd-characteristic addition had fallen behind the general one it specialises | **vetted and measured**; implementation next |
+| N19 | The specialised odd-characteristic addition had fallen behind the general one it specialises | **implemented**; the invariant is now asserted in CI |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -509,11 +509,14 @@ Restructured to the genus-2 shape at the same time: `RandomG3Curve`,
 `RandomG3NotChar2Curve`, `RandomG3Char2Curve`, replacing a `char_type`
 parameter.
 
-**Two places the analogy is deliberately inexact**, recorded in the code rather
-than smoothed over. `RandomG3NotChar2Curve` still draws `f₆`, because the
-genus-3 formulas do not yet apply the depression — dropping it belongs with the
-formula change, or the generator would again be testing a domain the formulas do
-not claim. And `RandomG3Char2Curve` constructs both `f` *and* `h`
+**One place the analogy is deliberately inexact**, recorded in the code rather
+than smoothed over. (There were two: `RandomG3NotChar2Curve` also drew `f₆`,
+because the genus-3 formulas had not yet applied the depression. N19 applied it,
+and the generator stopped drawing the term in the same commit — dropping it any
+earlier would have had the generator testing a domain the formulas did not claim,
+and dropping it any later would have had the formulas claiming a domain the
+generator did not produce. That is now the exact genus-2 analogue.)
+`RandomG3Char2Curve` constructs both `f` *and* `h`
 directly in the characteristic-2 normal form — `h` monic of degree exactly 3 —
 rather than normalising an arbitrary curve into it, so it never samples
 `deg h < 3`: that region has its own normal form and is served by the arb
@@ -697,8 +700,9 @@ count, and the recorded figures had not caught up: the arb addition falls from
 products PR20 had recorded.
 
 **What that does to the standing comparison.** The `nch2` genus-3 addition's
-frequent case is **62 combined M+S, 3C, 77A** — 5 better than Nyukai and 8 better
-than GKP on M+S, with 28 fewer additions. And against the thesis's own
+frequent case was **62 combined M+S, 3C, 77A** at the time of this entry — 5 better
+than Nyukai and 8 better than GKP on M+S, with 28 fewer additions. (N19 later took
+it to **56 M+S, 0C, 59A**; the figures here are this entry's own.) And against the thesis's own
 split-model Degree-3 rows, ramified is now cheaper on **both** multiplications and
 constant multiplications, where the earlier reading had the addition's C as
 "identical". The sanity flag is unchanged and still points at additions.
@@ -1043,8 +1047,9 @@ tree as it actually stood rather than trusted from the report.
 
 ## N19 — The specialised addition had fallen behind the general one
 
-**Status:** vetted and measured, 2026-08-12; implementation is the next PR. Full
-detail in [`EFFICIENCY_NCH2_G3.md`](EFFICIENCY_NCH2_G3.md).
+**Status:** implemented and measured, 2026-08-12, and the invariant it proposes is now
+enforced in `verification/selftest.py`. Full detail in
+[`EFFICIENCY_NCH2_G3.md`](EFFICIENCY_NCH2_G3.md).
 
 **The observation, which is a process result before it is a mathematical one.** The
 odd-characteristic genus-3 addition is the arbitrary-characteristic addition
@@ -1121,7 +1126,13 @@ sentences, one wrong; see [`Thesis/ERRATA.md`](Thesis/ERRATA.md) E-T9.
 **For the paper.** Two transferable points. First, the one above: **a specialisation
 must be re-derived when its parent improves, and the invariant that child ≤ parent in
 every column is worth enforcing mechanically** — the drift here was invisible to
-every per-file gate the project has, and those gates are thorough. Second, that a
+every per-file gate the project has, and those gates are thorough. That invariant is
+now a `selftest.py` section, shown to fire: against the pre-implementation file it
+reports all three columns exceeded. **Two findings existed only because the earlier
+ones landed** — eleven of the seventeen disguised squarings become available only once
+`f₆ = 0` makes the leading quotient coefficient a bare negation — which is the same
+non-independence the doubling ledger showed, and the second reason a ledger has to be
+re-derived rather than replayed. Second, that a
 normal-form assumption is a claim about the *domain*, not about the formulas: the
 depression's cost was three artefacts outside the formula file and zero
 multiplications inside it, and a report that prices only the arithmetic prices the

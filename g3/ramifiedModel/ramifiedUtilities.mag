@@ -106,22 +106,27 @@ end function;
 //         h is 0 and is not returned, as in RandomG2NotChar2Curve (genus-2
 //         utilities).
 //
-//         NOTE the one place this is not yet the exact analogue of genus 2:
-//         the genus-2 RandomG2NotChar2Curve omits the degree-4 term because
-//         nch2 formulas apply the x -> x - f4/5 depression (char != 5). The
-//         genus-3 analogue is x -> x - f6/7 (char != 7), which the nch2
-//         formulas do NOT yet apply -- they still take f6 as a parameter. So f6
-//         is still drawn here. Dropping it belongs with the formula change, not
-//         ahead of it, or the generator would be testing a domain the formulas
-//         do not claim.
+//         This is now the exact analogue of genus 2. The genus-2
+//         RandomG2NotChar2Curve omits the degree-4 term because the nch2
+//         formulas apply the depression x -> x - f4/5, valid when char != 5;
+//         the genus-3 analogue is x -> x - f6/7, valid when char != 7, and the
+//         genus-3 nch2 formulas now apply it. So no x^6 term is drawn, and
+//         f6 is no longer a parameter of those formulas.
+//
+//         char != 7 is necessary, not conservative: over GF(7) the x^7 term
+//         contributes -7c*x^6 = 0, so the degree-6 coefficient is invariant
+//         under every translation and cannot be cleared. GF(7) curves with
+//         f6 = 0 are still legitimate inputs -- they are simply the ones
+//         already in the form -- so the odd-characteristic test fields are
+//         unchanged.
 //-----------------------------------------------------------------------------
 RandomG3NotChar2Curve := function(q)
     assert IsPrimePower(q);
     F:=GF(q);
     R<x>:=PolynomialRing(F);
     while true do
-        //Randomly generate f
-        f:= x^7 + Random(F)*x^6 + Random(F)*x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
+        //Randomly generate f, with no x^6 term: the nch2 formulas assume f6 = 0
+        f:= x^7 + Random(F)*x^5 + Random(F)*x^4 + Random(F)*x^3 + Random(F)*x^2 + Random(F)*x + Random(F);
 
         //Check if f is hyperelliptic polynomial for a curve
         try
