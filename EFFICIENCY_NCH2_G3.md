@@ -13,6 +13,14 @@ That matters here: **this file is the arb addition specialised to `h = 0`**, so
 the arb work is not merely a precedent, it is the source this one should have
 been derived from.
 
+> **Identifier note, 2026-08-12.** PR21 renamed the divisor coordinates to house
+> style, so the names quoted throughout this document are the pre-rename ones. They
+> are left as written, because a findings report is a record of what the code looked
+> like when the finding was made. Translate with:
+> `u1_i → u<i>`, `u2_i → up<i>`, `un<i> → upp<i>`, `v1_i → v<i>`, `v2_i → vp<i>`,
+> `vn<i> → vpp<i>`, and `t1_i`/`hv<i> → vh<i>`. The polynomials `u1`/`u2`/`v1`/`v2`
+> became `u`/`up`/`v`/`vp`.
+
 ## Outcome
 
 `Deg3ADD` typical went **58M 4S 77A 3C → 53M 3S 59A 0C**, and the addition is now

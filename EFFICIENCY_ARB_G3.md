@@ -9,6 +9,14 @@ bisectable.
 Companion to [RELATED_WORK.md](RELATED_WORK.md), which establishes what the
 published state of the art costs and what these files cost today.
 
+> **Identifier note, 2026-08-12.** PR21 renamed the divisor coordinates to house
+> style, so the names quoted throughout this document are the pre-rename ones. They
+> are left as written, because a findings report is a record of what the code looked
+> like when the finding was made. Translate with:
+> `u1_i → u<i>`, `u2_i → up<i>`, `un<i> → upp<i>`, `v1_i → v<i>`, `v2_i → vp<i>`,
+> `vn<i> → vpp<i>`, and `t1_i`/`hv<i> → vh<i>`. The polynomials `u1`/`u2`/`v1`/`v2`
+> became `u`/`up`/`v`/`vp`.
+
 ## Re-vetted and fully implemented, 2026-08-10 and 2026-08-11
 
 **Every finding in this document held.** Two things about *this document* did not,
