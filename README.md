@@ -6,7 +6,7 @@ and table-generation machinery behind them.
 Sebastian Lindner. Companion code to *Explicit Formulas for Hyperelliptic Curve Arithmetic* (University
 of Calgary, 2020), built as `ucalgary_2020_lindner_sebastian.pdf` in this directory.
 
-**Last updated:** 2026-08-11.
+**Last updated:** 2026-08-12.
 
 | model | genus 2 | genus 3 |
 |---|---|---|
@@ -61,22 +61,48 @@ gate reporting a clean pass. For those files the gates that bite are the differe
 `UTL` branches are instrumented at genus 3 only; the eight genus-2 split testers set
 `UTL_DEBUG := false`.
 
-**Operation counts** are measured by executing the formulas over a real field —
-`python3 verification/opcount.py --family ramified/g3/arb`. Frequent case, genus-3 ramified arbitrary:
+**Operation counts.** Every operation costs exactly one inversion, so `I` is omitted below.
+"Typical" means the non-degenerate path: trivial gcd, `deg s = 2`, a full-degree result. The
+condition differs per operation — coprime input supports for an addition, no ramification
+point in the support for a doubling — but the role is the same, and it is the case published
+tables price.
 
-| operation | M | S | A | C | I |
-|---|---|---|---|---|---|
-| `Deg3ADD`, typical | 53 | 3 | 71 | 1 | 1 |
-| `Deg3DBL`, typical | 57 | 4 | 92 | 3 | 1 |
+Highest-degree typical case per family, `M / S / A / C`:
 
-"Typical" throughout means the non-degenerate path: trivial gcd, `deg s = 2`, a
-full-degree result, one inversion. The conditions differ per operation — coprime input
-supports for an addition, no ramification point in the support for a doubling — but the
-role is the same, and it is the case the published tables price.
+| family | addition | doubling | source |
+|---|---|---|---|
+| **g2 ramified** arb | 21 / 2 / 31 / 0 | 22 / 4 / 42 / 2 | measured |
+| **g2 ramified** nch2 | 21 / 2 / 23 / 0 | 21 / 5 / 25 / 0 | measured |
+| **g2 ramified** ch2 | 20 / 3 / 26 / 0 | 21 / 4 / 24 / 0 | measured |
+| **g2 split** arb | 27 / 1 / 37 / 3 | 30 / 2 / 44 / 8 | published |
+| **g2 split** nch2 | 26 / 2 / 36 / 0 | 29 / 3 / 39 / 0 | published |
+| **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | published |
+| **g3 ramified** arb | **53 / 3 / 71 / 1** | **57 / 4 / 92 / 3** | measured |
+| **g3 ramified** nch2 | 58 / 4 / 77 / 3 | *borrows arb* | measured |
+| **g3 split** arb | 65 / 3 / 87 / 12 | 73 / 3 / 101 / 19 | published |
+| **g3 split** nch2 | 65 / 3 / 85 / 0 | 72 / 4 / 97 / 0 | published |
+| **g3 split** ch2 | 65 / 3 / 80 / 0 | 71 / 4 / 86 / 1 | published |
 
-Both now beat the thesis's own split-model Degree-3 rows on M+S, C and A. See
-[Operation-count tables](#operation-count-tables) for the counter of record and the one known
-misclassification in it.
+**Two sources, because only one is reproducible here.** *Measured* rows come from
+`python3 verification/opcount.py --family <name>`, which executes the formulas over a real
+field and identifies the frequent case by observing which branch is taken. *Published* rows
+are read from the thesis — `tab:splitfcosts` and `tab:g3splitfcosts{ADD,DBL}` — because
+**the counter cannot measure split families yet** and refuses rather than guessing. Until it
+can, no split figure here is independently checked.
+
+**Where both exist, they agree exactly.** The genus-2 ramified rows are measured, and they match
+`tab:ramfcosts` cell for cell across **all three** characteristic columns — arbitrary, char != 2
+and char = 2 — including the lower-degree rows not shown here. Execution against static counting,
+two methods sharing no code, same answer. That agreement is the evidence for trusting the measured
+genus-3 ramified figures, which have no published counterpart at all: the thesis deferred genus-3
+ramified entirely (`chapter6.tex:15`, "ramified models are developed by another student").
+
+The genus-3 ramified **arb** row now beats the thesis's own split Degree-3 rows on M+S, C and A.
+The **nch2** row is *behind its own arb parent*, which is backwards and is being fixed — see
+[Known gaps](#known-gaps-and-roadmap) and [EFFICIENCY_NCH2_G3.md](EFFICIENCY_NCH2_G3.md).
+
+See [Operation-count tables](#operation-count-tables) for the counter of record and the one
+known misclassification in it.
 
 **Not currently runnable:** `latexTables/latexConverter.py`, whose input paths are stale. It has been
 demoted to a LaTeX renderer — counting moved to `verification/opcount.py` — so the committed `.tex`
