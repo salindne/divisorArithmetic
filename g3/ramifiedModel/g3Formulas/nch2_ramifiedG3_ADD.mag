@@ -2,10 +2,20 @@
 // Author: Amir Abbas Asgari, based on the initial version by Randall Apperley
 //                                                   
 // Description: Explicit divisor addition formulas for the 4 coordinate Mumford
-//              representation over fields of characteristic not 2, where h(x) = 0
-//              (all h_i coefficients vanish from the formulas) and:
+//              representation over fields of characteristic neither 2 nor 7,
+//              where h(x) = 0 (all h_i coefficients vanish from the formulas)
+//              and f is depressed:
 //
-//              f(x) = x^7 + f6x^6 + f5x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0
+//              f(x) = x^7 + f5x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0
+//
+// Characteristic: not 2, so completing the square gives h = 0; and not 7, so the
+//              translation x -> x - f6/7 gives f6 = 0. Both are needed and both
+//              are necessary rather than conservative: at char 7 the x^7 term
+//              contributes -7c*x^6 = 0, so the degree-6 coefficient is invariant
+//              under every translation and cannot be cleared. This is the curve
+//              form every published odd-characteristic genus-3 count assumes
+//              (Kuroki, Gonda, Guyot, Nyukai, Fan-Wollinger-Gong), so counts
+//              from this file are directly comparable with theirs.
 //
 // Precondition: the Deg* cases below assume D1 != D2 (the thesis Require
 //               clause). The ADD dispatcher routes D1 = D2 to DBL, so callers
@@ -13,7 +23,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //Must keep next line in this format for latex conversion
-//Constant: f6,f5,f4,f3,f2,f1,f0
+//Constant: f5,f4,f3,f2,f1,f0
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -101,14 +111,14 @@ end function;
 // Deg12ADD():
 // Input: u1_1..v1_0: Mumford coordinates for degree 2 divisor D1 (deg 2 first)
 //        u2_0, v2_0: Mumford coordinates for degree 1 divisor D2
-//        f6..f2:     curve coefficients
+//        f5..f2:     curve coefficients
 //
 // Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of a degree two and a
 //              degree one divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2)
+Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f5, f4, f3, f2)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
@@ -118,7 +128,7 @@ Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2)
     //f0 is not an argument (nor is f1): at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
-    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
+    f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
     //h = 0 in this class
     u1 := x^2 + u1_1*x + u1_0;
     v1 := v1_1*x + R!v1_0;
@@ -205,7 +215,7 @@ Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2)
 
         // w1 = (f - v1*h - v1^2)/u1
         //w1_5:= 1;
-        w1_4:= f6 - u1_1;
+        w1_4:= -u1_1;
 		ta:= u1_1*w1_4;
         w1_3:= f5 - u1_0 - ta;
 		tb:= u1_0*w1_3;
@@ -272,14 +282,14 @@ end function;
 // Deg22ADD():
 // Input: u1_1..v1_0: Mumford coordinates for degree 2 divisor D1
 //        u2_1..v2_0: Mumford coordinates for degree 2 divisor D2
-//        f6..f2:     curve coefficients
+//        f5..f2:     curve coefficients
 //
 // Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of two degree two
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, f3, f2)
+Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, f2)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
@@ -289,7 +299,7 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, 
     //f0 is not an argument (nor is f1): at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
-    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
+    f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
     //h = 0 in this class
     u1 := x^2 + u1_1*x + u1_0;
     v1 := v1_1*x + R!v1_0;
@@ -390,7 +400,7 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, 
 
 			// w1 = (f - v1*h - v1^2)/u1
 			//w1_5:= 1;
-			w1_4:= f6 - u1_1;
+			w1_4:= -u1_1;
 			ta:= u1_1*w1_4;
 			w1_3:= f5 - u1_0 - ta;
 			tb:= u1_0*w1_3;
@@ -503,7 +513,7 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, 
 
         // w1 = (f - v1*h - v1^2)/u1
         //w1_5:= 1;
-        w1_4:= f6 - u1_1;
+        w1_4:= -u1_1;
 		ta:= u1_1*w1_4;
         w1_3:= f5 - u1_0 - ta;
 		tb:= u1_0*w1_3;
@@ -592,7 +602,7 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, 
 
     // w1 = (f - v1*h - v1^2)/u1
     //w1_5:= 1;
-    w1_4:= f6 - u1_1;
+    w1_4:= -u1_1;
     w1_3:= f5 - u1_0 - u1_1*w1_4;
     w1_2:= f4 - u1_0*w1_4 - u1_1*w1_3;
 
@@ -635,14 +645,14 @@ end function;
 // Deg13ADD():
 // Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1 (deg 3 first)
 //        u2_0, v2_0: Mumford coordinates for degree 1 divisor D2
-//        f6..f1:     curve coefficients
+//        f5..f1:     curve coefficients
 //
 // Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of a degree three and a
 //              degree one divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, f1)
+Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f5, f4, f3, f2, f1)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
@@ -652,7 +662,7 @@ Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, 
     //f0 is not an argument: at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
-    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
+    f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     //h = 0 in this class
     u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
     v1 := v1_2*x^2 + v1_1*x + v1_0;
@@ -743,7 +753,7 @@ Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, 
 
         // w1 = (f - v1*h - v1^2)/u1
         //w1_4:= 1;
-        w1_3:= f6 - u1_2;
+        w1_3:= -u1_2;
 		ta:= u1_2*w1_3;
         w1_2:= f5 - u1_1 - ta;
 		tb:= u1_1*w1_2;
@@ -784,7 +794,7 @@ Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, 
 
     // w1 = (f - v1*h - v1^2)/u1
     //w1_4:= 1;
-    w1_3:= f6 - u1_2;
+    w1_3:= -u1_2;
     w1_2:= f5 - u1_1 - u1_2*w1_3;
     w1_1:= f4 - u1_0 - v1_2*t1_1 - u1_1*w1_3 - u1_2*w1_2;
 
@@ -815,14 +825,14 @@ end function;
 // Deg23ADD():
 // Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1 (deg 3 first)
 //        u2_1..v2_0: Mumford coordinates for degree 2 divisor D2
-//        f6..f1:     curve coefficients
+//        f5..f1:     curve coefficients
 //
 // Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of a degree three and a
 //              degree two divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, f3, f2, f1)
+Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, f2, f1)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
@@ -832,7 +842,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
     //f0 is not an argument: at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
-    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
+    f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     //h = 0 in this class
     u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
     v1 := v1_2*x^2 + v1_1*x + v1_0;
@@ -950,7 +960,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
 
 			// w1 = (f - v1*h - v1^2)/u1
 			//w1_4:= 1;
-			w1_3:= f6 - u1_2;
+			w1_3:= -u1_2;
 			ta:= u1_2*w1_3;
 			w1_2:= f5 - u1_1 - ta;
 			tb:= u1_1*w1_2;
@@ -1150,7 +1160,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
 
 		// w1 = (f - v1*h - v1^2)/u1
 		//w1_4:= 1;
-		w1_3:= f6 - u1_2;
+		w1_3:= -u1_2;
 		ta:= u1_2*w1_3;
 		w1_2:= f5 - u1_1 - ta;
 		tb:= u1_1*w1_2;
@@ -1253,7 +1263,7 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
 
     // w1 = (f - v1*h - v1^2)/u1
     //w1_4:= 1;
-    w1_3:= f6 - u1_2;
+    w1_3:= -u1_2;
     w1_2:= f5 - u1_1 - u1_2*w1_3;
 
     // vp = v2 - v1 mod u2
@@ -1335,14 +1345,14 @@ end function;
 // Deg3ADD():
 // Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1
 //        u2_2..v2_0: Mumford coordinates for degree 3 divisor D2
-//        f6..f1:     curve coefficients
+//        f5..f1:     curve coefficients
 //
 // Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of two degree three
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v2_1, v2_0, f6, f5, f4, f3, f2, f1)
+Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v2_1, v2_0, f5, f4, f3, f2, f1)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
@@ -1352,7 +1362,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
     //f0 is not an argument: at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
-    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
+    f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     //h = 0 in this class
     u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
     v1 := v1_2*x^2 + v1_1*x + v1_0;
@@ -1484,7 +1494,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
 			// w1 = (f - v1*h - v1^2)/u1
 			//w1_4:= 1;
-			w1_3:= f6 - u1_2;
+			w1_3:= -u1_2;
 			ta:= u1_2*w1_3;
 			w1_2:= f5 - u1_1 - ta;
 			tb:= u1_1*w1_2;
@@ -1680,7 +1690,7 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
 			// w1 = (f - v1*h - v1^2)/u1
 			//w1_4:= 1;
-			w1_3:= f6 - u1_2;
+			w1_3:= -u1_2;
 			ta:= u1_2*w1_3;
 			w1_2:= f5 - u1_1 - ta;
 			tb:= u1_1*w1_2;
@@ -1985,9 +1995,9 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
             // w1 = (f - v1*h - v1^2)/u1
             //w1_4:= 1;
-            w1_3:= f6 - u1_2;
-            w1_2:= f5 - u1_1 - f6*u1_2 + u1_2^2;
-            w1_1:= f4 - u1_0 - f6*u1_1 - v1_2^2 - u1_2*(w1_2 - u1_1);
+            w1_3:= -u1_2;
+            w1_2:= f5 - u1_1 + u1_2^2;
+            w1_1:= f4 - u1_0 - v1_2^2 - u1_2*(w1_2 - u1_1);
 
             // wi = 1/e1, dm = e/e1
             wi:= 1/e1;         	// 1/(e1*d2^2)
@@ -2057,10 +2067,10 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
         // w1 = (f - v1*h - v1^2)/u1
         //w1_4:= 1;
-        w1_3:= f6 - u1_2;
-        w1_2:= f5 - u1_1 - f6*u1_2 + u1_2^2;
-        w1_1:= f4 - u1_0 - f6*u1_1 - v1_2^2 - u1_2*(w1_2 - u1_1);                      // no karatsuba, use u1_2 multiplication
-        w1_0:= f3 - f6*u1_0 - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*(2*v1_1);
+        w1_3:= -u1_2;
+        w1_2:= f5 - u1_1 + u1_2^2;
+        w1_1:= f4 - u1_0 - v1_2^2 - u1_2*(w1_2 - u1_1);                      // no karatsuba, use u1_2 multiplication
+        w1_0:= f3 - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*(2*v1_1);
 
         // vt = v2 - v1
         vt2:= v2_2 - v1_2;
@@ -2229,10 +2239,10 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
     // w1 = (f - v1*h - v1^2)/u1
     //w1_4:= 1;
-    w1_3:= f6 - u1_2;
-    w1_2:= f5 - u1_1 - f6*u1_2 + u1_2^2;
-    w1_1:= f4 - u1_0 - f6*u1_1 - v1_2^2 - u1_2*(w1_2 - u1_1);                      // no karatsuba, use u1_2 multiplication
-    w1_0:= f3 - f6*u1_0 - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*2*v1_1;
+    w1_3:= -u1_2;
+    w1_2:= f5 - u1_1 + u1_2^2;
+    w1_1:= f4 - u1_0 - v1_2^2 - u1_2*(w1_2 - u1_1);                      // no karatsuba, use u1_2 multiplication
+    w1_0:= f3 - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*2*v1_1;
 
     //vt = v1 - v2
     vt2:= v2_2 - v1_2;
@@ -2395,7 +2405,7 @@ ADD:= function(D1, D2, f)//startIGNORE
 
     end if;
 
-    f7:= Coeff(f, 7); f6:= Coeff(f, 6); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
+    f7:= Coeff(f, 7); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
 
     u1_3:= Coeff(u1,3); u1_2:= Coeff(u1,2); u1_1:= Coeff(u1,1); u1_0:= Coeff(u1,0);
     v1_2:= Coeff(v1,2); v1_1:= Coeff(v1,1); v1_0:= Coeff(v1,0);
@@ -2405,13 +2415,13 @@ ADD:= function(D1, D2, f)//startIGNORE
 
     if (u1_3 ne 0) then
         if (u2_3 ne 0) then
-            return Deg3ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v2_1, v2_0, f6, f5, f4, f3, f2, f1);
+            return Deg3ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v2_1, v2_0, f5, f4, f3, f2, f1);
 
         elif (u2_2 ne 0) then
-            return Deg23ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, f3, f2, f1);
+            return Deg23ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, f2, f1);
 
         elif (u2_1 ne 0) then
-            return Deg13ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2, f1);
+            return Deg13ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f5, f4, f3, f2, f1);
 
         else
 			return u1_3, u1_2, u1_1, u1_0, v1_2, v1_1, v1_0;
@@ -2420,10 +2430,10 @@ ADD:= function(D1, D2, f)//startIGNORE
 
     elif (u1_2 ne 0) then
         if (u2_2 ne 0) then
-            return Deg22ADD(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f6, f5, f4, f3, f2);
+            return Deg22ADD(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, f2);
 
         elif (u2_1 ne 0) then
-            return Deg12ADD(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f6, f5, f4, f3, f2);
+            return Deg12ADD(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f5, f4, f3, f2);
             
         else
             return u1_3, u1_2, u1_1, u1_0, v1_2, v1_1, v1_0;
