@@ -752,11 +752,8 @@ Deg3DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h
 	w2:= det*w1;            // 1/(det*s2)
 	wi:= det*w2;            // 1/s2
 	
-	s0_monic:= sp0*w2;      // (s0*det)/(s2*det) = s0/s2
-	s1_monic:= sp1*w2;      // (s1*det)/(s2*det) = s1/s2
-	
-	sm0:= s0_monic;
-	sm1:= s1_monic;
+	sm0:= sp0*w2;      // (s0*det)/(s2*det) = s0/s2
+	sm1:= sp1*w2;      // (s1*det)/(s2*det) = s1/s2
 	
 	s2:= (sp2^2)*w1;        // ((s2*det)^2)/((det^2)*s2)) = s2^2/s2 = s2
 
