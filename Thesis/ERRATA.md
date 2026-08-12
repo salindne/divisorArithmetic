@@ -22,7 +22,7 @@ that is stated plainly rather than left to the reader to assume.
 | | |
 |---|---|
 | files differing | **3** (`chapter4.tex`, `chapter5.tex`, `chapter6.tex`) |
-| entries | **8** (E-T1 … E-T8) |
+| entries | **9** (E-T1 … E-T9) |
 | published state | commit `399c817` |
 
 ---
@@ -298,3 +298,48 @@ contradictory notations in one document.** Two smaller faults inside the
 generated tables themselves: `split_ADD.tex:26` labels the result `D''` but
 writes single-primed coefficients, and `split_*.tex` orders coordinates
 low-to-high where `ram_*.tex` orders them high-to-low.
+
+## E-T9 — the odd-characteristic counts DO assume `f4 = 0`
+
+**`chapter5.tex:86-87`.** Found 2026-08-12 while vetting the genus-3 odd-characteristic
+addition, and provable from the shipped code rather than argued.
+
+**As published:**
+
+> Operation counts in Section~\ref{sec:ramFieldCosts} assume $h = 0$ whenever
+> char($k) \neq 2$, but make no assumption about $f_4$.
+
+**The second clause is false.** The genus-2 odd-characteristic addition assumes `f4 = 0`
+throughout, three ways over:
+
+| evidence | value |
+|---|---|
+| occurrences of `f4` in `g2/ramifiedModel/g2Formulas/nch2_ramifiedG2_ADD.mag` | **zero** |
+| its banner | `f(x) = x^5 + f3x^3 + f2x^2 + f1x + f0` |
+| its `//Constant:` directive | `f3,f2,f1` |
+
+So the file implements the depressed form the *preceding two sentences* of the same
+paragraph derive — `x -> x - f4/5`, valid when the characteristic is also not five — and
+the counts in `tab:ramfcosts` are counts of that code. The sentence contradicts its own
+table.
+
+**Corrected to:** "...assume $h = 0$ whenever char($k) \neq 2$, and additionally assume
+$f_4 = 0$ whenever the characteristic is also not five."
+
+**`chapter5.tex:1167` says the same thing about `f_5` and is TRUE — do not touch it.**
+That sentence is about the genus-2 *split* model, whose odd-characteristic formulas really
+do keep `f5` live: `g2/splitModel/negReduced/g2Formulas/nch2_splitG2_UTL.mag:32` reads
+`f5:= Coeff(f,5);`. The two sentences look identical and only one is wrong, which is
+presumably how this survived.
+
+**Why it matters beyond the sentence.** It is the same omission at genus 3, where the
+odd-characteristic file has kept `f6` live and so implements a curve form **no published
+source uses** — every odd-characteristic genus-3 count in the literature assumes
+`f6 = 0`. Correcting the genus-2 sentence and depressing the genus-3 file are the same
+fix at two genera; see [`../EFFICIENCY_NCH2_G3.md`](../EFFICIENCY_NCH2_G3.md).
+
+**Affects:** the prose only. No table cell moves — `tab:ramfcosts` was always generated
+from the `f4`-free code, which is why the contradiction is with the sentence and not with
+the numbers.
+
+---

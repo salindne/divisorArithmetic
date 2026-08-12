@@ -55,6 +55,7 @@ restating the detail.
 | N16 | A declared domain was masking a transcription slip, not buying anything | **established**; defect recorded, not yet fixed |
 | N17 | The genus-3 ramified addition now beats the split-model one on M+S, C and A | **implemented**; superseded by N18 |
 | N18 | The doubling trades one multiplication for twenty-two additions; the ledger is closed but for two open items | **implemented**, measured, Magma-verified |
+| N19 | The specialised odd-characteristic addition had fallen behind the general one it specialises | **vetted and measured**; implementation next |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -780,7 +781,7 @@ split-model Degree-3 row, which is what N11's vetting set out to explain.
 
 | | before | after |
 |---|---|---|
-| `Deg3ADD` generic | 59M 4S 95A 4C | **54M 3S 74A 1C** |
+| `Deg3ADD` typical | 59M 4S 95A 4C | **54M 3S 74A 1C** |
 | `Deg3DBL` typical | 55M 5S 114A 4C | **55M 5S 111A 4C** |
 | split Degree-3 ADD, for comparison | 65M 3S 87A 12C | — |
 
@@ -881,7 +882,7 @@ transferable thing here.
 
 | | pre-PR16 | now |
 |---|---|---|
-| `Deg3ADD` generic | 59M 4S 95A 4C | **53M 3S 71A 1C** |
+| `Deg3ADD` typical | 59M 4S 95A 4C | **53M 3S 71A 1C** |
 | `Deg3DBL` typical | 55M 5S 114A 4C | **57M 4S 92A 3C** |
 
 The doubling is the interesting one. **Twenty-two additions came off and one
@@ -1040,6 +1041,94 @@ tree as it actually stood rather than trusted from the report.
 
 ---
 
+## N19 — The specialised addition had fallen behind the general one
+
+**Status:** vetted and measured, 2026-08-12; implementation is the next PR. Full
+detail in [`EFFICIENCY_NCH2_G3.md`](EFFICIENCY_NCH2_G3.md).
+
+**The observation, which is a process result before it is a mathematical one.** The
+odd-characteristic genus-3 addition is the arbitrary-characteristic addition
+specialised to `h = 0`. Ten efficiency findings landed in the general file; none
+landed in the specialised one. So for a while the repository shipped a *general*
+addition cheaper than its own *specialisation* — 56 M+S, 1C, 71A against
+62 M+S, 3C, 77A — which cannot be right on any correct accounting, since the
+specialisation does strictly less work.
+
+**Nobody had looked, because there was no reason to.** Each finding was verified
+against the file it was found in. What no per-file gate can see is that a
+specialisation and its parent have drifted apart, and this project has no check for
+that relationship at all. **A specialisation hierarchy needs an invariant, not just
+per-file tests:** the child may never cost more than the parent in any column. That
+is mechanically checkable from `opcount.py` and is not checked today.
+
+**What the drift was made of.** Measured composite, four findings:
+
+| step | `Deg3ADD` typical |
+|---|---|
+| before | 58M 4S 77A 3C |
+| after | **53M 3S 59A 0C** |
+
+Three are the direct twins of findings already landed in the parent — dead quotient
+coefficients, a `vn` tail written three inequivalent times, and two temporaries
+formed before the only branch that reads them. The fourth is the `f6 = 0`
+depression, which had never been applied.
+
+**The depression is the interesting one, and its value is not arithmetic.** Every
+published odd-characteristic genus-3 source — Kuroki, Gonda, Guyot, Nyukai,
+Fan–Wollinger–Gong — assumes `f₆ = 0`. Keeping it live meant this repository was
+implementing a curve form **nobody in the literature uses**, so its counts were not
+comparable in the direction that flatters nobody. After the depression the
+comparison is apples-to-apples for the first time: **56 M+S and 59A against
+Nyukai's 67 and 105.**
+
+And the audit's recorded cost for it was wrong in a way worth recording. It said
+`8M + 22A`. All eight products are `f₆·u₁ᵢ` — a coefficient the file itself declares
+constant times a variable — so they are C, honestly, being multiplications by a
+quantity fixed once per curve. **The depression removes zero multiplications.** It is
+`22A + 8C` static, `4A + 3C` on the frequent case. A finding whose headline is
+"comparability" and not "operations saved" is harder to sell and is what the evidence
+supports.
+
+**The blast radius is the work, and it does not live in the formula file.** Three
+things must move in the same commit, each established by making the gate fail:
+
+- the curve generator still draws an `x⁶` term — leaving it produced **25,477 Magma
+  error lines** over 60 trials;
+- the dispatcher still extracts `Coeff(f,6)`, and the test harness derives the tested
+  domain *by contrast* with the general file's dispatcher, so while that line is
+  there the harness keeps generating `f₆ ≠ 0` curves and reports **110 mismatches**;
+- two of the thirty frozen corpus records sit on `f₆ = 1` curves.
+
+**A depression is therefore not a formula edit.** It is a change of domain, and every
+artefact that generates or freezes an input to those formulas encodes the old domain
+somewhere. The formula file is the smallest part of it.
+
+**Four assumptions were tested and refuted**, so the budget is closed: the leftover
+α-scaling buys nothing once `h = 0`, `f₅ = 0` is not reachable, an alternative
+allocation of the normalisation budget loses, and there is no halving site to exploit
+in `char ≠ 2`. No published source takes a third assumption either. `h = 0` and
+`f₆ = 0` is the whole of it — which is itself worth stating, since it closes a
+question rather than leaving it open.
+
+**And a thesis erratum falls out with a proof.** `chapter5.tex` claimed the
+odd-characteristic counts "make no assumption about `f₄`". The genus-2 file contains
+**zero** occurrences of `f₄`, its banner omits the term, and its constant directive
+omits it — so the counts do assume it, and the sentence contradicts the table two
+paragraphs later. The neighbouring sentence saying the same of `f₅` is **true**,
+because the genus-2 *split* formulas really do keep `f₅` live. Two near-identical
+sentences, one wrong; see [`Thesis/ERRATA.md`](Thesis/ERRATA.md) E-T9.
+
+**For the paper.** Two transferable points. First, the one above: **a specialisation
+must be re-derived when its parent improves, and the invariant that child ≤ parent in
+every column is worth enforcing mechanically** — the drift here was invisible to
+every per-file gate the project has, and those gates are thorough. Second, that a
+normal-form assumption is a claim about the *domain*, not about the formulas: the
+depression's cost was three artefacts outside the formula file and zero
+multiplications inside it, and a report that prices only the arithmetic prices the
+easy part.
+
+---
+
 # Part IV — The comparison with prior work
 
 Full detail in [`RELATED_WORK.md`](RELATED_WORK.md). The three results below are
@@ -1130,9 +1219,9 @@ Corrected frequent-case baseline, source-level, with C split per the committed
 
 | function | M | S | A | C | I | M+S |
 |---|---|---|---|---|---|---|
-| arb `Deg3ADD` generic | 60 | 4 | 95 | 12 | 1 | 64 |
+| arb `Deg3ADD` typical | 60 | 4 | 95 | 12 | 1 | 64 |
 | arb `Deg3DBL` typical | 56 | 5 | 114 | 16 | 1 | 61 |
-| nch2 `Deg3ADD` generic | 59 | 4 | 77 | 3 | 1 | 63 |
+| nch2 `Deg3ADD` typical | 59 | 4 | 77 | 3 | 1 | 63 |
 
 **Both comparisons invert.** Against published work we are ahead on both axes.
 Against the thesis's own *split* rows, ramified is cheaper on multiplications in

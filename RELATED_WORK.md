@@ -100,8 +100,8 @@ frequent-case counts:
 
 | file | function | C | of which `h₃` products |
 |---|---|---|---|
-| `nch2_ramifiedG3_ADD` | `Deg3ADD` generic | **3** — precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form | — (h = 0) |
-| `arb_ramifiedG3_ADD` | `Deg3ADD` generic | **12** → **4** | 8 |
+| `nch2_ramifiedG3_ADD` | `Deg3ADD` typical | **3** — precisely the `f₆` products, so PR17's depression takes this to **0**, matching every published form | — (h = 0) |
+| `arb_ramifiedG3_ADD` | `Deg3ADD` typical | **12** → **4** | 8 |
 | `arb_ramifiedG3_DBL` | `Deg3DBL` typical | **16** → **4** | 12 |
 
 The arrow is the `h₃ ∈ {0,1}` convention: both arb files declare it in their
@@ -181,14 +181,20 @@ prior-work A counts are derived here rather than published by their authors —
 | **arb ADD** | **none** | **56 M+S, 1C, 71A** | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD (68 M+S, 12C, 87A): **12 better on M+S, 11 better on C, 16 better on A**, and a tie on S alone (3 vs 3) |
 | **arb DBL** | **none** | **61 M+S, 3C, 92A** | As above. Against split Degree-3 DBL (76 M+S, 19C, 101A): **better on M+S, C and A; one squaring worse on S alone** |
 
-**A temporary inversion worth knowing about, 2026-08-11.** The arb addition
+**A temporary inversion worth knowing about, updated 2026-08-12.** The arb addition
 (56 M+S, 1C, 71A) is currently *cheaper than the nch2 addition* (62 M+S, 3C, 77A),
 which is backwards — nch2 is arb specialised to `h = 0` and can only be cheaper on
-a correct accounting. The cause is scheduling, not mathematics: PR16 applied the
-efficiency findings to the arb files, and the identical findings in the nch2
-addition are PR15/PR17's. Two of them are measured and waiting — the dead quotient
-coefficients (−4M −1S −11A) and the `vn`-tail port (−1M −3A). Do not quote the nch2
-row as this project's best odd-characteristic figure until PR17 lands.
+a correct accounting. The cause is scheduling, not mathematics: the efficiency
+findings landed in the arb files first.
+
+**Now vetted and measured**, in [`EFFICIENCY_NCH2_G3.md`](EFFICIENCY_NCH2_G3.md):
+four findings take the nch2 addition to **56 M+S, 0C, 59A** — twelve additions and
+one C below arb at identical M and S. One of the four is the `f₆ = 0` depression,
+after which this row is on the same curve form as every published
+odd-characteristic source and the lane-1 comparison becomes apples-to-apples for
+the first time. **Not yet implemented**, so the table below still shows today's
+figures. Do not quote the nch2 row as this project's best odd-characteristic result
+until it is.
 
 **C is 0 in every "previous best" cell above** — the published normal forms
 leave no coefficient to multiply by. It is non-zero only for us, and only in the
@@ -433,7 +439,7 @@ frequency:
 
 | Operation | M | S | A | C | I | M+S |
 |---|---|---|---|---|---|---|
-| `arb` ADD, `Deg3ADD` generic | 53 | 3 | 71 | 1 | 1 | **56** |
+| `arb` ADD, `Deg3ADD` typical | 53 | 3 | 71 | 1 | 1 | **56** |
 | `arb` DBL, `Deg3DBL` typical | 57 | 4 | 92 | 3 | 1 | **61** |
 
 **One caveat on the doubling row, `ERRATA.md` E13.** The counter charges `2*f6*u1_0`
