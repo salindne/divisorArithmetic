@@ -78,15 +78,15 @@ for F in FIELDS do
         if DEBUG then
           "Divisor D1 is: ", D1;
         end if;
-        u1:= D1[1];
-        v1:= D1[2];
+        u:= D1[1];
+        v:= D1[2];
 
         D2:= Random(Jac);
         if DEBUG then
           "Divisor D2 is: ", D2;
         end if;
-        u2:= D2[1];
-        v2:= D2[2];
+        up:= D2[1];
+        vp:= D2[2];
 
 
         /////////////////////////////////////////////////////
@@ -106,14 +106,14 @@ for F in FIELDS do
             ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
             va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
 
-            un3, un2, un1, un0, vn2, vn1, vn0 := DBL(D1, f, h);
+            upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := DBL(D1, f, h);
 
-            if ((cantor[1] ne un3*x^3 + un2*x^2 + un1*x + un0) or (cantor[2] ne vn2*x^2 + vn1*x + vn0)) and not (un3 eq -1 and un2 eq -1 and un1 eq -1 and un0 eq -1) then
+            if ((cantor[1] ne upp3*x^3 + upp2*x^2 + upp1*x + upp0) or (cantor[2] ne vpp2*x^2 + vpp1*x + vpp0)) and not (upp3 eq -1 and upp2 eq -1 and upp1 eq -1 and upp0 eq -1) then
                 errorFlag:= true;
                 "ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
                 "the input divisors: ", D1;
                 "Cantor result: ", cantor;
-                "Explicit result: ", un3*x^3 + un2*x^2 + un1*x + un0, vn2*x^2 + vn1*x + vn0;
+                "Explicit result: ", upp3*x^3 + upp2*x^2 + upp1*x + upp0, vpp2*x^2 + vpp1*x + vpp0;
             end if;
 
             if DEBUG then "cantor doubling: ", cantor; end if;
@@ -141,8 +141,8 @@ for F in FIELDS do
 
             if D1 ne D2 then
 
-                un3, un2, un1, un0, vn2, vn1, vn0 := ADD(D1, D2, f, h);
-                un,vn := Nucomp_g3_RAM(D1,D2,f,h);
+                upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := ADD(D1, D2, f, h);
+                upp,vpp := Nucomp_g3_RAM(D1,D2,f,h);
 
                 // ensure ua is always the larger polynomial
                 if D2[1] le D1[1] then
@@ -162,30 +162,30 @@ for F in FIELDS do
                 vb2:= Coeff(vb,2); vb1:= Coeff(vb,1); vb0:= Coeff(vb,0);
 
                 // this is here to ensure that I didn't miss any cases
-                if (un3 eq -1 and un2 eq -1 and un1 eq -1 and un0 eq -1) and (F mod 2 ne 0)  then
+                if (upp3 eq -1 and upp2 eq -1 and upp1 eq -1 and upp0 eq -1) and (F mod 2 ne 0)  then
                     "-1 detected";
-                    "input: (", u1, v1, "), (", u2, v2, ")";
+                    "input: (", u, v, "), (", up, vp, ")";
                     "result: ", cantor;
 
                 else
-                    if (cantor[1] ne un3*x^3 + un2*x^2 + un1*x + un0) or (cantor[2] ne vn2*x^2 + vn1*x + vn0) then
+                    if (cantor[1] ne upp3*x^3 + upp2*x^2 + upp1*x + upp0) or (cantor[2] ne vpp2*x^2 + vpp1*x + vpp0) then
                         errorFlag:= true;
                         "ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
                         "the input divisors: ", D1, D2;
                         "Cantor result: ", cantor;
-                        "Explicit result: ", un3*x^3 + un2*x^2 + un1*x + un0, vn2*x^2 + vn1*x + vn0;
+                        "Explicit result: ", upp3*x^3 + upp2*x^2 + upp1*x + upp0, vpp2*x^2 + vpp1*x + vpp0;
                         the_gcd, a1, a2 := Xgcd(ub, ua);
                         the_gcd2, a1, a2 := Xgcd(h+va+vb, the_gcd);
                         "the gcd(ub,ua) = ", the_gcd;
                         "the gcd(h+va+vb,the_gcd) = ", the_gcd2;
                     end if;
 
-                    if (un ne cantor[1] or vn ne cantor[2]) then
+                    if (upp ne cantor[1] or vpp ne cantor[2]) then
                         errorFlag:= true;
                         "NUCOMP ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
                         "the input divisors: ", D1, D2;
                         "Cantor result: ", cantor;
-                        "NUCOMP result: ", un, vn;
+                        "NUCOMP result: ", upp, vpp;
                     end if;
 
                 end if;

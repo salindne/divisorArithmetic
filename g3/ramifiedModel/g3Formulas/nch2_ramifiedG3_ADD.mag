@@ -28,451 +28,451 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg1ADD():
-// Input: u1_0, v1_0: Mumford coordinates for degree 1 divisor D1
-//        u2_0, v2_0: Mumford coordinates for degree 1 divisor D2
+// Input: u0, v0: Mumford coordinates for degree 1 divisor D1
+//        up0, vp0: Mumford coordinates for degree 1 divisor D2
 //
-// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of two degree one
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg1ADD:= function(u1_0, v1_0, u2_0, v2_0)
+Deg1ADD:= function(u0, v0, up0, vp0)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
     //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
-    //No curve coefficients are needed: with u1 = u2 and D1 ne D2, the two
+    //No curve coefficients are needed: with u = up and D1 ne D2, the two
     //v values are the two roots of y^2 + h(x0)y = f(x0), so D2 = -D1 and
     //the sum is the neutral element.
-    FF := Parent(u1_0);
+    FF := Parent(u0);
     R<x> := PolynomialRing(FF);
-    u1 := x + u1_0;
-    v1 := R!v1_0;
-    u2 := x + u2_0;
-    v2 := R!v2_0;
+    u := x + u0;
+    v := R!v0;
+    up := x + up0;
+    vp := R!vp0;
 
-    d := u1 mod u2;
+    d := u mod up;
     if IsZero(d) then
         return 0, 0, 0, 1, 0, 0, 0;
     end if;
-    s := (v2 - v1)*FF!Coeff(d,0)^-1 mod u2;
-    un := u1*u2;
-    vn := (v1 + u1*s) mod un;
-    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
-           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    s := (vp - v)*FF!Coeff(d,0)^-1 mod up;
+    upp := u*up;
+    vpp := (v + u*s) mod upp;
+    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
-    // 1) gcd(u1,u2) = 1	(typical)
-    // 2) gcd(u1,u2) = u1	(DB = P1, DA = -P1, return P0)
+    // 1) gcd(u,up) = 1	(typical)
+    // 2) gcd(u,up) = u	(DB = P1, DA = -P1, return P0)
     // ++++++++++++++++++++++++++++ /CASES +++++++++++++++++++++++++++++++
     
-    // d = u1 mod u2
-    d0:= u1_0 - u2_0;
+    // d = u mod up
+    d0:= u0 - up0;
     
-    // if gcd(u1,u2) = u1
+    // if gcd(u,up) = u
     if (d0 eq 0) then
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u1,u2) = u1
+        // gcd(u,up) = u
         // DB = P1, DA = -P1
         // return P0
         
-		if (ADD_DEBUG) then "Deg1ADD | Case #2: gcd(u1,u2) = u1"; end if;
+		if (ADD_DEBUG) then "Deg1ADD | Case #2: gcd(u,up) = u"; end if;
         return 0, 0, 0, 1, 0, 0, 0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~ TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // gcd(u1,u2) = 1
+    // gcd(u,up) = 1
     // DB = P1, DA = P2
     // return P1+P2
     
-    // s = (v2 - v1)/u1 mod u2 = (v2 - v1) * d^-1
+    // s = (vp - v)/u mod up = (vp - v) * d^-1
     d0Inv := d0^-1;
-    s0:= d0Inv * (v2_0 - v1_0);
+    s0:= d0Inv * (vp0 - v0);
 
-    // un = u1*u2
-    un3:= 0;
-    un2:= 1;
-    un1:= u1_0 + u2_0;
-    un0:= u1_0*u2_0;
+    // upp = u*up
+    upp3:= 0;
+    upp2:= 1;
+    upp1:= u0 + up0;
+    upp0:= u0*up0;
 
-    // vn = (v1 + u1*s) mod un
-    vn2:= 0;
-    vn1:= s0;
-    vn0:= v1_0 + u1_0*s0;
+    // vpp = (v + u*s) mod upp
+    vpp2:= 0;
+    vpp1:= s0;
+    vpp0:= v0 + u0*s0;
     
 	if (ADD_DEBUG) then "Deg1ADD | Typical"; end if;
-    return un3, un2, un1, un0, vn2, vn1, vn0;
+    return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg12ADD():
-// Input: u1_1..v1_0: Mumford coordinates for degree 2 divisor D1 (deg 2 first)
-//        u2_0, v2_0: Mumford coordinates for degree 1 divisor D2
+// Input: u1..v0: Mumford coordinates for degree 2 divisor D1 (deg 2 first)
+//        up0, vp0: Mumford coordinates for degree 1 divisor D2
 //        f5..f2:     curve coefficients
 //
-// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of a degree two and a
 //              degree one divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg12ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f5, f4, f3, f2)
+Deg12ADD:= function(u1, u0, v1, v0, up0, vp0, f5, f4, f3, f2)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
     //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
-    FF := Parent(u1_0);
+    FF := Parent(u0);
     R<x> := PolynomialRing(FF);
     //f0 is not an argument (nor is f1): at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
     f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
     //h = 0 in this class
-    u1 := x^2 + u1_1*x + u1_0;
-    v1 := v1_1*x + R!v1_0;
-    u2 := x + u2_0;
-    v2 := R!v2_0;
+    u := x^2 + u1*x + u0;
+    v := v1*x + R!v0;
+    up := x + up0;
+    vp := R!vp0;
 
-    k := (f - v1*v1) div u1;
+    k := (f - v*v) div u;
 
-    S, a1, b1 := XGCD(u1, u2);
+    S, a1, b1 := XGCD(u, up);
     if not IsOne(S) then
-        S, a2, b2 := XGCD(S, v2 + v1);
+        S, a2, b2 := XGCD(S, vp + v);
         if not IsOne(S) then
-            u1 := ExactQuotient(u1, S);
-            u2 := ExactQuotient(u2, S);
+            u := ExactQuotient(u, S);
+            up := ExactQuotient(up, S);
         end if;
-        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+        s := (a2*a1*(vp - v) + b2*k) mod up;
     else
-        s := a1*(v2 - v1) mod u2;
+        s := a1*(vp - v) mod up;
     end if;
 
-    if Degree(u1) + Degree(u2) le 3 then
+    if Degree(u) + Degree(up) le 3 then
         //composition only (a gcd case shrank the degrees)
-        un := u1*u2;
-        vn := (v1 + u1*s) mod un;
+        upp := u*up;
+        vpp := (v + u*s) mod upp;
     else
-        //one reduction: un = (k*S - s*(s*u1 + 2*v1))/u2, monic
-        un := ExactQuotient(k*S - s*(s*u1 + 2*v1), u2);
-        un := un/LeadingCoefficient(un);
-        vn := (-s*u1 - v1) mod un;
+        //one reduction: upp = (k*S - s*(s*u + 2*v))/up, monic
+        upp := ExactQuotient(k*S - s*(s*u + 2*v), up);
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (-s*u - v) mod upp;
     end if;
-    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
-           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
-    // 1) gcd(u2,u1) = 1	            (typical)
-    // 2) gcd(u2,u1) = u2
-	//		2.1) gcd(u2,h+v2+v1) = 1	(DB = P1, DA = P1+P2, return 2P1+P2)
-	//		2.2) gcd(u2,h+v2+v1) = u2	(DB = P1, DA = P2-P1, return P2)
+    // 1) gcd(up,u) = 1	            (typical)
+    // 2) gcd(up,u) = up
+	//		2.1) gcd(up,h+vp+v) = 1	(DB = P1, DA = P1+P2, return 2P1+P2)
+	//		2.2) gcd(up,h+vp+v) = up	(DB = P1, DA = P2-P1, return P2)
     // ++++++++++++++++++++++++++++ /CASES +++++++++++++++++++++++++++++++
 
-	// t1 = h + v1 = v1
-	t1_1:= v1_1;
-	t1_0:= v1_0;
+	// vh = h + v = v
+	vh1:= v1;
+	vh0:= v0;
 
-    // d = u1 mod u2
-	u2_0Sq := u2_0^2;
-    u2_0Timesu1_1 := u2_0*u1_1;
-    d0:= u1_0 - u2_0Timesu1_1 + u2_0Sq;
+    // d = u mod up
+	up0Sq := up0^2;
+    up0Timesu1 := up0*u1;
+    d0:= u0 - up0Timesu1 + up0Sq;
 
-    // if gcd(u2,u1) = u2
+    // if gcd(up,u) = up
     if (d0 eq 0) then
-        // dw = (h + v2 + v1) mod u2
-        dw0:= t1_0 + v2_0 - u2_0*(t1_1);
+        // dw = (h + vp + v) mod up
+        dw0:= vh0 + vp0 - up0*(vh1);
 
-        // if gcd(u2,h+v2+v1) = u2
+        // if gcd(up,h+vp+v) = up
         if (dw0 eq 0) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = u2
-			// gcd(u2,v2+v1+h) = u2
+            // gcd(up,u) = up
+			// gcd(up,vp+v+h) = up
             // DB = P1, DA = P2-P1
             // return P2
 
-            // un = u1/u2
-            un3:= 0;
-            un2:= 0;
-            un1:= 1;
-            un0:= u1_1 - u2_0;
+            // upp = u/up
+            upp3:= 0;
+            upp2:= 0;
+            upp1:= 1;
+            upp0:= u1 - up0;
 
-            // vn = v1 mod un
-            vn2:= 0;
-            vn1:= 0;
-            vn0:= v1_0 - v1_1*un0;
+            // vpp = v mod upp
+            vpp2:= 0;
+            vpp1:= 0;
+            vpp0:= v0 - v1*upp0;
 
-			if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Case #2.2: gcd(u2,u1) = u2, gcd(u2,h+v2+v1) = u2"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+			if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Case #2.2: gcd(up,u) = up, gcd(up,h+vp+v) = up"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u2,u1) = u2
-		// gcd(u2,v2+v1+h) = 1
+        // gcd(up,u) = up
+		// gcd(up,vp+v+h) = 1
         // DB = P1, DA = P1+P2
         // return 2P1+P2
 
-        // w1 = (f - v1*h - v1^2)/u1
-        //w1_5:= 1;
-        w1_4:= -u1_1;
-		ta:= -u1_1^2;
-        w1_3:= f5 - u1_0 - ta;
-		tb:= u1_0*w1_3;
-        w1_2:= f4 - (u1_0 + u1_1)*(w1_3 + w1_4) + ta + tb;		// karatsuba
-        w1_1:= f3 - tb - u1_1*w1_2;
-        w1_0:= f2 - v1_1^2 - u1_0*w1_2 - u1_1*w1_1;
+        // w1 = (f - v*h - v^2)/u
+        //k5:= 1;
+        k4:= -u1;
+		ta:= -u1^2;
+        k3:= f5 - u0 - ta;
+		tb:= u0*k3;
+        k2:= f4 - (u0 + u1)*(k3 + k4) + ta + tb;		// karatsuba
+        k1:= f3 - tb - u1*k2;
+        k0:= f2 - v1^2 - u0*k2 - u1*k1;
 
-        // sp = w1 mod u2
+        // sp = w1 mod up
         //sp5:= 1;
-        sp4:= w1_4 - u2_0;
-		sp3:= w1_3 - u2_0*sp4;
-        sp2:= w1_2 - u2_0*sp3;
-        sp1:= w1_1 - u2_0*sp2;
-        sp0:= w1_0 - u2_0*sp1;
+        sp4:= k4 - up0;
+		sp3:= k3 - up0*sp4;
+        sp2:= k2 - up0*sp3;
+        sp1:= k1 - up0*sp2;
+        sp0:= k0 - up0*sp1;
 
-        // s = (u2^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt u2)*w1 mod u2
-        //   = (       a2        )*(     a1     )*(v2-v1) + (       b2        )*(  sp  )
-        //   = (       a2        )*(     0      )*(v2-v1) + (      1/dw       )*(  sp  )
+        // s = (up^-1 wrt h+vp+v)*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt up)*w1 mod up
+        //   = (       a2        )*(     a1     )*(vp-v) + (       b2        )*(  sp  )
+        //   = (       a2        )*(     0      )*(vp-v) + (      1/dw       )*(  sp  )
         //   = sp/dw
         s0:= sp0/dw0;
 
-        // un = u2*u1
-        un3:= 1;
-        un2:= u2_0 + u1_1;
-        un1:= u2_0Timesu1_1 + u1_0;
-        un0:= u2_0*u1_0;
+        // upp = up*u
+        upp3:= 1;
+        upp2:= up0 + u1;
+        upp1:= up0Timesu1 + u0;
+        upp0:= up0*u0;
 
-        // vn = (u1*s + v1) mod un
-        vn2:= s0;
-        vn1:= u1_1*s0 + v1_1;
-        vn0:= u1_0*s0 + v1_0;
+        // vpp = (u*s + v) mod upp
+        vpp2:= s0;
+        vpp1:= u1*s0 + v1;
+        vpp0:= u0*s0 + v0;
 
-		if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Case #2.1: gcd(u2,u1) = u2, gcd(u2,h+v2+v1) = 1"; end if;
-        return un3, un2, un1, un0, vn2, vn1, vn0;
+		if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Case #2.1: gcd(up,u) = up, gcd(up,h+vp+v) = 1"; end if;
+        return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~ TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // gcd(u2,u1) = 1
+    // gcd(up,u) = 1
     // DB = P1, DA = P2+P3
     // return P1+P2+P3
 
-    // s = (v2 - v1)/u1 mod u2
-    s0:= (v2_0 - v1_0 + u2_0*v1_1)/d0;
+    // s = (vp - v)/u mod up
+    s0:= (vp0 - v0 + up0*v1)/d0;
 
-    // un = u2*u1
-    un3:= 1;
-    un2:= u2_0 + u1_1;
-    un1:= u2_0Timesu1_1 + u1_0;
-    un0:= u2_0*u1_0;
+    // upp = up*u
+    upp3:= 1;
+    upp2:= up0 + u1;
+    upp1:= up0Timesu1 + u0;
+    upp0:= up0*u0;
 
-    // vn = u1*s + v1 mod un
-    vn2:= s0;
-    vn1:= u1_1*s0 + v1_1;
-    vn0:= u1_0*s0 + v1_0;
+    // vpp = u*s + v mod upp
+    vpp2:= s0;
+    vpp1:= u1*s0 + v1;
+    vpp0:= u0*s0 + v0;
 
 	if (ADD_DEBUG) then "Deg12ADD (deg 2 first) | Typical"; end if;
-    return un3, un2, un1, un0, vn2, vn1, vn0;
+    return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg22ADD():
-// Input: u1_1..v1_0: Mumford coordinates for degree 2 divisor D1
-//        u2_1..v2_0: Mumford coordinates for degree 2 divisor D2
+// Input: u1..v0: Mumford coordinates for degree 2 divisor D1
+//        up1..vp0: Mumford coordinates for degree 2 divisor D2
 //        f5..f2:     curve coefficients
 //
-// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of two degree two
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, f2)
+Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
     //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
-    FF := Parent(u1_0);
+    FF := Parent(u0);
     R<x> := PolynomialRing(FF);
     //f0 is not an argument (nor is f1): at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
     f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
     //h = 0 in this class
-    u1 := x^2 + u1_1*x + u1_0;
-    v1 := v1_1*x + R!v1_0;
-    u2 := x^2 + u2_1*x + u2_0;
-    v2 := v2_1*x + R!v2_0;
+    u := x^2 + u1*x + u0;
+    v := v1*x + R!v0;
+    up := x^2 + up1*x + up0;
+    vp := vp1*x + R!vp0;
 
-    k := (f - v1*v1) div u1;
+    k := (f - v*v) div u;
 
-    S, a1, b1 := XGCD(u1, u2);
+    S, a1, b1 := XGCD(u, up);
     if not IsOne(S) then
-        S, a2, b2 := XGCD(S, v2 + v1);
+        S, a2, b2 := XGCD(S, vp + v);
         if not IsOne(S) then
-            u1 := ExactQuotient(u1, S);
-            u2 := ExactQuotient(u2, S);
+            u := ExactQuotient(u, S);
+            up := ExactQuotient(up, S);
         end if;
-        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+        s := (a2*a1*(vp - v) + b2*k) mod up;
     else
-        s := a1*(v2 - v1) mod u2;
+        s := a1*(vp - v) mod up;
     end if;
 
-    if Degree(u1) + Degree(u2) le 3 then
+    if Degree(u) + Degree(up) le 3 then
         //composition only (a gcd case shrank the degrees)
-        un := u1*u2;
-        vn := (v1 + u1*s) mod un;
+        upp := u*up;
+        vpp := (v + u*s) mod upp;
     else
-        //one reduction: un = (k*S - s*(s*u1 + 2*v1))/u2, monic
-        un := ExactQuotient(k*S - s*(s*u1 + 2*v1), u2);
-        un := un/LeadingCoefficient(un);
-        vn := (-s*u1 - v1) mod un;
+        //one reduction: upp = (k*S - s*(s*u + 2*v))/up, monic
+        upp := ExactQuotient(k*S - s*(s*u + 2*v), up);
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (-s*u - v) mod upp;
     end if;
-    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
-           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
-    // 1) gcd(u2,u1) = 1
+    // 1) gcd(up,u) = 1
     //      1.1) DB = P1+P2, DA = P3+P4         (typical)
-    // 2) gcd(u2,u1) = d (deg 1)
-    //      2.1) gcd(d,h+v2+v1) = 1				(DB = P1+P2, DA = P1+P3, return 2P1+P2+P3)
-    //      2.2) gcd(d,h+v2+v1) = d				(DB = P1+P2, DA = P3-P1, return P2+P3)
-    // 3) gcd(u2,u1) = u2
-    //      3.1) gcd(u2,h+v2+v1) = dw (deg 1)	(DB = P1+P2, DA = P2-P1, return 2P2)
-    //      3.2) gcd(u2,h+v2+v1) = u2			(DB = P1-P2, DA = P2-P1, return P0)
+    // 2) gcd(up,u) = d (deg 1)
+    //      2.1) gcd(d,h+vp+v) = 1				(DB = P1+P2, DA = P1+P3, return 2P1+P2+P3)
+    //      2.2) gcd(d,h+vp+v) = d				(DB = P1+P2, DA = P3-P1, return P2+P3)
+    // 3) gcd(up,u) = up
+    //      3.1) gcd(up,h+vp+v) = dw (deg 1)	(DB = P1+P2, DA = P2-P1, return 2P2)
+    //      3.2) gcd(up,h+vp+v) = up			(DB = P1-P2, DA = P2-P1, return P0)
     // ++++++++++++++++++++++++++++ /CASES +++++++++++++++++++++++++++++++
 
-	// t1 = h + v1 = v1
-	t1_1:= v1_1;
-	t1_0:= v1_0;
+	// vh = h + v = v
+	vh1:= v1;
+	vh0:= v0;
 
-	// vt = v2 - v1
-	vt_1:= v2_1 - v1_1;
-	vt_0:= v2_0 - v1_0;
+	// vt = vp - v
+	vt1:= vp1 - v1;
+	vt0:= vp0 - v0;
 
-    // d = u1 mod u2
-    d1:= u1_1 - u2_1;
-    d0:= u1_0 - u2_0;
+    // d = u mod up
+    d1:= u1 - up1;
+    d0:= u0 - up0;
 
-    // set up system of equations to solve for s = (v2-v1)/u1 mod u2
+    // set up system of equations to solve for s = (vp-v)/u mod up
     // and find the determinant
     // from Lindner's MSc thesis (pages 63-64)
     //m4:= d0;
     //m3:= -d1;
-    m2:= u2_0*d1;
-	m1:= d0 - u2_1*d1;
+    m2:= up0*d1;
+	m1:= d0 - up1*d1;
 
     det:= d0*m1 + m2*d1;
 
-    // if gcd(u2,u1) != 1
+    // if gcd(up,u) != 1
     if (det eq 0) then
 
-		// ht = t1 + v2
-		v2Plust1_1:= t1_1 + v2_1;
-		v2Plust1_0:= t1_0 + v2_0;
+		// ht = vh + vp
+		vpPlusvh1:= vh1 + vp1;
+		vpPlusvh0:= vh0 + vp0;
 
-        // if gcd(u2,u1) = u2
+        // if gcd(up,u) = up
         if (d1 eq 0) then
-            // dw = (h + v2 + v1) mod u2
-            dw1:= v2Plust1_1;
-            dw0:= v2Plust1_0;
+            // dw = (h + vp + v) mod up
+            dw1:= vpPlusvh1;
+            dw0:= vpPlusvh0;
 
-            // if gcd(u2,h+v2+v1) = u2
+            // if gcd(up,h+vp+v) = up
             if (dw1 eq 0 and dw0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = u2
-				// gcd(u2,h+v2+v1) = u2
+                // gcd(up,u) = up
+				// gcd(up,h+vp+v) = up
                 // DB = P1-P2, DA = P2-P1
                 // return P0
 
-				if (ADD_DEBUG) then "Deg22ADD | Case #3.2: gcd(u2,u1) = u2, gcd(u2,h+v2+v1) = u2"; end if;
+				if (ADD_DEBUG) then "Deg22ADD | Case #3.2: gcd(up,u) = up, gcd(up,h+vp+v) = up"; end if;
                 return 0, 0, 0, 1, 0, 0, 0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = u2
-			// gcd(u2,h+v2+v1) = dw
+            // gcd(up,u) = up
+			// gcd(up,h+vp+v) = dw
             // DB = P1+P2, DA = P2-P1
             // return 2P2
 
-			// w1 = (f - v1*h - v1^2)/u1
-			//w1_5:= 1;
-			w1_4:= -u1_1;
-			ta:= -u1_1^2;
-			w1_3:= f5 - u1_0 - ta;
-			tb:= u1_0*w1_3;
-			w1_2:= f4 - (u1_0 + u1_1)*(w1_3 + w1_4) + ta + tb;		// karatsuba
-			w1_1:= f3 - tb - u1_1*w1_2;
-			w1_0:= f2 - v1_1^2 - u1_0*w1_2 - u1_1*w1_1;
+			// w1 = (f - v*h - v^2)/u
+			//k5:= 1;
+			k4:= -u1;
+			ta:= -u1^2;
+			k3:= f5 - u0 - ta;
+			tb:= u0*k3;
+			k2:= f4 - (u0 + u1)*(k3 + k4) + ta + tb;		// karatsuba
+			k1:= f3 - tb - u1*k2;
+			k0:= f2 - v1^2 - u0*k2 - u1*k1;
 
-            // at = (  u2^-1 wrt h+v2+v1   )*dw1
-            //    = ( (-(h+v2+v1)/u2)/dw1  )*dw1
+            // at = (  up^-1 wrt h+vp+v   )*dw1
+            //    = ( (-(h+vp+v)/up)/dw1  )*dw1
             //    = (          a2          )*dw1
             //at1:= -h3 = 0;
-            //at0:= temp2 = h2 - h3Timesu2_1; = 0;
+            //at0:= temp2 = h2 - h3Timesup1; = 0;
 
-            // st = ((u2^-1 wrt h+v2+v1)*dw1)*(u1^-1 wrt u2)*(v2-v1) + ((h+v2+v1^-1 wrt u2)*dw1)*w1
+            // st = ((up^-1 wrt h+vp+v)*dw1)*(u^-1 wrt up)*(vp-v) + ((h+vp+v^-1 wrt up)*dw1)*w1
             //    = ((       a2        )*dw1)*(     a1     )*( vt  ) + ((       b2        )*dw1)*w1
             //    = (           at          )*(     1      )*( vt  ) + (           1           )*w1
             //    = w1 + at*vt
             //st5:= 1;
-            //st4:= w1_4;
-            //st3:= w1_3;
-            st2:= w1_2;
-            st1:= w1_1;
-            st0:= w1_0;
+            //st4:= k4;
+            //st3:= k3;
+            st2:= k2;
+            st1:= k1;
+            st0:= k0;
 
             //dm = dw/dw1	(dm = monic(d))
             dw1Inv:= 1/dw1;
             dm0:= dw0*dw1Inv;
 
-            // u2 = u2/dm
-            u2_0:= u2_1 - dm0;
+            // up = up/dm
+            up0:= up1 - dm0;
 
-            // u1 = u1/dm
-            u1_0:= u1_1 - dm0;
+            // u = u/dm
+            u0:= u1 - dm0;
 
             // st equals w1 here: with h = 0 the correction term in st
             // vanishes, so swapping them is an identity, not a coincidence.
-            // sp = st mod u2
+            // sp = st mod up
             //sp5:= 1;
-            sp4:= w1_4 - u2_0;
-            sp3:= w1_3 - u2_0*sp4;
-            sp2:= st2 - u2_0*sp3;
-            sp1:= st1 - u2_0*sp2;
-            sp0:= st0 - u2_0*sp1;
+            sp4:= k4 - up0;
+            sp3:= k3 - up0*sp4;
+            sp2:= st2 - up0*sp3;
+            sp1:= st1 - up0*sp2;
+            sp0:= st0 - up0*sp1;
 
             // s = sp/dw1
             s0:= sp0*dw1Inv;
 
-            // un = u2*u1
-            un3:= 0;
-            un2:= 1;
-            un1:= u2_0 + u1_0;
-            un0:= u2_0*u1_0;
+            // upp = up*u
+            upp3:= 0;
+            upp2:= 1;
+            upp1:= up0 + u0;
+            upp0:= up0*u0;
 
-            // vn = (u1*s + v1) mod un
-            vn2:= 0;
-            vn1:= s0 + v1_1;
-            vn0:= u1_0*s0 + v1_0;
+            // vpp = (u*s + v) mod upp
+            vpp2:= 0;
+            vpp1:= s0 + v1;
+            vpp0:= u0*s0 + v0;
 
-			if (ADD_DEBUG) then "Deg22ADD | Case #3.1: gcd(u2,u1) = u2, gcd(u2,h+v2+v1) = dw (deg 1)"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+			if (ADD_DEBUG) then "Deg22ADD | Case #3.1: gcd(up,u) = up, gcd(up,h+vp+v) = dw (deg 1)"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
-        // dw = (h + v2 + v1) mod d
+        // dw = (h + vp + v) mod d
         d1Sq:= d1^2;
-        dw0:= d1Sq*(d1*v2Plust1_0 - d0*v2Plust1_1);		//d1^3
+        dw0:= d1Sq*(d1*vpPlusvh0 - d0*vpPlusvh1);		//d1^3
 
-        // if gcd(d,h+v2+v1) = d
+        // if gcd(d,h+vp+v) = d
         if (dw0 eq 0) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = d
-			// gcd(d,h+v2+v1) = d
+            // gcd(up,u) = d
+			// gcd(d,h+vp+v) = d
             // DB = P1+P2, DA = P3-P1
             // return P2+P3
 
@@ -480,53 +480,53 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, 
             d1Inv:= 1/d1;
             dm0:= d0*d1Inv;
 
-            // u2 = u2/dm
-            u2_0:= u2_1 - dm0;
+            // up = up/dm
+            up0:= up1 - dm0;
 
-            // u1 = u1/dm
-            u1_0:= u1_1 - dm0;
+            // u = u/dm
+            u0:= u1 - dm0;
 
-            // s = vt/u1 mod u2
-            s0:= (vt_0 - u2_0*vt_1)*d1Inv;
+            // s = vt/u mod up
+            s0:= (vt0 - up0*vt1)*d1Inv;
 
-            // un = u2*u1
-            un3:= 0;
-            un2:= 1;
-            un1:= u2_0 + u1_0;
-            un0:= u2_0*u1_0;
+            // upp = up*u
+            upp3:= 0;
+            upp2:= 1;
+            upp1:= up0 + u0;
+            upp0:= up0*u0;
 
-            // vn = (u1*s + v1) mod un
-            vn2:= 0;
-            vn1:= s0 + v1_1;
-            vn0:= u1_0*s0 + v1_0;
+            // vpp = (u*s + v) mod upp
+            vpp2:= 0;
+            vpp1:= s0 + v1;
+            vpp0:= u0*s0 + v0;
 
-			if (ADD_DEBUG) then "Deg22ADD | Case #2.2: gcd(u2,u1) = d (deg 1), gcd(d,h+v2+v1) = d"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+			if (ADD_DEBUG) then "Deg22ADD | Case #2.2: gcd(up,u) = d (deg 1), gcd(d,h+vp+v) = d"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u2,u1) = d
-		// gcd(d,h+v2+v1) = 1
+        // gcd(up,u) = d
+		// gcd(d,h+vp+v) = 1
         // DB = P1+P2, DA = P1+P3
         // return 2P1+P2+P3
 
-        // w1 = (f - v1*h - v1^2)/u1
-        //w1_5:= 1;
-        w1_4:= -u1_1;
-		ta:= -u1_1^2;
-        w1_3:= f5 - u1_0 - ta;
-		tb:= u1_0*w1_3;
-        w1_2:= f4 - (u1_0 + u1_1)*(w1_3 + w1_4) + ta + tb;		// karatsuba
-        w1_1:= f3 - tb - u1_1*w1_2;
-        w1_0:= f2 - v1_1^2 - u1_0*w1_2 - u1_1*w1_1;
+        // w1 = (f - v*h - v^2)/u
+        //k5:= 1;
+        k4:= -u1;
+		ta:= -u1^2;
+        k3:= f5 - u0 - ta;
+		tb:= u0*k3;
+        k2:= f4 - (u0 + u1)*(k3 + k4) + ta + tb;		// karatsuba
+        k1:= f3 - tb - u1*k2;
+        k0:= f2 - v1^2 - u0*k2 - u1*k1;
 
-        // a1 = u1^-1 wrt u2
+        // a1 = u^-1 wrt up
         //    = 1/d1
         w0:= 1/(dw0*d1);        // 1/(dw0*d1^4)
         a1:= dw0*w0;            // (dw0*d1^3)/(dw0*d1^4) = 1/d1
 
-        // b2 = h+v2+v1^-1 wrt dm
+        // b2 = h+vp+v^-1 wrt dm
         //    = 1/dw0
         b2:= (d1Sq^2)*w0;        // (d1^4)/(dw0*d1^4) = 1/dw0
 
@@ -536,81 +536,81 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, 
         // commented at1 line below records (at1 = -h2 + h3*dm0 = 0).
 
         // vp = a1*vt
-        vp_1:= a1*vt_1;
-        vp_2:= a1*vt_0;
+        t18:= a1*vt1;
+        t19:= a1*vt0;
 
-        // at = ( dm^-1 wrt h+v2+v1 )*dw0
-        //    = ((-(h+v2+v1)/dm)/dw0)*dw0
+        // at = ( dm^-1 wrt h+vp+v )*dw0
+        //    = ((-(h+vp+v)/dm)/dw0)*dw0
         //    = (        a2         )*dw0
-        //    = -(h + v2 + v1)/dm
+        //    = -(h + vp + v)/dm
         // at2:= -h3 = 0;
         // at1:= -h2 + h3*dm0 = 0;
-        at0:= -v2Plust1_1;
+        at0:= -vpPlusvh1;
 
-        // st = (( dm^-1 wrt h+v2+v1)*dw0)*((u1^-1 wrt u2)*(v2-v1)) + ((h+v2+v1^-1 wrt dm)*dw0)*w1
-        //    = ((        a2        )*dw0)*((     a1     )*(v2-v1)) + (         b2       )*dw0)*w1
+        // st = (( dm^-1 wrt h+vp+v)*dw0)*((u^-1 wrt up)*(vp-v)) + ((h+vp+v^-1 wrt dm)*dw0)*w1
+        //    = ((        a2        )*dw0)*((     a1     )*(vp-v)) + (         b2       )*dw0)*w1
         //    = (           at           )*(          vp          ) + (           1           )*w1
         //    = w1 + at*vp
-        tb:= at0*vp_2;
+        tb:= at0*t19;
 
         //st5:= 1;
-        //st4:= w1_4;
-        st3:= w1_3;
-        st2:= w1_2;
-        st1:= w1_1 + at0*(vp_1 + vp_2) - tb;		// karatsuba
-        st0:= w1_0 + tb;
+        //st4:= k4;
+        st3:= k3;
+        st2:= k2;
+        st1:= k1 + at0*(t18 + t19) - tb;		// karatsuba
+        st0:= k0 + tb;
 
-        // sp = st mod u2
+        // sp = st mod up
         //sp5:= 1;
-        sp4:= w1_4 - u2_1;
-		temp3:= u2_1*sp4;
-        sp3:= st3 - u2_0 - temp3;
-        ta:= u2_0*sp3;
-        sp2:= st2 - (u2_0 + u2_1)*(sp3 + sp4) + temp3 + ta;     // karatsuba
-        sp1:= st1 - ta - u2_1*sp2;
-        sp0:= st0 - u2_0*sp2;
+        sp4:= k4 - up1;
+		temp3:= up1*sp4;
+        sp3:= st3 - up0 - temp3;
+        ta:= up0*sp3;
+        sp2:= st2 - (up0 + up1)*(sp3 + sp4) + temp3 + ta;     // karatsuba
+        sp1:= st1 - ta - up1*sp2;
+        sp0:= st0 - up0*sp2;
 
         // s = sp/dw0
         s1:= sp1*b2;
         s0:= sp0*b2;
 
-        // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-		ta:= u1_1*s0;
-        temp4:= t1_1 + u1_0*s1 + ta;
+        // upp = (w1 - s*(h + 2*v + u*s))/up
+		ta:= u1*s0;
+        temp4:= vh1 + u0*s1 + ta;
 		temp5:= s0;
 
-        un3:= 1;
-        un2:= sp4 - s1^2;
-        un1:= w1_3 - u2_0 - s1*(s1*d1 + s0 + temp5) - temp3;
-        un0:= w1_2 - u2_0*un2 - u2_1*un1 - s0*temp5 - s1*(v1_1 + ta + temp4);
+        upp3:= 1;
+        upp2:= sp4 - s1^2;
+        upp1:= k3 - up0 - s1*(s1*d1 + s0 + temp5) - temp3;
+        upp0:= k2 - up0*upp2 - up1*upp1 - s0*temp5 - s1*(v1 + ta + temp4);
 
-        // vn = -h - v1 - u1*s mod un
+        // vpp = -h - v - u*s mod upp
         ta:= s1;
 
-        vn2:= s1*(un2 - u1_1) - temp5;
-        vn1:= un1*ta - temp4;
-        vn0:= un0*ta - t1_0 - u1_0*s0;
+        vpp2:= s1*(upp2 - u1) - temp5;
+        vpp1:= upp1*ta - temp4;
+        vpp0:= upp0*ta - vh0 - u0*s0;
 
-		if (ADD_DEBUG) then "Deg22ADD | Case #2.1: gcd(u2,u1) = d (deg 1), gcd(d,h+v2+v1) = 1"; end if;
-        return un3, un2, un1, un0, vn2, vn1, vn0;
+		if (ADD_DEBUG) then "Deg22ADD | Case #2.1: gcd(up,u) = d (deg 1), gcd(d,h+vp+v) = 1"; end if;
+        return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~ TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // gcd(u2,u1) = 1
+    // gcd(up,u) = 1
     // DB = P1+P2, DA = P3+P4
     // return P1+P2+P3+P4
 
-    // w1 = (f - v1*h - v1^2)/u1
-    //w1_5:= 1;
-    w1_4:= -u1_1;
-    w1_3:= f5 - u1_0 + u1_1^2;
-    w1_2:= f4 - u1_0*w1_4 - u1_1*w1_3;
+    // w1 = (f - v*h - v^2)/u
+    //k5:= 1;
+    k4:= -u1;
+    k3:= f5 - u0 + u1^2;
+    k2:= f4 - u0*k4 - u1*k3;
 
     // partially solve system to get sp = s*det
     // from Lindner's MSc thesis (pages 63-64)
-    sp0:= vt_0*m1 + vt_1*m2;
-    sp1:= vt_1*d0 - vt_0*d1;
+    sp0:= vt0*m1 + vt1*m2;
+    sp1:= vt1*d0 - vt0*d1;
 
     // s = sp/det
     detInv:= 1/det;
@@ -618,274 +618,274 @@ Deg22ADD:= function(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, 
     s1:= sp1*detInv;
     s0:= sp0*detInv;
 
-    // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-    ta:= w1_4 - u2_1;
-    tb:= u1_1*s0;
-    temp2:= t1_1 + u1_0*s1 + tb;
+    // upp = (w1 - s*(h + 2*v + u*s))/up
+    ta:= k4 - up1;
+    tb:= u1*s0;
+    temp2:= vh1 + u0*s1 + tb;
 	temp3:= s0;
 
-    un3:= 1;
-    un2:= ta - s1^2;
-    un1:= w1_3 - u2_0 - s1*(s1*d1 + s0 + temp3) - u2_1*ta;
-    un0:= w1_2 - u2_0*un2 - u2_1*un1 - s0*temp3 - s1*(v1_1 + tb + temp2);
+    upp3:= 1;
+    upp2:= ta - s1^2;
+    upp1:= k3 - up0 - s1*(s1*d1 + s0 + temp3) - up1*ta;
+    upp0:= k2 - up0*upp2 - up1*upp1 - s0*temp3 - s1*(v1 + tb + temp2);
 
-    // vn = -h - v1 - u1*s mod un
+    // vpp = -h - v - u*s mod upp
     ta:= s1;
 
-    vn2:= s1*(un2 - u1_1) - temp3;
-    vn1:= un1*ta - temp2;
-    vn0:= un0*ta - t1_0 - u1_0*s0;
+    vpp2:= s1*(upp2 - u1) - temp3;
+    vpp1:= upp1*ta - temp2;
+    vpp0:= upp0*ta - vh0 - u0*s0;
 
 	if (ADD_DEBUG) then "Deg22ADD | Typical"; end if;
-    return un3, un2, un1, un0, vn2, vn1, vn0;
+    return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg13ADD():
-// Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1 (deg 3 first)
-//        u2_0, v2_0: Mumford coordinates for degree 1 divisor D2
+// Input: u2..v0: Mumford coordinates for degree 3 divisor D1 (deg 3 first)
+//        up0, vp0: Mumford coordinates for degree 1 divisor D2
 //        f5..f1:     curve coefficients
 //
-// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of a degree three and a
 //              degree one divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg13ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f5, f4, f3, f2, f1)
+Deg13ADD:= function(u2, u1, u0, v2, v1, v0, up0, vp0, f5, f4, f3, f2, f1)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
     //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
-    FF := Parent(u1_0);
+    FF := Parent(u0);
     R<x> := PolynomialRing(FF);
     //f0 is not an argument: at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
     f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     //h = 0 in this class
-    u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
-    v1 := v1_2*x^2 + v1_1*x + v1_0;
-    u2 := x + u2_0;
-    v2 := R!v2_0;
+    u := x^3 + u2*x^2 + u1*x + u0;
+    v := v2*x^2 + v1*x + v0;
+    up := x + up0;
+    vp := R!vp0;
 
-    k := (f - v1*v1) div u1;
+    k := (f - v*v) div u;
 
-    S, a1, b1 := XGCD(u1, u2);
+    S, a1, b1 := XGCD(u, up);
     if not IsOne(S) then
-        S, a2, b2 := XGCD(S, v2 + v1);
+        S, a2, b2 := XGCD(S, vp + v);
         if not IsOne(S) then
-            u1 := ExactQuotient(u1, S);
-            u2 := ExactQuotient(u2, S);
+            u := ExactQuotient(u, S);
+            up := ExactQuotient(up, S);
         end if;
-        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+        s := (a2*a1*(vp - v) + b2*k) mod up;
     else
-        s := a1*(v2 - v1) mod u2;
+        s := a1*(vp - v) mod up;
     end if;
 
-    if Degree(u1) + Degree(u2) le 3 then
+    if Degree(u) + Degree(up) le 3 then
         //composition only (a gcd case shrank the degrees)
-        un := u1*u2;
-        vn := (v1 + u1*s) mod un;
+        upp := u*up;
+        vpp := (v + u*s) mod upp;
     else
-        //one reduction: un = (k*S - s*(s*u1 + 2*v1))/u2, monic
-        un := ExactQuotient(k*S - s*(s*u1 + 2*v1), u2);
-        un := un/LeadingCoefficient(un);
-        vn := (-s*u1 - v1) mod un;
+        //one reduction: upp = (k*S - s*(s*u + 2*v))/up, monic
+        upp := ExactQuotient(k*S - s*(s*u + 2*v), up);
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (-s*u - v) mod upp;
     end if;
-    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
-           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
-    // 1) gcd(u2,u1) = 1
+    // 1) gcd(up,u) = 1
     //      1.1) DB = P1, DA = P2+P3+P4     (typical)
-    // 2) gcd(u2,u1) = u2
+    // 2) gcd(up,u) = up
     //      2.1) DB = P1, DA = P1+P2+P3     (return 2P1+P2+P3)
     //      2.2) DB = P1, DA = P2-P1+P3     (return P2+P3)
     // ++++++++++++++++++++++++++++ /CASES +++++++++++++++++++++++++++++++
 
-	// t1 = h + v1 = v1
-	t1_1:= v1_2;
-	t1_2:= v1_1;
-	t1_0:= v1_0;
+	// vh = h + v = v
+	vh1:= v2;
+	vh2:= v1;
+	vh0:= v0;
 
-	temp1:= -t1_1;
+	temp1:= -vh1;
 
-    // d = u1 mod u2
-	temp2:= u1_2 - u2_0;
-    temp3:= u1_1 - u2_0*temp2;
+    // d = u mod up
+	temp2:= u2 - up0;
+    temp3:= u1 - up0*temp2;
 
-    d0:= u1_0 - u2_0*temp3;
+    d0:= u0 - up0*temp3;
 
-    // if gcd(u2,u1) = u2
+    // if gcd(up,u) = up
     if (d0 eq 0) then
 
-        // dw = (h + v2 + v1) mod u2
-        dw0:= t1_0 + v2_0 - u2_0*(t1_2 + u2_0*temp1);
+        // dw = (h + vp + v) mod up
+        dw0:= vh0 + vp0 - up0*(vh2 + up0*temp1);
 
-        // if gcd(u2,h+v2+v1) = u2
+        // if gcd(up,h+vp+v) = up
         if (dw0 eq 0) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = u2
+            // gcd(up,u) = up
             // DB = P1, DA = P2-P1+P3
             // return P2+P3
 
-            // un = u1/u2
-            un3:= 0;
-            un2:= 1;
-            un1:= temp2;
-            un0:= temp3;
+            // upp = u/up
+            upp3:= 0;
+            upp2:= 1;
+            upp1:= temp2;
+            upp0:= temp3;
 
-            // vn = v1 mod un
-            vn2:= 0;
-            vn1:= v1_1 - un1*v1_2;
-            vn0:= v1_0 - un0*v1_2;
+            // vpp = v mod upp
+            vpp2:= 0;
+            vpp1:= v1 - upp1*v2;
+            vpp0:= v0 - upp0*v2;
 
-            if (ADD_DEBUG) then "Deg13ADD (deg 3 first): gcd(u2,u1) = u2, DB = P1, DA = P2-P1+P3"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+            if (ADD_DEBUG) then "Deg13ADD (deg 3 first): gcd(up,u) = up, DB = P1, DA = P2-P1+P3"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u2,u1) = u2
+        // gcd(up,u) = up
         // DB = P1, DA = P1+P2+P3
         // return 2P1+P2+P3
 
-        // w1 = (f - v1*h - v1^2)/u1
-        //w1_4:= 1;
-        w1_3:= -u1_2;
-		ta:= -u1_2^2;
-        w1_2:= f5 - u1_1 - ta;
-		tb:= u1_1*w1_2;
-        w1_1:= f4 - u1_0 - v1_2^2 - (u1_1 + u1_2)*(w1_2 + w1_3) + ta + tb;		// karatsuba
-        w1_0:= f3 - 2*(v1_1*v1_2) - u1_0*w1_3 - tb - u1_2*w1_1;
+        // w1 = (f - v*h - v^2)/u
+        //k4:= 1;
+        k3:= -u2;
+		ta:= -u2^2;
+        k2:= f5 - u1 - ta;
+		tb:= u1*k2;
+        k1:= f4 - u0 - v2^2 - (u1 + u2)*(k2 + k3) + ta + tb;		// karatsuba
+        k0:= f3 - 2*(v1*v2) - u0*k3 - tb - u2*k1;
 
-        // s = (u2^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt u2)*w1 mod u2
-        //   = (       a2        )*(     a1     )*(v2-v1) + (        b2       )*w1 mod u2
-        //   = (       a2        )*(     0      )*(v2-v1) + (       1/dw      )*w1 mod u2
-        //   = w1/dw mod u2
-		temp4:= w1_3 - u2_0;
-		temp5:= w1_2 - u2_0*temp4;
+        // s = (up^-1 wrt h+vp+v)*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt up)*w1 mod up
+        //   = (       a2        )*(     a1     )*(vp-v) + (        b2       )*w1 mod up
+        //   = (       a2        )*(     0      )*(vp-v) + (       1/dw      )*w1 mod up
+        //   = w1/dw mod up
+		temp4:= k3 - up0;
+		temp5:= k2 - up0*temp4;
 
-        s0:= (w1_0 - u2_0*(w1_1 - u2_0*temp5))/dw0;
-        s0Timesu1_1 := s0*u1_1;
+        s0:= (k0 - up0*(k1 - up0*temp5))/dw0;
+        s0Timesu1 := s0*u1;
 
-        // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-        un3:= 1;
-        un2:= temp4 - s0^2;
-        un1:= temp5 - s0*(s0*temp2 - temp1 + v1_2);
-        un0:= w1_1 - s0*(s0Timesu1_1 + t1_2 + v1_1) - u2_0*un1;
+        // upp = (w1 - s*(h + 2*v + u*s))/up
+        upp3:= 1;
+        upp2:= temp4 - s0^2;
+        upp1:= temp5 - s0*(s0*temp2 - temp1 + v2);
+        upp0:= k1 - s0*(s0Timesu1 + vh2 + v1) - up0*upp1;
 
 
-        // vn = -h - v1 - u1*s mod un
-        vn2:= s0*un2 - s0*u1_2 - t1_1;
-        vn1:= s0*un1 - s0Timesu1_1 - t1_2;
-        vn0:= s0*un0 - s0*u1_0 - t1_0;
+        // vpp = -h - v - u*s mod upp
+        vpp2:= s0*upp2 - s0*u2 - vh1;
+        vpp1:= s0*upp1 - s0Timesu1 - vh2;
+        vpp0:= s0*upp0 - s0*u0 - vh0;
 
-        if (ADD_DEBUG) then "Deg13ADD (deg 3 first): gcd(u2,u1) = u2, DB = P1, DA = P1+P2+P3"; end if;
-        return un3, un2, un1, un0, vn2, vn1, vn0;
+        if (ADD_DEBUG) then "Deg13ADD (deg 3 first): gcd(up,u) = up, DB = P1, DA = P1+P2+P3"; end if;
+        return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~ TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // gcd(u2,u1) = 1
+    // gcd(up,u) = 1
     // DB = P1, DA = P2+P3+P4
     // return P1+P2+P3+P4
 
-    // w1 = (f - v1*h - v1^2)/u1
-    //w1_4:= 1;
-    w1_3:= -u1_2;
-    w1_2:= f5 - u1_1 + u1_2^2;
-    w1_1:= f4 - u1_0 - v1_2^2 - u1_1*w1_3 - u1_2*w1_2;
+    // w1 = (f - v*h - v^2)/u
+    //k4:= 1;
+    k3:= -u2;
+    k2:= f5 - u1 + u2^2;
+    k1:= f4 - u0 - v2^2 - u1*k3 - u2*k2;
 
-    // s = (v2 - v1)/u1 mod u2
-    s0:= (v2_0 - v1_0 + u2_0*(v1_1 - u2_0*v1_2))/d0;
+    // s = (vp - v)/u mod up
+    s0:= (vp0 - v0 + up0*(v1 - up0*v2))/d0;
 
-    // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-	ta:= w1_3 - u2_0;
-    s0Timesu1_1 := s0*u1_1;
+    // upp = (w1 - s*(h + 2*v + u*s))/up
+	ta:= k3 - up0;
+    s0Timesu1 := s0*u1;
 
-    un3:= 1;
-    un2:= ta - s0^2;
-    un1:= w1_2 - s0*(s0*temp2 - temp1 + v1_2) - u2_0*ta;
-    un0:= w1_1 - s0*(s0Timesu1_1 + t1_2 + v1_1) - u2_0*un1;
+    upp3:= 1;
+    upp2:= ta - s0^2;
+    upp1:= k2 - s0*(s0*temp2 - temp1 + v2) - up0*ta;
+    upp0:= k1 - s0*(s0Timesu1 + vh2 + v1) - up0*upp1;
 
-    // vn = -h - v1 - u1*s mod un
-    vn2:= s0*un2 - s0*u1_2 - t1_1;
-    vn1:= s0*un1 - s0Timesu1_1 - t1_2;
-    vn0:= s0*un0 - s0*u1_0 - t1_0;
+    // vpp = -h - v - u*s mod upp
+    vpp2:= s0*upp2 - s0*u2 - vh1;
+    vpp1:= s0*upp1 - s0Timesu1 - vh2;
+    vpp0:= s0*upp0 - s0*u0 - vh0;
 
     if (ADD_DEBUG) then "Deg13ADD (deg 3 first): Typical"; end if;
-    return un3, un2, un1, un0, vn2, vn1, vn0;
+    return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg23ADD():
-// Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1 (deg 3 first)
-//        u2_1..v2_0: Mumford coordinates for degree 2 divisor D2
+// Input: u2..v0: Mumford coordinates for degree 3 divisor D1 (deg 3 first)
+//        up1..vp0: Mumford coordinates for degree 2 divisor D2
 //        f5..f1:     curve coefficients
 //
-// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of a degree three and a
 //              degree two divisor. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, f2, f1)
+Deg23ADD:= function(u2, u1, u0, v2, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2, f1)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
     //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
-    FF := Parent(u1_0);
+    FF := Parent(u0);
     R<x> := PolynomialRing(FF);
     //f0 is not an argument: at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
     f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     //h = 0 in this class
-    u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
-    v1 := v1_2*x^2 + v1_1*x + v1_0;
-    u2 := x^2 + u2_1*x + u2_0;
-    v2 := v2_1*x + R!v2_0;
+    u := x^3 + u2*x^2 + u1*x + u0;
+    v := v2*x^2 + v1*x + v0;
+    up := x^2 + up1*x + up0;
+    vp := vp1*x + R!vp0;
 
-    k := (f - v1*v1) div u1;
+    k := (f - v*v) div u;
 
-    S, a1, b1 := XGCD(u1, u2);
+    S, a1, b1 := XGCD(u, up);
     if not IsOne(S) then
-        S, a2, b2 := XGCD(S, v2 + v1);
+        S, a2, b2 := XGCD(S, vp + v);
         if not IsOne(S) then
-            u1 := ExactQuotient(u1, S);
-            u2 := ExactQuotient(u2, S);
+            u := ExactQuotient(u, S);
+            up := ExactQuotient(up, S);
         end if;
-        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+        s := (a2*a1*(vp - v) + b2*k) mod up;
     else
-        s := a1*(v2 - v1) mod u2;
+        s := a1*(vp - v) mod up;
     end if;
 
-    if Degree(u1) + Degree(u2) le 3 then
+    if Degree(u) + Degree(up) le 3 then
         //composition only (a gcd case shrank the degrees)
-        un := u1*u2;
-        vn := (v1 + u1*s) mod un;
+        upp := u*up;
+        vpp := (v + u*s) mod upp;
     else
-        //one reduction: un = (k*S - s*(s*u1 + 2*v1))/u2, monic
-        un := ExactQuotient(k*S - s*(s*u1 + 2*v1), u2);
-        un := un/LeadingCoefficient(un);
-        vn := (-s*u1 - v1) mod un;
+        //one reduction: upp = (k*S - s*(s*u + 2*v))/up, monic
+        upp := ExactQuotient(k*S - s*(s*u + 2*v), up);
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (-s*u - v) mod upp;
     end if;
-    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
-           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
-    // 1) gcd(u2,u1) = 1
+    // 1) gcd(up,u) = 1
     //      1.1) DB = P1+P2, DA = P3+P4+P5 and deg(s) = 1       (typical)
     //      1.2) DB =   "  , DA =    "     and deg(s) = 0
-    // 2) gcd(u2,u1) = d s.t. deg(d) = 1
+    // 2) gcd(up,u) = d s.t. deg(d) = 1
     //      2.1) DB = P1+P2, DA = P1+P3+P4 and deg(s) = 1       (return 2P1+P2+P3+P4)
     //      2.2) DB =   "  , DA =    "     and deg(s) = 0
     //      2.3) DB = P1+P2, DA = P3-P1+P4                      (return P2+P3+P4)
-    // 3) gcd(u2,u1) = u2
+    // 3) gcd(up,u) = up
     //      3.1) DB = P1+P2, DA = P1+P2+P3 and deg(s) = 1       (return 2P1+2P2+P3)
     //      3.2) DB =   "  , DA =    "     and deg(s) = 0
     //      3.3) DB = P1+P2, DA = P2-P1+P3                      (return 2P2+P3)
@@ -893,88 +893,88 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
     // ++++++++++++++++++++++++++++ /CASES +++++++++++++++++++++++++++++++
 
 
-	// t1 = h + v1 = v1
-	t1_2:= v1_2;
-	t1_1:= v1_1;
-	t1_0:= v1_0;
+	// vh = h + v = v
+	vh2:= v2;
+	vh1:= v1;
+	vh0:= v0;
 
-	// vt = v2 - v1
-	//vt2:= v2_2;
-	vt1:= v2_1 - v1_1;
-	vt0:= v2_0 - v1_0;
+	// vt = vp - v
+	//vt2:= vp2;
+	vt1:= vp1 - v1;
+	vt0:= vp0 - v0;
 
-    // d = u1 mod u2
-    temp2:= u2_1 - u1_2;
-	temp3:= u2_1^2 - u2_0;
+    // d = u mod up
+    temp2:= up1 - u2;
+	temp3:= up1^2 - up0;
 
-    d1:= u1_1 - u2_1*u1_2 + temp3;
-    d0:= u1_0 + u2_0*temp2;
+    d1:= u1 - up1*u2 + temp3;
+    d0:= u0 + up0*temp2;
 
-    // set up system of equations to solve for s = (v2-v1)/u1 mod u2
+    // set up system of equations to solve for s = (vp-v)/u mod up
     // and find the determinant
     // from Lindner's MSc thesis (pages 63-64)
     //m4:= d0;
     //m3:= -d1;
-    m2:= u2_0*d1;
-    m1:= d0 - u2_1*d1;
+    m2:= up0*d1;
+    m1:= d0 - up1*d1;
 
     det:= d0*m1 + m2*d1;
 
-    // if gcd(u2,u1) != 1
+    // if gcd(up,u) != 1
     if (det eq 0) then
 
-		// ht = t1 + v2
-		ht1:= t1_1 + v2_1;
-		ht0:= t1_0 + v2_0;
+		// ht = vh + vp
+		ht1:= vh1 + vp1;
+		ht0:= vh0 + vp0;
 
-        // if gcd(u2,u1) = u2
+        // if gcd(up,u) = up
         if (d1 eq 0) then
 
-            // dw = (h + v2 + v1) mod u2
-            ta:= - t1_2;
+            // dw = (h + vp + v) mod up
+            ta:= - vh2;
 
-            dw1:= ht1 + u2_1*ta;
-            dw0:= ht0 + u2_0*ta;
+            dw1:= ht1 + up1*ta;
+            dw0:= ht0 + up0*ta;
 
-            // if gcd(u2,h+v2+v1) = u2
+            // if gcd(up,h+vp+v) = up
             if (dw1 eq 0 and dw0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = u2
+                // gcd(up,u) = up
                 // DB = P1+P2, DA = P3-P1-P2
                 // return P3
 
-                // un = u1/u2
-                un3:= 0;
-                un2:= 0;
-                un1:= 1;
-                un0:= -temp2;
+                // upp = u/up
+                upp3:= 0;
+                upp2:= 0;
+                upp1:= 1;
+                upp0:= -temp2;
 
-                // vn = v1 mod un
-                vn2:= 0;
-                vn1:= 0;
-                vn0:= v1_0 - un0*(v1_1 - v1_2*un0);
+                // vpp = v mod upp
+                vpp2:= 0;
+                vpp1:= 0;
+                vpp0:= v0 - upp0*(v1 - v2*upp0);
 
-                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u2,u1) = u2, DB = P1+P2, DA = P3-P1-P2"; end if;
-                return un3, un2, un1, un0, vn2, vn1, vn0;
+                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(up,u) = up, DB = P1+P2, DA = P3-P1-P2"; end if;
+                return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
-			// w1 = (f - v1*h - v1^2)/u1
-			//w1_4:= 1;
-			w1_3:= -u1_2;
-			ta:= -u1_2^2;
-			w1_2:= f5 - u1_1 - ta;
-			tb:= u1_1*w1_2;
-			w1_1:= f4 - u1_0 - v1_2*t1_2 - (u1_1 + u1_2)*(w1_2 + w1_3) + ta + tb;		// karatsuba
-			w1_0:= f3 - v1_1*t1_2 - v1_2*t1_1 - u1_0*w1_3 - tb - u1_2*w1_1;
+			// w1 = (f - v*h - v^2)/u
+			//k4:= 1;
+			k3:= -u2;
+			ta:= -u2^2;
+			k2:= f5 - u1 - ta;
+			tb:= u1*k2;
+			k1:= f4 - u0 - v2*vh2 - (u1 + u2)*(k2 + k3) + ta + tb;		// karatsuba
+			k0:= f3 - v1*vh2 - v2*vh1 - u0*k3 - tb - u2*k1;
 
-            // dx = (u2 mod dw)
-            dx0:= u2_0*dw1^2 + dw0*(dw0 - u2_1*dw1);        //dw1^2
+            // dx = (up mod dw)
+            dx0:= up0*dw1^2 + dw0*(dw0 - up1*dw1);        //dw1^2
 
-            // if gcd (u2,h+v2+v1) = dw
+            // if gcd (up,h+vp+v) = dw
             if (dw1 ne 0 and dx0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = u2
+                // gcd(up,u) = up
                 // DB = P1+P2, DA = P2-P1+P3
                 // return 2P2+P3
 
@@ -982,92 +982,92 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
                 wi:= 1/dw1;
                 dm0:= dw0*wi;
 
-                // u2 = u2/dw
-                u2_0:= u2_1 - dm0;
+                // up = up/dw
+                up0:= up1 - dm0;
 
-                // u1 = u1/dw
-                ta:= u1_2 - dm0;
+                // u = u/dw
+                ta:= u2 - dm0;
 
-                u1_0:= u1_1 - dm0*ta;
-                u1_1:= ta;
+                u0:= u1 - dm0*ta;
+                u1:= ta;
 
-                // s = (u2^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt u2)*w1 mod u2
-                //   = (       a2        )*(     a1     )*(v2-v1) + (        b2       )*w1 mod u2
-                //   = (       a2        )*(     0      )*(v2-v1) + (      1/dw1      )*w1 mod u2
-                //   = w1/dw mod u2
-                s0:= ((((u2_0 - w1_3)*u2_0  + w1_2)*u2_0 - w1_1)*u2_0 + w1_0)*wi;
+                // s = (up^-1 wrt h+vp+v)*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt up)*w1 mod up
+                //   = (       a2        )*(     a1     )*(vp-v) + (        b2       )*w1 mod up
+                //   = (       a2        )*(     0      )*(vp-v) + (      1/dw1      )*w1 mod up
+                //   = w1/dw mod up
+                s0:= ((((up0 - k3)*up0  + k2)*up0 - k1)*up0 + k0)*wi;
 
-                // un = u2*u1
-                un3:= 1;
-                un2:= u2_0 + u1_1;
-                un1:= u2_0*u1_1 + u1_0;
-                un0:= u2_0*u1_0;
+                // upp = up*u
+                upp3:= 1;
+                upp2:= up0 + u1;
+                upp1:= up0*u1 + u0;
+                upp0:= up0*u0;
 
-                // vn = (u1*s + v1) mod un
-                vn2:= s0 + v1_2;
-                vn1:= u1_1*s0 + v1_1;
-                vn0:= u1_0*s0 + v1_0;
+                // vpp = (u*s + v) mod upp
+                vpp2:= s0 + v2;
+                vpp1:= u1*s0 + v1;
+                vpp0:= u0*s0 + v0;
 
-                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u2,u1) = u2, DB = P1+P2, DA = P2-P1+P3"; end if;
-                return un3, un2, un1, un0, vn2, vn1, vn0;
+                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(up,u) = up, DB = P1+P2, DA = P2-P1+P3"; end if;
+                return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
-            // w1R = w1 mod u2
-            w1R_3:= w1_3 - u2_1;
-			ta:= u2_1*w1R_3;
-            w1R_2:= w1_2 - ta - u2_0;
-            tb:= u2_0*w1R_2;
-            w1R_1:= w1_1 - (u2_0 + u2_1)*(w1R_2 + w1R_3) + ta + tb;		// karatsuba
-            w1R_0:= w1_0 - tb;
+            // kp = k mod up
+            kp3:= k3 - up1;
+			ta:= up1*kp3;
+            kp2:= k2 - ta - up0;
+            tb:= up0*kp2;
+            kp1:= k1 - (up0 + up1)*(kp2 + kp3) + ta + tb;		// karatsuba
+            kp0:= k0 - tb;
 
-            // bt = (h+v2+v1^-1 wrt u2)*dx
-            //    = (   -(u2/dw)/dx   )*dx
+            // bt = (h+vp+v^-1 wrt up)*dx
+            //    = (   -(up/dw)/dx   )*dx
             //    = (       b2        )*dx
-            //    = -(u2/dw)
+            //    = -(up/dw)
             bt1:= -dw1;                 //dw1^2
-            bt0:= dw0 - u2_1*dw1;        //dw1^2
+            bt0:= dw0 - up1*dw1;        //dw1^2
 
-            // sp = (u2^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt u2)*dx*w1 mod u2
-            //    = (       a2        )*(     a1     )*(v2-v1) + (        b2       )*dx*w1 mod u2
-            //    = (       a2        )*(     0      )*(v2-v1) + (         bt         )*(  w1R  ) mod u2
-            //    = bt*w1R mod u2
-            ta:= bt1*w1R_1;
-            tb:= bt0*w1R_0;
+            // sp = (up^-1 wrt h+vp+v)*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt up)*dx*w1 mod up
+            //    = (       a2        )*(     a1     )*(vp-v) + (        b2       )*dx*w1 mod up
+            //    = (       a2        )*(     0      )*(vp-v) + (         bt         )*(  w1R  ) mod up
+            //    = bt*w1R mod up
+            ta:= bt1*kp1;
+            tb:= bt0*kp0;
 
             //sp2:= ta;                                             //dw1^2
-            sp1:= (bt1 + bt0)*(w1R_1 + w1R_0) - ta - tb - u2_1*ta;		//dw1^2 karatsuba
-            sp0:= tb - u2_0*ta;                                      //dw1^2
+            sp1:= (bt1 + bt0)*(kp1 + kp0) - ta - tb - up1*ta;		//dw1^2 karatsuba
+            sp0:= tb - up0*ta;                                      //dw1^2
 
             if (sp1 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = u2
+                // gcd(up,u) = up
                 // DB = P1+P2, DA = P1+P2+P3
 
                 // s = sp/dx0
                 s0:= sp0/dx0;
 
-                // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-                un3:= 0;
-                un2:= 1;
-                un1:= w1R_3 - s0^2;
-                un0:= w1R_2 + s0*(s0*temp2 - t1_2 - v1_2);
+                // upp = (w1 - s*(h + 2*v + u*s))/up
+                upp3:= 0;
+                upp2:= 1;
+                upp1:= kp3 - s0^2;
+                upp0:= kp2 + s0*(s0*temp2 - vh2 - v2);
 
-                // vn = -h - v1 - u1*s mod un
-                ta:= u1_2 - un1;
-                tb:= t1_2;
+                // vpp = -h - v - u*s mod upp
+                ta:= u2 - upp1;
+                tb:= vh2;
 
-                vn2:= 0;
-                vn1:= s0*(un1*ta - u1_1 + un0) + un1*tb - t1_1;
-                vn0:= s0*(un0*ta - u1_0) + un0*tb - t1_0;
+                vpp2:= 0;
+                vpp1:= s0*(upp1*ta - u1 + upp0) + upp1*tb - vh1;
+                vpp0:= s0*(upp0*ta - u0) + upp0*tb - vh0;
 
-                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u2,u1) = u2, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"; end if;
-                return un3, un2, un1, un0, vn2, vn1, vn0;
+                if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(up,u) = up, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"; end if;
+                return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = u2
+            // gcd(up,u) = up
             // DB = P1+P2, DA = P1+P2+P3
 
             // s = sp/dx, wi = 1/s1
@@ -1078,42 +1078,42 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
             sm0:= sp0*w2;           // (sp0*dw1^2)/(sp1*dw1^2) = sp0/sp1 = s0/s1
             s1:= sp1^2*w1;          // (sp1^2*dw1^4)/(sp1*dx0*dw1^4) = sp1/dx0 = s1
 
-            // un = (w1 - s*(h + 2*v1 + u1*s))/u2 (made monic)
-            temp4:= sm0*u1_2;
-			ta:= u1_1 + temp4;
-			tb:= t1_2 + v1_2;
+            // upp = (w1 - s*(h + 2*v + u*s))/up (made monic)
+            temp4:= sm0*u2;
+			ta:= u1 + temp4;
+			tb:= vh2 + v2;
 
-			un3:= 1;
-			un2:= - temp2 + sm0 + sm0 - wi^2;
-			un1:= ta - u2_0 - u2_1*un2 + temp4 + sm0^2 + (tb - w1_3*wi)*wi;
-			un0:= u1_0 - u2_1*un1 - u2_0*un2 + sm0*(u1_1 + ta) + (t1_1 + v1_1 + sm0*tb - w1_2*wi)*wi;
+			upp3:= 1;
+			upp2:= - temp2 + sm0 + sm0 - wi^2;
+			upp1:= ta - up0 - up1*upp2 + temp4 + sm0^2 + (tb - k3*wi)*wi;
+			upp0:= u0 - up1*upp1 - up0*upp2 + sm0*(u1 + ta) + (vh1 + v1 + sm0*tb - k2*wi)*wi;
 
-            // vn = -h - v1 - u1*s mod un
-            ta:= u1_2 - un2;
-            tb:= u1_1 - un1;
-            tc:= u1_0 - un0;
+            // vpp = -h - v - u*s mod upp
+            ta:= u2 - upp2;
+            tb:= u1 - upp1;
+            tc:= u0 - upp0;
 
-            vn2:= s1*(un2*(ta + sm0) - temp4 - tb) - t1_2;
-            vn1:= s1*(un1*ta - sm0*tb - tc) - t1_1;
-            vn0:= s1*(un0*ta - sm0*tc) - t1_0;
+            vpp2:= s1*(upp2*(ta + sm0) - temp4 - tb) - vh2;
+            vpp1:= s1*(upp1*ta - sm0*tb - tc) - vh1;
+            vpp0:= s1*(upp0*ta - sm0*tc) - vh0;
 
-            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u2,u1) = u2, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(up,u) = up, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
-        // dw = (h + v2 + v1) mod d
+        // dw = (h + vp + v) mod d
         temp4:= d1^2;
         temp5:= d1*temp4;
-        temp6:= d1*t1_2;       //d1
+        temp6:= d1*vh2;       //d1
         temp7:= temp4*ht1 - d0*temp6;		//d1^2
 
         dw0:= temp5*ht0 - d0*temp7;     //d1^3
 
-        // if gcd(d,h+v2+v1) = d
+        // if gcd(d,h+vp+v) = d
         if (dw0 eq 0) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = d
+            // gcd(up,u) = d
             // DB = P1+P2, DA = P3-P1+P4
             // return return P2+P3+P4
 
@@ -1123,55 +1123,55 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
             // dm = d/d1
             dm0:= d0*wi;
 
-            // u2 = u2/d
-            u2_0:= u2_1 - dm0;
+            // up = up/d
+            up0:= up1 - dm0;
 
-            // u1 = u1/d
-            ta:= u1_2 - dm0;
+            // u = u/d
+            ta:= u2 - dm0;
 
-            u1_0:= u1_1 - dm0*ta;
-            u1_1:= ta;
+            u0:= u1 - dm0*ta;
+            u1:= ta;
 
-            // vp = (v2 - v1) mod u2
-            //vp2:= -v1_2;
-            vp1:= vt1 + u2_0*v1_2;
-            vp0:= vt0 - u2_0*vp1;
+            // vp = (vp - v) mod up
+            //t22:= -v2;
+            t21:= vt1 + up0*v2;
+            t20:= vt0 - up0*t21;
 
-            // s = (d^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt d)*w1 mod u2
-            //   = (       a2       )*(     a1     )*(v2-v1) + (       b2       )*w1 mod u2
-            //   = (       1        )*(    1/d1    )*(v2-v1) + (       0        )*w1 mod u2
+            // s = (d^-1 wrt h+vp+v)*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt d)*w1 mod up
+            //   = (       a2       )*(     a1     )*(vp-v) + (       b2       )*w1 mod up
+            //   = (       1        )*(    1/d1    )*(vp-v) + (       0        )*w1 mod up
             //   = a1*vp
-            s0:= wi*vp0;
+            s0:= wi*t20;
 
-            // un = u2*u1
-            un3:= 1;
-            un2:= u2_0 + u1_1;
-            un1:= u2_0*u1_1 + u1_0;
-            un0:= u2_0*u1_0;
+            // upp = up*u
+            upp3:= 1;
+            upp2:= up0 + u1;
+            upp1:= up0*u1 + u0;
+            upp0:= up0*u0;
 
-            // vn = (u1*s + v1) mod un
-            vn2:= s0 + v1_2;
-            vn1:= u1_1*s0 + v1_1;
-            vn0:= u1_0*s0 + v1_0;
+            // vpp = (u*s + v) mod upp
+            vpp2:= s0 + v2;
+            vpp1:= u1*s0 + v1;
+            vpp0:= u0*s0 + v0;
 
-            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u2,u1) = d, DB = P1+P2, DA = P3-P1+P4"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(up,u) = d, DB = P1+P2, DA = P3-P1+P4"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
-		// w1 = (f - v1*h - v1^2)/u1
-		//w1_4:= 1;
-		w1_3:= -u1_2;
-		ta:= -u1_2^2;
-		w1_2:= f5 - u1_1 - ta;
-		tb:= u1_1*w1_2;
-		w1_1:= f4 - u1_0 - v1_2*t1_2 - (u1_1 + u1_2)*(w1_2 + w1_3) + ta + tb;		// karatsuba
-		w1_0:= f3 - v1_1*t1_2 - v1_2*t1_1 - u1_0*w1_3 - tb - u1_2*w1_1;
+		// w1 = (f - v*h - v^2)/u
+		//k4:= 1;
+		k3:= -u2;
+		ta:= -u2^2;
+		k2:= f5 - u1 - ta;
+		tb:= u1*k2;
+		k1:= f4 - u0 - v2*vh2 - (u1 + u2)*(k2 + k3) + ta + tb;		// karatsuba
+		k0:= f3 - v1*vh2 - v2*vh1 - u0*k3 - tb - u2*k1;
 
-        // at = ( d^-1 wrt h+v2+v1 )*(u1^-1)*dw0
+        // at = ( d^-1 wrt h+vp+v )*(u^-1)*dw0
         //    = (        a2        )*( a1  )*dw0
-        //    = ((-(h+v2+v1)/d)/dw0)*(1/d1 )*dw0
-        //    = (-(h+v2+v1)/d)/d1
+        //    = ((-(h+vp+v)/d)/dw0)*(1/d1 )*dw0
+        //    = (-(h+vp+v)/d)/d1
         // at2:= -h3*temp4 = 0;      //d1^2
         at1:= -temp6*d1;      //d1^2
         at0:= -temp7;         //d1^2
@@ -1180,53 +1180,53 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
         ta:= at1*vt1;       //d1^2
         tb:= at0*vt0;       //d1^2
 
-        // z4:= -at2*v1_2 = 0;                                      //d1^2
-        z3:= at1*(vt1 - v1_2) - ta;           	//d1^2 karatsuba
-        z2:= at0*(vt0 - v1_2) + ta - tb;		//d1^2 karatsuba
+        // z4:= -at2*v2 = 0;                                      //d1^2
+        z3:= at1*(vt1 - v2) - ta;           	//d1^2 karatsuba
+        z2:= at0*(vt0 - v2) + ta - tb;		//d1^2 karatsuba
         z1:= (at0 + at1)*(vt0 + vt1) - ta - tb;           	//d1^2 karatsuba
         z0:= tb;                                           	//d1^2
 
-        // sp = (d^-1 wrt h+v2+v1)*dw0*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt d)*dw0*w1 mod u2
-        //    = (       a2       )*dw0*(     a1     )*( vt  ) + (       b2       )*dw0*w1 mod u2
-        //    = (       1        )*dw0*(    1/d1    )*( vt  ) + (     1/dw0      )*dw0*w1 mod u2
-        //    = z + w1 mod u2
+        // sp = (d^-1 wrt h+vp+v)*dw0*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt d)*dw0*w1 mod up
+        //    = (       a2       )*dw0*(     a1     )*( vt  ) + (       b2       )*dw0*w1 mod up
+        //    = (       1        )*dw0*(    1/d1    )*( vt  ) + (     1/dw0      )*dw0*w1 mod up
+        //    = z + w1 mod up
         sp4:= temp5;                                             //d1^2,d1^3
-        ta:= u2_1*sp4;                                               //d1^2,d1^3
-        sp3:= z3 + w1_3*temp5 - ta;                                     //d1^2,d1^3
-        tb:= u2_0*sp3;                                               //d1^2,d1^3
-        sp2:= z2 + w1_2*temp5 - (u2_0 + u2_1)*(sp3 + sp4) + ta + tb;		//d1^2,d1^3 karatsuba
-        sp1:= z1 + w1_1*temp5 - u2_1*sp2 - tb;                           //d1^2,d1^3
-        sp0:= z0 + w1_0*temp5 - u2_0*sp2;                                //d1^2,d1^3
+        ta:= up1*sp4;                                               //d1^2,d1^3
+        sp3:= z3 + k3*temp5 - ta;                                     //d1^2,d1^3
+        tb:= up0*sp3;                                               //d1^2,d1^3
+        sp2:= z2 + k2*temp5 - (up0 + up1)*(sp3 + sp4) + ta + tb;		//d1^2,d1^3 karatsuba
+        sp1:= z1 + k1*temp5 - up1*sp2 - tb;                           //d1^2,d1^3
+        sp0:= z0 + k0*temp5 - up0*sp2;                                //d1^2,d1^3
 
         if (sp1 eq 0) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = d
+            // gcd(up,u) = d
             // DB = P1+P2, DA = P1+P3+P4
 
             // s = sp/dw
             s0:= sp0/dw0;       // (sp0*(z part is d1^2 w1 part is d1^3))/(dw0*d1^3) = sp0/dw0 = s0
 
-            // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-			un3:= 0;
-			un2:= 1;
-			un1:= w1_3 - u2_1 - s0^2;
-			un0:= w1_2 + s0*(s0*temp2 - t1_2 - v1_2) + temp3 - u2_1*w1_3;
+            // upp = (w1 - s*(h + 2*v + u*s))/up
+			upp3:= 0;
+			upp2:= 1;
+			upp1:= k3 - up1 - s0^2;
+			upp0:= k2 + s0*(s0*temp2 - vh2 - v2) + temp3 - up1*k3;
 
-            // vn = -h - v1 - u1*s mod un
-            ta:= u1_2 - un1;
-            tb:= t1_2;
+            // vpp = -h - v - u*s mod upp
+            ta:= u2 - upp1;
+            tb:= vh2;
 
-            vn2:= 0;
-            vn1:= s0*(un1*ta - u1_1 + un0) + un1*tb - t1_1;
-            vn0:= s0*(un0*ta - u1_0) + un0*tb - t1_0;
+            vpp2:= 0;
+            vpp1:= s0*(upp1*ta - u1 + upp0) + upp1*tb - vh1;
+            vpp0:= s0*(upp0*ta - u0) + upp0*tb - vh0;
 
-            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u2,u1) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+            if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(up,u) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u2,u1) = d
+        // gcd(up,u) = d
         // DB = P1+P2, DA = P1+P3+P4
         // return 2P1+P2+P3+P4
 
@@ -1238,74 +1238,74 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
         sm0:= dw0*sp0*w1;       // (dw0*sp0*d1^6)/(dw0*sp1*d1^6) = sp0/sp1 = s0/s1 = sm0
         s1:= sp1^2*w1;          // (sp1^2*d1^6)/(dw0*sp1*d1^6) = sp1/dw0 = s1
 
-        // un = (w1 - s*(h + 2*v1 + u1*s))/u2 (made monic)
-        temp8:= sm0*u1_2;
-		ta:= u1_1 + temp8;
-		tb:= t1_2 + v1_2;
+        // upp = (w1 - s*(h + 2*v + u*s))/up (made monic)
+        temp8:= sm0*u2;
+		ta:= u1 + temp8;
+		tb:= vh2 + v2;
 
-		un3:= 1;
-		un2:= - temp2 + sm0 + sm0 - wi^2;
-		un1:= ta - u2_0 - u2_1*un2 + temp8 + sm0^2 + (tb - w1_3*wi)*wi;
-		un0:= u1_0 - u2_1*un1 - u2_0*un2 + sm0*(u1_1 + ta) + (t1_1 + v1_1 + sm0*tb - w1_2*wi)*wi;
+		upp3:= 1;
+		upp2:= - temp2 + sm0 + sm0 - wi^2;
+		upp1:= ta - up0 - up1*upp2 + temp8 + sm0^2 + (tb - k3*wi)*wi;
+		upp0:= u0 - up1*upp1 - up0*upp2 + sm0*(u1 + ta) + (vh1 + v1 + sm0*tb - k2*wi)*wi;
 
-        // vn = -h - v1 - u1*s mod un
-        ta:= u1_2 - un2;
-        tb:= u1_1 - un1;
-        tc:= u1_0 - un0;
+        // vpp = -h - v - u*s mod upp
+        ta:= u2 - upp2;
+        tb:= u1 - upp1;
+        tc:= u0 - upp0;
 
-        vn2:= s1*(un2*(ta + sm0) - temp8 - tb) - t1_2;
-        vn1:= s1*(un1*ta - sm0*tb - tc) - t1_1;
-        vn0:= s1*(un0*ta - sm0*tc) - t1_0;
+        vpp2:= s1*(upp2*(ta + sm0) - temp8 - tb) - vh2;
+        vpp1:= s1*(upp1*ta - sm0*tb - tc) - vh1;
+        vpp0:= s1*(upp0*ta - sm0*tc) - vh0;
 
-        if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(u2,u1) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"; end if;
-        return un3, un2, un1, un0, vn2, vn1, vn0;
+        if (ADD_DEBUG) then "Deg23ADD (deg 3 first): gcd(up,u) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"; end if;
+        return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
 
-    // w1 = (f - v1*h - v1^2)/u1
-    //w1_4:= 1;
-    w1_3:= -u1_2;
-    w1_2:= f5 - u1_1 + u1_2^2;
+    // w1 = (f - v*h - v^2)/u
+    //k4:= 1;
+    k3:= -u2;
+    k2:= f5 - u1 + u2^2;
 
-    // vp = v2 - v1 mod u2
-    //vp2:= v2_2;
-    vp1:= vt1 + u2_1*v1_2;
-    vp0:= vt0 + u2_0*v1_2;
+    // vp = vp - v mod up
+    //t22:= vp2;
+    t21:= vt1 + up1*v2;
+    t20:= vt0 + up0*v2;
 
     // partially solve system to get sp = s*det
     // from Lindner's MSc thesis (pages 63-64)
-    sp0:= vp0*m1 + vp1*m2;
-    sp1:= vp1*d0 - vp0*d1;
+    sp0:= t20*m1 + t21*m2;
+    sp1:= t21*d0 - t20*d1;
 
     if (sp1 eq 0) then
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #1.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u2,u1) = d
+        // gcd(up,u) = d
         // DB = P1+P2, DA = P1+P3+P4
 
         // s = sp/det
         s0:= sp0/det;
 
-        // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-        un3:= 0;
-        un2:= 1;
-        un1:= w1_3 - u2_1 - s0^2;
-        un0:= w1_2 + s0*(s0*temp2 - t1_2 - v1_2) + temp3 - u2_1*w1_3;
+        // upp = (w1 - s*(h + 2*v + u*s))/up
+        upp3:= 0;
+        upp2:= 1;
+        upp1:= k3 - up1 - s0^2;
+        upp0:= k2 + s0*(s0*temp2 - vh2 - v2) + temp3 - up1*k3;
 
-        // vn = -h - v1 - u1*s mod un
-        ta:= u1_2 - un1;
-        tb:= t1_2;
+        // vpp = -h - v - u*s mod upp
+        ta:= u2 - upp1;
+        tb:= vh2;
 
-        vn2:= 0;
-        vn1:= s0*(un1*ta - u1_1 + un0) + un1*tb - t1_1;
-        vn0:= s0*(un0*ta - u1_0) + un0*tb - t1_0;
+        vpp2:= 0;
+        vpp1:= s0*(upp1*ta - u1 + upp0) + upp1*tb - vh1;
+        vpp0:= s0*(upp0*ta - u0) + upp0*tb - vh0;
 
         if (ADD_DEBUG) then "Deg23ADD (deg 3 first): Typical, deg(s) = 0"; end if;
-        return un3, un2, un1, un0, vn2, vn1, vn0;
+        return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #1.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~ TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // gcd(u2,u1) = 1
+    // gcd(up,u) = 1
     // DB = P1+P2, DA = P3+P4+P5
     // return P1+P2+P3+P4+P5
 
@@ -1317,140 +1317,140 @@ Deg23ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, 
     sm0:= sp0*w2;           // (s0*det)/(s1*det) = s0/s1
     s1:= sp1^2*w1;          // (s1^2*det^2)/(s1*det^2) = s1
 
-    // un = (w1 - s*(h + 2*v1 + u1*s))/u2 (made monic)
-    temp4:= sm0*u1_2;
-	ta:= u1_1 + temp4;
-	tb:= t1_2 + v1_2;
+    // upp = (w1 - s*(h + 2*v + u*s))/up (made monic)
+    temp4:= sm0*u2;
+	ta:= u1 + temp4;
+	tb:= vh2 + v2;
 
-    un3:= 1;
-    un2:= - temp2 + sm0 + sm0 - wi^2;
-    un1:= ta - u2_0 - u2_1*un2 + temp4 + sm0^2 + (tb - w1_3*wi)*wi;
-    un0:= u1_0 - u2_1*un1 - u2_0*un2 + sm0*(u1_1 + ta) + (t1_1 + v1_1 + sm0*tb - w1_2*wi)*wi;
+    upp3:= 1;
+    upp2:= - temp2 + sm0 + sm0 - wi^2;
+    upp1:= ta - up0 - up1*upp2 + temp4 + sm0^2 + (tb - k3*wi)*wi;
+    upp0:= u0 - up1*upp1 - up0*upp2 + sm0*(u1 + ta) + (vh1 + v1 + sm0*tb - k2*wi)*wi;
 
-    // vn = -h - v1 - u1*s mod un
-    ta:= u1_2 - un2;
-    tb:= u1_1 - un1;
-    tc:= u1_0 - un0;
+    // vpp = -h - v - u*s mod upp
+    ta:= u2 - upp2;
+    tb:= u1 - upp1;
+    tc:= u0 - upp0;
 
-    vn2:= s1*(un2*(ta + sm0) - temp4 - tb) - t1_2;
-    vn1:= s1*(un1*ta - sm0*tb - tc) - t1_1;
-    vn0:= s1*(un0*ta - sm0*tc) - t1_0;
+    vpp2:= s1*(upp2*(ta + sm0) - temp4 - tb) - vh2;
+    vpp1:= s1*(upp1*ta - sm0*tb - tc) - vh1;
+    vpp0:= s1*(upp0*ta - sm0*tc) - vh0;
 
     if (ADD_DEBUG) then "Deg23ADD (deg 3 first): Typical"; end if;
-    return un3, un2, un1, un0, vn2, vn1, vn0;
+    return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg3ADD():
-// Input: u1_2..v1_0: Mumford coordinates for degree 3 divisor D1
-//        u2_2..v2_0: Mumford coordinates for degree 3 divisor D2
+// Input: u2..v0: Mumford coordinates for degree 3 divisor D1
+//        up2..vp0: Mumford coordinates for degree 3 divisor D2
 //        f5..f1:     curve coefficients
 //
-// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
 // Description: Computes the explicit formula for the addition of two degree three
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v2_1, v2_0, f5, f4, f3, f2, f1)
+Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2, f1)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
     //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
-    FF := Parent(u1_0);
+    FF := Parent(u0);
     R<x> := PolynomialRing(FF);
     //f0 is not an argument: at every division below the absent
     //coefficients have degree below the divisor's, so they stay in the
     //discarded remainder; `div` makes that explicit.
     f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     //h = 0 in this class
-    u1 := x^3 + u1_2*x^2 + u1_1*x + u1_0;
-    v1 := v1_2*x^2 + v1_1*x + v1_0;
-    u2 := x^3 + u2_2*x^2 + u2_1*x + u2_0;
-    v2 := v2_2*x^2 + v2_1*x + v2_0;
+    u := x^3 + u2*x^2 + u1*x + u0;
+    v := v2*x^2 + v1*x + v0;
+    up := x^3 + up2*x^2 + up1*x + up0;
+    vp := vp2*x^2 + vp1*x + vp0;
 
-    k := (f - v1*v1) div u1;
+    k := (f - v*v) div u;
 
-    S, a1, b1 := XGCD(u1, u2);
+    S, a1, b1 := XGCD(u, up);
     if not IsOne(S) then
-        S, a2, b2 := XGCD(S, v2 + v1);
+        S, a2, b2 := XGCD(S, vp + v);
         if not IsOne(S) then
-            u1 := ExactQuotient(u1, S);
-            u2 := ExactQuotient(u2, S);
+            u := ExactQuotient(u, S);
+            up := ExactQuotient(up, S);
         end if;
-        s := (a2*a1*(v2 - v1) + b2*k) mod u2;
+        s := (a2*a1*(vp - v) + b2*k) mod up;
     else
-        s := a1*(v2 - v1) mod u2;
+        s := a1*(vp - v) mod up;
     end if;
 
-    if Degree(u1) + Degree(u2) le 3 then
+    if Degree(u) + Degree(up) le 3 then
         //composition only (a gcd case shrank the degrees)
-        un := u1*u2;
-        vn := (v1 + u1*s) mod un;
+        upp := u*up;
+        vpp := (v + u*s) mod upp;
     elif Degree(s) lt 2 then
-        //one reduction: un = (k*S - s*(s*u1 + 2*v1))/u2, monic
-        un := ExactQuotient(k*S - s*(s*u1 + 2*v1), u2);
-        un := un/LeadingCoefficient(un);
-        vn := (-s*u1 - v1) mod un;
+        //one reduction: upp = (k*S - s*(s*u + 2*v))/up, monic
+        upp := ExactQuotient(k*S - s*(s*u + 2*v), up);
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (-s*u - v) mod upp;
     else
         //two reductions, the typical case: one continued-fraction step
         //(reachable only with S = 1, as in Nucomp_g3_RAM)
-        q, r := Quotrem(u2, s);
-        M1 := ExactQuotient((v2 - v1)*q + u1*r, u2);
-        M2 := ExactQuotient(r*(v2 + v1) + q*k, u2);
-        un := r*M1 - q*M2;
-        z := ExactQuotient(u1*r - un, q);
-        un := un/LeadingCoefficient(un);
-        vn := (z - v1) mod un;
+        q, r := Quotrem(up, s);
+        M1 := ExactQuotient((vp - v)*q + u*r, up);
+        M2 := ExactQuotient(r*(vp + v) + q*k, up);
+        upp := r*M1 - q*M2;
+        z := ExactQuotient(u*r - upp, q);
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (z - v) mod upp;
     end if;
-    return Coeff(un,3), Coeff(un,2), Coeff(un,1), Coeff(un,0),
-           Coeff(vn,2), Coeff(vn,1), Coeff(vn,0);
+    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
-    // 1) gcd(u2,u1) = 1
+    // 1) gcd(up,u) = 1
     //      1.1) DB = P1+P2+P3, DA = P4+P5+P6 and deg(s) = 2        (typical)
     //      1.2) DB =    "    , DA =    "     and deg(s) = 1
     //      1.3) DB =    "    , DA =    "     and deg(s) = 0
-    // 2) gcd(u2,u1) = e s.t. deg(e) = 1
+    // 2) gcd(up,u) = e s.t. deg(e) = 1
     //      2.1) DB = P1+P2+P3, DA = P1+P4+P5 and deg(s) = 2        (return 2P1+P2+P3+P4+P5)
     //      2.2) DB =    "    , DA =    "     and deg(s) = 1
     //      2.3) DB =    "    , DA =    "     and deg(s) = 0
     //      2.4) DB = P1+P2+P3, DA = P4-P1+P5                       (return P2+P3+P4+P5)
-    // 3) gcd(u2,u1) = d s.t. deg(d) = 2
+    // 3) gcd(up,u) = d s.t. deg(d) = 2
     //      3.1) DB = P1+P2+P3, DA = P1+P2+P4 and deg(s) = 2        (return 2P1+2P2+P3+P4)
     //      3.2) DB = P1+P2+P3, DA = P1+P2+P4 and deg(s) = 1
     //      3.3) DB = P1+P2+P3, DA = P1+P2+P4 and deg(s) = 0
     //      3.4) DB = P1+P2+P3, DA = P2-P1+P4                       (return 2P2+P3+P4)
     //      3.5) DB = P1+P2+P3, DA = P4-P1-P2                       (return P3+P4)
-    // 4) gcd(u2,u1) = u2
+    // 4) gcd(up,u) = up
     //      4.1) DB = P1+P2+P3, DA = P2-P1+P3                       (return 2P2+2P3)
     //      4.2) DB = P1+P2+P3, DA = P3-P1-P2                       (return 2P3)
     //      4.3) DB = P1+P2-P3, DA = P3-P1-P2                       (return P0)
     // ++++++++++++++++++++++++++++ /CASES +++++++++++++++++++++++++++++++
 
-	// t1 = h + v1 = v1
-	t1_0:= v1_0;
-	t1_1:= v1_1;
-	t1_2:= v1_2;
+	// vh = h + v = v
+	vh0:= v0;
+	vh1:= v1;
+	vh2:= v2;
 
-	// ht = t1 + v2
+	// ht = vh + vp
 	// Only ht2 is needed on the generic path -- it is read at the resultant
 	// below. ht1 and ht0 are read solely inside the `det eq 0` branch, so they
 	// are formed there instead; the special cases pay the same two additions,
 	// just later.
-	ht2:= t1_2 + v2_2;
+	ht2:= vh2 + vp2;
 
-    // d = u1 mod u2
-    d2:= u1_2 - u2_2;
-    d1:= u1_1 - u2_1;
-    d0:= u1_0 - u2_0;
+    // d = u mod up
+    d2:= u2 - up2;
+    d1:= u1 - up1;
+    d0:= u0 - up0;
 
-    // set up system of equations to solve for s = (v2-v1)/u1 mod u2
+    // set up system of equations to solve for s = (vp-v)/u mod up
     // and find the determinant
-	ta:= u2_2*d2;
-	tb:= u2_1*d2;
-	tc:= u2_0*d2;
+	ta:= up2*d2;
+	tb:= up1*d2;
+	tc:= up0*d2;
 	temp1:= d1 - ta;
     temp2:= d0 - tb;
 	temp3:= d2*tc;
@@ -1461,103 +1461,103 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 	m8:= -temp5 - temp3;
 	m7:= temp4 - d2*temp2;
 
-    tf:= -u2_0*m7;
+    tf:= -up0*m7;
 
-    m5:= m9 + u2_2*m8;
-    m3:= -u2_0*m8;
+    m5:= m9 + up2*m8;
+    m3:= -up0*m8;
     m2:= tf;
-    m1:= m5 + u2_1*m7;
+    m1:= m5 + up1*m7;
 
     det:= d0*m1 + d1*m2 + d2*m3;
 
-    // if gcd(u2,u1) != 1
+    // if gcd(up,u) != 1
     if (det eq 0) then
 
-		ht1:= t1_1 + v2_1;
-		ht0:= t1_0 + v2_0;
+		ht1:= vh1 + vp1;
+		ht0:= vh0 + vp0;
 
-        // if gcd(u2,u1) = u2
+        // if gcd(up,u) = up
         if (d2 eq 0 and d1 eq 0) then
 
-            // dw = (h + v2 + v1) mod u2
+            // dw = (h + vp + v) mod up
             dw2:= ht2;
             dw1:= ht1;
             dw0:= ht0;
 
-            // if gcd(u2,h+v2+v1) = u2
+            // if gcd(up,h+vp+v) = up
             if (dw2 eq 0 and dw1 eq 0 and dw0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = u2
+                // gcd(up,u) = up
                 // DB = P1+P2-P3, DA = P3-P1-P2
                 // return P0
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = u2, DB = P1+P2-P3, DA = P3-P1-P2"; end if;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = up, DB = P1+P2-P3, DA = P3-P1-P2"; end if;
                 return 0, 0, 0, 1, 0, 0, 0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
-			// w1 = (f - v1*h - v1^2)/u1
-			//w1_4:= 1;
-			w1_3:= -u1_2;
-			ta:= -u1_2^2;
-			w1_2:= f5 - u1_1 - ta;
-			tb:= u1_1*w1_2;
-			w1_1:= f4 - u1_0 - v1_2*t1_2 - (u1_1 + u1_2)*(w1_2 + w1_3) + ta + tb;		// karatsuba
-			w1_0:= f3 - v1_1*t1_2 - v1_2*t1_1 - u1_0*w1_3 - tb - u1_2*w1_1;
+			// w1 = (f - v*h - v^2)/u
+			//k4:= 1;
+			k3:= -u2;
+			ta:= -u2^2;
+			k2:= f5 - u1 - ta;
+			tb:= u1*k2;
+			k1:= f4 - u0 - v2*vh2 - (u1 + u2)*(k2 + k3) + ta + tb;		// karatsuba
+			k0:= f3 - v1*vh2 - v2*vh1 - u0*k3 - tb - u2*k1;
 
-            // dx = u2 mod dw
+            // dx = up mod dw
             ta:= dw2^2;
-            temp6:= u2_2*dw2 - dw1;                    //dw2
+            temp6:= up2*dw2 - dw1;                    //dw2
 
-            dx1:= u2_1*ta - dw0*dw2 - dw1*temp6;		//dw2^2
-            dx0:= u2_0*ta - dw0*temp6;					//dw2^2
+            dx1:= up1*ta - dw0*dw2 - dw1*temp6;		//dw2^2
+            dx0:= up0*ta - dw0*temp6;					//dw2^2
 
-            // if gcd(u2,h+v2+v1) = dw
+            // if gcd(up,h+vp+v) = dw
             if (dx1 eq 0 and dx0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = u2
+                // gcd(up,u) = up
                 // DB = P1+P2+P3, DA = P1-P2-P3
                 // return 2P1
 
-                // wi = h+v2+v1^-1 wrt u2
+                // wi = h+vp+v^-1 wrt up
                 //    = b2
                 wi:= 1/dw2;
 
                 // dm = dw/dw2
                 dm1:= dw1*wi;
 
-                // u2 = u2/dw
-                //u2_1:= 1;
-                u2_0:= u2_2 - dm1;
+                // up = up/dw
+                //up1:= 1;
+                up0:= up2 - dm1;
 
-                // u1 = u1/dw
-                //u1_1:= 1;
-                u1_0:= u1_2 - dm1;
+                // u = u/dw
+                //u1:= 1;
+                u0:= u2 - dm1;
 
-                // s = (u2^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt u2)*w1 mod u2
-                //   = (       a2        )*(     a1     )*(v2-v1) + (       b2        )*w1 mod u2
-                //   = (       a2        )*(     0      )*(v2-v1) + (       wi        )*w1 mod u2
-                //   = w1*wi mod u2
-                s0:= (w1_0 - u2_0*(w1_1 - u2_0*(w1_2 - u2_0*(w1_3 - u2_0))))*wi;
+                // s = (up^-1 wrt h+vp+v)*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt up)*w1 mod up
+                //   = (       a2        )*(     a1     )*(vp-v) + (       b2        )*w1 mod up
+                //   = (       a2        )*(     0      )*(vp-v) + (       wi        )*w1 mod up
+                //   = w1*wi mod up
+                s0:= (k0 - up0*(k1 - up0*(k2 - up0*(k3 - up0))))*wi;
 
-                // un = u2*u1
-                un3:= 0;
-                un2:= 1;
-                un1:= u2_0 + u1_0;
-                un0:= u2_0*u1_0;
+                // upp = up*u
+                upp3:= 0;
+                upp2:= 1;
+                upp1:= up0 + u0;
+                upp0:= up0*u0;
 
-                // vn = (u1*s + v1) mod un
-                vn2:= 0;
-                vn1:= s0 + v1_1 - un1*v1_2;
-                vn0:= u1_0*s0 + v1_0 - un0*v1_2;
+                // vpp = (u*s + v) mod upp
+                vpp2:= 0;
+                vpp1:= s0 + v1 - upp1*v2;
+                vpp0:= u0*s0 + v0 - upp0*v2;
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = u2, DB = P1+P2+P3, DA = P1-P2-P3"; end if;
-                return un3, un2, un1, un0, vn2, vn1, vn0;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P1-P2-P3"; end if;
+                return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = u2
+            // gcd(up,u) = up
             // DB = P1+P2+P3, DA = P3+P2-P1
             // return 2P2+2P3
 
@@ -1567,84 +1567,84 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             //dm1:= 1;
             dm0:= dx0*wi;		// (dx0*dw2^2)/(dx1*dw2^2) = dx0/dx1
 
-            // bt = (h+v2+v1^-1 wrt u2)*dx1
+            // bt = (h+vp+v^-1 wrt up)*dx1
             //    = (       b2        )*dx1
-            //    = (  (-u2/dw)/dx1   )*dx1
-            //    = -u2/dw
+            //    = (  (-up/dw)/dx1   )*dx1
+            //    = -up/dw
             bt1:= -dw2;     //dw2^2
             bt0:= -temp6;     //dw2^2
 
-            // u2 = u2/dx
-            ta:= u2_2 - dm0;
+            // up = up/dx
+            ta:= up2 - dm0;
 
-            u2_0:= u2_1 - dm0*ta;
-            u2_1:= ta;
+            up0:= up1 - dm0*ta;
+            up1:= ta;
 
-            // u1 = u1/dx
-            ta:= u1_2 - dm0;
+            // u = u/dx
+            ta:= u2 - dm0;
 
-            u1_0:= u1_1 - dm0*ta;
-			u1_1:= ta;
+            u0:= u1 - dm0*ta;
+			u1:= ta;
 
-            // w1R = w1 mod u2
-            //w1R_4:= 1;
-            w1R_3:= w1_3 - u2_1;
-            ta:= u2_1*w1R_3;
-            w1R_2:= w1_2 - u2_0 - ta;
-            tb:= u2_0*w1R_2;
-            w1R_1:= w1_1 - (u2_0 + u2_1)*(w1R_2 + w1R_3) + ta + tb;		// karatsuba
-            w1R_0:= w1_0 - tb;
+            // kp = k mod up
+            //kp4:= 1;
+            kp3:= k3 - up1;
+            ta:= up1*kp3;
+            kp2:= k2 - up0 - ta;
+            tb:= up0*kp2;
+            kp1:= k1 - (up0 + up1)*(kp2 + kp3) + ta + tb;		// karatsuba
+            kp0:= k0 - tb;
 
-            // sp = (u2^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*dx1*(v2-v1) + (h+v2+v1^-1 wrt u2)*dx1*w1 mod u2
-            //    = (       a2        )*(     a1     )*dx1*(v2-v1) + (       b2        )*dx1*w1 mod u2
-            //    = (       a2        )*(     0      )*dx1*(v2-v1) + (          bt         )*(  w1R  ) mod u2
-            //    = bt*w1R mod u2
-            ta:= bt1*w1R_1;
-            tb:= bt0*w1R_0;
+            // sp = (up^-1 wrt h+vp+v)*(u^-1 wrt up)*dx1*(vp-v) + (h+vp+v^-1 wrt up)*dx1*w1 mod up
+            //    = (       a2        )*(     a1     )*dx1*(vp-v) + (       b2        )*dx1*w1 mod up
+            //    = (       a2        )*(     0      )*dx1*(vp-v) + (          bt         )*(  w1R  ) mod up
+            //    = bt*w1R mod up
+            ta:= bt1*kp1;
+            tb:= bt0*kp0;
 
-            sp1:= (bt0 + bt1)*(w1R_0 + w1R_1) - ta - tb - u2_1*ta;		//dx1*dw2^2 karatsuba
-            sp0:= tb - u2_0*ta;                                      //dx1*dw2^2
+            sp1:= (bt0 + bt1)*(kp0 + kp1) - ta - tb - up1*ta;		//dx1*dw2^2 karatsuba
+            sp0:= tb - up0*ta;                                      //dx1*dw2^2
 
             // s = sp/dx1
             s1:= sp1*wi;        // (s1*dx1*dw2^2)/(dx1*dw2^2) = s1
             s0:= sp0*wi;        // (s0*dx1*dw2^2)/(dx1*dw2^2) = s0
 
-            // un = (dm*w1 - s*(h + 2*v1 + u1*s))/u2
-			temp7:= t1_2 + s0;
-			ta:= temp7 + v1_2;
-            tb:= s0*u1_1;
-			temp8:= t1_1 + tb + s1*u1_0;
+            // upp = (dm*w1 - s*(h + 2*v + u*s))/up
+			temp7:= vh2 + s0;
+			ta:= temp7 + v2;
+            tb:= s0*u1;
+			temp8:= vh1 + tb + s1*u0;
 
-            un3:= 1;
-            un2:= w1R_3 + dm0 - s1^2;
-            un1:= w1R_2 + w1R_3*dm0 - s1*(ta + s0 - s1*(u2_1 - u1_1));
-            un0:= w1_1 + w1_2*dm0 - u2_1*un1 - u2_0*un2 - s1*(temp8 + v1_1 + tb) - s0*ta;
+            upp3:= 1;
+            upp2:= kp3 + dm0 - s1^2;
+            upp1:= kp2 + kp3*dm0 - s1*(ta + s0 - s1*(up1 - u1));
+            upp0:= k1 + k2*dm0 - up1*upp1 - up0*upp2 - s1*(temp8 + v1 + tb) - s0*ta;
 
-            // vn = -h - v1 - u1*s mod un
+            // vpp = -h - v - u*s mod upp
             ta:= s1;
 
-            vn2:= - temp7 - s1*(u1_1 - un2);
-            vn1:= un1*ta - temp8;
-            vn0:= un0*ta - t1_0 - u1_0*s0;
+            vpp2:= - temp7 - s1*(u1 - upp2);
+            vpp1:= upp1*ta - temp8;
+            vpp0:= upp0*ta - vh0 - u0*s0;
 
-			if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = u2, DB = P1+P2+P3, DA = P3+P2-P1"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+			if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P3+P2-P1"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
-        // e = u2 mod d
+        // e = up mod d
         e1:= m7;		//d2^2
         e0:= -m8;		//d2^2
 
-        // if gcd(u2,u1) = d
+        // if gcd(up,u) = d
         if (e1 eq 0) then
 
-			// vt = v2 - v1
-			vt2:= v2_2 - v1_2;
-			vt1:= v2_1 - v1_1;
-			vt0:= v2_0 - v1_0;
+			// vt = vp - v
+			vt2:= vp2 - v2;
+			vt1:= vp1 - v1;
+			vt0:= vp0 - v0;
 
-            // dw = h + v2 + v1 mod d
+            // dw = h + vp + v mod d
 			temp6:= d2^2;
 			// ta:= d0*d2 is not formed: it carried the h contribution to dw, which
 			// vanishes at h = 0, and nothing else reads it.
@@ -1653,10 +1653,10 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             dw1:= ht1*temp6 - d1*tb;		//d2^2
             dw0:= ht0*temp6 - d0*tb;				//d2^2
 
-            // if gcd(d,h+v2+v1) = d
+            // if gcd(d,h+vp+v) = d
             if (dw1 eq 0 and dw0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = d
+                // gcd(up,u) = d
                 // DB = P1+P2+P3, DA = P4-P1-P2
                 // return P3+P4
 
@@ -1665,42 +1665,42 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
                 dm1:= d1*wi;
 
-                // u2 = u2/d
-                u2_0:= u2_2 - dm1;
+                // up = up/d
+                up0:= up2 - dm1;
 
-                // u1 = u1/d
-                u1_0:= u1_2 - dm1;
+                // u = u/d
+                u0:= u2 - dm1;
 
-                // s = (d^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt d)*w1 mod u2
-                //   = (       a2       )*(     a1     )*(v2-v1) + (       b2       )*w1 mod u2
-                //   = (       1        )*(    1/d2    )*(v2-v1) + (       0        )*w1 mod u2
-                //   = (v2-v1)/d2 mod u2
-                s0:= (vt0 - u2_0*(vt1 - u2_0*vt2))*wi;
+                // s = (d^-1 wrt h+vp+v)*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt d)*w1 mod up
+                //   = (       a2       )*(     a1     )*(vp-v) + (       b2       )*w1 mod up
+                //   = (       1        )*(    1/d2    )*(vp-v) + (       0        )*w1 mod up
+                //   = (vp-v)/d2 mod up
+                s0:= (vt0 - up0*(vt1 - up0*vt2))*wi;
 
-                // un = u2*u1
-                un3:= 0;
-                un2:= 1;
-                un1:= u2_0 + u1_0;
-                un0:= u2_0*u1_0;
+                // upp = up*u
+                upp3:= 0;
+                upp2:= 1;
+                upp1:= up0 + u0;
+                upp0:= up0*u0;
 
-                // vn = (u1*s + v1) mod un
-                vn2:= 0;
-                vn1:= s0 + v1_1 - un1*v1_2;
-                vn0:= u1_0*s0 + v1_0 - un0*v1_2;
+                // vpp = (u*s + v) mod upp
+                vpp2:= 0;
+                vpp1:= s0 + v1 - upp1*v2;
+                vpp0:= u0*s0 + v0 - upp0*v2;
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P4-P2-P1"; end if;
-                return un3, un2, un1, un0, vn2, vn1, vn0;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P4-P2-P1"; end if;
+                return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.5 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
-			// w1 = (f - v1*h - v1^2)/u1
-			//w1_4:= 1;
-			w1_3:= -u1_2;
-			ta:= -u1_2^2;
-			w1_2:= f5 - u1_1 - ta;
-			tb:= u1_1*w1_2;
-			w1_1:= f4 - u1_0 - v1_2*t1_2 - (u1_1 + u1_2)*(w1_2 + w1_3) + ta + tb;		// karatsuba
-			w1_0:= f3 - v1_1*t1_2 - v1_2*t1_1 - u1_0*w1_3 - tb - u1_2*w1_1;
+			// w1 = (f - v*h - v^2)/u
+			//k4:= 1;
+			k3:= -u2;
+			ta:= -u2^2;
+			k2:= f5 - u1 - ta;
+			tb:= u1*k2;
+			k1:= f4 - u0 - v2*vh2 - (u1 + u2)*(k2 + k3) + ta + tb;		// karatsuba
+			k0:= f3 - v1*vh2 - v2*vh1 - u0*k3 - tb - u2*k1;
 
             // dx = d mod dw
             temp7:= dw1^2;
@@ -1708,10 +1708,10 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
             dx0:= d0*temp7 - dw0*temp8;		//dw1^2*d2^2
 
-            // if gcd(d,h+v2+v1) = dw
+            // if gcd(d,h+vp+v) = dw
             if (dx0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = d
+                // gcd(up,u) = d
                 // DB = P1+P2+P3, DA = P4-P1+P2
                 // return 2P2+P3+P4
 
@@ -1722,87 +1722,87 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
                 dm0:= dw0*w2;           // (dw0*d2^2)/(dw1*d2^2) = dw0/dw1
 
-                // b2 = h+v2+v1^-1 wrt d
+                // b2 = h+vp+v^-1 wrt d
                 //    = 1/dw1
                 b2:= temp6*w2;           	// d2^2/(dw1*d2^2) = 1/dw1
 
-                // at = ((d^-1 wrt h+v2+v1 )*dw1)*(u1^-1 wrt u2)
+                // at = ((d^-1 wrt h+vp+v )*dw1)*(u^-1 wrt up)
                 //    = ((       a2        )*dw1)*(     a1     )
-                //    = ((-(h+v2+v1/d)/dw1 )*dw1)*(    1/d2    )
-                //    = ((-(h+v2+v1/d)/dw1 )*dw1)*(     wi     )
-                //    = -(h+v2+v1/d)*wi
+                //    = ((-(h+vp+v/d)/dw1 )*dw1)*(    1/d2    )
+                //    = ((-(h+vp+v/d)/dw1 )*dw1)*(     wi     )
+                //    = -(h+vp+v/d)*wi
                 // at1:= -h3*wi = 0;
                 at0:= -ht2*wi;
 
-                // u2 = u2/dw
-                ta:= u2_2 - dm0;
+                // up = up/dw
+                ta:= up2 - dm0;
 
-                u2_0:= u2_1 - dm0*ta;
-                u2_1:= ta;
+                up0:= up1 - dm0*ta;
+                up1:= ta;
 
-                // u1 = u1/dw
-                ta:= u1_2 - dm0;
+                // u = u/dw
+                ta:= u2 - dm0;
 
-                u1_0:= u1_1 - dm0*ta;
-                u1_1:= ta;
+                u0:= u1 - dm0*ta;
+                u1:= ta;
 
-                // sp = (d^-1 wrt h+v2+v1)*dw1*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt d)*dw1*w1 mod u2
-                //    = (       a2       )*dw1*(     a1     )*( vt  ) + (       b2       )*dw1*w1 mod u2
-                //    = (                at                 )*( vt  ) + (     1/dw1      )*dw1*w1 mod u2
-                //    = (w1 + at*vt) mod u2
-				temp9:= w1_3 - u2_1;
-				t10:= w1_2 - u2_0;
+                // sp = (d^-1 wrt h+vp+v)*dw1*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt d)*dw1*w1 mod up
+                //    = (       a2       )*dw1*(     a1     )*( vt  ) + (       b2       )*dw1*w1 mod up
+                //    = (                at                 )*( vt  ) + (     1/dw1      )*dw1*w1 mod up
+                //    = (w1 + at*vt) mod up
+				temp9:= k3 - up1;
+				t10:= k2 - up0;
                 // ta:= at1*vt2 = 0;
                 tb:= at0*vt1;
 
                 //sp4:= 1;
                 sp3:= temp9;
-                tc:= u2_1*sp3;
+                tc:= up1*sp3;
                 sp2:= t10 + at0*(vt1 + vt2) - tb - tc;					// karatsuba
-                td:= u2_0*sp2;
-                sp1:= w1_1 + tb - (u2_0 + u2_1)*(sp2 + sp3) + tc + td;		// karatsuba
-                sp0:= w1_0 + at0*vt0 - td;
+                td:= up0*sp2;
+                sp1:= k1 + tb - (up0 + up1)*(sp2 + sp3) + tc + td;		// karatsuba
+                sp0:= k0 + at0*vt0 - td;
 
                 // s = sp/dw1
                 s1:= sp1*b2;
                 s0:= sp0*b2;
 
-				// un = (dm*w1 - s*(h + 2*v1 + u1*s))/u2
-				t11:= t1_2 + s0;
-				ta:= t11 + v1_2;
-				tb:= s0*u1_1;
-				t12:= t1_1 + tb + s1*u1_0;
+				// upp = (dm*w1 - s*(h + 2*v + u*s))/up
+				t11:= vh2 + s0;
+				ta:= t11 + v2;
+				tb:= s0*u1;
+				t12:= vh1 + tb + s1*u0;
 
-				un3:= 1;
-				un2:= temp9 + dm0 - s1^2;
-				un1:= t10 + temp9*(dm0 - u2_1) - s1*(ta + s0 - s1*(u2_1 - u1_1));
-				un0:= w1_1 + w1_2*dm0 - u2_1*un1 - u2_0*un2 - s1*(t12 + v1_1 + tb) - s0*ta;
+				upp3:= 1;
+				upp2:= temp9 + dm0 - s1^2;
+				upp1:= t10 + temp9*(dm0 - up1) - s1*(ta + s0 - s1*(up1 - u1));
+				upp0:= k1 + k2*dm0 - up1*upp1 - up0*upp2 - s1*(t12 + v1 + tb) - s0*ta;
 
-				// vn = -h - v1 - u1*s mod un
+				// vpp = -h - v - u*s mod upp
 				ta:= s1;
 
-				vn2:= - t11 - s1*(u1_1 - un2);
-				vn1:= un1*ta - t12;
-				vn0:= un0*ta - t1_0 - u1_0*s0;
+				vpp2:= - t11 - s1*(u1 - upp2);
+				vpp1:= upp1*ta - t12;
+				vpp0:= upp0*ta - vh0 - u0*s0;
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P4-P1+P2"; end if;
-                return un3, un2, un1, un0, vn2, vn1, vn0;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P4-P1+P2"; end if;
+                return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
-            // b2 = (  h+v2+v1^-1 wrt d   )
+            // b2 = (  h+vp+v^-1 wrt d   )
             //    = (     -d/dw      )/dx0
             //    = (       bt       )/dx0
             bt1:= -temp6*dw1;     //dw1^2
             bt0:= -d2*temp8;      //dw1^2
 
-            // a2 = (     d^-1 wrt h+v2+v1      )
-            //    = (1 + (h+v2+v1/d)*(d/dw))/dx0
+            // a2 = (     d^-1 wrt h+vp+v      )
+            //    = (1 + (h+vp+v/d)*(d/dw))/dx0
             //    = (1 + (    y    )*(-bt ))/dx0
             //    = (1 + (        z        )/dx0
             //    = (          at          )/dx0
 
-            // y = h+v2+v1/d
+            // y = h+vp+v/d
             // y1:= h3*d2 = 0;					//d2
             y0:= ht2*d2;		//d2
 
@@ -1831,62 +1831,62 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             // rh = b2*w1
             ta:= bt1*temp6;		//dw1^2*d2^2 //extra d2^2 added here (1 extra d2^2 compared to the LHS)
             tb:= bt0*temp6;      	//dw1^2*d2^2 //extra d2^2 added here (1 extra d2^2 compared to the LHS)
-            tc:= ta*w1_3;       	//dw1^2*d2^2
-            td:= tb*w1_2;       	//dw1^2*d2^2
-            te:= ta*w1_1;       	//dw1^2*d2^2
-            tf:= tb*w1_0;       	//dw1^2*d2^2
+            tc:= ta*k3;       	//dw1^2*d2^2
+            td:= tb*k2;       	//dw1^2*d2^2
+            te:= ta*k1;       	//dw1^2*d2^2
+            tf:= tb*k0;       	//dw1^2*d2^2
 
             rh5:= ta;                                   //dw1^2*d2^2
             rh4:= tc + tb;                              //dw1^2*d2^2
-            rh3:= (ta + tb)*(w1_2 + w1_3) - tc - td;		//dw1^2*d2^2 karatsuba
+            rh3:= (ta + tb)*(k2 + k3) - tc - td;		//dw1^2*d2^2 karatsuba
             rh2:= td + te;                              //dw1^2*d2^2
-            rh1:= (ta + tb)*(w1_0 + w1_1) - te - tf;        //dw1^2*d2^2 karatsuba
+            rh1:= (ta + tb)*(k0 + k1) - te - tf;        //dw1^2*d2^2 karatsuba
             rh0:= tf;                                   //dw1^2*d2^2
 
-            // sp = (d^-1 wrt h+v2+v1)*dx0*(u1^-1 wrt u2)*d2*(v2-v1) + (h+v2+v1^-1 wrt d)*dx0*w1 mod u2
-            //    = (       a2       )*dx0*(     a1     )*d2*( vt  ) + (       b2       )*dx0*w1 mod u2
-            //    = (     at/dx0     )*dx0*(    1/d2    )*d2*( vt  ) + (     bt/dx0     )*dx0*w1 mod u2
-            //    = (         at         )*(       1       )*( vt  ) + (         bt         )*w1 mod u2
-            //    = (                      lh                      ) + (          rh          ) mod u2
-            //    = (lh + rh) mod u2
+            // sp = (d^-1 wrt h+vp+v)*dx0*(u^-1 wrt up)*d2*(vp-v) + (h+vp+v^-1 wrt d)*dx0*w1 mod up
+            //    = (       a2       )*dx0*(     a1     )*d2*( vt  ) + (       b2       )*dx0*w1 mod up
+            //    = (     at/dx0     )*dx0*(    1/d2    )*d2*( vt  ) + (     bt/dx0     )*dx0*w1 mod up
+            //    = (         at         )*(       1       )*( vt  ) + (         bt         )*w1 mod up
+            //    = (                      lh                      ) + (          rh          ) mod up
+            //    = (lh + rh) mod up
             sp5:= rh5;
-            ta:= u2_2*sp5;
+            ta:= up2*sp5;
             sp4:= rh4 - ta;
-            tb:= u2_1*sp4;
-            sp3:= lh3 + rh3 - (u2_1 + u2_2)*(sp4 + sp5) + ta + tb;            // karatsuba
-            tc:= u2_0*sp3;
+            tb:= up1*sp4;
+            sp3:= lh3 + rh3 - (up1 + up2)*(sp4 + sp5) + ta + tb;            // karatsuba
+            tc:= up0*sp3;
 
-            sp2:= lh2 + rh2 - tb - (u2_0 + u2_2)*(sp3 + sp5) + ta + tc;		// karatsuba
-            sp1:= lh1 + rh1 - (u2_0 + u2_1)*(sp3 + sp4) + tb + tc;            // karatsuba
+            sp2:= lh2 + rh2 - tb - (up0 + up2)*(sp3 + sp5) + ta + tc;		// karatsuba
+            sp1:= lh1 + rh1 - (up0 + up1)*(sp3 + sp4) + tb + tc;            // karatsuba
             sp0:= lh0 + rh0 - tc;
 
             if (sp2 eq 0) then
                 if (sp1 eq 0) then
                     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    // gcd(u2,u1) = d
+                    // gcd(up,u) = d
                     // DB = P1+P2+P3, DA = P1+P2+P4
 
                     // s = sp/(dx0*d2)
                     s0:= sp0/(dx0*d2);
 
-                    // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-                    un3:= 0;
-                    un2:= 0;
-                    un1:= 1;
-                    un0:= w1_3 - u2_2 - s0^2;
+                    // upp = (w1 - s*(h + 2*v + u*s))/up
+                    upp3:= 0;
+                    upp2:= 0;
+                    upp1:= 1;
+                    upp0:= k3 - up2 - s0^2;
 
-                    // vn = -h - v1 - u1*s mod un
-                    vn2:= 0;
-                    vn1:= 0;
-                    vn0:= un0*(u1_1*s0 + t1_1 + un0*(s0*(un0 - u1_2) - t1_2)) - t1_0 - u1_0*s0;
+                    // vpp = -h - v - u*s mod upp
+                    vpp2:= 0;
+                    vpp1:= 0;
+                    vpp0:= upp0*(u1*s0 + vh1 + upp0*(s0*(upp0 - u2) - vh2)) - vh0 - u0*s0;
 
-					if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 0"; end if;
-                    return un3, un2, un1, un0, vn2, vn1, vn0;
+					if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 0"; end if;
+                    return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 end if;
 
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = d
+                // gcd(up,u) = d
                 // DB = P1+P2+P3, DA = P1+P2+P4
 
                 // s = sp/(dx0*d2), wi = 1/s1, sm = s/s1
@@ -1899,32 +1899,32 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
                 s1:= sp1^2*w1;          // (s1^2*dx0^2)/(s1*dx0^2*d2) = s1/d2 = s1
                 sm0:= sp0*w2;           // s0*dx0/s1*dx0 = s0/s1
 
-                // un = (w1 - s*(h + 2*v1 + u1*s))/u2 (made monic)
-                temp9:= sm0*u1_2;
+                // upp = (w1 - s*(h + 2*v + u*s))/up (made monic)
+                temp9:= sm0*u2;
 
-                un3:= 0;
-                un2:= 1;
-                un1:= d2 + sm0 + sm0 - wi^2;
-				t10:= un1 - sm0;
-                un0:= d1 + temp9 + (sm0 - u2_2)*t10 + (t1_2 + v1_2 + (sm0 - w1_3)*wi)*wi;
+                upp3:= 0;
+                upp2:= 1;
+                upp1:= d2 + sm0 + sm0 - wi^2;
+				t10:= upp1 - sm0;
+                upp0:= d1 + temp9 + (sm0 - up2)*t10 + (vh2 + v2 + (sm0 - k3)*wi)*wi;
 
-                // vn = -h - v1 - u1*s mod un
-                ta:= s1*(t10 - u1_2);
-                tb:= un1*ta;
-                tc:= s1*(un0 - u1_1 - temp9) - t1_2 - tb;
-                td:= un0*tc;
+                // vpp = -h - v - u*s mod upp
+                ta:= s1*(t10 - u2);
+                tb:= upp1*ta;
+                tc:= s1*(upp0 - u1 - temp9) - vh2 - tb;
+                td:= upp0*tc;
 
-                vn2:= 0;
-                vn1:= -s1*(u1_0 + u1_1*sm0) - t1_1 - (un0 + un1)*(tc + ta) + tb + td;		// karatsuba
-                vn0:= -s1*(u1_0*sm0) - t1_0 - td;
+                vpp2:= 0;
+                vpp1:= -s1*(u0 + u1*sm0) - vh1 - (upp0 + upp1)*(tc + ta) + tb + td;		// karatsuba
+                vpp0:= -s1*(u0*sm0) - vh0 - td;
 
-                if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 1"; end if;
-                return un3, un2, un1, un0, vn2, vn1, vn0;
+                if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 1"; end if;
+                return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = d
+            // gcd(up,u) = d
             // DB = P1+P2+P3, DA = P1+P2+P4
             // return 2P1+2P2+P3+P4
 
@@ -1939,50 +1939,50 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             sm1:= sp1*w2;           // s1*dx0/s2*dx0 = s1/s2
             sm0:= sp0*w2;           // s0*dx0/s2*dx0 = s0/s2
 
-            // q = u2/s
+            // q = up/s
             //q1:= 1;           //s2
-            q0:= u2_2 - sm1;     //s2
+            q0:= up2 - sm1;     //s2
 
-            // r = u2 mod s
-            r1:= s2*(u2_1 - sm1*q0 - sm0);       //s2
-            r0:= s2*(u2_0 - sm0*q0);             //s2
+            // r = up mod s
+            r1:= s2*(up1 - sm1*q0 - sm0);       //s2
+            r0:= s2*(up0 - sm0*q0);             //s2
 
-            // M1 = (q*(v2 - v1) + r*u1)/u2
+            // M1 = (q*(vp - v) + r*u)/up
             //M11:= r1;                 //s2^2
             M10:= vt2 + r0 + r1*d2;     //s2
 
-            // M2 = (r*(h + v2 + v1) + q*w1)/u2
+            // M2 = (r*(h + vp + v) + q*w1)/up
             //M22:= 1;                                                          //s2
-            M21:= w1_3 - sm1;                                             //s2
-            M20:= w1_2 - sm1*(w1_3 - u2_2) + r1*ht2 - u2_1;		//s2
+            M21:= k3 - sm1;                                             //s2
+            M20:= k2 - sm1*(k3 - up2) + r1*ht2 - up1;		//s2
 
-            // un = r*M1 - q*M2 (monic)
-            un3:= 1;
-            un2:= M21 - r1^2 + q0;
-            un1:= M20 - r1*(M10 + r0) + M21*q0;
-            un0:= M20*q0 - r0*M10;
+            // upp = r*M1 - q*M2 (monic)
+            upp3:= 1;
+            upp2:= M21 - r1^2 + q0;
+            upp1:= M20 - r1*(M10 + r0) + M21*q0;
+            upp0:= M20*q0 - r0*M10;
 
-            // vn = ((u1*r - un)/q - v1 - h) mod un
+            // vpp = ((u*r - upp)/q - v - h) mod upp
             ta:= r0 - r1*q0;
-			tb:= (u1_2 - q0)*ta + (un2 - q0)*wi;
+			tb:= (u2 - q0)*ta + (upp2 - q0)*wi;
 
-			vn2:= r1*(u1_2 - un2) + ta + wi - t1_2;
-            vn1:= r1*(u1_1 - un1) + tb - t1_1;
-			vn0:= r1*(u1_0 - un0) + u1_1*ta - q0*tb + un1*wi - t1_0;
+			vpp2:= r1*(u2 - upp2) + ta + wi - vh2;
+            vpp1:= r1*(u1 - upp1) + tb - vh1;
+			vpp0:= r1*(u0 - upp0) + u1*ta - q0*tb + upp1*wi - vh0;
 
-            if (ADD_DEBUG) then "Deg3ADD: gcd(u2,u1) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 2"; end if;
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+            if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 2"; end if;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
-        // at = (u1^-1 wrt u2)*e1
+        // at = (u^-1 wrt up)*e1
         //    = (     a1     )*e1
-        //    = ( -(u2/d)/e1 )*e1
-        //    = -(u2/d)
+        //    = ( -(up/d)/e1 )*e1
+        //    = -(up/d)
         at1:= -d2;		//d2^2
         at0:= temp1;		//d2^2
 
-        // dw0 = (h + v2 + v1) mod e
+        // dw0 = (h + vp + v) mod e
         temp4:= e1^2;
 		temp5:= ht2*e1;
 		temp6:= ht1*temp4;
@@ -1991,43 +1991,43 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
         dw0:= ht0*temp8 - e0*(temp6 - temp7);		//e1^3 (e1^3*d2^6)
 
-        // if gcd(e,h+v2+v1) = e
+        // if gcd(e,h+vp+v) = e
         if (dw0 eq 0) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = e
+            // gcd(up,u) = e
             // DB = P1+P2+P3, DA = P4-P1+P5
             // return P2+P3+P4+P5
 
-            // w1 = (f - v1*h - v1^2)/u1
-            //w1_4:= 1;
-            w1_3:= -u1_2;
-            w1_2:= f5 - u1_1 + u1_2^2;
-            w1_1:= f4 - u1_0 - v1_2^2 - u1_2*(w1_2 - u1_1);
+            // w1 = (f - v*h - v^2)/u
+            //k4:= 1;
+            k3:= -u2;
+            k2:= f5 - u1 + u2^2;
+            k1:= f4 - u0 - v2^2 - u2*(k2 - u1);
 
             // wi = 1/e1, dm = e/e1
             wi:= 1/e1;         	// 1/(e1*d2^2)
 
             dm0:= e0*wi;		// (e0*d2^2)/(e1*d2^2) = e0/e1
 
-            // a1 = u1^-1 wrt u2
+            // a1 = u^-1 wrt up
             //    = at/e1
             a11:= at1*wi;
             a10:= at0*wi;
 
-            // u2 = u2/dm
-            ta:= u2_2 - dm0;
-            u2_0:= u2_1 - dm0*ta;
-            u2_1:= ta;
+            // up = up/dm
+            ta:= up2 - dm0;
+            up0:= up1 - dm0*ta;
+            up1:= ta;
 
-            // u1 = u1/dm
-            ta:= u1_2 - dm0;
-            u1_0:= u1_1 - dm0*ta;
-            u1_1:= ta;
+            // u = u/dm
+            ta:= u2 - dm0;
+            u0:= u1 - dm0*ta;
+            u1:= ta;
 
-            // vt = v2 - v1
-            vt2:= v2_2 - v1_2;
-            vt1:= v2_1 - v1_1;
-            vt0:= v2_0 - v1_0;
+            // vt = vp - v
+            vt2:= vp2 - v2;
+            vt1:= vp1 - v1;
+            vt0:= vp0 - v0;
 
             // y = a1*vt
             ta:= a10*vt1;
@@ -2037,65 +2037,65 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             y1:= a11*vt0 + ta;
             y0:= a10*vt0;
 
-            // s = (e^-1 wrt h+v2+v1)*(u1^-1 wrt u2)*(v2-v1) + (h+v2+v1^-1 wrt e)*w1 mod u2
-            //   = (       a2       )*(     a1     )*( vt  ) + (       b2       )*w1 mod u2
-            //   = (       1        )*(         y          ) + (       0        )*w1 mod u2
-            //   = y mod u2
+            // s = (e^-1 wrt h+vp+v)*(u^-1 wrt up)*(vp-v) + (h+vp+v^-1 wrt e)*w1 mod up
+            //   = (       a2       )*(     a1     )*( vt  ) + (       b2       )*w1 mod up
+            //   = (       1        )*(         y          ) + (       0        )*w1 mod up
+            //   = y mod up
             s3:= y3;
-            ta:= u2_1*s3;
+            ta:= up1*s3;
             s2:= y2 - ta;
-            tb:= u2_0*s2;
-            s1:= y1 - (u2_0 + u2_1)*(s2 + s3) + ta + tb;		// karatsuba
+            tb:= up0*s2;
+            s1:= y1 - (up0 + up1)*(s2 + s3) + ta + tb;		// karatsuba
             s0:= y0 - tb;
 
-            // un = (w1*dm - s*(h + 2*v1 + u1*s))/u2
-            t10:= s0*u1_1;
-            t11:= s1*u1_0;
-            ta:= w1_3 - u2_1;
+            // upp = (w1*dm - s*(h + 2*v + u*s))/up
+            t10:= s0*u1;
+            t11:= s1*u0;
+            ta:= k3 - up1;
 
-            un3:= 1;
-            un2:= ta + dm0 - s1^2;
-            un1:= w1_2 - u2_0 - ta*(u2_1 - dm0) - s1*(2*(v1_2 + s0) + s1*(u1_1 - u2_1));
-            un0:= w1_1 - u2_1*(un1) - u2_0*(un2) - s1*(2*(v1_1 + t10) + t11) + dm0*w1_2 - s0*(2*v1_2 + s0);
+            upp3:= 1;
+            upp2:= ta + dm0 - s1^2;
+            upp1:= k2 - up0 - ta*(up1 - dm0) - s1*(2*(v2 + s0) + s1*(u1 - up1));
+            upp0:= k1 - up1*(upp1) - up0*(upp2) - s1*(2*(v1 + t10) + t11) + dm0*k2 - s0*(2*v2 + s0);
 
-            // vn = -h - v1 - u1*s mod un
+            // vpp = -h - v - u*s mod upp
 			ta:= s1;
 
-            vn2:= s1*(un2 - u1_1) - t1_2 - s0;
-            vn1:= un1*ta - t10 - t11 - t1_1;
-            vn0:= un0*ta - s0*u1_0 - t1_0;
+            vpp2:= s1*(upp2 - u1) - vh2 - s0;
+            vpp1:= upp1*ta - t10 - t11 - vh1;
+            vpp0:= upp0*ta - s0*u0 - vh0;
 
-            //"Deg3ADD - gcd(u2,u1) = e, DB = P1+P2+P3, DA = P4-P1+P5";
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+            //"Deg3ADD - gcd(up,u) = e, DB = P1+P2+P3, DA = P4-P1+P5";
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.4 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
-        // w1 = (f - v1*h - v1^2)/u1
-        //w1_4:= 1;
-        w1_3:= -u1_2;
-        w1_2:= f5 - u1_1 + u1_2^2;
-        w1_1:= f4 - u1_0 - v1_2^2 - u1_2*(w1_2 - u1_1);                      // no karatsuba, use u1_2 multiplication
-        w1_0:= f3 - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*(2*v1_1);
+        // w1 = (f - v*h - v^2)/u
+        //k4:= 1;
+        k3:= -u2;
+        k2:= f5 - u1 + u2^2;
+        k1:= f4 - u0 - v2^2 - u2*(k2 - u1);                      // no karatsuba, use u2 multiplication
+        k0:= f3 - u2*(k1 - u0) - u1*(k2) - v2*(2*v1);
 
-        // vt = v2 - v1
-        vt2:= v2_2 - v1_2;
-        vt1:= v2_1 - v1_1;
-        vt0:= v2_0 - v1_0;
+        // vt = vp - v
+        vt2:= vp2 - v2;
+        vt1:= vp1 - v1;
+        vt0:= vp0 - v0;
 
-        // a2 = ( e^-1 wrt h+v2+v1 )
-        //    = ( -(h+v2+v1)/e )/dw0
+        // a2 = ( e^-1 wrt h+vp+v )
+        //    = ( -(h+vp+v)/e )/dw0
         //    = (      y       )/dw0
-        // y = -(h+v2+v1)/e
+        // y = -(h+vp+v)/e
         // y2:= -h3*temp4 = 0;			//e1^2
         y1:= -e1*temp5;			//e1^2
         y0:= -(temp6 - temp7);		//e1^2
 
-        // z = at*vt mod u2
+        // z = at*vt mod up
         z3:= at1*vt2;                           				//d2^2
 		ta:= at0*vt1;											//d2^2
-        z2:= (at0 + at1)*(vt1 + vt2) - z3  - ta - u2_2*z3;		//d2^2 karatsuba
-        z1:= at1*vt0 + ta - u2_1*z3;        						//d2^2
-        z0:= at0*vt0 - u2_0*z3;                  				//d2^2
+        z2:= (at0 + at1)*(vt1 + vt2) - z3  - ta - up2*z3;		//d2^2 karatsuba
+        z1:= at1*vt0 + ta - up1*z3;        						//d2^2
+        z0:= at0*vt0 - up0*z3;                  				//d2^2
 
         // lh = y*z
 		ta:= y1*z1;										//e1^2*d2^2
@@ -2109,53 +2109,53 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
 
         //rhs = w1
         rh4:= temp8;        	//e1^3
-        rh3:= w1_3*temp8;     	//e1^3
-        rh2:= w1_2*temp8;     	//e1^3
-        rh1:= w1_1*temp8;     	//e1^3
-        rh0:= w1_0*temp8;		//e1^3
+        rh3:= k3*temp8;     	//e1^3
+        rh2:= k2*temp8;     	//e1^3
+        rh1:= k1*temp8;     	//e1^3
+        rh0:= k0*temp8;		//e1^3
 
-        // sp = ( e^-1 wrt h+v2+v1 )*dw0*(u1^-1 wrt u2)*e1*(v2-v1) + (h+v2+v1^-1 wrt e)*dw0*w1 mod u2
-        //    = (        a2        )*dw0*(     a1     )*e1*( vt  ) + (       b2       )*dw0*w1 mod u2
-        //    = ((-(h+v2+v1)/e)/dw0)*dw0*( -(u2/d)/e1 )*e1*( vt  ) + (     1/dw0      )*dw0*w1 mod u2
-        //    = (          y           )*(      at       )*( vt  ) + (         1          )*w1 mod u2
-        //    = (          y           )*(           z           ) + (         1          )*w1 mod u2
-        //    = (                       lh                       ) + (          rh          ) mod u2
-        //    = lh + rh mod u2
+        // sp = ( e^-1 wrt h+vp+v )*dw0*(u^-1 wrt up)*e1*(vp-v) + (h+vp+v^-1 wrt e)*dw0*w1 mod up
+        //    = (        a2        )*dw0*(     a1     )*e1*( vt  ) + (       b2       )*dw0*w1 mod up
+        //    = ((-(h+vp+v)/e)/dw0)*dw0*( -(up/d)/e1 )*e1*( vt  ) + (     1/dw0      )*dw0*w1 mod up
+        //    = (          y           )*(      at       )*( vt  ) + (         1          )*w1 mod up
+        //    = (          y           )*(           z           ) + (         1          )*w1 mod up
+        //    = (                       lh                       ) + (          rh          ) mod up
+        //    = lh + rh mod up
         sp4:= rh4;
-		ta:= u2_2*sp4;
+		ta:= up2*sp4;
         sp3:= lh3 + rh3 - ta;
-		tb:= u2_1*sp3;
+		tb:= up1*sp3;
 
-        sp2:= lh2 + rh2 - (u2_1 + u2_2)*(sp3 + sp4) + ta + tb;		// karatsuba
-        sp1:= lh1 + rh1 - tb - u2_0*sp4;
-        sp0:= lh0 + rh0 - u2_0*sp3;
+        sp2:= lh2 + rh2 - (up1 + up2)*(sp3 + sp4) + ta + tb;		// karatsuba
+        sp1:= lh1 + rh1 - tb - up0*sp4;
+        sp0:= lh0 + rh0 - up0*sp3;
 
         if (sp2 eq 0) then
             if (sp1 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                // gcd(u2,u1) = e
+                // gcd(up,u) = e
                 // DB = P1+P2+P3, DA = P1+P4+P5
 
                 // s = sp/dw0
                 s0:= sp0/(dw0);
 
-                // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-                un3:= 0;
-                un2:= 0;
-                un1:= 1;
-                un0:= w1_3 - u2_2 - s0^2;
+                // upp = (w1 - s*(h + 2*v + u*s))/up
+                upp3:= 0;
+                upp2:= 0;
+                upp1:= 1;
+                upp0:= k3 - up2 - s0^2;
 
-                // vn = -h - v1 - u1*s mod un
-                vn2:= 0;
-                vn1:= 0;
-                vn0:= un0*(u1_1*s0 + t1_1 + un0*(s0*(un0 - u1_2) - t1_2)) - t1_0 - u1_0*s0;
+                // vpp = -h - v - u*s mod upp
+                vpp2:= 0;
+                vpp1:= 0;
+                vpp0:= upp0*(u1*s0 + vh1 + upp0*(s0*(upp0 - u2) - vh2)) - vh0 - u0*s0;
 
-                return un3, un2, un1, un0, vn2, vn1, vn0;
+                return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = e
+            // gcd(up,u) = e
             // DB = P1+P2+P3, DA = P1+P4+P5
 
             // s = sp/dw0, wi = 1/s1, sm = s/s1
@@ -2168,30 +2168,30 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
             s1:= sp1^2*w1;          // (s1^2*dw0^2)/(s1*dw0^2*d2) = s1/d2 = s1
             sm0:= sp0*w2;           // s0*dw0/s1*dw0 = s0/s1
 
-            // un = (w1 - s*(h + 2*v1 + u1*s))/u2 (made monic)
-            tsb:= sm0*u1_2;
+            // upp = (w1 - s*(h + 2*v + u*s))/up (made monic)
+            tsb:= sm0*u2;
 
-            un3:= 0;
-            un2:= 1;
-            un1:= d2 + 2*sm0 - wi^2;
-            un0:= (sm0 - u2_2)*(un1 - sm0) + tsb + d1 + (2*v1_2 + (sm0 - w1_3)*wi)*wi;
+            upp3:= 0;
+            upp2:= 1;
+            upp1:= d2 + 2*sm0 - wi^2;
+            upp0:= (sm0 - up2)*(upp1 - sm0) + tsb + d1 + (2*v2 + (sm0 - k3)*wi)*wi;
 
-            // vn = -h - v1 - u1*s mod un
-            ta:= s1*(un1 - u1_2 - sm0);
-            tc:= un1*ta;
-            tb:= s1*(un0 - u1_1 - tsb) - t1_2 - tc;
-            td:= un0*tb;
+            // vpp = -h - v - u*s mod upp
+            ta:= s1*(upp1 - u2 - sm0);
+            tc:= upp1*ta;
+            tb:= s1*(upp0 - u1 - tsb) - vh2 - tc;
+            td:= upp0*tb;
 
-            vn2:= 0;
-            vn1:= -s1*(u1_0 + u1_1*sm0) - t1_1 - (un0 + un1)*(ta + tb) + tc + td;        // karatsuba
-            vn0:= -s1*(u1_0*sm0) - t1_0 - td;
+            vpp2:= 0;
+            vpp1:= -s1*(u0 + u1*sm0) - vh1 - (upp0 + upp1)*(ta + tb) + tc + td;        // karatsuba
+            vpp0:= -s1*(u0*sm0) - vh0 - td;
 
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u2,u1) = e
+        // gcd(up,u) = e
         // DB = P1+P2+P3, DA = P1+P4+P5
         // return 2P1+P2+P3+P4+P5
 
@@ -2206,69 +2206,69 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
         sm1:= sp1*w2;           // s1*dw0/s2*dw0 = s1/s2
         sm0:= sp0*w2;           // s0*dw0/s2*dw0 = s0/s2
 
-        // q = u2/s
+        // q = up/s
         //q1:= 1;           //s2
-        q0:= u2_2 - sm1;     //s2
+        q0:= up2 - sm1;     //s2
 
-        // r = u2 mod s
-        r1:= s2*(u2_1 - sm1*q0 - sm0);       //s2
-        r0:= s2*(u2_0 - sm0*q0);             //s2
+        // r = up mod s
+        r1:= s2*(up1 - sm1*q0 - sm0);       //s2
+        r0:= s2*(up0 - sm0*q0);             //s2
 
-        // M1 = (q*(v2 - v1) + r*u1)/u2
+        // M1 = (q*(vp - v) + r*u)/up
         //M11:= r1;                 //s2^2
         M10:= vt2 + r0 + r1*d2;     //s2
 
-        // M2 = (r*(h + v2 + v1) + q*w1)/u2
+        // M2 = (r*(h + vp + v) + q*w1)/up
         //M22:= 1;                                                              //s2
-        M21:= w1_3 - sm1;                                                 //s2
-        M20:= w1_2 - sm1*(w1_3 - u2_2) + r1*ht2 - u2_1;      		//s2
+        M21:= k3 - sm1;                                                 //s2
+        M20:= k2 - sm1*(k3 - up2) + r1*ht2 - up1;      		//s2
 
-        // un = r*M1 - q*M2 (monic)
-        un3:= 1;
-        un2:= M21 - r1^2 + q0;
-        un1:= M20 - r1*(M10 + r0) + M21*q0;
-        un0:= M20*q0 - r0*M10;
+        // upp = r*M1 - q*M2 (monic)
+        upp3:= 1;
+        upp2:= M21 - r1^2 + q0;
+        upp1:= M20 - r1*(M10 + r0) + M21*q0;
+        upp0:= M20*q0 - r0*M10;
 
-        // vn = ((u1*r - un)/q - v1 - h) mod un (where un is not monic)
+        // vpp = ((u*r - upp)/q - v - h) mod upp (where upp is not monic)
         tx:= r0 - r1*q0;
-        ty:= (u1_2 - q0)*tx + (un2 - q0)*wi;        // shared by vn1 and vn0
+        ty:= (u2 - q0)*tx + (upp2 - q0)*wi;        // shared by vpp1 and vpp0
 
-        vn2:= r1*(u1_2 - un2) + tx + wi - t1_2;
-        vn1:= r1*(u1_1 - un1) + ty - t1_1;        // convenient precomp (tuck u1_2*wi in obligate un2*wi multiplication)
-        vn0:= r1*(u1_0 - un0) + u1_1*tx - q0*ty + un1*wi - t1_0;
+        vpp2:= r1*(u2 - upp2) + tx + wi - vh2;
+        vpp1:= r1*(u1 - upp1) + ty - vh1;        // convenient precomp (tuck u2*wi in obligate upp2*wi multiplication)
+        vpp0:= r1*(u0 - upp0) + u1*tx - q0*ty + upp1*wi - vh0;
 
-        return un3, un2, un1, un0, vn2, vn1, vn0;
+        return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     end if;
 
-    // w1 = (f - v1*h - v1^2)/u1
-    //w1_4:= 1;
-    w1_3:= -u1_2;
-    w1_2:= f5 - u1_1 + u1_2^2;
-    // w1_1 and w1_0 are not formed here. Only the top two coefficients of the
-    // quotient (f - v1^2)/u1 are used on this path -- w1_3 and w1_2 feed the
+    // w1 = (f - v*h - v^2)/u
+    //k4:= 1;
+    k3:= -u2;
+    k2:= f5 - u1 + u2^2;
+    // k1 and k0 are not formed here. Only the top two coefficients of the
+    // quotient (f - v^2)/u are used on this path -- k3 and k2 feed the
     // resultant below -- and the thesis's efficient exact division
     // (sec:exactdiv) says only the highest d1 - d2 + 1 are ever needed. Their
     // former definitions read:
-    //   w1_1:= f4 - u1_0 - v1_2^2 - u1_2*(w1_2 - u1_1);
-    //   w1_0:= f3 - u1_2*(w1_1 - u1_0) - u1_1*(w1_2) - v1_2*2*v1_1;
+    //   k1:= f4 - u0 - v2^2 - u2*(k2 - u1);
+    //   k0:= f3 - u2*(k1 - u0) - u1*(k2) - v2*2*v1;
 
-    //vt = v1 - v2
-    vt2:= v2_2 - v1_2;
-    vt1:= v2_1 - v1_1;
-    vt0:= v2_0 - v1_0;
+    //vt = v - vp
+    vt2:= vp2 - v2;
+    vt1:= vp1 - v1;
+    vt0:= vp0 - v0;
 
     // m6 and m4 close the adjugate. The sp1 row below is their only reader, and it
-    // is on the gcd(u2,u1) = 1 path, so they belong here rather than above the
+    // is on the gcd(up,u) = 1 path, so they belong here rather than above the
     // `det eq 0` test -- the special cases all return without reading them.
     //
     // Each is the plain cofactor with a term that is identically zero folded in,
     // which is what lets tf, m8 and m7 stand in for products the cofactor would
     // otherwise need. Both are ordinary adjugate values, nonzero for essentially
     // every curve.
-    m6:= tf - u2_1*m8;
-    m4:= m8 + u2_2*m7;
+    m6:= tf - up1*m8;
+    m4:= m8 + up2*m7;
 
 	// partially solve system to get sp = s*det
     sp0:= vt0*m1 + vt1*m2 + vt2*m3;
@@ -2282,29 +2282,29 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
     if (sp2 eq 0) then
         if (sp1 eq 0) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #1.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u2,u1) = 1
+            // gcd(up,u) = 1
             // DB = P1+P2+P3, DA = P4+P5+P6
 
             // s = sp/det
             s0:= sp0/(det);
 
-            // un = (w1 - s*(h + 2*v1 + u1*s))/u2
-            un3:= 0;
-            un2:= 0;
-            un1:= 1;
-            un0:= w1_3 - u2_2 - s0^2;
+            // upp = (w1 - s*(h + 2*v + u*s))/up
+            upp3:= 0;
+            upp2:= 0;
+            upp1:= 1;
+            upp0:= k3 - up2 - s0^2;
 
-            // vn = -h - v1 - u1*s mod un
-            vn2:= 0;
-            vn1:= 0;
-            vn0:= un0*(u1_1*s0 + t1_1 + un0*(s0*(un0 - u1_2) - t1_2)) - t1_0 - u1_0*s0;
+            // vpp = -h - v - u*s mod upp
+            vpp2:= 0;
+            vpp1:= 0;
+            vpp0:= upp0*(u1*s0 + vh1 + upp0*(s0*(upp0 - u2) - vh2)) - vh0 - u0*s0;
 
-            return un3, un2, un1, un0, vn2, vn1, vn0;
+            return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #1.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #1.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u2,u1) = 1
+        // gcd(up,u) = 1
         // DB = P1+P2+P3, DA = P4+P5+P6
 
         // s = sp/det, wi = 1/s1, sm = s/s1
@@ -2317,30 +2317,30 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
         s1:= sp1^2*w1;          // (s1^2*dw0^2)/(s1*dw0^2*d2) = s1/d2 = s1
         sm0:= sp0*w2;           // s0*dw0/s1*dw0 = s0/s1
 
-        // un = (w1 - s*(h + 2*v1 + u1*s))/u2 (made monic)
-        tsb:= sm0*u1_2;
+        // upp = (w1 - s*(h + 2*v + u*s))/up (made monic)
+        tsb:= sm0*u2;
 
-        un3:= 0;
-        un2:= 1;
-        un1:= d2 + 2*sm0 - wi^2;
-        un0:= (sm0 - u2_2)*(un1 - sm0) + tsb + d1 + (2*v1_2 + (sm0 - w1_3)*wi)*wi;
+        upp3:= 0;
+        upp2:= 1;
+        upp1:= d2 + 2*sm0 - wi^2;
+        upp0:= (sm0 - up2)*(upp1 - sm0) + tsb + d1 + (2*v2 + (sm0 - k3)*wi)*wi;
 
-        // vn = -h - v1 - u1*s mod un
-        tn3:= s1*(un1 - u1_2 - sm0);
-        tx:= un1*tn3;
-        tn2:= s1*(un0 - u1_1 - tsb) - t1_2 - tx;
-        ty:= un0*tn2;
+        // vpp = -h - v - u*s mod upp
+        tn3:= s1*(upp1 - u2 - sm0);
+        tx:= upp1*tn3;
+        tn2:= s1*(upp0 - u1 - tsb) - vh2 - tx;
+        ty:= upp0*tn2;
 
-        vn2:= 0;
-        vn1:= -s1*(u1_0 + u1_1*sm0) - t1_1 - (un0 + un1)*(tn2 + tn3) + tx + ty;        // karatsuba
-        vn0:= -s1*(u1_0*sm0) - t1_0 - ty;
+        vpp2:= 0;
+        vpp1:= -s1*(u0 + u1*sm0) - vh1 - (upp0 + upp1)*(tn2 + tn3) + tx + ty;        // karatsuba
+        vpp0:= -s1*(u0*sm0) - vh0 - ty;
 
-        return un3, un2, un1, un0, vn2, vn1, vn0;
+        return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #1.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #1.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // gcd(u2,u1) = 1
+    // gcd(up,u) = 1
     // DB = P1+P2+P3, DA = P4+P5+P6
     // return P1+P2+P3+P4+P5+P6
 
@@ -2355,38 +2355,38 @@ Deg3ADD:= function(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v
     sm1:= sp1*w2;           // s1*dw0/s2*dw0 = s1/s2
     sm0:= sp0*w2;           // s0*dw0/s2*dw0 = s0/s2
 
-    // q = u2/s
+    // q = up/s
     //q1:= 1;           //s2
-    q0:= u2_2 - sm1;     //s2
+    q0:= up2 - sm1;     //s2
 
-    // r = u2 mod s
-    r1:= s2*(u2_1 - sm1*q0 - sm0);       //s2
-    r0:= s2*(u2_0 - sm0*q0);             //s2
+    // r = up mod s
+    r1:= s2*(up1 - sm1*q0 - sm0);       //s2
+    r0:= s2*(up0 - sm0*q0);             //s2
 
-    // M1 = (q*(v2 - v1) + r*u1)/u2
+    // M1 = (q*(vp - v) + r*u)/up
     //M11:= r1;                 //s2^2
     M10:= vt2 + r0 + r1*d2;     //s2
 
-    // M2 = (r*(h + v2 + v1) + q*w1)/u2
+    // M2 = (r*(h + vp + v) + q*w1)/up
     //M22:= 1;                                                              //s2
-    M21:= w1_3 - sm1;                                                 //s2
-    M20:= w1_2 - sm1*(w1_3 - u2_2) + r1*ht2 - u2_1;      		//s2
+    M21:= k3 - sm1;                                                 //s2
+    M20:= k2 - sm1*(k3 - up2) + r1*ht2 - up1;      		//s2
 
-    // un = r*M1 - q*M2 (monic)
-    un3:= 1;
-    un2:= M21 - r1^2 + q0;
-    un1:= M20 - r1*(M10 + r0) + M21*q0;
-    un0:= M20*q0 - r0*M10;
+    // upp = r*M1 - q*M2 (monic)
+    upp3:= 1;
+    upp2:= M21 - r1^2 + q0;
+    upp1:= M20 - r1*(M10 + r0) + M21*q0;
+    upp0:= M20*q0 - r0*M10;
 
-    // vn = ((u1*r - un)/q - v1 - h) mod un (where un is not monic)
+    // vpp = ((u*r - upp)/q - v - h) mod upp (where upp is not monic)
     tx:= r0 - r1*q0;
-    ty:= (u1_2 - q0)*tx + (un2 - q0)*wi;        // shared by vn1 and vn0
+    ty:= (u2 - q0)*tx + (upp2 - q0)*wi;        // shared by vpp1 and vpp0
 
-    vn2:= r1*(u1_2 - un2) + tx + wi - t1_2;
-    vn1:= r1*(u1_1 - un1) + ty - t1_1;        // convenient precomp (tuck u1_2*wi in obligate un2*wi multiplication)
-    vn0:= r1*(u1_0 - un0) + u1_1*tx - q0*ty + un1*wi - t1_0;
+    vpp2:= r1*(u2 - upp2) + tx + wi - vh2;
+    vpp1:= r1*(u1 - upp1) + ty - vh1;        // convenient precomp (tuck u2*wi in obligate upp2*wi multiplication)
+    vpp0:= r1*(u0 - upp0) + u1*tx - q0*ty + upp1*wi - vh0;
 
-    return un3, un2, un1, un0, vn2, vn1, vn0;
+    return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #1.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 end function;
@@ -2397,7 +2397,7 @@ end function;
 // Input: D1, D2:     divisors as [u, v] polynomial pairs, any degrees
 //        f:          curve polynomial (h = 0 in this class)
 //
-// Output: Mumford coordinates un3, un2, un1, un0, vn2, vn1, vn0 for D3 = D1 + D2
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
 // Description: Dispatches on the operand degrees to the Deg* cases above,
 //              normalising the larger-degree divisor first. D1 = D2 is routed
@@ -2415,63 +2415,63 @@ ADD:= function(D1, D2, f)//startIGNORE
         return DBL(D1,f,0*f);
     end if;
 
-    // ensure u1 is always the larger polynomial
+    // ensure u is always the larger polynomial
     if D2[1] le D1[1] then
-        u1:= D1[1]; v1:= D1[2];
-        u2:= D2[1]; v2:= D2[2];
+        u:= D1[1]; v:= D1[2];
+        up:= D2[1]; vp:= D2[2];
 
     else
-        u2:= D1[1]; v2:= D1[2];
-        u1:= D2[1]; v1:= D2[2];
+        up:= D1[1]; vp:= D1[2];
+        u:= D2[1]; v:= D2[2];
 
     end if;
 
     f7:= Coeff(f, 7); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
 
-    u1_3:= Coeff(u1,3); u1_2:= Coeff(u1,2); u1_1:= Coeff(u1,1); u1_0:= Coeff(u1,0);
-    v1_2:= Coeff(v1,2); v1_1:= Coeff(v1,1); v1_0:= Coeff(v1,0);
+    u3:= Coeff(u,3); u2:= Coeff(u,2); u1:= Coeff(u,1); u0:= Coeff(u,0);
+    v2:= Coeff(v,2); v1:= Coeff(v,1); v0:= Coeff(v,0);
 
-    u2_3:= Coeff(u2,3); u2_2:= Coeff(u2,2); u2_1:= Coeff(u2,1); u2_0:= Coeff(u2,0);
-    v2_2:= Coeff(v2,2); v2_1:= Coeff(v2,1); v2_0:= Coeff(v2,0);
+    up3:= Coeff(up,3); up2:= Coeff(up,2); up1:= Coeff(up,1); up0:= Coeff(up,0);
+    vp2:= Coeff(vp,2); vp1:= Coeff(vp,1); vp0:= Coeff(vp,0);
 
-    if (u1_3 ne 0) then
-        if (u2_3 ne 0) then
-            return Deg3ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_2, u2_1, u2_0, v2_2, v2_1, v2_0, f5, f4, f3, f2, f1);
+    if (u3 ne 0) then
+        if (up3 ne 0) then
+            return Deg3ADD(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2, f1);
 
-        elif (u2_2 ne 0) then
-            return Deg23ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, f2, f1);
+        elif (up2 ne 0) then
+            return Deg23ADD(u2, u1, u0, v2, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2, f1);
 
-        elif (u2_1 ne 0) then
-            return Deg13ADD(u1_2, u1_1, u1_0, v1_2, v1_1, v1_0, u2_0, v2_0, f5, f4, f3, f2, f1);
+        elif (up1 ne 0) then
+            return Deg13ADD(u2, u1, u0, v2, v1, v0, up0, vp0, f5, f4, f3, f2, f1);
 
         else
-			return u1_3, u1_2, u1_1, u1_0, v1_2, v1_1, v1_0;
+			return u3, u2, u1, u0, v2, v1, v0;
 
 		end if;
 
-    elif (u1_2 ne 0) then
-        if (u2_2 ne 0) then
-            return Deg22ADD(u1_1, u1_0, v1_1, v1_0, u2_1, u2_0, v2_1, v2_0, f5, f4, f3, f2);
+    elif (u2 ne 0) then
+        if (up2 ne 0) then
+            return Deg22ADD(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2);
 
-        elif (u2_1 ne 0) then
-            return Deg12ADD(u1_1, u1_0, v1_1, v1_0, u2_0, v2_0, f5, f4, f3, f2);
+        elif (up1 ne 0) then
+            return Deg12ADD(u1, u0, v1, v0, up0, vp0, f5, f4, f3, f2);
             
         else
-            return u1_3, u1_2, u1_1, u1_0, v1_2, v1_1, v1_0;
+            return u3, u2, u1, u0, v2, v1, v0;
         
         end if;
     
-    elif (u1_1 ne 0) then
-        if (u2_1 ne 0) then
-            return Deg1ADD(u1_0, v1_0, u2_0, v2_0);
+    elif (u1 ne 0) then
+        if (up1 ne 0) then
+            return Deg1ADD(u0, v0, up0, vp0);
             
         else
-            return u1_3, u1_2, u1_1, u1_0, v1_2, v1_1, v1_0;
+            return u3, u2, u1, u0, v2, v1, v0;
         
         end if;     
     
     else
-        return u1_3, u1_2, u1_1, u1_0, v1_2, v1_1, v1_0;
+        return u3, u2, u1, u0, v2, v1, v0;
     
     end if;
         
