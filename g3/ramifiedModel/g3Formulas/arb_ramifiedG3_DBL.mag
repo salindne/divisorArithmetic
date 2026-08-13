@@ -70,12 +70,12 @@ Deg1DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h
         end if;
         _, s1, s3 := XGCD(u, 2*v + h);
     end if;
-    k := (f - v*(v + h)) div u;
+    k := (f - v*(v + h)) div u;   //Exact quotient
     s := s3*k mod u;
     upp := u^2;
     vpp := (v + u*s) mod upp;
     while Degree(upp) gt 3 do
-        upp2 := (f - vpp*(vpp + h)) div upp;
+        upp2 := (f - vpp*(vpp + h)) div upp;   //Exact quotient
         upp2 := upp2/LeadingCoefficient(upp2);
         vpp := (-vpp - h) mod upp2;
         upp := upp2;
@@ -174,12 +174,12 @@ Deg2DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h
         end if;
         _, s1, s3 := XGCD(u, 2*v + h);
     end if;
-    k := (f - v*(v + h)) div u;
+    k := (f - v*(v + h)) div u;   //Exact quotient
     s := s3*k mod u;
     upp := u^2;
     vpp := (v + u*s) mod upp;
     while Degree(upp) gt 3 do
-        upp2 := (f - vpp*(vpp + h)) div upp;
+        upp2 := (f - vpp*(vpp + h)) div upp;   //Exact quotient
         upp2 := upp2/LeadingCoefficient(upp2);
         vpp := (-vpp - h) mod upp2;
         upp := upp2;
@@ -390,12 +390,12 @@ Deg3DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h
         end if;
         _, s1, s3 := XGCD(u, 2*v + h);
     end if;
-    k := (f - v*(v + h)) div u;
+    k := (f - v*(v + h)) div u;   //Exact quotient
     s := s3*k mod u;
     upp := u^2;
     vpp := (v + u*s) mod upp;
     while Degree(upp) gt 3 do
-        upp2 := (f - vpp*(vpp + h)) div upp;
+        upp2 := (f - vpp*(vpp + h)) div upp;   //Exact quotient
         upp2 := upp2/LeadingCoefficient(upp2);
         vpp := (-vpp - h) mod upp2;
         upp := upp2;

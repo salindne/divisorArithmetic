@@ -56,6 +56,7 @@ restating the detail.
 | N17 | The genus-3 ramified addition now beats the split-model one on M+S, C and A | **implemented**; superseded by N18 |
 | N18 | The doubling trades one multiplication for twenty-two additions; the ledger is closed but for two open items | **implemented**, measured, Magma-verified |
 | N19 | The specialised odd-characteristic addition had fallen behind the general one it specialises | **implemented**; the invariant is now asserted in CI |
+| N20 | The polynomial reference blocks are executable, so they became a second oracle | **established**; 12 functions checked, 3 defects found |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -1137,6 +1138,69 @@ normal-form assumption is a claim about the *domain*, not about the formulas: th
 depression's cost was three artefacts outside the formula file and zero
 multiplications inside it, and a report that prices only the arithmetic prices the
 easy part.
+
+---
+
+## N20 — The polynomial reference blocks are executable, and that turned them into a test
+
+**Status:** established, 2026-08-13. PR36, in progress.
+
+Every case function in the genus-2 and genus-3 ramified formula files opens with a
+commented block holding the *polynomial-level* formulation the explicit coefficient
+arithmetic implements — `d := up mod u`, `k := (f - v*(v+h)) div u`, and so on. Their
+stated purpose is that deleting the explicit formulas and uncommenting the block leaves
+a working function. Until now that was an aspiration: nothing ever ran them.
+
+**They can now be extracted mechanically and checked, and doing so is worth more than
+reading them.** A parser lifts each block out of the source verbatim, wraps it in the
+host function's own signature, and the result is compared against the explicit formulas
+on genuinely on-curve divisor pairs — pairs built from affine points, with deliberate
+overlap so the degenerate branches are reached rather than hoped for. Across the two
+genus-3 ramified addition files that is **12 functions, 7,235 + 5,365 pairs over six
+fields, every one of the seven returned coefficients compared, zero disagreements and
+zero runtime errors.** The blocks are now a second oracle rather than a comment.
+
+Three things this found that reading could not:
+
+- **`ExactQuotient` and `div` are not interchangeable here, and the difference is
+  invisible until the block is executed.** Each block builds `f` truncated at the lowest
+  coefficient its own signature carries, because the omitted low coefficients have degree
+  below the divisor's and so cannot reach the quotient — measured, `div` returns the true
+  exact quotient on 3,000 of 3,000 degree-2 divisors. But the *numerator* is then not
+  divisible: `up | f - vp(vp+h)` holds for the full `f` and fails for the truncated one on
+  **0 of 3,000**. So `ExactQuotient` raises on every evaluation of that line, and `div`
+  is not a loose spelling of it but the correct operator. Both now carry an
+  `//Exact quotient` comment saying which it is.
+- **The genus-2 blocks are not runnable at all**, for a different reason: they reference
+  `f0`, which is not a parameter of the functions that contain them. Magma resolves free
+  identifiers at *definition* time, so uncommenting one does not merely fail at that line
+  — it refuses to define the function and aborts the load. The genus-3 blocks were
+  written extractable; the genus-2 ones were not, and the asymmetry had gone unnoticed
+  because neither had been tried.
+- **Two commented lines in the degree-2-plus-degree-3 addition were wrong, in both
+  files, and one had a correct twin 135 lines away.** `//t22:= -v2;` and `//t22:= vp2;`
+  annotate the same quantity in sibling branches and disagree; the first is right. The
+  companion `//vt2:=` line had its operands reversed. The value is load-bearing even
+  though the line is commented out: the Karatsuba immediately below expands
+  `(at1 + at2)*(vt1 + vt2)` with `vt2` folded in as `-vp2`, and the `mod up` reduction
+  two branches later folds the same coefficient in as `up*vp2`. A commented-out
+  coefficient can still document a live one.
+
+**For the paper.** The transferable point is that **a reference formulation shipped as a
+comment is untested documentation, and the cost of testing it is a parser, not a
+rewrite.** This project already treats the interpreter as the counter of record (N12)
+because interpreting the real source removes transcription drift; the same argument
+applies one level up, to the algorithm statement the formulas claim to implement. Two of
+the three findings above are exactly transcription drift between a formulation and its
+implementation, which is the class of defect a human reading both is worst at.
+
+Landing alongside it, and behaviour-preserving: the genus-3 ramified case functions now
+take **the smaller-degree divisor first, unprimed**, matching genus 2, so `u, v` is
+always the lower-degree operand, `up, vp` the higher, and `upp, vpp` the result. Genus 3
+had `(u, v)` first but bound to the *larger* divisor, so a reader who knew genus 2 read
+every mixed-degree signature backwards. Verified as a pure refactor by comparing both
+addition dispatchers against their pre-change selves on 2,995 operations spanning all
+six degree pairs — zero mismatches — with every operation count identical per branch.
 
 ---
 

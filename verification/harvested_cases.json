@@ -44,7 +44,7 @@
     ]
    ],
    "labels": [
-    "Deg13ADD (deg 3 first): Typical"
+    "Deg13ADD: Typical"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -296,7 +296,7 @@
     ]
    ],
    "labels": [
-    "Deg12ADD (deg 2 first) | Case #2.2: gcd(u,up) = up, gcd(up,h+vp+v) = up"
+    "Deg12ADD | Case #2.2: gcd(up,u) = u, gcd(u,h+v+vp) = u"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -436,7 +436,7 @@
     ]
    ],
    "labels": [
-    "Deg12ADD (deg 2 first) | Typical"
+    "Deg12ADD | Typical"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -502,7 +502,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): Typical, deg(s) = 0"
+    "Deg23ADD: Typical, deg(s) = 0"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -648,7 +648,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): Typical"
+    "Deg23ADD: Typical"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -730,7 +730,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(u,up) = dw1, DB = P1+P2, DA = P3-P1+P4"
+    "Deg23ADD: gcd(up,u) = dw1, DB = P1+P2, DA = P3-P1+P4"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -819,7 +819,7 @@
     ]
    ],
    "labels": [
-    "Deg13ADD (deg 3 first): gcd(u,up) = up, DB = P1, DA = P1+P2+P3"
+    "Deg13ADD: gcd(up,u) = u, DB = P1, DA = P1+P2+P3"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -902,7 +902,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(u,up) = dw1, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"
+    "Deg23ADD: gcd(up,u) = dw1, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -981,7 +981,7 @@
     ]
    ],
    "labels": [
-    "Deg13ADD (deg 3 first): gcd(u,up) = up, DB = P1, DA = P2-P1+P3"
+    "Deg13ADD: gcd(up,u) = u, DB = P1, DA = P2-P1+P3"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -1209,7 +1209,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(u,up) = up, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"
+    "Deg23ADD: gcd(up,u) = u, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -1295,7 +1295,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(u,up) = dw1, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"
+    "Deg23ADD: gcd(up,u) = dw1, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -1476,7 +1476,7 @@
     ]
    ],
    "labels": [
-    "Deg12ADD (deg 2 first) | Case #2.1: gcd(u,up) = up, gcd(up,h+vp+v) = 1"
+    "Deg12ADD | Case #2.1: gcd(up,u) = u, gcd(u,h+v+vp) = 1"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -1553,7 +1553,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(u,up) = up, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"
+    "Deg23ADD: gcd(up,u) = u, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -1898,7 +1898,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(u,up) = up, DB = P1+P2, DA = P3-P1-P2"
+    "Deg23ADD: gcd(up,u) = u, DB = P1+P2, DA = P3-P1-P2"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -2183,7 +2183,7 @@
     ]
    ],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(u,up) = up, DB = P1+P2, DA = P2-P1+P3"
+    "Deg23ADD: gcd(up,u) = u, DB = P1+P2, DA = P2-P1+P3"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3230,7 +3230,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg12ADD (deg 2 first) | Case #2.1: gcd(up,u) = up, gcd(up,h+vp+v) = 1"
+    "Deg12ADD | Case #2.1: gcd(u,up) = u, gcd(u,h+v+vp) = 1"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3300,7 +3300,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg13ADD (deg 3 first): Typical"
+    "Deg13ADD: Typical"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3373,7 +3373,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg13ADD (deg 3 first): gcd(up,u) = up, DB = P1, DA = P1+P2+P3"
+    "Deg13ADD: gcd(u,up) = u, DB = P1, DA = P1+P2+P3"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3449,7 +3449,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(up,u) = up, DB = P1+P2, DA = P3-P1-P2"
+    "Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P3-P1-P2"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3531,7 +3531,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(up,u) = d, DB = P1+P2, DA = P3-P1+P4"
+    "Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P3-P1+P4"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3610,7 +3610,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg12ADD (deg 2 first) | Typical"
+    "Deg12ADD | Typical"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3744,7 +3744,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): Typical"
+    "Deg23ADD: Typical"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3899,7 +3899,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): Typical, deg(s) = 0"
+    "Deg23ADD: Typical, deg(s) = 0"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -3978,7 +3978,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg12ADD (deg 2 first) | Case #2.2: gcd(up,u) = up, gcd(up,h+vp+v) = up"
+    "Deg12ADD | Case #2.2: gcd(u,up) = u, gcd(u,h+v+vp) = u"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -4112,7 +4112,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg13ADD (deg 3 first): gcd(up,u) = up, DB = P1, DA = P2-P1+P3"
+    "Deg13ADD: gcd(u,up) = u, DB = P1, DA = P2-P1+P3"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -4264,7 +4264,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(up,u) = up, DB = P1+P2, DA = P2-P1+P3"
+    "Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P2-P1+P3"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -4343,7 +4343,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(up,u) = up, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"
+    "Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -4583,7 +4583,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(up,u) = up, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"
+    "Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -4665,7 +4665,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(up,u) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"
+    "Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -4914,7 +4914,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg23ADD (deg 3 first): gcd(up,u) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"
+    "Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"
    ],
    "model": "ramified",
    "op": "ADD",
