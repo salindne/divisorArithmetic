@@ -589,7 +589,7 @@ Deg3DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h
 		// dm = dw/dw1, w1 = 1/dw1
 		w1:= 1/dw1;
 
-		dm1:= 1;
+		//dm1:= 1;
 		dm0:= dw0*w1;
 
 		// a1 = (2va + h)^-1
