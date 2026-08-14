@@ -27,7 +27,7 @@
 // Description: Computes the explicit formula for the addition of two degree one
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg1ADD:= function(u0, v0, up0, vp0)
+Deg1ADD:= function(u0,v0,up0,vp0)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
@@ -60,7 +60,7 @@ Deg1ADD:= function(u0, v0, up0, vp0)
     d:= u0 - up0;
     if IsZero(d) then
 
-		if (ADD_DEBUG) then "Deg1ADD | Case #2: gcd(u,up) = u"; end if;
+		if ADD_DEBUG then "Deg1ADD | Case #2: gcd(u,up) = u"; end if;
         return 0,0,0,1,0,0,0;
     end if;//d
     
@@ -73,11 +73,10 @@ Deg1ADD:= function(u0, v0, up0, vp0)
     upp0:= u0*up0;
 
     //vpp := (v + u*s) mod upp;
-    //vpp2:= 0;
     //vpp1:= s0;
     vpp0:= v0 + u0*s0;
     
-	if (ADD_DEBUG) then "Deg1ADD | Typical"; end if;
+	if ADD_DEBUG then "Deg1ADD | Typical"; end if;
     return 0, 1, upp1, upp0, 0, s0, vpp0;
 end function;
 
@@ -132,41 +131,35 @@ Deg12ADD:= function(u0, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, h2, h1, 
     return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     */ //endIGNORE
 
-    //vh := h + vp;
-    vh1:= h1 + vp1;
-    vh0:= h0 + vp0;
-
     //d := up mod u;
     t0 := u0^2;
     t1 := u0*up1;
     d:= up0 - t1 + t0;
     if IsZero(d) then
         //dw := (h + v + vp) mod u;
-        dw:= vh0 + v0 - u0*(vh1 - h2*u0 + h3*t0);
+        vh1:= h1 + vp1;
+        dw:= h0 + vp0 + v0 - u0*(vh1 - h2*u0 + h3*t0);
         if IsZero(dw) then
             //upp := ExactQuotient(up, u);
             upp0:= up1 - u0;
             //vpp := vp mod upp;
             vpp0:= vp0 - vp1*upp0;
 
-            if (ADD_DEBUG) then "Deg12ADD | Case #2.2: gcd(up,u) = u, gcd(u,h+v+vp) = u"; end if;
+            if ADD_DEBUG then "Deg12ADD | Case #2.2: gcd(up,u) = u, gcd(u,h+v+vp) = u"; end if;
             return 0, 0, 1, upp0, 0, 0, vpp0;
         end if;//dw
 
         //k := (f - vp*(vp + h)) div up;
         //k5:= 1;
         k4:= f6 - up1;
-        ta:= up1*k4;
-        k3:= f5 - up0 - ta;
-        tb:= up0*k3;
-        k2:= f4 - h3*vp1 - (up0 + up1)*(k3 + k4) + ta + tb;        // karatsuba
-        k1:= f3 - h3*vp0 - h2*vp1 - tb - up1*k2;
+        t2:= up1*k4;
+        k3:= f5 - up0 - t2;
+        t3:= up0*k3;
+        k2:= f4 - h3*vp1 - (up0 + up1)*(k3 + k4) + t2 + t3;        // karatsuba
+        k1:= f3 - h3*vp0 - h2*vp1 - t3 - up1*k2;
         k0:= f2 - h2*vp0 - vp1*vh1 - up0*k2 - up1*k1;
 
         //s := R!(Q!dw^-1)*k mod u;
-        //   = (u^-1 mod h+v+vp)*(up^-1 mod u)*(v-vp) + (h+v+vp^-1 mod u)*k mod u
-        //   = (        a2       )*(      0     )*(v-vp) + (      1/dw       )*( sp )
-        //   = sp/dw,  where sp = k mod u
         //sp5:= 1;
         sp4:= k4 - u0;
         sp3:= k3 - u0*sp4;
@@ -187,7 +180,7 @@ Deg12ADD:= function(u0, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, h2, h1, 
         vpp1:= up1*s0 + vp1;
         vpp0:= up0*s0 + vp0;
 
-        if (ADD_DEBUG) then "Deg12ADD | Case #2.1: gcd(up,u) = u, gcd(u,h+v+vp) = 1"; end if;
+        if ADD_DEBUG then "Deg12ADD | Case #2.1: gcd(up,u) = u, gcd(u,h+v+vp) = 1"; end if;
         return 1, upp2, upp1, upp0, s0, vpp1, vpp0;
     end if;//d
 
