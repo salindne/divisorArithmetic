@@ -600,21 +600,23 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
 
     // upp = (w1 - s*(h + 2*v + u*s))/up
     ta:= k4 - up1;
-    tb:= u1*s0;
-    temp2:= vh1 + u0*s1 + tb;
-	temp3:= s0;
+    tb:= u0*s0;
+    tc:= u1*s1;
+    temp2:= vh1 + (u0 + u1)*(s0 + s1) - tb - tc;		// karatsuba
+	temp3:= s0 + tc;
+    s1Sq:= s1^2;
 
     upp3:= 1;
-    upp2:= ta - s1^2;
-    upp1:= k3 - up0 - s1*(s1*d1 + s0 + temp3) - up1*ta;
-    upp0:= k2 - up0*upp2 - up1*upp1 - s0*temp3 - s1*(v1 + tb + temp2);
+    upp2:= ta - s1Sq;
+    upp1:= k3 - up0 - s1*(temp3 + s0) - up1*upp2;
+    upp0:= k2 - up0*upp2 - up1*upp1 - s0*temp3 - s1*(temp2 + v1);
 
     // vpp = -h - v - u*s mod upp
     ta:= s1;
 
-    vpp2:= s1*(upp2 - u1) - temp3;
-    vpp1:= upp1*ta - temp2;
-    vpp0:= upp0*ta - vh0 - u0*s0;
+    vpp2:= ta*upp2 - temp3;
+    vpp1:= ta*upp1 - temp2;
+    vpp0:= ta*upp0 - vh0 - tb;
 
 	if (ADD_DEBUG) then "Deg22ADD | Typical"; end if;
     return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;

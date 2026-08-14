@@ -285,15 +285,11 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
     return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     */ //endIGNORE
 
-	h3Timesup1:= h3*up1;
+    t0:= h3*up1;
 
-	// vh = h + v
-	vh1:= h1 + v1;
-	vh0:= h0 + v0;
-
-	// vt = vp - v
-	vt1:= vp1 - v1;
-	vt0:= vp0 - v0;
+    // vh = h + v
+    vh1:= h1 + v1;
+    vh0:= h0 + v0;
 
     // dw1 = u mod up
     dw11:= u1 - up1;
@@ -305,59 +301,59 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
     m4:= dw10;
     m3:= -dw11;
     m2:= -up0*m3;
-	m1:= m4 + up1*m3;
+    m1:= m4 + up1*m3;
 
     det:= m4*m1 - m2*m3;
 
     // if gcd(u,up) != 1
-    if (det eq 0) then
+    if IsZero(det) then
 
-		// ht = vh + vp
-		vpPlusvh1:= vh1 + vp1;
-		vpPlusvh0:= vh0 + vp0;
+        // ht = vh + vp
+        ht1:= vh1 + vp1;
+        ht0:= vh0 + vp0;
 
         // if gcd(u,up) = up
-        if (dw11 eq 0) then
-			temp2:= h2 - h3Timesup1;
+        if IsZero(dw11) then
+            t4:= h2 - t0;
 
             // dw2 = (h + vp + v) mod up
-            dw21:= vpPlusvh1 - h3*up0 - up1*temp2;
-            dw20:= vpPlusvh0 - up0*temp2;
+            dw21:= ht1 - h3*up0 - up1*t4;
+            dw20:= ht0 - up0*t4;
 
             // if gcd(up,h+vp+v) = up
-            if (dw21 eq 0 and dw20 eq 0) then
+            if IsZero(dw20) and IsZero(dw21) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(u,up) = up
-				// gcd(up,h+vp+v) = up
+                // gcd(up,h+vp+v) = up
                 // DB = P1-P2, DA = P2-P1
                 // return P0
 
-				if (ADD_DEBUG) then "Deg22ADD | Case #3.2: gcd(u,up) = up, gcd(up,h+vp+v) = up"; end if;
+                if ADD_DEBUG then "Deg22ADD | Case #3.2: gcd(u,up) = up, gcd(up,h+vp+v) = up"; end if;
                 return 0, 0, 0, 1, 0, 0, 0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // gcd(u,up) = up	=> a1=0, b1=1
-			// gcd(up,h+vp+v) = dw
+            // gcd(u,up) = up   => a1=0, b1=1
+            // gcd(up,h+vp+v) = dw
             // DB = P1+P2, DA = P2-P1
             // return 2P2
 
-			// w1 = (f - v*h - v^2)/u
-			//k5:= 1;
-			k4:= f6 - u1;
-			ta:= u1*k4;
-			k3:= f5 - u0 - ta;
-			tb:= u0*k3;
-			k2:= f4 - h3*v1 - (u0 + u1)*(k3 + k4) + ta + tb;		// karatsuba
-			k1:= f3 - h3*v0 - h2*v1 - tb - u1*k2;
-			k0:= f2 - h2*v0 - v1*vh1 - u0*k2 - u1*k1;
+            // w1 = (f - v*h - v^2)/u
+            //k5:= 1;
+            k4:= f6 - u1;
+            t1:= u1*k4;
+            k3:= f5 - u0 - t1;
+            t2:= u0*k3;
+            k2:= f4 - h3*v1 - (u0 + u1)*(k3 + k4) + t1 + t2;        // karatsuba
+            k1:= f3 - h3*v0 - h2*v1 - t2 - u1*k2;
+            k0:= f2 - h2*v0 - v1*vh1 - u0*k2 - u1*k1;
 
             // at = (  up^-1 mod h+vp+v   )*dw21
             //    = ( (-(h+vp+v)/up)/dw21  )*dw21
             //    = (          a2          )*dw21
             //at1:= -h3;
-            //at0:= -temp2;
+            //at0:= -t4;
 
             // st = ((up^-1 mod h+vp+v)*dw21)*(u^-1 mod up)*(vp-v) + ((h+vp+v^-1 mod up)*dw21)*w1
             //    = ((       a2        )*dw21)*(     a1     )*( vt  ) + ((       b2        )*dw21)*w1
@@ -370,7 +366,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
             //st1:= k1;
             //st0:= k0;
 
-            //dm = dw2/dw21	(dm = monic(dw2))
+            //dm = dw2/dw21 (dm = monic(dw2))
             dw21Inv:= 1/dw21;
             dm0:= dw20*dw21Inv;
 
@@ -403,28 +399,32 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
             vpp1:= s0 + v1;
             vpp0:= u0*s0 + v0;
 
-			if (ADD_DEBUG) then "Deg22ADD | Case #3.1: gcd(u,up) = up, gcd(up,h+vp+v) = dw (deg 1)"; end if;
+            if ADD_DEBUG then "Deg22ADD | Case #3.1: gcd(u,up) = up, gcd(up,h+vp+v) = dw (deg 1)"; end if;
             return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
+        // vt = vp - v
+        vt1:= vp1 - v1;
+        vt0:= vp0 - v0;
+
         // dw3 = (h + vp + v) mod dw1
         dw11Sq:= dw11^2;
-        dw30:= dw11Sq*(dw11*vpPlusvh0 - dw10*vpPlusvh1) + dw10^2*(h2*dw11 - h3*dw10);		//dw11^3
+        dw30:= dw11Sq*(dw11*ht0 - dw10*ht1) + dw10^2*(h2*dw11 - h3*dw10);       //dw11^3
 
         // if gcd(dw1,h+vp+v) = dw1
-        if (dw30 eq 0) then
+        if IsZero(dw30) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             // S = gcd(u,up) = dw1, actually the monic of the latter
               // a1 = lcf(dw1)^-1 = u^-1 mod up
-			// S' = gcd(dw1,h+vp+v) = monic(dw1)
+            // S' = gcd(dw1,h+vp+v) = monic(dw1)
             // DB = P1+P2, DA = P3-P1
             // return P2+P3
 
             // dm = monic(dw1) = dw1/dw11
             dw11Inv:= 1/dw11;
             // dm1 = 1
-        	dm0:= dw10*dw11Inv;
+            dm0:= dw10*dw11Inv;
 
             // u = u/dm
             u0:= u1 - dm0;
@@ -445,25 +445,25 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
             vpp1:= s0 + v1;
             vpp0:= u0*s0 + v0;
 
-			if (ADD_DEBUG) then "Deg22ADD | Case #2.2: gcd(u,up) = d (deg 1), gcd(d,h+vp+v) = d"; end if;
+            if ADD_DEBUG then "Deg22ADD | Case #2.2: gcd(u,up) = d (deg 1), gcd(d,h+vp+v) = d"; end if;
             return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // gcd(u,up) = dw1
-		// gcd(dw1,h+vp+v) = 1
+        // gcd(dw1,h+vp+v) = 1
         // DB = P1+P2, DA = P1+P3
         // return 2P1+P2+P3
 
         // w1 = (f - v*h - v^2)/u
         //k5:= 1;
         k4:= f6 - u1;
-		ta:= u1*k4;
-        k3:= f5 - u0 - ta;
-		tb:= u0*k3;
-        k2:= f4 - h3*v1 - (u0 + u1)*(k3 + k4) + ta + tb;		// karatsuba
-        k1:= f3 - h3*v0 - h2*v1 - tb - u1*k2;
+        t1:= u1*k4;
+        k3:= f5 - u0 - t1;
+        t2:= u0*k3;
+        k2:= f4 - h3*v1 - (u0 + u1)*(k3 + k4) + t1 + t2;        // karatsuba
+        k1:= f3 - h3*v0 - h2*v1 - t2 - u1*k2;
         k0:= f2 - h2*v0 - v1*vh1 - u0*k2 - u1*k1;
 
         // a1 = u^-1 mod up
@@ -480,8 +480,8 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
         dm0:= dw10*a1;            // dw10/dw11
 
         // vp = a1*vt
-        t18:= a1*vt1;
-        t19:= a1*vt0;
+        t8:= a1*vt1;
+        t9:= a1*vt0;
 
         // at = ( dm^-1 mod h+vp+v )*dw30
         //    = ((-(h+vp+v)/dm)/dw30)*dw30
@@ -489,30 +489,30 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
         //    = -(h + vp + v)/dm
         //at2:= -h3;
         at1:= -h2 + h3*dm0;
-        at0:= -vpPlusvh1 - dm0*at1;
+        at0:= -ht1 - dm0*at1;
 
         // st = (( dm^-1 mod h+vp+v)*dw30)*((u^-1 mod up)*(vp-v)) + ((h+vp+v^-1 mod dm)*dw30)*w1
         //    = ((        a2        )*dw30)*((     a1     )*(vp-v)) + (         b2       )*dw30)*w1
         //    = (           at           )*(          vp          ) + (           1           )*w1
         //    = w1 + at*vp
-        ta:= at1*t18;
-        tb:= at0*t19;
+        t1:= at1*t8;
+        t2:= at0*t9;
 
         //st5:= 1;
         //st4:= k4;
-        st3:= k3 - h3*t18;
-        st2:= k2 - h3*t19 + ta;
-        st1:= k1 + (at0 + at1)*(t18 + t19) - ta - tb;		// karatsuba
-        st0:= k0 + tb;
+        st3:= k3 - h3*t8;
+        st2:= k2 - h3*t9 + t1;
+        st1:= k1 + (at0 + at1)*(t8 + t9) - t1 - t2;     // karatsuba
+        st0:= k0 + t2;
 
         // sp = st mod up
         //sp5:= 1;
         sp4:= k4 - up1;
-		temp3:= up1*sp4;
-        sp3:= st3 - up0 - temp3;
-        ta:= up0*sp3;
-        sp2:= st2 - (up0 + up1)*(sp3 + sp4) + temp3 + ta;     // karatsuba
-        sp1:= st1 - ta - up1*sp2;
+        t5:= up1*sp4;
+        sp3:= st3 - up0 - t5;
+        t1:= up0*sp3;
+        sp2:= st2 - (up0 + up1)*(sp3 + sp4) + t5 + t1;     // karatsuba
+        sp1:= st1 - t1 - up1*sp2;
         sp0:= st0 - up0*sp2;
 
         // s = sp/dw30
@@ -520,23 +520,23 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
         s0:= sp0*b2;
 
         // upp = (w1 - s*(h + 2*v + u*s))/up
-		ta:= u1*s0;
-        temp4:= vh1 + u0*s1 + ta;
-		temp5:= h2 + s0;
+        t1:= u1*s0;
+        t6:= vh1 + u0*s1 + t1;
+        t7:= h2 + s0;
 
         upp3:= 1;
         upp2:= sp4 - h3*s1 - s1^2;
-        upp1:= k3 - up0 - h3*s0 - s1*(s1*dw11 + s0 - h3Timesup1 + temp5) - temp3;
-        upp0:= k2 - up0*upp2 - up1*upp1 - s0*temp5 - s1*(v1 + ta + temp4);
+        upp1:= sp3 + h3*(t8 - s0) - s1*(s1*dw11 + s0 - t0 + t7);
+        upp0:= k2 - up0*upp2 - up1*upp1 - s0*t7 - s1*(v1 + t1 + t6);
 
         // vpp = -h - v - u*s mod upp
-        ta:= h3 + s1;
+        t1:= h3 + s1;
 
-        vpp2:= s1*(upp2 - u1) + h3*upp2 - temp5;
-        vpp1:= upp1*ta - temp4;
-        vpp0:= upp0*ta - vh0 - u0*s0;
+        vpp2:= s1*(upp2 - u1) + h3*upp2 - t7;
+        vpp1:= upp1*t1 - t6;
+        vpp0:= upp0*t1 - vh0 - u0*s0;
 
-		if (ADD_DEBUG) then "Deg22ADD | Case #2.1: gcd(u,up) = d (deg 1), gcd(d,h+vp+v) = 1"; end if;
+        if ADD_DEBUG then "Deg22ADD | Case #2.1: gcd(u,up) = d (deg 1), gcd(d,h+vp+v) = 1"; end if;
         return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     end if;
@@ -552,6 +552,10 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
     k3:= f5 - u0 - u1*k4;
     k2:= f4 - h3*v1 - u0*k4 - u1*k3;
 
+    // vt = vp - v
+    vt1:= vp1 - v1;
+    vt0:= vp0 - v0;
+
     // partially solve system to get sp = s*det
     // from Lindner's MSc thesis (pages 63-64)
     sp1:= vt1*m4 + vt0*m3;
@@ -564,28 +568,30 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
     s0:= sp0*detInv;
 
     // upp = (w1 - s*(h + 2*v + u*s))/up
-    //	Because deg(w1)=5 and deg(s*(h + 2*v + u*s))=4 and w1 is already monic,
-    //	lcf(s)=s1 has no role in lcf of the numerator of upp above; so, unlike
-    //	Lindner's formulas for genus 2, there's no need to compute lcf(s)^-1=1/s1
-    //	and the monic version of s.
-    ta:= k4 - up1;
-    tb:= u1*s0;
-    temp2:= vh1 + u0*s1 + tb;
-	temp3:= h2 + s0;
+    //  Because deg(w1)=5 and deg(s*(h + 2*v + u*s))=4 and w1 is already monic,
+    //  lcf(s)=s1 has no role in lcf of the numerator of upp above; so, unlike
+    //  Lindner's formulas for genus 2, there's no need to compute lcf(s)^-1=1/s1
+    //  and the monic version of s.
+    t1:= k4 - up1;
+    t2:= u0*s0;
+    t3:= u1*s1;
+    t4:= vh1 + (u0 + u1)*(s0 + s1) - t2 - t3;       // karatsuba
+    t5:= h2 + s0 + t3;
+    s1Sq:= s1^2;
 
     upp3:= 1;
-    upp2:= ta - h3*s1 - s1^2;
-    upp1:= k3 - up0 - h3*s0 - s1*(s1*dw11 + s0 - h3Timesup1 + temp3) - up1*ta;
-    upp0:= k2 - up0*upp2 - up1*upp1 - s0*temp3 - s1*(v1 + tb + temp2);
+    upp2:= t1 - h3*s1 - s1Sq;
+    upp1:= k3 - up0 - h3*s0 - s1*(t5 + s0) - up1*upp2;
+    upp0:= k2 - up0*upp2 - up1*upp1 - s0*t5 - s1*(t4 + v1);
 
     // vpp = -h - v - u*s mod upp
-    ta:= h3 + s1;
+    t1:= h3 + s1;
 
-    vpp2:= s1*(upp2 - u1) + h3*upp2 - temp3;
-    vpp1:= upp1*ta - temp2;
-    vpp0:= upp0*ta - vh0 - u0*s0;
+    vpp2:= t1*upp2 - t5;
+    vpp1:= t1*upp1 - t4;
+    vpp0:= t1*upp0 - vh0 - t2;
 
-	if (ADD_DEBUG) then "Deg22ADD | Typical"; end if;
+    if ADD_DEBUG then "Deg22ADD | Typical"; end if;
     return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     // ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 end function;
