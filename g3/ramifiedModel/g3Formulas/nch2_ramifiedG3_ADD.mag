@@ -286,81 +286,108 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
     //Assumes D1 ne D2: the ADD dispatcher routes D1 eq D2 to DBL.
     FF := Parent(u0);
     R<x> := PolynomialRing(FF);
-    //f0 is not an argument (nor is f1): at every division below the absent
-    //coefficients have degree below the divisor's, so they stay in the
-    //discarded remainder; `div` makes that explicit.
+    //f is truncated at the lowest coefficient this case needs: the omitted
+    //coefficients have degree below the divisor's, so they fall in the
+    //discarded remainder of every division here; `div` makes that explicit.
     f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2;
     //h = 0 in this class
     u := x^2 + u1*x + u0;
     v := v1*x + R!v0;
     up := x^2 + up1*x + up0;
     vp := vp1*x + R!vp0;
+    Q := quo<R | up>;
 
-    k := (f - v*v) div u;   //Exact quotient
-
-    S, a1, b1 := XGCD(u, up);
-    if not IsOne(S) then
-        S, a2, b2 := XGCD(S, vp + v);
-        if not IsOne(S) then
-            u := ExactQuotient(u, S);
-            up := ExactQuotient(up, S);
+    //Formulation
+    vh := -v;                           // = -v - h, and h = 0
+    ht := vp - vh;                      // = h + v + vp = v + vp
+    vt := vp - v;
+    dw1 := u mod up;                    // = (a1^-1)*S1 for S1,a1,b1 = XGCD(u,up);
+    d := Resultant(u,up);               // computed with 2x2 system
+    if IsZero(d) then                   //gcd(u,up) != 1
+        if IsZero(dw1) then             //u = up
+            //ht is already reduced: h = 0 and deg v, deg vp < deg up
+            dw2 := ht mod up;           // = (b2^-1)*S1 for S1,a2,b2 = XGCD(up,ht);
+            if IsZero(dw2) then         //vp = -v, so D2 = -D1
+                return 0,0,0,1,0,0,0;
+            end if;
+            k := (f + v*vh) div u;   //Exact quotient
+            b2 := LeadingCoefficient(dw2)^-1;
+            u := ExactQuotient(u,dw2*b2);
+            s := b2*k mod u;
+            upp := u^2;
+            vpp := (v + u*s) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
         end if;
-        s := (a2*a1*(vp - v) + b2*k) mod up;
-    else
-        s := a1*(vp - v) mod up;
+        a1 := LeadingCoefficient(dw1)^-1;
+        S1 := dw1*a1;
+        dw := ht mod S1;                // = (b2^-1)*S for S,a2,b2 = XGCD(S1,ht);
+        if IsZero(dw) then
+            //S,a2,b2 := XGCD(S1,ht);
+            //S = S1, a2 = 1, b2 = 0;
+            u := ExactQuotient(u,S1);
+            up := ExactQuotient(up,S1);
+            s := a1*vt mod up;
+            upp := u*up;
+            vpp := (v + u*s) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+        end if;
+        k := (f + v*vh) div u;   //Exact quotient
+        //S,a2,b2 := XGCD(S1,ht);
+        //S := 1;
+        b2 := FF!dw^-1;
+        //Reducing mod up before dividing by the linear S1 leaves a2 a CONSTANT,
+        //and a2 never appears alone -- only as a2*a1, which is Coeff(ht,1)/dw.
+        a2 := ExactQuotient((1 - b2*ht) mod up, S1);
+        s := (a2*a1*vt + b2*k) mod up;
+        //M1 := ExactQuotient(u*s + vt, up); M2 := ExactQuotient(s*ht - k, up); upp := -s*M1 - M2;
+        upp := ExactQuotient(-s*(s*u + v - vh) + k, up);
+        //upp is monic already: k is monic of degree 5 and s*(s*u + v - vh) has
+        //degree 4, so lcf(s) has no role and, unlike genus 2, there is no need
+        //to form lcf(s)^-1 and the monic version of s.
+        vpp := (vh - s*u) mod upp;
+        return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     end if;
-
-    if Degree(u) + Degree(up) le 3 then
-        //composition only (a gcd case shrank the degrees)
-        upp := u*up;
-        vpp := (v + u*s) mod upp;
-    else
-        //one reduction: upp = (k*S - s*(s*u + 2*v))/up, monic
-        upp := ExactQuotient(k*S - s*(s*u + 2*v), up);
-        upp := upp/LeadingCoefficient(upp);
-        vpp := (-s*u - v) mod upp;
-    end if;
-    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
-           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
+    k := (f + v*vh) div u;   //Exact quotient
+    s := R!(Q!dw1^-1)*vt mod up;
+    //M1 := ExactQuotient(u*s + vt, up); M2 := ExactQuotient(s*ht - k, up); upp := -s*M1 - M2;
+    upp := ExactQuotient(-s*(s*u + v - vh) + k, up);
+    vpp := (vh - s*u) mod upp;
+    return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     */ //endIGNORE
 
-	// vh = h + v = v
-	vh1:= v1;
-	vh0:= v0;
+    //vh := -v - h, and h = 0
+    vh1:= -v1;
+    vh0:= -v0;
 
-	// vt = vp - v
+    //vt := vp - v;
 	vt1:= vp1 - v1;
 	vt0:= vp0 - v0;
 
-    // d = u mod up
-    d1:= u1 - up1;
-    d0:= u0 - up0;
+    //dw1 := u mod up;
+    m4:= u0 - up0;
+    m3:= up1 - u1;
 
-    // set up system of equations to solve for s = (vp-v)/u mod up
-    // and find the determinant
-    // from Lindner's MSc thesis (pages 63-64)
-    //m4:= d0;
-    //m3:= -d1;
-    m2:= up0*d1;
-	m1:= d0 - up1*d1;
+    //d := Resultant(u,up);      // 2x2 system, from Lindner's MSc thesis pp.63-64
+    m2:= -up0*m3;
+    m1:= m4 + up1*m3;
 
-    det:= d0*m1 + m2*d1;
+    d:= m4*m1 - m2*m3;
 
-    // if gcd(up,u) != 1
-    if (det eq 0) then
+    //gcd(u,up) != 1
+    if IsZero(d) then
 
-		// ht = vh + vp
-		vpPlusvh1:= vh1 + vp1;
-		vpPlusvh0:= vh0 + vp0;
+        //ht := vp - vh;      // = v + vp
+        ht1:= vp1 - vh1;
+        ht0:= vp0 - vh0;
 
-        // if gcd(up,u) = up
-        if (d1 eq 0) then
-            // dw = (h + vp + v) mod up
-            dw1:= vpPlusvh1;
-            dw0:= vpPlusvh0;
+        //dw1 := u mod up;
+        if IsZero(m3) then
+            //dw2 := ht mod up;
+            dw21:= ht1;
+            dw20:= ht0;
 
-            // if gcd(up,h+vp+v) = up
-            if (dw1 eq 0 and dw0 eq 0) then
+            //gcd(up,ht) = up
+            if IsZero(dw21) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(up,u) = up
 				// gcd(up,h+vp+v) = up
@@ -378,7 +405,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
             // DB = P1+P2, DA = P2-P1
             // return 2P2
 
-			// w1 = (f - v*h - v^2)/u
+            //k := (f + v*vh) div u;   //Exact quotient
 			//k5:= 1;
 			k4:= -u1;
 			ta:= -u1^2;
@@ -405,14 +432,14 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
             st1:= k1;
             st0:= k0;
 
-            //dm = dw/dw1	(dm = monic(d))
-            dw1Inv:= 1/dw1;
-            dm0:= dw0*dw1Inv;
+            //b2 := LeadingCoefficient(dw2)^-1;  dm := monic(dw2)
+            dw21Inv:= 1/dw21;
+            dm0:= dw20*dw21Inv;
 
-            // up = up/dm
+            //up := ExactQuotient(up,dw2*b2);
             up0:= up1 - dm0;
 
-            // u = u/dm
+            //u := ExactQuotient(u,dw2*b2);
             u0:= u1 - dm0;
 
             // st equals w1 here: with h = 0 the correction term in st
@@ -425,16 +452,16 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
             sp1:= st1 - up0*sp2;
             sp0:= st0 - up0*sp1;
 
-            // s = sp/dw1
-            s0:= sp0*dw1Inv;
+            //s := b2*k mod u;
+            s0:= sp0*dw21Inv;
 
-            // upp = up*u
+            //upp := u*up;
             upp3:= 0;
             upp2:= 1;
             upp1:= up0 + u0;
             upp0:= up0*u0;
 
-            // vpp = (u*s + v) mod upp
+            //vpp := (v + u*s) mod upp;
             vpp2:= 0;
             vpp1:= s0 + v1;
             vpp0:= u0*s0 + v0;
@@ -444,38 +471,38 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         end if;
 
-        // dw = (h + vp + v) mod d
-        d1Sq:= d1^2;
-        dw0:= d1Sq*(d1*vpPlusvh0 - d0*vpPlusvh1);		//d1^3
+        //dw := ht mod S1;
+        //h = 0, so h + vp + v is already linear and the weight is d1, not d1^3
+        dw:= m4*ht1 + m3*ht0;						//m3
 
-        // if gcd(d,h+vp+v) = d
-        if (dw0 eq 0) then
+        //gcd(S1,ht) = S1
+        if IsZero(dw) then
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             // gcd(up,u) = d
 			// gcd(d,h+vp+v) = d
             // DB = P1+P2, DA = P3-P1
             // return P2+P3
 
-            // dm = d/d1
-            d1Inv:= 1/d1;
-            dm0:= d0*d1Inv;
+            //a1 := LeadingCoefficient(dw1)^-1;  S1 := dw1*a1;
+            a1:= -m3^-1;
+            S10:= m4*a1;
 
-            // up = up/dm
-            up0:= up1 - dm0;
+            //up := ExactQuotient(up,dw2*b2);
+            up0:= up1 - S10;
 
-            // u = u/dm
-            u0:= u1 - dm0;
+            //u := ExactQuotient(u,dw2*b2);
+            u0:= u1 - S10;
 
-            // s = vt/u mod up
-            s0:= (vt0 - up0*vt1)*d1Inv;
+            //s := a1*vt mod up;
+            s0:= (vt0 - up0*vt1)*a1;
 
-            // upp = up*u
+            //upp := u*up;
             upp3:= 0;
             upp2:= 1;
             upp1:= up0 + u0;
             upp0:= up0*u0;
 
-            // vpp = (u*s + v) mod upp
+            //vpp := (v + u*s) mod upp;
             vpp2:= 0;
             vpp1:= s0 + v1;
             vpp0:= u0*s0 + v0;
@@ -491,7 +518,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
         // DB = P1+P2, DA = P1+P3
         // return 2P1+P2+P3
 
-        // w1 = (f - v*h - v^2)/u
+        //k := (f + v*vh) div u;   //Exact quotient
         //k5:= 1;
         k4:= -u1;
 		ta:= -u1^2;
@@ -501,75 +528,45 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
         k1:= f3 - tb - u1*k2;
         k0:= f2 - v1^2 - u0*k2 - u1*k1;
 
-        // a1 = u^-1 wrt up
-        //    = 1/d1
-        w0:= 1/(dw0*d1);        // 1/(dw0*d1^4)
-        a1:= dw0*w0;            // (dw0*d1^3)/(dw0*d1^4) = 1/d1
+        //b2 := FF!dw^-1;
+        //a2 := ExactQuotient((1 - b2*ht) mod up, S1);
+        //  ht is already linear at h = 0, and a2 is a CONSTANT that never appears
+        //  alone -- only as a2*a1, which is -ht1/dw. So a1, the monic dm and the
+        //  at coefficients are all dead, and dw is inverted alone.
+        w0:= 1/dw;
+        b2:= m3*w0;              // m3/dw = 1/dw3
+        w1:= ht1*w0;             // a2*a1 = ht1/dw
 
-        // b2 = h+vp+v^-1 wrt dm
-        //    = 1/dw0
-        b2:= (d1Sq^2)*w0;        // (d1^4)/(dw0*d1^4) = 1/dw0
-
-        // dm = dw/d1
-        //dm1:= 1;
-        // dm0:= d0*a1 is not formed: at h = 0 its only consumer vanishes, as the
-        // commented at1 line below records (at1 = -h2 + h3*dm0 = 0).
-
-        // vp = a1*vt
-        t18:= a1*vt1;
-        t19:= a1*vt0;
-
-        // at = ( dm^-1 wrt h+vp+v )*dw0
-        //    = ((-(h+vp+v)/dm)/dw0)*dw0
-        //    = (        a2         )*dw0
-        //    = -(h + vp + v)/dm
-        // at2:= -h3 = 0;
-        // at1:= -h2 + h3*dm0 = 0;
-        at0:= -vpPlusvh1;
-
-        // st = (( dm^-1 wrt h+vp+v)*dw0)*((u^-1 wrt up)*(vp-v)) + ((h+vp+v^-1 wrt dm)*dw0)*w1
-        //    = ((        a2        )*dw0)*((     a1     )*(vp-v)) + (         b2       )*dw0)*w1
-        //    = (           at           )*(          vp          ) + (           1           )*w1
-        //    = w1 + at*vp
-        tb:= at0*t19;
-
-        //st5:= 1;
-        //st4:= k4;
-        st3:= k3;
-        st2:= k2;
-        st1:= k1 + at0*(t18 + t19) - tb;		// karatsuba
-        st0:= k0 + tb;
-
-        // sp = st mod up
+        //sp := k mod up;
         //sp5:= 1;
         sp4:= k4 - up1;
 		temp3:= up1*sp4;
-        sp3:= st3 - up0 - temp3;
+        sp3:= k3 - up0 - temp3;
         ta:= up0*sp3;
-        sp2:= st2 - (up0 + up1)*(sp3 + sp4) + temp3 + ta;     // karatsuba
-        sp1:= st1 - ta - up1*sp2;
-        sp0:= st0 - up0*sp2;
+        sp2:= k2 - (up0 + up1)*(sp3 + sp4) + temp3 + ta;     // karatsuba
+        sp1:= k1 - ta - up1*sp2;
+        sp0:= k0 - up0*sp2;
 
-        // s = sp/dw0
-        s1:= sp1*b2;
-        s0:= sp0*b2;
+        //s := (a2*a1*vt + b2*k) mod up;
+        s1:= w1*vt1 + b2*sp1;
+        s0:= w1*vt0 + b2*sp0;
 
-        // upp = (w1 - s*(h + 2*v + u*s))/up
+        //upp := ExactQuotient(-s*(s*u + v - vh) + k, up);
 		ta:= u1*s0;
-        temp4:= vh1 + u0*s1 + ta;
+        temp4:= u0*s1 + ta - vh1;
 		temp5:= s0;
 
         upp3:= 1;
         upp2:= sp4 - s1^2;
-        upp1:= k3 - up0 - s1*(s1*d1 + s0 + temp5) - temp3;
+        upp1:= sp3 - s1*(s0 - s1*m3 + temp5);
         upp0:= k2 - up0*upp2 - up1*upp1 - s0*temp5 - s1*(v1 + ta + temp4);
 
-        // vpp = -h - v - u*s mod upp
+        //vpp := (vh - s*u) mod upp;
         ta:= s1;
 
         vpp2:= s1*(upp2 - u1) - temp5;
         vpp1:= upp1*ta - temp4;
-        vpp0:= upp0*ta - vh0 - u0*s0;
+        vpp0:= upp0*ta + vh0 - u0*s0;
 
 		if (ADD_DEBUG) then "Deg22ADD | Case #2.1: gcd(up,u) = d (deg 1), gcd(d,h+vp+v) = 1"; end if;
         return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
@@ -581,28 +578,27 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
     // DB = P1+P2, DA = P3+P4
     // return P1+P2+P3+P4
 
-    // w1 = (f - v*h - v^2)/u
+    //k := (f + v*vh) div u;   //Exact quotient
     //k5:= 1;
     k4:= -u1;
     k3:= f5 - u0 + u1^2;
     k2:= f4 - u0*k4 - u1*k3;
 
-    // partially solve system to get sp = s*det
-    // from Lindner's MSc thesis (pages 63-64)
+    //s := R!(Q!dw1^-1)*vt mod up;
     sp0:= vt0*m1 + vt1*m2;
-    sp1:= vt1*d0 - vt0*d1;
+    sp1:= vt1*m4 + vt0*m3;
 
-    // s = sp/det
-    detInv:= 1/det;
+    //   = sp/d
+    w1:= d^-1;
 
-    s1:= sp1*detInv;
-    s0:= sp0*detInv;
+    s1:= sp1*w1;
+    s0:= sp0*w1;
 
-    // upp = (w1 - s*(h + 2*v + u*s))/up
+    //upp := ExactQuotient(-s*(s*u + v - vh) + k, up);
     ta:= k4 - up1;
     tb:= u0*s0;
     tc:= u1*s1;
-    temp2:= vh1 + (u0 + u1)*(s0 + s1) - tb - tc;		// karatsuba
+    temp2:= (u0 + u1)*(s0 + s1) - tb - tc - vh1;		// karatsuba
 	temp3:= s0 + tc;
     s1Sq:= s1^2;
 
@@ -611,12 +607,12 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
     upp1:= k3 - up0 - s1*(temp3 + s0) - up1*upp2;
     upp0:= k2 - up0*upp2 - up1*upp1 - s0*temp3 - s1*(temp2 + v1);
 
-    // vpp = -h - v - u*s mod upp
+    //vpp := (vh - s*u) mod upp;
     ta:= s1;
 
     vpp2:= ta*upp2 - temp3;
     vpp1:= ta*upp1 - temp2;
-    vpp0:= ta*upp0 - vh0 - tb;
+    vpp0:= ta*upp0 + vh0 - tb;
 
 	if (ADD_DEBUG) then "Deg22ADD | Typical"; end if;
     return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;

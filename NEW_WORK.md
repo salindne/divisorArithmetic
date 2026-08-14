@@ -57,6 +57,7 @@ restating the detail.
 | N18 | The doubling trades one multiplication for twenty-two additions; the ledger is closed but for two open items | **implemented**, measured, Magma-verified |
 | N19 | The specialised odd-characteristic addition had fallen behind the general one it specialises | **implemented**; the invariant is now asserted in CI |
 | N20 | The polynomial reference blocks are executable, so they became a second oracle | **established**; 12 functions checked, 3 defects found |
+| N21 | Two weights that were larger than the mathematics requires, and a Bézout cofactor that is a constant | **implemented and measured**; both addition files |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -1239,6 +1240,72 @@ addition dispatchers against their pre-change selves on 2,995 operations spannin
 six degree pairs — zero mismatches — with every operation count identical per branch.
 
 ---
+
+## N21 — Two weights larger than the mathematics requires, and a cofactor that is a constant
+
+**Status:** implemented and measured, 2026-08-14. Genus-3 ramified `Deg22ADD`, both
+the arbitrary and the odd-characteristic file.
+
+The degree-2-plus-degree-2 addition's degenerate branches carried three separate
+pieces of avoidable work. None is visible in the published frequent-case row, and
+none was found by reading the arithmetic — each came from asking what a *weight*
+was for.
+
+**A cube weight where linear suffices — and it was avoidable in both files, for
+different reasons.** The branch test needs `dw3 = (h+v+vp) mod S1` with `S1` linear,
+i.e. the cubic `h+v+vp` evaluated at `m4/m3`; clearing denominators for a cubic
+costs `m3^3`. But `S1` divides `up`, so reduction is transitive:
+
+    (h+v+vp) mod S1  =  ((h+v+vp) mod up) mod S1
+
+and `(h+v+vp) mod up` is **linear**, so the weight is `m3`. The arbitrary file was
+evaluating the cubic directly; its sibling branch one level up already performed
+exactly the `mod up` reduction, so the cheaper route was present in the same
+function and unused. Hoisting it serves both branches: **−2S −1C +2A** on the two
+degree-1-gcd cases. The odd-characteristic file had no cubic at all — at `h = 0`
+the quantity is linear from the start — and yet carried a `d1^2` factor copied from
+the arbitrary shape, which then forced a `d1^4` correction downstream to undo
+itself: **−1M −1S**. The same finding twice, reached from opposite directions.
+
+**The Bézout cofactor `a2` is a constant, not a quadratic.** The reference block
+computes it as `ExactQuotient((1 - b2*(h+v+vp)) mod up, S1)` — reduced mod `up`
+*first*, so the numerator is linear and the quotient by a linear `S1` has degree 0.
+The explicit code instead divided the unreduced cubic by the monic gcd and got a
+degree-2 `at`, then paid for a polynomial-by-polynomial product. Both are valid
+representatives, because `s` is taken mod `up`; they differ by a multiple of
+`up/S1`, which is *not* a multiple of `up`, so the interchange is legitimate here
+and would not be if the modulus changed.
+
+**But being a constant is a precondition, not the win.** `a2` never appears alone —
+only as `a2*a1`, and with `dw = m3*dw3` and `a1 = -1/m3` that product is `gt1/dw`:
+one multiplication of a subexpression the branch test already formed. That kills
+`a1`, the monic `dm`, both `at` coefficients and the entire `st` chain, and shrinks
+the inversion from `1/(m3*dw)` to `1/dw`, which also drops a squaring. Measured on
+constructed inputs over nine fields:
+
+| | before | after |
+|---|---|---|
+| arb, gcd degree 1, `dw != 0` | 44M 2S 78A 2C 1I | **38M 1S 68A 2C 1I** |
+| nch2, same branch | 38M 5S 55A 0C 1I | **34M 3S 51A 0C 1I** |
+
+**A redundant guard, with a one-line proof.** The `u = up` branch tested
+`IsZero(dw20) and IsZero(dw21)`. Subtracting the two curve conditions gives
+`u | (vp-v)(vp+v+h)`; if `dw21 = 0` then `vp+v+h` is the constant `dw20` mod `u`, so
+`u | (vp-v)*dw20`, and since `deg(vp-v) < deg u` with `vp != v` that forces
+`dw20 = 0`. No squarefree assumption needed. So `dw21 = 0` alone decides it, which
+is what the split model has always tested, and `dw20` moves below the guard:
+**−1M −3A** on the branch that returns the neutral element.
+
+**For the paper.** The transferable point is that **a weight is a claim about a
+degree, and it should be re-derived whenever the degree changes** — by a
+specialisation (`h = 0` collapsing a cubic to a linear form) or by an available
+reduction (`S1 | up` making the cubic unnecessary). Copying a parent's weighted
+shape into a child carries an assumption the child does not have; that is the same
+class of defect as N19's cost drift, seen in the arithmetic rather than the totals.
+Second point: the frequent case did not move in either file, so none of this
+appears in a published table. Rare-branch savings survive only in the commit
+record, which is an argument for measuring per branch rather than reporting the
+modal cost alone.
 
 # Part IV — The comparison with prior work
 
