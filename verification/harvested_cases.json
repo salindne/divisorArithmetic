@@ -1984,7 +1984,7 @@
     ]
    ],
    "labels": [
-    "Deg3ADD: gcd(u,up) = up, DB = P1+P2+P3, DA = P1-P2-P3"
+    "Deg3ADD: gcd(u,up) = up, DB = P1+P2+P3, DA = P3-P1-P2"
    ],
    "model": "ramified",
    "op": "ADD",
@@ -5221,7 +5221,7 @@
    "family": "ramified/g3/nch2",
    "h": [],
    "labels": [
-    "Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P1-P2-P3"
+    "Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P3-P1-P2"
    ],
    "model": "ramified",
    "op": "ADD",

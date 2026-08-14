@@ -1516,7 +1516,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
             if (dx1 eq 0 and dx0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(up,u) = up
-                // DB = P1+P2+P3, DA = P1-P2-P3
+                // DB = P1+P2+P3, DA = P3-P1-P2
                 // return 2P1
 
                 // wi = h+vp+v^-1 wrt up
@@ -1551,7 +1551,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
                 vpp1:= s0 + v1 - upp1*v2;
                 vpp0:= u0*s0 + v0 - upp0*v2;
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P1-P2-P3"; end if;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P3-P1-P2"; end if;
                 return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;

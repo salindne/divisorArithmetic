@@ -231,33 +231,58 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
     v := v1*x + R!v0;
     up := x^2 + up1*x + up0;
     vp := vp1*x + R!vp0;
+    Q := quo<R | up>;
 
-    k := (f - v*(v + h)) div u;   //Exact quotient
-
-    S, a1, b1 := XGCD(u, up);
-    if not IsOne(S) then
-        S, a2, b2 := XGCD(S, vp + v + h);
-        if not IsOne(S) then
-            u := ExactQuotient(u, S);
-            up := ExactQuotient(up, S);
+    //Formulation
+    dw1 := u mod up;                    // = (a1^-1)*S for S,a1,b1 = XGCD(u,up);
+    d := Resultant(u,up);               // computed with 2x2 system
+    if IsZero(d) then
+        if IsZero(dw1) then             //u = up
+            dw2 := (h + v + vp) mod u;  // = (b2^-1)*S for S,a2,b2 = XGCD(u,h + v + vp);
+            if IsZero(dw2) then         //vp = -v - h
+                return 0,0,0,1,0,0,0;
+            end if;
+            k := (f - v*(v + h)) div u;   //Exact quotient
+            b2 := LeadingCoefficient(dw2)^-1;
+            u := ExactQuotient(u,dw2*b2);
+            s := b2*k mod u;
+            upp := u^2;
+            vpp := (v + u*s) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
         end if;
+        a1 := LeadingCoefficient(dw1)^-1;
+        S1 := dw1*a1;
+        dw3 := (h + v + vp) mod S1;     // = (b2^-1)*S for S,a2,b2 = XGCD(S1,h + v + vp);
+        if IsZero(dw3) then
+            //S,a2,b2 := XGCD(S1,h + v + vp);
+            //S1 = S, a2 = 1, b2 = 0;
+            u := ExactQuotient(u,S1);
+            up := ExactQuotient(up,S1);
+            s := a1*(vp - v) mod up;
+            upp := u*up;
+            vpp := (v + u*s) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+        end if;
+        k := (f - v*(v + h)) div u;   //Exact quotient
+        //S,a2,b2 := XGCD(S1,h + v + vp);
+        //S := 1;
+        b2 := FF!dw3^-1;
+        t := (1 - b2*(h + v + vp)) mod up;
+        a2 := ExactQuotient(t,S1);
         s := (a2*a1*(vp - v) + b2*k) mod up;
-    else
-        s := a1*(vp - v) mod up;
-    end if;
-
-    if Degree(u) + Degree(up) le 3 then
-        //composition only (a gcd case shrank the degrees)
-        upp := u*up;
-        vpp := (v + u*s) mod upp;
-    else
-        //one reduction: upp = (k*S - s*(s*u + 2*v + h))/up, monic
-        upp := ExactQuotient(k*S - s*(s*u + 2*v + h), up);
+        //M1 := ExactQuotient(u*s-v+v,up); M2:=ExactQuotient(s*(h+v+vp)-k,up); upp:=-s*M1-M2;
+        upp := ExactQuotient(-s*(s*u + 2*v + h) + k, up);
         upp := upp/LeadingCoefficient(upp);
         vpp := (-s*u - v - h) mod upp;
+        return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     end if;
-    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
-           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
+    s := R!(Q!dw1^-1)*(vp - v) mod up;
+    k := (f - v*(v + h)) div u;   //Exact quotient
+    //M1 := ExactQuotient(u*s-v+v,up); M2:=ExactQuotient(s*(h+v+vp)-k,up); upp:=-s*M1-M2;
+    upp := ExactQuotient(-s*(s*u + 2*v + h) + k, up);
+    upp := upp/LeadingCoefficient(upp);
+    vpp := (-s*u - v - h) mod upp;
+    return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
     // 1) gcd(u,up) = 1
@@ -603,33 +628,32 @@ Deg13ADD:= function(u0, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5, f4, f3, f2, f1
     vp := vp2*x^2 + vp1*x + vp0;
     u := x + u0;
     v := R!v0;
+    Q := quo<R | u>;
 
-    k := (f - vp*(vp + h)) div up;   //Exact quotient
-
-    S, a1, b1 := XGCD(up, u);
-    if not IsOne(S) then
-        S, a2, b2 := XGCD(S, v + vp + h);
-        if not IsOne(S) then
-            up := ExactQuotient(up, S);
-            u := ExactQuotient(u, S);
+    //Formulation
+    d := up mod u;                  //u is linear, so this is the resultant
+    if IsZero(d) then
+        dw := (h + v + vp) mod u;   // = (b2^-1)*S for S,a2,b2 = XGCD(u,h + v + vp);
+        if IsZero(dw) then          //v = -vp - h at the point of u
+            upp := ExactQuotient(up,u);
+            vpp := vp mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
         end if;
-        s := (a2*a1*(v - vp) + b2*k) mod u;
-    else
-        s := a1*(v - vp) mod u;
-    end if;
-
-    if Degree(up) + Degree(u) le 3 then
-        //composition only (a gcd case shrank the degrees)
-        upp := up*u;
-        vpp := (vp + up*s) mod upp;
-    else
-        //one reduction: upp = (k*S - s*(s*up + 2*vp + h))/u, monic
-        upp := ExactQuotient(k*S - s*(s*up + 2*vp + h), u);
+        k := (f - vp*(vp + h)) div up;   //Exact quotient
+        s := k*R!(Q!dw^-1) mod u;
+        //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(h+v+vp)-k,u); upp:=-s*M1-M2;
+        upp := ExactQuotient(-s*(up*s + 2*vp + h) + k, u);
         upp := upp/LeadingCoefficient(upp);
-        vpp := (-s*up - vp - h) mod upp;
+        vpp := (-up*s - vp - h) mod upp;
+        return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     end if;
-    return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
-           Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
+    s := R!(Q!d^-1)*(v - vp) mod u;
+    k := (f - vp*(vp + h)) div up;   //Exact quotient
+    //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(h+v+vp)-k,u); upp:=-s*M1-M2;
+    upp := ExactQuotient(-s*(up*s + 2*vp + h) + k, u);
+    upp := upp/LeadingCoefficient(upp);
+    vpp := (-up*s - vp - h) mod upp;
+    return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     */ //endIGNORE
     // +++++++++++++++++++++++++++++ CASES +++++++++++++++++++++++++++++++
     // 1) gcd(up,u) = 1
@@ -785,31 +809,72 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5, f4, f3
     vp := vp2*x^2 + vp1*x + vp0;
     u := x^2 + u1*x + u0;
     v := v1*x + R!v0;
+    Q := quo<R | u>;
 
-    k := (f - vp*(vp + h)) div up;   //Exact quotient
-
-    S, a1, b1 := XGCD(up, u);
-    if not IsOne(S) then
-        S, a2, b2 := XGCD(S, v + vp + h);
-        if not IsOne(S) then
-            up := ExactQuotient(up, S);
-            u := ExactQuotient(u, S);
+    //Formulation
+    d := Resultant(up,u);               // computed with 2x2 system
+    if IsZero(d) then
+        dw1 := up mod u;                // = (a1^-1)*S for S,a1,b1 = XGCD(up,u);
+        if IsZero(dw1) then             //u divides up
+            dw2 := (h + v + vp) mod u;  // = (b2^-1)*S for S,a2,b2 = XGCD(u,h + v + vp);
+            dw := Resultant(u,h + v + vp);
+            if IsZero(dw) then
+                if IsZero(dw2) then     //-D1 sits inside D2
+                    upp := ExactQuotient(up,u);
+                    vpp := vp mod upp;
+                    return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+                end if;
+                k := (f - vp*(vp + h)) div up;   //Exact quotient
+                b2 := LeadingCoefficient(dw2)^-1;
+                S := dw2*b2;
+                up := ExactQuotient(up,S);
+                u := ExactQuotient(u,S);
+                s := b2*k mod u;
+                upp := up*u;
+                vpp := (vp + up*s) mod upp;
+                return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+            end if;
+            k := (f - vp*(vp + h)) div up;   //Exact quotient
+            b2 := R!(Q!dw2^-1);
+            s := b2*k mod u;
+            //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(h+v+vp)-k,u); upp:=-s*M1-M2;
+            upp := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
+            upp := upp/LeadingCoefficient(upp);
+            vpp := (-s*up - vp - h) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
         end if;
+        a1 := LeadingCoefficient(dw1)^-1;
+        S := dw1*a1;
+        dw3 := (h + v + vp) mod S;      // = (b2^-1)*S for S,a2,b2 = XGCD(S,h + v + vp);
+        if IsZero(dw3) then
+            //S1,a2,b2 := XGCD(S,h + v + vp);
+            //S1 = S, a2 = 1, b2 = 0;
+            up := ExactQuotient(up,S);
+            u := ExactQuotient(u,S);
+            s := a1*(v - vp) mod u;
+            upp := up*u;
+            vpp := (vp + up*s) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+        end if;
+        //S1,a2,b2 := XGCD(S,h + v + vp);
+        //S1 = 1;
+        k := (f - vp*(vp + h)) div up;   //Exact quotient
+        b2 := FF!dw3^-1;
+        t := (1 - b2*(h + v + vp)) mod u;
+        a2 := ExactQuotient(t,S);
         s := (a2*a1*(v - vp) + b2*k) mod u;
-    else
-        s := a1*(v - vp) mod u;
-    end if;
-
-    if Degree(up) + Degree(u) le 3 then
-        //composition only (a gcd case shrank the degrees)
-        upp := up*u;
-        vpp := (vp + up*s) mod upp;
-    else
-        //one reduction: upp = (k*S - s*(s*up + 2*vp + h))/u, monic
-        upp := ExactQuotient(k*S - s*(s*up + 2*vp + h), u);
+        //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(h+v+vp)-k,u); upp:=-s*M1-M2;
+        upp := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
         upp := upp/LeadingCoefficient(upp);
         vpp := (-s*up - vp - h) mod upp;
-    end if;
+        return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+    end if;//d
+    s := R!(Q!up^-1)*(v - vp) mod u;
+    k := (f - vp*(vp + h)) div up;   //Exact quotient
+    //M1 := ExactQuotient(up*s-v+vp,u); M2:=ExactQuotient(s*(h+v+vp)-k,u); upp:=-s*M1-M2;
+    upp := ExactQuotient(-s*(s*up + 2*vp + h) + k, u);
+    upp := upp/LeadingCoefficient(upp);
+    vpp := (-s*up - vp - h) mod upp;
     return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
            Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
@@ -1308,41 +1373,168 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5,
     v := v2*x^2 + v1*x + v0;
     up := x^3 + up2*x^2 + up1*x + up0;
     vp := vp2*x^2 + vp1*x + vp0;
+    Q := quo<R | up>;
 
-    k := (f - v*(v + h)) div u;   //Exact quotient
-
-    S, a1, b1 := XGCD(u, up);
-    if not IsOne(S) then
-        S, a2, b2 := XGCD(S, vp + v + h);
-        if not IsOne(S) then
-            u := ExactQuotient(u, S);
-            up := ExactQuotient(up, S);
+    //Formulation
+    dw1 := u mod up;                    // = (a1^-1)*S for S,a1,b1 = XGCD(u,up);
+    d := Resultant(u,up);               // computed with 3x3 system
+    if IsZero(d) then                   //gcd(u,up) != 1
+        if IsZero(dw1) then             //u = up, so gcd(u,up) = up
+            dw2 := (h + v + vp) mod up; // = (b2^-1)*S1 for S1,a2,b2 = XGCD(up,h + v + vp);
+            if IsZero(dw2) then         //CASE #4.3: vp = -v - h, so D2 = -D1
+                return 0,0,0,1,0,0,0;
+            end if;
+            k := (f - v*(v + h)) div u;   //Exact quotient
+            //dx = up mod dw2, taken at the formal degree 2 for dw2, which is what the
+            //  dw22^2 weight on the explicit dx does. A linear dw2 always divides up, so
+            //  a plain remainder would vanish there and send a degree 1 second gcd into
+            //  the composition-only case below; taken at the formal degree, dx degenerates
+            //  to dw2 itself and falls through correctly. Same device for bt, ew and at.
+            dx := (Degree(dw2) eq 2) select (up mod dw2) else dw2;
+            if IsZero(dx) then          //CASE #4.2: S1 = dw2, of degree 2
+                //S1,a2,b2 := XGCD(up,h + v + vp);
+                //a1 = 0 because gcd(u,up) = up;
+                b2 := LeadingCoefficient(dw2)^-1;
+                S1 := dw2*b2;
+                up := ExactQuotient(up,S1);
+                u := ExactQuotient(u,S1);
+                s := b2*k mod up;
+                upp := up*u;
+                vpp := (v + u*s) mod upp;
+                return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+            end if;
+            //CASE #4.1: S1 = dx made monic, of degree 1
+            //S1,a2,b2 := XGCD(up,h + v + vp);
+            //a1 = 0 because gcd(u,up) = up;
+            dx1Inv := LeadingCoefficient(dx)^-1;
+            S1 := dx*dx1Inv;
+            bt := (Degree(dw2) eq 2) select (-(up div dw2)) else R!1;    // = b2*dx1
+            b2 := bt*dx1Inv;
+            up := ExactQuotient(up,S1);
+            u := ExactQuotient(u,S1);
+            s := b2*k mod up;
+            upp := ExactQuotient(k*S1 - s*(s*u + 2*v + h), up);
+            vpp := (-s*u - v - h) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
         end if;
-        s := (a2*a1*(vp - v) + b2*k) mod up;
-    else
-        s := a1*(vp - v) mod up;
-    end if;
-
-    if Degree(u) + Degree(up) le 3 then
-        //composition only (a gcd case shrank the degrees)
-        upp := u*up;
-        vpp := (v + u*s) mod upp;
-    elif Degree(s) lt 2 then
-        //one reduction: upp = (k*S - s*(s*u + 2*v + h))/up, monic
-        upp := ExactQuotient(k*S - s*(s*u + 2*v + h), up);
-        upp := upp/LeadingCoefficient(upp);
-        vpp := (-s*u - v - h) mod upp;
-    else
-        //two reductions, the typical case: one continued-fraction step
-        //(reachable only with S = 1, as in Nucomp_g3_RAM)
-        q, r := Quotrem(up, s);
+        //ew = up mod dw1, at the formal degree 2 for dw1: a linear dw1 always divides up,
+        //  and there ew degenerates to dw1 itself, which is already the degree 1 gcd
+        ew := (Degree(dw1) eq 2) select (up mod dw1) else dw1;
+        if IsZero(ew) then              //gcd(u,up) = dw1, of degree 2
+            vt := vp - v;
+            a1 := LeadingCoefficient(dw1)^-1;
+            S := dw1*a1;
+            dw3 := (h + v + vp) mod S;  // = (b2^-1)*S1 for S1,a2,b2 = XGCD(S,h + v + vp);
+            if IsZero(dw3) then         //CASE #3.5
+                //S1,a2,b2 := XGCD(S,h + v + vp);
+                //S1 = S, a2 = 1, b2 = 0;
+                u := ExactQuotient(u,S);
+                up := ExactQuotient(up,S);
+                s := a1*vt mod up;
+                upp := up*u;
+                vpp := (v + u*s) mod upp;
+                return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+            end if;
+            k := (f - v*(v + h)) div u;   //Exact quotient
+            dy := Resultant(S,h + v + vp);      // = dw1 mod dw3, up to weight
+            if IsZero(dy) then          //CASE #3.4
+                //S1,a2,b2 := XGCD(S,h + v + vp);
+                //S1 = dw3 made monic, of degree 1;
+                b2 := LeadingCoefficient(dw3)^-1;
+                S1 := dw3*b2;
+                t := S1 - b2*(h + v + vp);
+                a2 := ExactQuotient(t,S);
+                u := ExactQuotient(u,S1);
+                up := ExactQuotient(up,S1);
+                s := (a2*a1*vt + b2*k) mod up;
+                upp := ExactQuotient(k*S1 - s*(s*u + 2*v + h), up);
+                vpp := (-s*u - v - h) mod upp;
+                return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+            end if;
+            //S1,a2,b2 := XGCD(S,h + v + vp);
+            //S1 = 1;
+            QS := quo<R | S>;
+            b2 := R!(QS!dw3^-1);
+            t := (1 - b2*(h + v + vp)) mod up;
+            a2 := ExactQuotient(t,S);
+            s := (a2*a1*vt + b2*k) mod up;
+            if Degree(s) lt 2 then      //CASES #3.3 (deg(s) = 0) and #3.2 (deg(s) = 1)
+                upp := ExactQuotient(-s*(s*u + 2*v + h) + k, up);
+                upp := upp/LeadingCoefficient(upp);
+                vpp := (-s*u - v - h) mod upp;
+                return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+            end if;
+            //CASE #3.1: one continued fraction step (reachable only with S1 = 1)
+            q, r := Quotrem(up,s);
+            M1 := ExactQuotient((vp - v)*q + u*r, up);
+            M2 := ExactQuotient(r*(h + v + vp) + q*k, up);
+            upp := r*M1 - q*M2;
+            z := ExactQuotient(u*r - upp, q);
+            upp := upp/LeadingCoefficient(upp);
+            vpp := (z - v - h) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+        end if;
+        //gcd(u,up) = ew, of degree 1
+        at := (Degree(dw1) eq 2) select (-(up div dw1)) else R!1;    // = a1*ew1
+        ew1Inv := LeadingCoefficient(ew)^-1;
+        a1 := at*ew1Inv;
+        S := ew*ew1Inv;
+        dw4 := (h + v + vp) mod S;      // = (b2^-1)*S1 for S1,a2,b2 = XGCD(S,h + v + vp);
+        if IsZero(dw4) then             //CASE #2.4
+            //S1,a2,b2 := XGCD(S,h + v + vp);
+            //S1 = S, a2 = 1, b2 = 0;
+            k := (f - v*(v + h)) div u;   //Exact quotient
+            u := ExactQuotient(u,S);
+            up := ExactQuotient(up,S);
+            vt := vp - v;
+            y := a1*vt;
+            s := y mod up;
+            upp := ExactQuotient(k*S - s*(s*u + 2*v + h), up);
+            vpp := (-s*u - v - h) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+        end if;
+        //S1,a2,b2 := XGCD(S,h + v + vp);
+        //S1 = 1;
+        k := (f - v*(v + h)) div u;   //Exact quotient
+        vt := vp - v;
+        b2 := FF!dw4^-1;
+        t := (1 - b2*(h + v + vp)) mod up;
+        a2 := ExactQuotient(t,S);
+        s := (a2*a1*vt + b2*k) mod up;
+        if Degree(s) lt 2 then          //CASES #2.3 (deg(s) = 0) and #2.2 (deg(s) = 1)
+            upp := ExactQuotient(-s*(s*u + 2*v + h) + k, up);
+            upp := upp/LeadingCoefficient(upp);
+            vpp := (-s*u - v - h) mod upp;
+            return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+        end if;
+        //CASE #2.1: one continued fraction step (reachable only with S1 = 1)
+        q, r := Quotrem(up,s);
         M1 := ExactQuotient((vp - v)*q + u*r, up);
-        M2 := ExactQuotient(r*(vp + v + h) + q*k, up);
+        M2 := ExactQuotient(r*(h + v + vp) + q*k, up);
         upp := r*M1 - q*M2;
         z := ExactQuotient(u*r - upp, q);
         upp := upp/LeadingCoefficient(upp);
         vpp := (z - v - h) mod upp;
+        return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
     end if;
+    //gcd(u,up) = 1
+    k := (f - v*(v + h)) div u;   //Exact quotient
+    vt := vp - v;
+    s := R!(Q!dw1^-1)*vt mod up;
+    if Degree(s) lt 2 then              //CASES #1.3 (deg(s) = 0) and #1.2 (deg(s) = 1)
+        upp := ExactQuotient(-s*(s*u + 2*v + h) + k, up);
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (-s*u - v - h) mod upp;
+        return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0);
+    end if;
+    //CASE #1.1, the typical path: one continued fraction step
+    q, r := Quotrem(up,s);
+    M1 := ExactQuotient((vp - v)*q + u*r, up);
+    M2 := ExactQuotient(r*(h + v + vp) + q*k, up);
+    upp := r*M1 - q*M2;
+    z := ExactQuotient(u*r - upp, q);
+    upp := upp/LeadingCoefficient(upp);
+    vpp := (z - v - h) mod upp;
     return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
            Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
@@ -1455,7 +1647,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5,
             if (dx1 eq 0 and dx0 eq 0) then
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 // gcd(u,up) = up
-                // DB = P1+P2+P3, DA = P1-P2-P3
+                // DB = P1+P2+P3, DA = P3-P1-P2
                 // return 2P1
 
                 // dw22Inv = h+vp+v^-1 mod up
@@ -1492,7 +1684,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5,
                 vpp1:= s0 + v1 - upp1*v2;
                 vpp0:= u0*s0 + v0 - upp0*v2;
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(u,up) = up, DB = P1+P2+P3, DA = P1-P2-P3"; end if;
+				if (ADD_DEBUG) then "Deg3ADD: gcd(u,up) = up, DB = P1+P2+P3, DA = P3-P1-P2"; end if;
                 return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             end if;

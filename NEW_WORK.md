@@ -1194,6 +1194,42 @@ applies one level up, to the algorithm statement the formulas claim to implement
 the three findings above are exactly transcription drift between a formulation and its
 implementation, which is the class of defect a human reading both is worst at.
 
+**The blocks were then rewritten to say what the explicit code actually does.** They had
+been generic: one `XGCD(u,up)` call, a second `XGCD` on the gcd, and a three-way tail on
+`Degree(u) + Degree(up)`. That is a correct algorithm but it is not the algorithm below it,
+so no statement of it could serve as the comment above any particular explicit group. All
+four are now unfolded in the resultant form the house exemplars use — `arb_splitG3_ADD`'s
+`Deg22ADD` and genus-2 ramified's `Deg2ADD` — with every gcd case explicit and its own
+return. `Deg3ADD` goes from 51 lines to 178 and from 3 returns to 12.
+
+**How many leaves is settled by the parent, not by taste.** Each block's header names
+`Nucomp_g3_RAM` as what it specialises, and that function dispatches once on
+`Degree(s) lt 2`; thesis `alg:g3nucomp` writes the same single `\ElsIf{\deg(s) < 2}`. The
+author's own comment there says why — *"stay within these cases and go forward with the
+following output cases within each GCD case"* — the gcd axis and the output axis are
+orthogonal, and the explicit code's fifteen leaves are the pruned cross product of four
+gcd cases against three output cases. The block mirrors the algorithm's granularity, so
+its twelve leaves are right and the explicit code's extra `deg(s) = 0` versus `= 1` splits
+are degree bookkeeping. The same source settles a second point: it carries *"k should be
+pushed forward depending on case, should only compute k right before needed"*, which the
+old block violated by computing `k` unconditionally at the top. The new one computes it
+per branch, and never on the two paths that return without it.
+
+**One construct is load-bearing and looks like a hack.** Three lines read
+`dx := (Degree(dw2) eq 2) select (up mod dw2) else dw2;`. A linear `dw2` always divides
+`up`, so a plain remainder vanishes there and routes a degree-1 second gcd into the
+composition-only branch. Measured: the plain-`mod` spelling is **wrong on 15 of 1,890**
+degenerate-shape pairs and **never raises** — it silently returns a degree-1 or degree-2
+`upp` where the answer has degree 3. The alternative is an extra `if Degree(...) eq 2`
+guard level the explicit code does not have.
+
+**A defect the rewrite surfaced.** The `CASES` enumeration says case 4.2 is
+`DA = P3-P1-P2 (return 2P3)`, and the `ADD_DEBUG` label inside that case said
+`DA = P1-P2-P3`. The arithmetic decides it: `(P1+P2+P3) + (P3-P1-P2) = 2P3` matches the
+stated return, where `P1-P2-P3` would give `2P1`. Wrong in both addition files, at the
+label and at an in-case comment, with two frozen corpus records carrying the wrong string.
+Corrected in all six places.
+
 Landing alongside it, and behaviour-preserving: the genus-3 ramified case functions now
 take **the smaller-degree divisor first, unprimed**, matching genus 2, so `u, v` is
 always the lower-degree operand, `up, vp` the higher, and `upp, vpp` the result. Genus 3
