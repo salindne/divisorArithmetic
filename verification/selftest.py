@@ -43,9 +43,22 @@ Sections, and what each would catch:
                   reorders parameters in the genus-3 models and a mistake there is
                   wrong only on mixed-degree inputs, so this capability has to be
                   demonstrated before that work starts, not assumed.
+  adjugate        That `adjugate.py`'s verdict on the genus-3 adjugate block can
+                  come out negative. Two wrong programs are required to be
+                  caught, and one of them only outside characteristic 2, which is
+                  what shows the sixteen fields are load-bearing. Needs no
+                  Magma, so it runs in CI.
+  blocks          That `blockcheck.py` -- the only thing here that executes a
+                  reference block -- catches a block that disagrees with the
+                  explicit code in the `u = up` class, which is where the real
+                  defect hid. Needs Magma, so it SKIPs without it.
+
+More sections exist than this list names; `python3 selftest.py --list` prints them
+all, from each section's own docstring.
 
 The `reference` and `repros` sections need the audit artefacts, which live outside
 this repository. Point AUDIT_HARNESS at them, or let those two sections skip.
+The `blocks` section needs real Magma, which no hosted runner has.
 """
 
 from __future__ import annotations
@@ -1201,6 +1214,521 @@ def section_specialisation(rep, quick):
 
 
 
+def section_blocks(rep, quick):
+    """`blockcheck.py` executes a reference block, and is shown to catch a wrong one.
+
+    A reference block -- the `//Formulation` algorithm inside
+    `/* //startIGNORE ... */` -- is executed by nothing else in this repository,
+    and the claim that uncommenting one reproduces the explicit code was
+    unverified for the whole life of these files. It was also false: the genus-3
+    ramified `arb` Deg3ADD block agreed on every input whose `gcd(u, up)` had
+    degree 0, 1 or 2 and disagreed where `u = up`.
+
+    So this section does two things. It runs every shipped ADD block in every
+    family blockcheck can reach -- twelve of them, discovered by
+    `blockcheck.add_functions` rather than named here -- and requires agreement in
+    every gcd class of every one. Then it injects a defect confined to the
+    `u = up` branch of one of them and requires blockcheck to report a
+    disagreement whose wrong comparisons all land in that class -- "a guard never
+    seen to fire is not known to be a guard", and the class that matters is
+    precisely the one the earlier three-way Magma checking missed.
+
+    The provocation is injected into one block, not twelve, because one
+    demonstration that the oracle detects a wrong block is what is needed; the
+    breadth is in the control, which is the part that would go stale. `--quick`
+    keeps one function per family, so a pre-commit run stays at two Magma checks
+    plus the provocation.
+
+    Which side of a disagreement is wrong is a question this section cannot
+    answer, and it says so rather than guessing: blockcheck compares two
+    implementations of the same algorithm. `whitebox.py` and `driver.py` are what
+    check the explicit side against `reference.py`.
+
+    THE ORIGINAL DEFECT IS NO LONGER A PROVOCATION, AND THAT IS MEASURED
+
+    The natural injection is the defect itself: delete the missing
+    `upp := upp/LeadingCoefficient(upp);` from CASE #4.1. It no longer provokes
+    anything, because the rewritten CASE #4.1 obtains `upp` as an exact quotient
+    of a monic degree-5 numerator by a monic divisor -- the subtracted term
+    `s*(s*u + 2*v + h)` has degree at most 4 against `k*S1`'s 5, in every
+    characteristic -- so it is monic already and the normalisation is dead code.
+    Measured before choosing a different injection: 170 firings in `arb` and 125
+    in `nch2`, leading coefficient 1 at every one. The run is repeated here (not
+    in `--quick`) and reported as a note, so that stays evidence rather than a
+    remark. A live defect in the same branch is used to gate instead.
+
+    NO FORMULA FILE IS WRITTEN
+
+    `gate_guards` mutates files on disk because `whitebox.py` reads its inputs
+    from disk. Here the block is a parameter -- `blockcheck.run(block_lines=...)`
+    -- so the mutation happens in memory and the formula file is only ever read.
+    Nothing to restore, so no crash and no concurrent edit can lose anyone's
+    work. The on-disk path is exercised anyway: the control run below is the one
+    that reads the block out of the file.
+    """
+    import blockcheck as B                                      # noqa: PLC0415
+
+    FAMILY, FUNCTION = "arb", "Deg3ADD"
+    # Live defects in the u = up branch: CASE #4.2 divides both u and up by the
+    # degree-2 S1, and dropping either division leaves upp = u*up a degree too
+    # high. Confined to u = up by construction, which is the property being
+    # demonstrated. Two candidates rather than one because the wording of a block
+    # is not a stable interface -- if the first idiom is rewritten away the gate
+    # should try the next and report which it used, not collapse.
+    CANDIDATES = [("up := ExactQuotient(up,S1);", "CASE #4.2"),
+                  ("u := ExactQuotient(u,S1);", "CASE #4.2")]
+    # The original F2 defect, kept for the note above.
+    DEAD, DEAD_CASE = "upp := upp/LeadingCoefficient(upp);", "CASE #4.1"
+
+    targets, broken = B.discover_targets()
+    for rel, why in broken:
+        rep.note("blocks: unreadable tester %s: %s" % (rel, why))
+    if FAMILY not in targets:
+        rep.fail("blocks", "blockcheck discovers no %r family; known: %s"
+                 % (FAMILY, ", ".join(sorted(targets)) or "none"))
+        return
+
+    ok, why = B.magma_status()
+    if not ok:
+        rep.skip("blocks", "needs real Magma via tools/magma-docker/magma.sh: %s"
+                 % why)
+        return
+
+    target = targets[FAMILY]
+    curves, pairs, seed = (3, 4, 11) if quick else (4, 6, 11)
+
+    # What to check: every ADD block of every discovered family, or one per family
+    # in --quick. Discovered from the files, so a block added to one of them is
+    # checked without an edit here, and a block renamed out of existence fails the
+    # coverage test below instead of quietly leaving the gate.
+    plan = []
+    for name in sorted(targets):
+        fns, unrunnable = B.add_functions(targets[name].add_path)
+        for fn, whynot in unrunnable:
+            rep.note("    blocks: %s %s has no runnable block: %s"
+                     % (name, fn, whynot))
+        if FUNCTION not in fns:
+            rep.fail("blocks", "%s has no runnable %s block, so the provocation "
+                               "has nowhere to go; runnable: %s"
+                     % (name, FUNCTION, ", ".join(fns) or "none"))
+            return
+        plan += [(name, FUNCTION)] if quick else [(name, f) for f in fns]
+
+    control, checked, compared, disagreed = None, [], 0, []
+    for name, fn in plan:
+        res = B.run(targets[name], fn, curves=curves, pairs=pairs, seed=seed)
+        compared += res.compared
+        if res.verdict == "AGREE":
+            checked.append("%s %s %d" % (name, fn, res.compared))
+        else:
+            detail = res.error or ", ".join(
+                "shared %d: %d wrong of %d" % (s, w, c)
+                for s, c, w in res.classes if w) or res.verdict
+            disagreed.append("%s %s (%s)" % (name, fn, detail))
+            for line in res.stdout.splitlines():
+                if line.startswith("MISMATCH"):
+                    rep.note("    %s %s %s" % (name, fn, line.strip()))
+        if (name, fn) == (FAMILY, FUNCTION):
+            control = res
+    if disagreed:
+        rep.fail("blocks", "shipped block(s) do not agree with their explicit "
+                           "code: %s; which side is wrong is for whitebox.py and "
+                           "driver.py to say" % "; ".join(disagreed[:3]))
+        return
+    # "Nothing failed" must not be reachable by checking less than was discovered.
+    # Compared against the discovered set rather than against a count, so a family
+    # or a block that disappears from the files fails here instead of shrinking
+    # the gate silently.
+    if control is None or {n for n, _f in plan} != set(targets):
+        rep.fail("blocks", "the gate narrowed: %d block(s) checked (%s) over "
+                           "families %s, out of %s discovered"
+                 % (len(plan), ", ".join("%s %s" % p for p in plan) or "none",
+                    ", ".join(sorted({n for n, _f in plan})) or "none",
+                    ", ".join(sorted(targets))))
+        return
+    rep.note("blocks: %d shipped block(s) = their explicit code on %d comparisons "
+             "(%s)" % (len(plan), compared, ", ".join(checked)))
+    rep.note("blocks: %s %s gcd classes %s"
+             % (FAMILY, FUNCTION,
+                "/".join(str(c) for _s, c, _w in control.classes)))
+
+    _sig, body, _arity = B.extract(target.add_path, FUNCTION)
+    tried, hurt, used = [], None, None
+    for needle, case in CANDIDATES:
+        mutated, dropped = B.drop_in_case(body, needle, case)
+        if dropped == 0:
+            tried.append("%r is not inside %s" % (needle, case))
+            continue
+        hurt = B.run(target, FUNCTION, curves=curves, pairs=pairs, seed=seed,
+                     block_lines=mutated)
+        used = "dropping %d x %r from %s" % (dropped, needle, case)
+        if hurt.verdict == "DISAGREE" and not hurt.error:
+            break
+        tried.append("%s gave %s" % (used, hurt.error or hurt.verdict))
+    problems = []
+    if hurt is None:
+        problems.append("cannot inject any provocation: %s" % "; ".join(tried))
+    elif hurt.error:
+        problems.append("the provoked run errored instead of disagreeing: %s"
+                        % hurt.error)
+    elif hurt.verdict != "DISAGREE":
+        problems.append("a wrong block was not detected -- %s gave %s, %d wrong "
+                        "of %d" % (used, hurt.verdict, hurt.wrong, hurt.compared))
+    else:
+        equal_u = max(s for s, _c, _w in hurt.classes)
+        stray = [(s, w) for s, _c, w in hurt.classes if w and s != equal_u]
+        if stray:
+            problems.append("the injected defect is confined to u = up but wrong "
+                            "answers appeared in gcd class(es) %s"
+                            % ", ".join("%d (%d wrong)" % sw for sw in stray))
+        if not [w for s, _c, w in hurt.classes if s == equal_u and w]:
+            problems.append("no wrong answer in the u = up class, where the "
+                            "injected defect lives")
+    for line in tried:
+        rep.note("    blocks: " + line)
+
+    if not quick:
+        dead, n = B.drop_in_case(body, DEAD, DEAD_CASE)
+        if n == 0:
+            rep.note("blocks: %r no longer appears inside %s" % (DEAD, DEAD_CASE))
+        else:
+            r = B.run(target, FUNCTION, curves=curves, pairs=pairs, seed=seed,
+                      block_lines=dead)
+            rep.note("blocks: dropping the %d %s normalisation(s) -- the original "
+                     "defect -- gives %s, %d wrong of %d: dead code there, as "
+                     "computed" % (n, DEAD_CASE, r.verdict, r.wrong, r.compared))
+
+    if problems:
+        rep.fail("blocks", problems[0])
+        for p in problems:
+            rep.note("    " + p)
+    else:
+        rep.ok("blocks", "%d block(s), %d compared clean; %s from %s %s gave %d "
+                         "wrong of %d, all in the u = up class"
+               % (len(plan), compared, used, FAMILY, FUNCTION,
+                  hurt.wrong, hurt.compared))
+
+
+def section_adjugate(rep, quick):
+    """`adjugate.py`'s verification of the genus-3 adjugate block, shown to fire.
+
+    That module recomputes the NEW_WORK N26 measurements -- the candidate table,
+    the span of the nine cofactors as quadratic forms, the lower bound on t-by-t
+    products, and the bilinear floor for the bottom row -- from scratch, with no
+    third-party dependency. Everything it prints is either measured on the spot
+    or read out of a formula file, so this section's job is to make sure its
+    verdict is capable of coming out negative.
+
+    THE CONTROL
+
+    Its `source` section is run first, because everything else in the module
+    stands on it: the cofactor definitions are parsed out of the `//| m1= ... |`
+    comment block that nine formula files carry, and required to agree with an
+    adjugate this module builds itself from `multiply by w, reduce mod up`. If a
+    file's block is edited into disagreement, that is where it shows.
+
+    Then the candidate table and the whole-region pair, at reduced trials.
+
+    THE PROVOCATIONS -- TWO, BECAUSE ONE WOULD NOT SHOW THE FIELDS ARE REAL
+
+    "A guard never seen to fire is not known to be a guard", so a wrong program
+    is handed to `adjugate.check` and a negative verdict is *required*:
+
+      * an operand swap (`m9 = t1*t5 - t2*t1` for `- t2*t4`) has to be reported
+        wrong in every field, all sixteen, seven of which have characteristic 2.
+
+      * a sign flip (`t5 = t1 + up1*t7` for `-`) has to be reported wrong in
+        every odd-characteristic field and in *none* of the characteristic-2
+        ones. That asymmetry is the check that the sixteen fields are not
+        decoration: a suite that only ever ran GF(2) would pass the first
+        provocation and miss this one entirely, and a suite that never ran GF(2)
+        would report the second as simply wrong everywhere.
+
+    Neither perturbation changes the op count, so a count-only comparison would
+    accept both -- which is why the values are compared against an independent
+    schoolbook reference rather than the counts being compared against a table.
+
+    THE COUNTS ARE REQUIRED AGAINST THE FILES, NOT AGAINST A TABLE HERE
+
+    `arb_ramifiedG3_DBL.mag` annotates its adjugate block `// 16m 0s 9a` and
+    `arb_ramifiedG3_ADD.mag` annotates `// top: 16m 0s 9a`,
+    `// total: 27m 0s 17a` and `// 11m 0s 8a`. All four comments are parsed and
+    the measured counts are required to equal them exactly. A count that moves
+    because someone improved the block fails here until the comment moves with
+    it, which is the intended behaviour.
+
+    NO FORMULA FILE IS WRITTEN
+
+    On the same principle as `blocks`: the candidate programs are Python
+    functions passed to `adjugate.check` as parameters, so a provocation is a
+    function defined in this docstring's own scope and nothing on disk is
+    touched. The formula files are opened read-only, for parsing.
+
+    THE THREE SHIPPED FRAGMENTS ARE MEASURED ON THE SOURCE, NOT ON A RETYPING
+
+    `adjugate.section_mag` extracts each shipped fragment's real statement text
+    from the .mag between two anchors and executes it through `maginterp.py` --
+    the same interpreter and cost model `opcount.py` uses -- then requires the
+    count AND the values to equal the transcription's. So for `shipped_7`,
+    `shipped_7_dbl` and `split_q` a transcription that drifted from the file is
+    caught. A moved anchor fails rather than skipping, since the anchors are the
+    only handle on the source.
+
+    WHAT THIS SECTION DOES NOT CHECK
+
+    The rest are still transcriptions: `shipped_9` and both `region` rows straddle
+    the `d eq 0` guard, so no anchor pair isolates them as a program, and the
+    `row3` pair and every rank-5 variant exist nowhere in the repository as .mag.
+    For those, the *values* are checked against the parsed cofactor definitions
+    and the region *count* against the file's own `// total:` comment, but a
+    transcription error preserving both would survive.
+    """
+    import adjugate as ADJ                                      # noqa: PLC0415
+
+    trials = 25 if quick else 60
+    problems = []
+
+    src = ADJ.section_source()
+    if not src["ok"]:
+        rep.fail("adjugate", "the cofactor definitions do not check out: %s"
+                 % "; ".join(src["problems"][:2]))
+        return
+    rep.note("adjugate: %d formula file(s) carry the cofactor block, all nine "
+             "entries agreeing with an independently built adj(T); det(T) = the "
+             "5x5 Sylvester Res(w,up)" % src["files_with_block"])
+
+    # The three shipped fragments' REAL statement text, extracted between two
+    # anchors and priced through `maginterp.py` -- the same interpreter and cost
+    # model `opcount.py` uses. This is the only thing here that measures the
+    # source rather than a retyping of it, so a transcription that drifted from
+    # the .mag is caught here and nowhere else. A moved anchor is a failure and
+    # not a skip: the anchors are the module's only handle on the source.
+    mag = ADJ.section_mag()
+    for row in mag["rows"]:
+        if not row["ok"]:
+            problems.append("the .mag fragment for %s: %s"
+                            % (row["candidate"], row["why"] or "not ok"))
+
+    table = ADJ.section_table("entries", None, trials)
+    region = ADJ.section_table("region", None, trials)
+    for blob, what in ((table, "candidate"), (region, "region")):
+        for row in blob["rows"]:
+            if not row["ok"]:
+                problems.append("%s %s does not reproduce the reference: %s"
+                                % (what, row["name"],
+                                   (row["fails"] or [["?"]])[0]))
+            if row["expect_agrees"] is False:
+                problems.append("%s %s measured %dM %dS %dA against the claimed "
+                                "%s" % (what, row["name"], row["M"], row["S"],
+                                        row["A"], row["expect"]))
+
+    # the four op-count comments in the two ramified files, parsed, required
+    annots = ADJ.all_annotations()
+    required = [("shipped_7", ("arb_ramifiedG3_ADD.mag", "top")),
+                ("shipped_7_dbl", ("arb_ramifiedG3_DBL.mag", "block")),
+                ("region_shipped", ("arb_ramifiedG3_ADD.mag", "total"))]
+    rows = {r["name"]: r for r in table["rows"] + region["rows"]}
+    for name, key in required:
+        want, row = annots.get(key), rows.get(name)
+        if row is None:
+            problems.append("candidate %s has gone from adjugate.py, so the "
+                            "%s comment is no longer checked" % (name, key[0]))
+        elif want is None:
+            problems.append("%s no longer carries its `%s` op-count comment, so "
+                            "%s is measured against nothing"
+                            % (key[0], key[1], name))
+        elif (row["M"], row["S"], row["A"]) != want:
+            problems.append("%s measured %dM %dS %dA against %s's own %dm %ds "
+                            "%da" % (name, row["M"], row["S"], row["A"], key[0],
+                                     want[0], want[1], want[2]))
+    lh = region.get("lower_half") or {}
+    if lh.get("agrees") is False:
+        problems.append("the lower half measured %s against the file's %s"
+                        % (lh.get("measured"), lh.get("annotation")))
+    elif lh.get("annotation") is None:
+        problems.append("arb_ramifiedG3_ADD.mag's unlabelled op-count comment "
+                        "has gone, so the lower half is measured against nothing")
+
+    # ---- the provocations -------------------------------------------------
+    def swapped_operand(t1, t4, t7, up0, up1, up2):
+        """shipped_7 with `- t2*t4` written `- t2*t1`. Wrong in every field."""
+        t2 = -(up0 * t7)
+        t5 = t1 - up1 * t7
+        t8 = t4 - up2 * t7
+        m7 = t4 * t8 - t5 * t7
+        m8 = t2 * t7 - t1 * t8
+        m9 = t1 * t5 - t2 * t1
+        m5 = m9 + up2 * m8
+        m3 = -(up0 * m8)
+        m2 = -(up0 * m7)
+        m1 = m5 + up1 * m7
+        return dict(m1=m1, m2=m2, m3=m3, m5=m5, m7=m7, m8=m8, m9=m9,
+                    d=t1 * m1 + t4 * m2 + t7 * m3)
+
+    def flipped_sign(t1, t4, t7, up0, up1, up2):
+        """shipped_7 with `t5 = t1 + up1*t7`. Invisible in characteristic 2."""
+        t2 = -(up0 * t7)
+        t5 = t1 + up1 * t7
+        t8 = t4 - up2 * t7
+        m7 = t4 * t8 - t5 * t7
+        m8 = t2 * t7 - t1 * t8
+        m9 = t1 * t5 - t2 * t4
+        m5 = m9 + up2 * m8
+        m3 = -(up0 * m8)
+        m2 = -(up0 * m7)
+        m1 = m5 + up1 * m7
+        return dict(m1=m1, m2=m2, m3=m3, m5=m5, m7=m7, m8=m8, m9=m9,
+                    d=t1 * m1 + t4 * m2 + t7 * m3)
+
+    good = ADJ.check(ADJ.shipped_7, 6, trials=trials)
+    nfields = len(good["fields"])
+    nch2 = sum(1 for n in good["fields"] if n in ADJ.CH2_NAMES)
+
+    swap = ADJ.check(swapped_operand, 6, trials=trials)
+    if swap["ok"]:
+        problems.append("an operand swap in shipped_7 was NOT detected")
+    elif len(swap["fields_wrong"]) != nfields:
+        problems.append("the operand swap was detected in %d of %d fields, not "
+                        "all: missing %s"
+                        % (len(swap["fields_wrong"]), nfields,
+                           sorted(set(good["fields"]) - set(swap["fields_wrong"]))))
+    if (swap["M"], swap["S"], swap["A"]) != (good["M"], good["S"], good["A"]):
+        problems.append("the operand swap changed the op count, so it does not "
+                        "demonstrate that values are what is being compared")
+
+    flip = ADJ.check(flipped_sign, 6, trials=trials)
+    if flip["ok"]:
+        problems.append("a sign flip in shipped_7 was NOT detected")
+    elif flip["fields_wrong_char2"]:
+        problems.append("a sign flip was reported wrong in characteristic 2 "
+                        "(%s), where it cannot be"
+                        % ", ".join(flip["fields_wrong_char2"]))
+    elif len(flip["fields_wrong"]) != nfields - nch2:
+        problems.append("the sign flip was detected in %d of the %d odd-"
+                        "characteristic fields"
+                        % (len(flip["fields_wrong"]), nfields - nch2))
+
+    # ---- the bound and the floor, at cheap settings ------------------------
+    span = ADJ.section_span((2, 3))
+    if not span["ok"]:
+        problems.append("the span of the nine entries is not 3-dimensional as "
+                        "computed: generic %s, at up=0 %s"
+                        % (span["generic_rank_over_Q_of_up"],
+                           span["rank_at_up0_over_Q"]))
+    bound = ADJ.section_bound((2, 3) if quick else (2, 3, 5, 7))
+    if bound["bound"] != 4:
+        problems.append("the lower bound came out %s, not 4"
+                        % bound["bound"])
+    rank = ADJ.section_rank((2, 3) if quick else (2, 3, 5))
+    if not rank["ok"]:
+        problems.append("the bottom row's bilinear floor is not as computed: "
+                        "floor %s, attained %s"
+                        % (rank["floor"], rank["attained"]))
+
+    located = [r for r in mag["rows"] if r.get("found")]
+    rep.note("adjugate: %d shipped fragment(s) executed from their real .mag text "
+             "through maginterp.py: %s -- each equal to its transcription's count "
+             "and values"
+             % (len(located),
+                ", ".join("%s %dM %dS %dA" % (r["candidate"], r["count"][0],
+                                              r["count"][1], r["count"][2])
+                          for r in located)))
+    rep.note("adjugate: %d candidates + %d region variants verified over %d "
+             "fields (%d of characteristic 2) x %d trials, and once as an "
+             "identity in Z[t,up]"
+             % (len(table["rows"]), len(region["rows"]), nfields, nch2, trials))
+    rep.note("adjugate: the operand swap is wrong in all %d fields at the same "
+             "%dM %dS %dA; the sign flip is wrong in the %d odd fields and in "
+             "none of the %d characteristic-2 ones"
+             % (len(swap["fields_wrong"]), swap["M"], swap["S"], swap["A"],
+                len(flip["fields_wrong"]), nch2))
+    rep.note("adjugate: span 3 at generic up and at up -> 0; bound %s t-by-t "
+             "products, shipped spends %d of which %d survive up -> 0; bottom "
+             "row floor %s bilinear products, shipped spends %d"
+             % (bound["bound"], bound["census"]["shipped_7"]["t_by_t"],
+                bound["census"]["shipped_7"]["t_by_t_up0"], rank["floor"],
+                next(d["bilinear"] for d in rank["decompositions"]
+                     if d["program"] == "row3_shipped")))
+
+    if problems:
+        rep.fail("adjugate", problems[0])
+        for p in problems:
+            rep.note("    " + p)
+    else:
+        rep.ok("adjugate", "%d programs verified and counted, %d of them priced "
+                           "from their real .mag text; two provocations detected, "
+                           "one only outside characteristic 2; 4 op-count "
+                           "comments in the .mag files reproduced"
+               % (len(table["rows"]) + len(region["rows"]), len(located)))
+
+
+def section_dominance(rep, quick):
+    """A read whose only assignment sits below it, checked in statement order.
+
+    `undef.py` asks, per function, whether a name is assigned ANYWHERE in the
+    body. An assignment below the read satisfies that, which is exactly the
+    residue of a half-finished rename: a variable inlined at one site, its
+    definition deleted, and a surviving read further up now resolving to a
+    definition that has not run. Two such breakages reached real Magma during
+    the 2026-08-20 genus-3 addition work and `undef.py` called both files clean.
+
+    `dominance.py` walks each body in order and reports reads with no
+    assignment above them. Both halves are exercised here: every formula file
+    must be clean, and deleting one live assignment must be caught -- a gate
+    never seen to fire is not known to be a gate.
+
+    What this does NOT cover is recorded in `ERRATA.md` E15 and matters: an
+    assignment inside an `if` above the read counts as reaching it, so a value
+    defined only on a sibling path still passes. Only Magma sees that.
+    """
+    import dominance as DM                                      # noqa: PLC0415
+
+    files = DM.formula_files()
+    if not files:
+        rep.fail("dominance", "no formula files discovered")
+        return
+    dirty = [(os.path.relpath(p, ROOT), DM.analyse(p)) for p in files]
+    bad = [(rel, found) for rel, found in dirty if found]
+    if bad:
+        rel, found = bad[0]
+        fn, lineno, nm = found[0]
+        rep.fail("dominance", "%s %s:%d reads %r with no assignment above it (%d total)"
+                 % (rel, fn, lineno, nm, sum(len(f) for _, f in bad)))
+        return
+
+    # the provocation: remove one live assignment that many reads depend on
+    target = os.path.join(ROOT, "g3", "ramifiedModel", "g3Formulas",
+                          "arb_ramifiedG3_ADD.mag")
+    if not os.path.exists(target):
+        rep.ok("dominance", "%d file(s) clean; provocation skipped, %s absent"
+               % (len(files), os.path.basename(target)))
+        return
+    original = open(target, encoding="utf-8").read()
+    lines = original.split("\n")
+    hit = None
+    for i, line in enumerate(lines):
+        if line.strip().startswith("k3:=") and "//" not in line.split("k3")[0]:
+            hit = i
+            break
+    if hit is None:
+        rep.ok("dominance", "%d file(s) clean; provocation skipped, no k3 assignment"
+               % len(files))
+        return
+    lines[hit] = "        //" + lines[hit].strip()
+    try:
+        open(target, "w", encoding="utf-8").write("\n".join(lines))
+        provoked = DM.analyse(target)
+    finally:
+        open(target, "w", encoding="utf-8").write(original)
+    if not provoked:
+        rep.fail("dominance", "deleting a live k3 assignment was NOT detected, "
+                              "so the check cannot be relied on")
+        return
+    rep.ok("dominance", "%d formula file(s) clean; deleting one live k3 assignment "
+                        "gave %d report(s), so the check fires"
+           % (len(files), len(provoked)))
+
+
 SECTIONS = [
     ("fields", section_fields),
     ("parse", section_parse),
@@ -1216,6 +1744,9 @@ SECTIONS = [
     ("gate_guards", section_gate_guards),
     ("domain", section_domain),
     ("specialisation", section_specialisation),
+    ("dominance", section_dominance),
+    ("adjugate", section_adjugate),
+    ("blocks", section_blocks),
 ]
 
 

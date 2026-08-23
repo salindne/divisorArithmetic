@@ -1279,12 +1279,14 @@ def _exercise(fam, cur, add, params, dbl, dbl_params, subs, res, rng,
             res.pairs_by_mode[mode] += 1
             _compare(fam, cur, add, params, subs, res, D1, D2, "ADD", q, mode,
                      verbose)
-            # Commutativity, checked rather than assumed. The genus-3 dispatchers
-            # sort their operands by Magma's polynomial order before handing them
-            # to a mixed-degree function that is not symmetric, so ADD(D1, D2)
-            # and ADD(D2, D1) taking different paths to the same answer is the
-            # property that makes that sort safe. Cheap, and it is one of the
-            # group axioms the plan requires anyway.
+            # Commutativity, checked rather than assumed. The genus-3 ramified
+            # dispatchers used to sort their operands so that a mixed-degree
+            # callee always saw the larger one first; they now have a leaf per
+            # (deg D1, deg D2) pair and name the operand each callee wants, the
+            # way the split dispatcher does. That doubles the number of leaves
+            # taking a mixed-degree path, and this swapped call is what exercises
+            # the half that the sort used to make unreachable. Cheap, and it is
+            # one of the group axioms the plan requires anyway.
             _compare(fam, cur, add, params, subs, res, D2, D1, "ADD", q,
                      mode + "/swapped", verbose)
             if dbl is not None:
