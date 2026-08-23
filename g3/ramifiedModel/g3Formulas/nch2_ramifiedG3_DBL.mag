@@ -500,8 +500,8 @@ Deg3DBL:= function(u2, u1, u0, v2, v1, v0, f5, f4, f3, f2, f1)
     sp1 := k0*m4 + k1*m5 + k2*m6;
     sp2 := k0*m7 + k1*m8 + k2*m9;
 
-	if (sp2 eq 0) then
-		if (sp1 eq 0) then
+	if IsZero(sp2) then
+		if IsZero(sp1) then
 			// s = sp/d
 			w1:= d^-1;
 			s0:= w1*sp0;
