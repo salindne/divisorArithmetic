@@ -455,6 +455,33 @@ instead of its own directory.
 
 ---
 
+**FIXED 2026-08-23 (PR6).** Each of the fourteen canonical random testers now counts
+its comparisons and asserts the count is non-zero:
+
+    printf "\n// Comparisons: %o", nCmp;
+    assert nCmp gt 0;
+
+The counter increments at every `:= ADD(...)` / `:= DBL(...)` call site, so it measures
+work actually done rather than trials attempted. `assert` was chosen over a printed
+warning because `test_all.sh` already greps `Runtime error|Assertion failed`, so an
+empty run becomes fatal with no change to the parser.
+
+**Demonstrated by reproducing the original discovery.** Run from the wrong directory,
+so every `load` fails, a tester used to print `TEST_ADD: true` / `TEST_DBL: true` /
+`// No errors.` in 0.469s. It now prints `// Comparisons: 0` followed by
+`Runtime error in assert: Assertion failed`. A healthy run reports a real figure --
+57,719 for the genus-2 arbitrary ramified tester.
+
+**Also removed:** the two genus-3 ramified testers echoed `TEST_ADD: ` and
+`TEST_DBL: ` with their values. Those are *configuration switches*, and printing them
+beside a verdict is what made a vacuous run look verified. The remaining twelve never
+printed them.
+
+**The two testers under `g2/timings/` are deliberately untouched**, consistent with
+every other gate in the repository: that tree is the E7 divergent generation and is
+excluded from `driver.py`, `dominance.py` and the operation counters. Sixteen files
+carry the defect; fourteen are of record.
+
 ## E13: the interpreter charges C as M when the coefficient is inside a subexpression
 
 **Found 2026-08-11** while implementing the genus-3 arbitrary efficiency findings, by two
@@ -526,6 +553,15 @@ here so the register carries it rather than only a findings report.
 ---
 
 ## Not defects
+
+**The reverse is exploitable, found 2026-08-23.** Because the blind spot is about the operand being a
+bare NAME, restructuring to keep it bare recovers the honest column. `Deg1DBL` wanted
+`t1*(2*f4)`: written `t10 := f4 + f4; t1*t10` the multiplicand is a temporary and the product is
+charged **1M**, while `t10 := t1*f4; t10 + t10` computes the same value with `f4` bare and is charged
+**1C** -- identical additions, one multiplication moved to the cheaper column by multiplying first and
+doubling second. First instance in this repository of working around this erratum in the formulas
+rather than waiting for the counter to be fixed, and worth knowing wherever an `i*f_i` derivative
+coefficient meets a runtime value.
 
 ## E14: the inline `// Nm Ns Na` ledger comments are gate input, and nothing says so
 
@@ -617,6 +653,17 @@ what `blockcheck` already is. Recorded as a rule instead: **before reusing a `t`
 scratch, enumerate its reads below the insertion point on every path.** The cheap structural fix
 is to honour PR21's convention and take a `t0x` slot, which is what was done here.
 
+**Fourth instance, 2026-08-23, and it arrived from the opposite direction -- collapsing a copy rather
+than adding a scratch.** Specialising the doubling to `f6 = 0` turned `t3 := t2 - f6*u2` into the pure
+rename `t3 := t2`. Removing it and reading `t2` directly is obviously free, and obviously wrong: `t2`
+is reassigned (`t2 := s1*q0`) between that point and the later read in `M20`, so the frequent path
+read `s1*q0` where it wanted `u2^2` -- **106 wrong of 120** in the generic class, clean in every
+other. The rule therefore generalises: **a copy is safe to collapse only if its SOURCE is intact at
+every read of the copy.** That is a liveness question about the source, not the copy, and it is
+exactly the direction the eye does not check. Two fixes remove the clobber rather than working around
+it -- rename the intervening scratch, or inline `s1*q0` so nothing is overwritten at all; the second
+is better, one name fewer at the same cost.
+
 ## E18: `opcount.py` answers a parse failure by omitting the row, not by failing
 
 **Found 2026-08-22**, when a missing comma (`return 0, 1, upp1, upp0, 0 vpp1, vpp0;`) reached the
@@ -632,6 +679,22 @@ empty run, and the reason this project's standing rule is that silence is not su
 `dominance.py` passed, being a line scanner. **Not fixed:** the honest repair is for `opcount` to
 know which functions it *expected* to price and fail on any it could not, which means giving it a
 per-family manifest. Recorded so that a disappearing row is read as the error it is.
+
+**Fired again 2026-08-23, and the second time is more instructive.** During PR6's cleanup
+`arb_ramifiedG3_DBL.mag`'s `Deg3DBL` lost a semicolon --
+`vpp0:= vh0 - s1*(s0*u0) - upp0*t3` -- and `opcount --family ramified/g3/arb` printed
+
+    1DBL   7M  1S  24A  4C  1I
+    2DBL  28M  4S  70A  9C  1I
+
+and stopped. Two plausible rows, no third, exit 0. The danger is not that the tool is silent; it is
+that **the output looks like a successful measurement of a smaller file.** A reader checking "did my
+edit move the counts" sees two rows that did not move and can reasonably conclude nothing did. Magma,
+handed the file directly, gave the line and column in under a second.
+
+So the rule is better stated positively than as a caveat: **the number of rows is part of the
+measurement.** Nine shapes are expected of a genus-3 ramified family; eight means the run failed.
+Until `opcount` asserts that itself, it is the reader's job.
 
 ## E15: no static check sees a read whose only assignment is on another path
 
