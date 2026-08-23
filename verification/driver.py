@@ -91,7 +91,7 @@ class Family(object):
 def discover_families(root=ROOT):
     """Every family present in the repository, found by walking the tree.
 
-    Not a hardcoded list: PR6 through PR8 add files to these directories, and a
+    Not a hardcoded list: PR7 and PR8 add files to these directories, and a
     driver that had to be edited to see a new specialisation would report full
     coverage of a matrix with a hole in it.
     """
@@ -136,11 +136,15 @@ def discover_families(root=ROOT):
         borrowed = False
         if add and not dbl and kind != "arb":
             # A specialisation with an ADD but no DBL of its own doubles with the
-            # general formula: nch2 genus-3 ramified ships no nch2 DBL until PR6,
-            # and its own tester loads arb_ramifiedG3_DBL.mag for exactly this.
-            # Without the borrow this driver silently skipped the family's
-            # doubling altogether -- no skip line, against this file's own rule
-            # that nothing is capped silently.
+            # general formula, and its own Magma tester loads the arb DBL for
+            # exactly this reason. Without the borrow this driver silently skipped
+            # the family's doubling altogether -- no skip line, against this
+            # file's own rule that nothing is capped silently.
+            #
+            # NO FAMILY BORROWS TODAY: ramified/g3/nch2 was the only one, and PR6
+            # gave it a real nch2_ramifiedG3_DBL.mag. Kept because the next family
+            # derived ADD-first lands in the same state -- ch2 genus-3 ramified,
+            # between PR7 and PR8.
             sib = seen.get((model, genus, "arb"), {}).get("DBL")
             if sib:
                 dbl, borrowed = sib, True
@@ -362,13 +366,14 @@ def family_domain(fam, families, op="ADD"):
         return None, None, why
     members = banner_members(fam.add_path)
     # A BORROWED file's banner describes its own family, not the borrower's.
-    # ramified/g3/nch2 has h = 0 and no DBL of its own, so it borrows the arb
-    # DBL -- whose banner says (h3 in {0,1}). Reading that as this family's
-    # domain, and then letting the banner win over the contrast, would leave h3
-    # free and hand h = x^3 to formulas derived for h = 0. The old code read it
-    # too, but the members skip happened to neutralise it; with that skip fixed
-    # the trap becomes live, so exclude it explicitly rather than relying on a
-    # second bug to cancel the first.
+    # The case that established this, now historical: ramified/g3/nch2 has h = 0
+    # and borrowed the arb DBL -- whose banner says (h3 in {0,1}). Reading that
+    # as this family's domain, and then letting the banner win over the contrast,
+    # would leave h3 free and hand h = x^3 to formulas derived for h = 0. The old
+    # code read it too, but the members skip happened to neutralise it; with that
+    # skip fixed the trap became live, so it is excluded explicitly rather than
+    # relying on a second bug to cancel the first. PR6 gave that family its own
+    # DBL, so nothing borrows today -- the guard stands for the next one that does.
     if fam.dbl_path and not getattr(fam, "dbl_borrowed", False):
         members.update(banner_members(fam.dbl_path))
     for (var, idx) in members:
@@ -749,7 +754,7 @@ def split_spec(fam, families=()):
                   since nch2 also has h = 0 that pins f_{2g+2} = 1.
 
     Deriving it beats tabulating it for the usual reason, and there is a second
-    reason here: PR6 through PR8 add new specialisations, and each will state its
+    reason here: PR7 and PR8 add new specialisations, and each will state its
     own normal form the same way.
     """
     out = {"declared": {}, "hlead": None, "y": None, "reads": set(), "why": []}
@@ -1011,7 +1016,7 @@ def run_family(fam, families, res, fields, n_curves, n_pairs, seed, verbose):
     dbl_params = None
     if fam.dbl_path:
         if getattr(fam, "dbl_borrowed", False):
-            print("  %-24s DBL borrowed from %s (its own DBL is PR6)"
+            print("  %-24s DBL borrowed from %s (no DBL of its own yet)"
                   % (fam.name, os.path.basename(fam.dbl_path)))
         try:
             dsubs = M.discover(fam.dbl_path)

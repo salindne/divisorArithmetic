@@ -8,7 +8,7 @@ clear;
 //-----------------------------------------------------------------------------
 // OVERVIEW
 //-----------------------------------------------------------------------------
-// This script tests divisor arithmetic functions from arb_ramifiedG3_DBL.mag
+// This script tests divisor arithmetic functions from nch2_ramifiedG3_DBL.mag
 // (this family's own DBL is PR6), and nch2_ramifiedG3_ADD.mag.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@ clear;
 DBL_DEBUG:= false;
 ADD_DEBUG:= false;
 load "ramifiedUtilities.mag";
-load "g3Formulas/arb_ramifiedG3_DBL.mag";
+load "g3Formulas/nch2_ramifiedG3_DBL.mag";
 // The arb DBL stands in until PR6 derives nch2_ramifiedG3_DBL.mag.
 load "g3Formulas/nch2_ramifiedG3_ADD.mag";
 "     ";
@@ -60,8 +60,8 @@ for F in FIELDS do
       R<x>:=PolynomialRing(FF);
 
       f:= RandomG3NotChar2Curve(F);
-      // h = 0 for this class; kept as a polynomial because the borrowed arb DBL
-      // and Nucomp_g3_RAM both take it (this family has no DBL of its own yet)
+      // h = 0 for this class. Kept as a polynomial because HyperellipticCurve
+      // and Nucomp_g3_RAM both take it; the formulas themselves no longer do.
       h:= R!0;
       C:= HyperellipticCurve(f,h);
       Jac:= Jacobian(C);
@@ -104,14 +104,12 @@ for F in FIELDS do
 
             f7:= Coeff(f, 7); f6:= Coeff(f, 6); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
 
-            h3:= Coeff(h,3); h2:= Coeff(h,2); h1:= Coeff(h,1); h0:= Coeff(h,0);
-
             ua:= D1[1]; va:= D1[2];
 
             ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
             va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
 
-            upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := DBL(D1[1], D1[2], f, h);
+            upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := DBL(D1[1], D1[2], f);
             nCmp+:= 1;
 
             if ((cantor[1] ne upp3*x^3 + upp2*x^2 + upp1*x + upp0) or (cantor[2] ne vpp2*x^2 + vpp1*x + vpp0)) and not (upp3 eq -1 and upp2 eq -1 and upp1 eq -1 and upp0 eq -1) then
