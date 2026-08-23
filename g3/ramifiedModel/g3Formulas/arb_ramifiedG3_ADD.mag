@@ -1945,14 +1945,17 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // ADD():
-// Input: D1, D2:     divisors as [u, v] polynomial pairs, any degrees
-//        f, h, h:    curve polynomials
+// Input: u, v:       Mumford coordinates of the first divisor, any degree
+//        up, vp:     Mumford coordinates of the second divisor, any degree
+//        f, h:       curve polynomials
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
-// Description: Dispatches on the operand degrees to the Deg* cases above,
-//              normalising the larger-degree divisor first. D1 = D2 is routed
-//              to DBL, so the D1 != D2 assumption of the cases holds below.
+// Description: Dispatches on the operand degrees to the Deg* cases above. Each
+//              leaf names the operand its callee wants, so nothing is sorted --
+//              which is also what lets deg(u) = 0 be answered: with the operands
+//              ordered, D1 = 0 implied D2 = 0 too. D1 = D2 is routed to DBL, so
+//              the D1 != D2 assumption of the cases holds below.
 ///////////////////////////////////////////////////////////////////////////////
 ADD:= function(u, v, up, vp, f, h)//startIGNORE
     // D1 = D2 is a doubling, not an addition: the Deg* cases below assume

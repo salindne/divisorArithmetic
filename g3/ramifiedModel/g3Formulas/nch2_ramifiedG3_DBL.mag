@@ -22,12 +22,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg1DBL():
-// Input: u0,v0:  Mumford coordinates for degree one divisor D1
+// Input: u0,v0:  Mumford coordinates for degree one divisor D
 //                     (shares the degree-3 signature; coefficients above
 //                     degree one are structurally zero here)
 //        f5..f1: curve coefficients
 //
-// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D1
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D
 //
 // Description: Computes the explicit formula for doubling a degree one
 //              divisor.
@@ -96,12 +96,12 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg2DBL():
-// Input:    u1,u0,v1,v0: Mumford coordinates for degree two divisor D1
+// Input:    u1,u0,v1,v0: Mumford coordinates for degree two divisor D
 //                        (shares the degree-3 signature; coefficients above
 //                        degree two are structurally zero here)
 //        f5,f4,f3,f2,f1: curve coefficients
 //
-// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D1
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D
 //
 // Description: Computes the explicit formula for doubling a degree two
 //              divisor.
@@ -596,10 +596,10 @@ end function;
 
 ///////////////////////////////////////////////////////////////////////////////
 // DBL():
-// Input: D1:         divisor as a [u, v] polynomial pair, any degree
+// Input: u, v:       Mumford coordinates of the divisor, any degree
 //        f:          curve polynomial
 //
-// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D1
+// Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D
 //
 // Description: Dispatches on the operand degree to the Deg*DBL cases above.
 ///////////////////////////////////////////////////////////////////////////////
