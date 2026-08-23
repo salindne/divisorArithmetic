@@ -30,10 +30,10 @@ framework in [verification/](verification/) runs in CI, which a licensed tool ne
 | gate | result |
 |---|---|
 | Magma suite, `./test_all.sh` | **26 testers, 0 failures, 2 skips**, ~40 min |
-| frozen case corpus, [verification/whitebox.py](verification/whitebox.py) | **1,812 cases replayed, 1,812 matched** |
-| branch coverage | **1,851 of 1,855 labelled branches, 99.8%** |
-| differential tester, [verification/driver.py](verification/driver.py) `--strict` | **12,990 operations compared, 0 wrong** |
-| framework selftest | **13 sections** |
+| frozen case corpus, [verification/whitebox.py](verification/whitebox.py) | **1,838 cases replayed, 1,838 matched** |
+| branch coverage | **1,866 of 1,870 labelled branches, 99.8%** |
+| differential tester, [verification/driver.py](verification/driver.py) `--strict` | **12,972 operations compared, 0 wrong** |
+| framework selftest | **17 sections** |
 
 The 4 uncovered branches are individually exempted with written reasons in
 `verification/coverage_baseline.json`; one of them, `ch2_splitG3_ADD`'s `ADD227`, carries a proof that it

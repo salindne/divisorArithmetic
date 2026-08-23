@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Author: Randall Apperley, Sebastian Lindner
+// Author: Sebastian Lindner (based on work by Randall Apperley) 
 //
 // Description: Explicit divisor doubling formulas for the 4 coordinate Mumford
 //              representation over arbitrary fields where:
@@ -7,28 +7,11 @@
 //              h(x) = h3*x^3 + h2*x^2 + h1*x + h0 (h3 in {0,1}) and
 //              f(x) = x^7 + f6x^6 + f5x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0
 //
-// On h3 in {0,1}: always reachable, and here a costing convention rather than a
-//              domain restriction. Reachable because x -> a^2*x, y -> a^7*y
-//              (dividing through by a^14) leaves f monic and sends h's leading
-//              coefficient to h3/a, so a = h3 makes h monic; no division by 2,
-//              3 or 7 is involved, so it holds in every characteristic. It is
-//              declared so h3 can be //Ignore'd, which is only sound when h3 is
-//              0 or 1. Note the contrast with genus 2, which is about how the
-//              formulas were derived and not about the mathematics: the same
-//              scaling makes h monic there too, but the genus-2 formulas were
-//              written using the assumption, so they are wrong for h2 outside
-//              {0,1} in every characteristic tested (char 2, 3, 5, 7, 11, 13 --
-//              not a GF(4) quirk). These genus-3 formulas were written
-//              generically in h3 and were measured correct outside {0,1}, so
-//              the declaration narrows what is claimed and tested, not what
-//              works -- and the assumption is so far declared but unexploited.
 ///////////////////////////////////////////////////////////////////////////////
-
 
 //Must keep next line in this format for latex conversion
 //Constant: f6,f5,f4,f3,f2,f1,f0,h2,h1,h0
 //Ignore: h3
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg1DBL():
@@ -42,90 +25,55 @@
 // Description: Computes the explicit formula for doubling a degree one
 //              divisor.
 ///////////////////////////////////////////////////////////////////////////////
-Deg1DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
+Deg1DBL:= function(u0, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
     /* //startIGNORE
     //Poly Dev Testing
-    //Cantor doubling: gcd with 2v + h, compose, then reduce. The explicit code
-    //below follows NUCOMP's continued-fraction shortcut for the reduction; the
-    //generic reduction here computes the same divisor.
     FF := Parent(u0);
     R<x> := PolynomialRing(FF);
-    //f0 is not an argument: at every division below the absent
-    //coefficients have degree below the divisor's, so they stay in the
-    //discarded remainder; `div` makes that explicit.
     f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     h := h3*x^3 + h2*x^2 + h1*x + h0;
-    //only u0, v0 are live at degree one; the shared signature's
-    //upper coefficients are structurally zero here
     u := x + u0;
     v := R!v0;
 
-    d, s1, s3 := XGCD(u, 2*v + h);
-    if not IsOne(d) then
-        //the gcd factors are ramification points, order 2, killed by doubling
-        u := ExactQuotient(u, d);
-        v := v mod u;
-        if Degree(u) eq 0 then
-            return 0, 0, 0, 1, 0, 0, 0;
-        end if;
-        _, s1, s3 := XGCD(u, 2*v + h);
+    d := (v + v + h) mod u;
+    if IsZero(d) then
+        return 0, 0, 0, 1, 0, 0, 0;
     end if;
-    k := (f - v*(v + h)) div u;   //Exact quotient
-    s := s3*k mod u;
+    k := (f - v*(v + h)) div u;
+    b1 := FF!d^-1;
+    s := b1*k mod u;
     upp := u^2;
     vpp := (v + u*s) mod upp;
-    while Degree(upp) gt 3 do
-        upp2 := (f - vpp*(vpp + h)) div upp;   //Exact quotient
-        upp2 := upp2/LeadingCoefficient(upp2);
-        vpp := (-vpp - h) mod upp2;
-        upp := upp2;
-    end while;
     return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
            Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
     
-    // d = 2va + h mod u
-    t01:= u0^2;
-    t02:= u0*t01;      // u0^3
-    
-    d0:= h0 + 2*v0 - h1*u0 + h2*t01 - h3*t02;
-    
-	// if gcd(u,2va+h) = u
-	if (d0 eq 0) then
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// gcd(u,2va+h) = u    
-		// DA = P1 s.t. 2P1 = P0
-		// return P0
-		
+	//d := (v + v + h) mod u;
+    t1:= u0^2;    
+    d:= h0 + v0 + v0 - h1*u0 + t1*(h2 - h3*u0);
+	if IsZero(d) then
 		if (DBL_DEBUG) then "Deg1DBL: gcd(u,2va+h) = u, DA = P1 s.t. 2P1 = P0"; end if;
 		return 0, 0, 0, 1, 0, 0, 0;
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	end if;
+
+	//k := (f - v*(v + h)) div u;
+	k0:= t1*(t1*(7*t1 + 5*f5) + 3*(f3 - h3*v0)) + f1 - h1*v0 - u0*(t1*(6*(f6*t1) + 4*f4) + 2*(f2 - h2*v0));
 	
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~ TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// gcd(u,2va+h) = 1
-	// DA = P1
+	//b1 := FF!d^-1;
+    //s := b1*k mod u;
+	b1:= d^-1;
+	s0:= b1*k0;
 	
-	// k = (f - v*h - v^2)/u mod u
-	k0:= f1 - h1*v0 + u0*(-2*(f2 - h2*v0) + u0*(3*(f3 - h3*v0) - 4*f4*u0 + 5*f5*t01 - 6*f6*t02 + 7*(t01^2)));
-	
-	// s = k/(2va + h) mod u
-	s0:= k0/d0;
-	
-	// upp = u^2
-	upp3:= 0;
-	upp2:= 1;
-	upp1:= 2*u0;
-	upp0:= t01;
-	
-	// vpp = u*s + v
-	vpp2:= 0;
-	vpp1:= s0;
+	//upp := u^2;
+	//upp0 := t1;
+	upp1:= u0 + u0;
+
+	//vpp := (v + u*s) mod upp;
+	//vpp1:= s0;
 	vpp0:= u0*s0 + v0;
 	
 	if (DBL_DEBUG) then "Deg1DBL: Typical"; end if;
-	return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
-	// ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	return 0, 1, upp1, t1, 0, s0, vpp0;
 end function;
 
 
@@ -141,203 +89,162 @@ end function;
 // Description: Computes the explicit formula for doubling a degree two
 //              divisor.
 ///////////////////////////////////////////////////////////////////////////////
-Deg2DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
+Deg2DBL:= function(u1, u0, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
     /* //startIGNORE
     //Poly Dev Testing
-    //Cantor doubling: gcd with 2v + h, compose, then reduce. The explicit code
-    //below follows NUCOMP's continued-fraction shortcut for the reduction; the
-    //generic reduction here computes the same divisor.
+    //f0 is absent from the signature, so the f below is the real f less its
+    //constant term. Every division here discards a remainder of lower degree
+    //than the divisor, so the missing constant never reaches the quotient;
+    //`div` says that where ExactQuotient would refuse.
     FF := Parent(u0);
     R<x> := PolynomialRing(FF);
-    //f0 is not an argument: at every division below the absent
-    //coefficients have degree below the divisor's, so they stay in the
-    //discarded remainder; `div` makes that explicit.
     f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     h := h3*x^3 + h2*x^2 + h1*x + h0;
-    //only the degree-2 coefficients are live here (shared signature)
     u := x^2 + u1*x + u0;
     v := v1*x + R!v0;
+    Q := quo<R | u>;
 
-    d, s1, s3 := XGCD(u, 2*v + h);
-    if not IsOne(d) then
-        //the gcd factors are ramification points, order 2, killed by doubling
-        u := ExactQuotient(u, d);
-        v := v mod u;
-        if Degree(u) eq 0 then
+    d := Resultant(u, v + v + h);
+    if IsZero(d) then
+        dw1 := (v + v + h) mod u;
+        if IsZero(dw1) then
+            //gcd(u, 2v + h) = u: both points are ramified, so doubling kills both
             return 0, 0, 0, 1, 0, 0, 0;
         end if;
-        _, s1, s3 := XGCD(u, 2*v + h);
+        b1 := LeadingCoefficient(dw1)^-1;
+        k := (f - v*(v + h)) div u;
+        u := ExactQuotient(u, dw1*b1);
+        s := b1*k mod u;
+        upp := u^2;
+        vpp := (v + u*s) mod upp;
+        return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0), 
+			   Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     end if;
-    k := (f - v*(v + h)) div u;   //Exact quotient
-    s := s3*k mod u;
-    upp := u^2;
-    vpp := (v + u*s) mod upp;
-    while Degree(upp) gt 3 do
-        upp2 := (f - vpp*(vpp + h)) div upp;   //Exact quotient
-        upp2 := upp2/LeadingCoefficient(upp2);
-        vpp := (-vpp - h) mod upp2;
-        upp := upp2;
-    end while;
+    //gcd(u, 2v + h) = 1
+    dw1 := (v + v + h) mod u;
+    b1 := R!((Q!dw1)^-1);
+    k := (f - v*(v + h)) div u;
+    s := b1*k mod u;
+    M2 := ExactQuotient(s*(v + v + h) - k, u);
+    upp := -s^2 - M2;
+    upp := upp/LeadingCoefficient(upp);
+    vpp := (-u*s - v - h) mod upp;
     return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
            Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
 
-    // d = (2va + h) mod u
-    t01:= u1^2;
-    t02:= u0*u1;
-    
-    d1:= h1 + 2*v1 - h2*u1 + h3*(t01 - u0);
-    d0:= h0 + 2*v0 - h2*u0 + h3*t02;
-    
-    // set up system of equations to solve for s = (k/d) mod u
-    // and find the determinant
-    // adapted from Lindner's MSc thesis (pages 63-64)
-    m1:= d0 - d1*u1;
-    m2:= d1*u0;
-    //m3:= -d1;
-    //m4:= d0;
-    
-    det:= d0*m1 + m2*d1;
+    //d := Resultant(u, v + v + h);
+    ht1:= h1 + v1 + v1; 
+	t1:= u1^2;
+    t2:= u0*u1;
+    m4:= h0 + v0 + v0 - h2*u0 + h3*t2;           
+    m3:= h2*u1 - ht1 - h3*(t1 - u0);   
+    m1:= m4 + m3*u1;
+    m2:= -m3*u0;
+    d:= m4*m1 - m2*m3;
 	
-	// if gcd(u,2va+h) != 1
-	if (det eq 0) then
-	
-		// if gcd(u,2va+h) = u
-		if (d1 eq 0) then
-			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// gcd(u,2va+h) = u
-			// DA = P1+P2 s.t. 2P1 = P0 and 2P2 = P0
-			// return P0
-			
+	if IsZero(d) then
+		//dw1 := (v + v + h) mod u;
+		if IsZero(m3) then
 			if (DBL_DEBUG) then "Deg2DBL: gcd(u,2va+h) = u, DA = P1+P2 s.t. 2P1 = P0 & 2P2 = P0"; end if;
 			return 0, 0, 0, 1, 0, 0, 0;
-			// ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		end if;
-		
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // gcd(u,2va+h) = d
-        // DA = P1+P2 s.t. 2P1 = P0
-        // return 2P2
+
+	    //b1 := LeadingCoefficient(dw1)^-1;
+		b1:= m3^-1;
         
-		// k = (f - v*h - v^2)/u
-		t03:= u0 + u1;
-		t04:= f6*u1 - t01;		// (u1*k4)
-		t05:= u0 + t04;	
-		t06:= f6*u0 - t02;		// (u0*k4)
+		//k := (f - v*(v + h)) div u;     //exact 
+		t3:= u0 + u1;
+		t4:= f6*u1 - t1;		// (u1*k4)
+		t5:= u0 + t4;	
+		t6:= f6*u0 - t2;		// (u0*k4)
 
 		//k5:= 1;
 		//k4:= f6 - u1;
-		k3:= f5 - t05;
-		t07:= u1*k3;
-		k2:= f4 - h3*v1 - t06 - t07;
-		t08:= u0*k2;
-		k1:= f3 - h3*v0 - h2*v1 - (t03)*(k2 + k3) + t08 + t07;		// karatsuba
-		k0:= f2 - h2*v0 - h1*v1 - v1^2 - t08 - u1*k1;
+		k3:= f5 - t5;
+		t7:= u1*k3;
+		k2:= f4 - h3*v1 - t6 - t7;
+		t8:= u0*k2;
+		k1:= f3 - h3*v0 - h2*v1 - (t3)*(k2 + k3) + t8 + t7;		// karatsuba
+		k0:= f2 - h2*v0 - h1*v1 - v1^2 - t8 - u1*k1;
 		
-		// kp = k mod u
-		//kp5:= 1;
-		//kp4:= k4 - u1;
-		kp3:= k3 - t05 + t01;
-		t09:= u1*kp3;
-		kp2:= k2 - t06 + t02 - t09;
+		//  kp = k mod u first, against the ORIGINAL degree-2 u
+		kp3:= k3 - t5 + t1;
+		t9:= u1*kp3;
+		kp2:= k2 - t6 + t2 - t9;
 		t10:= u0*kp2;
-		
-		kp1:= k1 - (t03)*(kp2 + kp3) + t09 + t10;		// karatsuba
+		kp1:= k1 - (t3)*(kp2 + kp3) + t9 + t10;		// karatsuba
 		kp0:= k0 - t10;
-		
-		// a1 = 2va+h^-1 wrt u
-		//    = 1/d1
-		a1:= 1/d1;
+
+        //u := ExactQuotient(u, dw1*b1);
+        u0:= u1 + m4*b1;
+
+		//s := b1*k mod u;
+        s0:= b1*(kp1*u0 - kp0);
         
-        // u = u/d	(where d is monic)
-        //u1:= 1;
-        u0:= u1 - d0*a1;
-        
-		// s = k/(2va + h) mod u
-        //   = k/(  d1   ) mod u
-		//   = k*a1 mod u
-        s0:= (kp0 - kp1*u0)*a1;
-        
-        // upp = u^2
-        upp3:= 0;
-        upp2:= 1;
-        upp1:= 2*u0;
+        //upp := u^2;
+        upp1:= u0 + u0;
         upp0:= u0^2;
         
-        // vpp = u*s + v
-        vpp2:= 0;
+        //vpp := (v + u*s) mod upp;
         vpp1:= s0 + v1;
         vpp0:= u0*s0 + v0;
         
 		if (DBL_DEBUG) then "Deg2DBL: gcd(u,2va+h) = d, DA = P1+P2 s.t. 2P1 = P0"; end if;
-        return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	end if;
+        return 0, 1, upp1, upp0, 0, vpp1, vpp0;
+	end if;//d
 	
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~ TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// gcd(u,2va+h) = 1
-	// DA = P1+P2
-	
-	// k = (f - v*h - v^2)/u
-	t03:= u0 + u1;
-	t04:= f6*u1 - t01;		// (u1*k4)
-	t05:= u0 + t04;	
-	t06:= f6*u0 - t02;		// (u0*k4)
+	//k := (f - v*(v + h)) div u;
+	t3:= u0 + u1;
+	t4:= f6*u1 - t1;		// (u1*k4)
+	t5:= u0 + t4;	
+	t6:= f6*u0 - t2;		// (u0*k4)
 
-	// SEE IF CAN OPTIMIZE THIS LIKE BELOW IN DOUBLING3
-	//k5:= 1;
 	k4:= f6 - u1;
-	k3:= f5 - t05;
-	t07:= u1*k3;
-	k2:= f4 - h3*v1 - t06 - t07;
-	t08:= u0*k2;
-	k1:= f3 - h3*v0 - h2*v1 - (t03)*(k2 + k3) + t08 + t07;		// karatsuba
-	k0:= f2 - h2*v0 - h1*v1 - v1^2 - t08 - u1*k1;
+	k3:= f5 - t5;
+	t7:= u1*k3;
+	k2:= f4 - h3*v1 - t6 - t7;
+	t8:= u0*k2;
+	k1:= f3 - h3*v0 - h2*v1 - (t3)*(k2 + k3) + t8 + t7;		// karatsuba
+	k0:= f2 - h2*v0 - h1*v1 - v1^2 - t8 - u1*k1;
 	
-	// kp = k mod u
-	//kp5:= 1;
+	//s := b1*k mod u;
 	//kp4:= k4 - u1;
-	kp3:= k3 - t05 + t01;
-	t09:= u1*kp3;
-	kp2:= k2 - t06 + t02 - t09;
-	t10:= u0*kp2;
-	
-	kp1:= k1 - (t03)*(kp2 + kp3) + t09 + t10;		// karatsuba
+	kp3:= k3 - t5 + t1;
+	t9:= u1*kp3;
+	kp2:= k2 - t6 + t2 - t9;
+	t10:= u0*kp2;	
+	kp1:= k1 - (t3)*(kp2 + kp3) + t9 + t10;		// karatsuba
 	kp0:= k0 - t10;
-	
-	// partially solve system to get sp = s*det
-	// adapted from Lindner's MSc thesis (pages 63-64)
 	sp0:= kp0*m1 + kp1*m2;
-	sp1:= kp1*d0 - kp0*d1;
+	sp1:= kp1*m4 + kp0*m3;
 	
-	// s = sp/det, w1 = 1/det
-	w1:= 1/det;
+	//b1 := R!((Q!dw1)^-1);
+	w1:= d^-1;	
+	s1:= sp1*w1;
+	s0:= sp0*w1;
 	
-	s1:= sp1*w1;       // (s1*det)/det
-	s0:= sp0*w1;       // (s0*det)/det
-	
-	// M2 = (s*(2va + h) - k)/u
+	//M2 := ExactQuotient(s*(v + v + h) - k, u);
 	//M23:= -1;
 	M22:= h3*s1 - k4 + u1;
 	M21:= h2*s1 + h3*s0 - k3 + u0 - u1*M22;
-	M20:= h1*s1 + h2*s0 - k2 + 2*s1*v1 - u0*M22 - u1*M21;
+	M20:= ht1*s1 + h2*s0 - k2 - u0*M22 - u1*M21;
 	
-	// upp = s^2 + M2	(made monic)
-	upp3:= 1;
+	//upp := -s^2 - M2;
+    //upp := upp/LeadingCoefficient(upp);
 	upp2:= - s1^2 - M22;
-	upp1:= - 2*s0*s1 - M21;
+	t11:= -s0*s1;
+	upp1:= t11 + t11  - M21;
 	upp0:= - s0^2 - M20;
 	
-	// vpp = (-u*s - v - h) mod upp
+	//vpp := (-u*s - v - h) mod upp;
 	vpp2:= s1*(upp2 - u1) + h3*upp2 - h2 - s0;
 	vpp1:= s1*(upp1 - u0) + h3*upp1 - s0*u1 - h1 - v1;
 	vpp0:= upp0*(h3 + s1) - s0*u0 - h0 - v0;
 	
 	if (DBL_DEBUG) then "Deg2DBL: Typical"; end if;
-	return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
-	// ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
 end function;
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -353,74 +260,93 @@ end function;
 Deg3DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0)
     /* //startIGNORE
     //Poly Dev Testing
-    //Cantor doubling: gcd with 2v + h, compose, then reduce. The explicit code
-    //below follows NUCOMP's continued-fraction shortcut for the reduction; the
-    //generic reduction here computes the same divisor.
+    //f0 is absent from the signature, so the f below is the real f less its
+    //constant term. Every division here discards a remainder of lower degree
+    //than the divisor, so the missing constant never reaches a quotient; `div`
+    //says that where ExactQuotient would refuse.
     FF := Parent(u0);
     R<x> := PolynomialRing(FF);
-    //f0 is not an argument: at every division below the absent
-    //coefficients have degree below the divisor's, so they stay in the
-    //discarded remainder; `div` makes that explicit.
     f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
     h := h3*x^3 + h2*x^2 + h1*x + h0;
     u := x^3 + u2*x^2 + u1*x + u0;
     v := v2*x^2 + v1*x + v0;
+    Q := quo<R | u>;
 
-    d, s1, s3 := XGCD(u, 2*v + h);
-    if not IsOne(d) then
-        //the gcd factors are ramification points, order 2, killed by doubling
-        u := ExactQuotient(u, d);
-        v := v mod u;
-        if Degree(u) eq 0 then
+    dw := (v + v + h) mod u;
+    d  := Resultant(u, v + v + h);
+    if IsZero(d) then
+        if IsZero(dw) then
+            //gcd(u, 2v + h) = u: every point ramified, so doubling kills them all
             return 0, 0, 0, 1, 0, 0, 0;
         end if;
-        _, s1, s3 := XGCD(u, 2*v + h);
+        //dw2 := dw/dw1, the monic gcd. At deg u = 3 it is NOT dw made monic --
+        //dw can be quadratic while the gcd is linear -- so it is its own object.
+        //Deg2DBL, where dw is at most linear, may take dw directly.
+        dw2 := GCD(u, dw);
+        //Cantor with a gcd keeps the k above, the quotient by the ORIGINAL u,
+        //and builds vpp on the original v. Reducing either first is wrong.
+        if Degree(dw2) eq 2 then
+            //deg dw2 = 2: two points ramified. u comes out linear and s a scalar,
+            //so upp is degree 2 and needs no reduction.
+			k   := (f - v*(v + h)) div u;
+            u   := ExactQuotient(u, dw2);
+            b1  := R!((quo<R | u>!(ExactQuotient(v + v + h, dw2)))^-1);
+            s   := b1*k mod u;
+            upp := u^2;
+            vpp := (v + u*s) mod upp;
+            return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+                   Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
+        end if;
+        //deg dw2 = 1: one point ramified, u stays quadratic. Composing then
+        //reducing would build a degree-4 upp; s^2 + M2 is those two steps at
+        //once. With vpp = v + u*s, f - vpp*(vpp + h) = u*(dw2*k - s*(2v + h)
+        //- u*s^2), so upp = -s^2 - (s*(2v + h) - dw2*k)/u. The dw2*k there is the
+        //explicit code's kt.
+		k  := (f - v*(v + h)) div u;
+        u   := ExactQuotient(u, dw2);
+        b1  := R!((quo<R | u>!(ExactQuotient(v + v + h, dw2)))^-1);
+        s   := b1*k mod u;
+        M2  := ExactQuotient(s*(v + v + h) - dw2*k, u);
+        upp := -s^2 - M2;
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (-u*s - v - h) mod upp;
+        return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+               Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     end if;
-    k := (f - v*(v + h)) div u;   //Exact quotient
-    s := s3*k mod u;
-    upp := u^2;
-    vpp := (v + u*s) mod upp;
-    while Degree(upp) gt 3 do
-        upp2 := (f - vpp*(vpp + h)) div upp;   //Exact quotient
-        upp2 := upp2/LeadingCoefficient(upp2);
-        vpp := (-vpp - h) mod upp2;
-        upp := upp2;
-    end while;
+
+    //gcd(u, 2v + h) = 1
+	k  := (f - v*(v + h)) div u;
+    b1 := R!((Q!dw)^-1);
+    s  := b1*k mod u;
+
+    if Degree(s) lt 2 then
+        //deg s < 2: s^2 + M2 is degree 3 already, so no continued-fraction step
+        M2  := ExactQuotient(s*(v + v + h) - k, u);
+        upp := -s^2 - M2;
+        upp := upp/LeadingCoefficient(upp);
+        vpp := (-u*s - v - h) mod upp;
+        return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
+               Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
+    end if;
+
+    //deg s = 2: one continued-fraction step, as arb_splitG3_DBL does
+    q   := u div s;
+    r   := u mod s;
+    M2  := ExactQuotient(r*(v + v + h) + q*k, u);
+    upp := r^2 - q*M2;
+    l   := ExactQuotient(u*r - upp, q);
+    upp := upp/LeadingCoefficient(upp);
+    vpp := (l - v - h) mod upp;
     return Coeff(upp,3), Coeff(upp,2), Coeff(upp,1), Coeff(upp,0),
            Coeff(vpp,2), Coeff(vpp,1), Coeff(vpp,0);
     */ //endIGNORE
 	
-	// This function builds all nine entries of the adjugate and recovers s by a
-	// matrix-vector product, the same shape arb_ramifiedG3_ADD uses for the same
-	// job. Both land on 27m 0s 17a.
-	//
-	// The alternative -- take only the first column of the adjugate, as Lindner's
-	// arb_splitG3_ADD does, and reduce s = k*q mod u with Karatsuba twice -- costs
-	// 11m 20a where the matrix-vector product costs 11m 8a, so it buys one
-	// multiplication for twelve additions. That is the losing side of sec:trades'
-	// 1M:3A rule, which is why this file does not use it.
-	//
-	// m4 and m6 are the two entries the determinant does not read, and they are
-	// formed below the `det eq 0` test so the rare special cases do not pay for
-	// them.
-	
-	
-    // d = (2va + h) mod u
-	t01:= h3*u2;
 
-	// h + v, formed once: `d` needs it plus another v, and the typical case's
-	// `vpp` subtracts it. Re-forming it in both cost an addition per coefficient.
-	vh2:= h2 + v2;
-	vh1:= h1 + v1;
-	vh0:= h0 + v0;
+	// h + v
+	vh2:= -h2 - v2;
+	vh1:= -h1 - v1;
+	vh0:= -h0 - v0;
 
-    d2:= vh2 + v2 - t01;
-    d1:= vh1 + v1 - h3*u1;
-    d0:= vh0 + v0 - h3*u0;
-	// 0m 0s 9a
-
-    // adapted from Lindner's arb_splitG3_ADD
-    // det := Resultant(up,u);
     // Original Setup T for (s*up1 = vp-v) mod up2
     // |t1,t2,t3|
     // |t4,t5,t6|
@@ -431,353 +357,260 @@ Deg3DBL:= function(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h
     // | m4= t6*t7-t4*t9,  m5= t1*t9-t3*t7, m6= t3*t4-t1*t6 |
     // | m7= t4*t8-t5*t7,  m8= t2*t7-t1*t8, m9= t1*t5-t2*t4 |
 
-    //t1 := d0;
-    //t4 := d1;
-    //t7 := d2;
-	ta := u2*d2;
-	tb := u1*d2;
-	tc := u0*d2;
-    t5 := d0 - tb;
-    t8 := d1 - ta;
-    //t2 := -tc;
+    ht2:= v2 - vh2;
+    ht1:= v1 - vh1;
+
+    t1 := v0 - vh0 - h3*u0;
+    t4 := ht1 - h3*u1;
+    t7 := ht2 - h3*u2;
+	t2 := -u0*t7;
+    t5 := t1 - u1*t7;
+    t8 := t4 - u2*t7;
+    
     //t3 := -u0*t8;
     //t6 := t2 - u1*t8;
     //t9 := t5 - u2*t8;
-	temp3 := d2*tc;
-	temp4 := d1*t8;
-	temp5 := d0*t8;
 
 	// Bottom row of the adjugate needs only columns 1 and 2 of T.
-	m9 := d0*t5 + d1*tc;
-	m8 := -temp5 - temp3;
-	m7 := temp4 - d2*t5;
+	m9 := t1*t5 - t4*t2;
+	m8 := t7*t2 - t1*t8;
+	m7 := t4*t8 - t7*t5;
 
 	// Column 3 of T is x*(column 2) reduced mod u, so the remaining six
-	// adjugate entries are shifts of the bottom row -- one multiplication each,
+	// adjugate entries are shifts of the bottom row with one multiplication each,
 	// not a 2x2 minor. m4 and m6 are the only two the determinant does not
 	// read, so they wait until the generic path below.
-	tf := -u0*m7;
 	m5 := m9 + u2*m8;
 	m3 := -u0*m8;
-	m2 := tf;
+	m2 := -u0*m7;
 	m1 := m5 + u1*m7;
 
-    det := d0*m1 + d1*m2 + d2*m3; //Determinant of T = t1*m1 + t4*m2 + t7*m3
+    d := t1*m1 + t4*m2 + t7*m3; //Determinant of T = t1*m1 + t4*m2 + t7*m3
 	// 16m 0s 9a
 
 	// if gcd(u,2va+h) != 1
-	if (det eq 0) then
-
-		// if gcd(u,2va+h) = u
-		if (d2 eq 0 and d1 eq 0) then
-			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #4.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// gcd(u,2va+h) = u
-			// DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = P0 & 2P3 = P0
-			// return P0
-
+	if IsZero(d) then
+		//dw := (v + v + h) mod u; //dw1 = t7, dw0 = t4
+		if IsZero(t4) and IsZero(t7) then
 			if (DBL_DEBUG) then "Deg3DBL: gcd(u,2va+h) = u, DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = P0 & 2P3 = P0"; end if;
 			return 0, 0, 0, 1, 0, 0, 0;
-			// ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #4.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		end if;
+		end if;//t4t7
+		//dw2 := GCD(u, dw); //dw21:= m7, dw20:= -m8;
+		if IsZero(m7) then
 
-		// dw = d mod u. The Sylvester block above already holds it: dw is the
-		// third row of the adjugate up to sign, so
-		//   dw2 = u2*d2 - d1               = -t8
-		//   dw1 = u1*d2^2 - d0*d2 - d1*dw2 =  m7
-		//   dw0 = u0*d2^2 - d0*dw2         = -m8
-		// Polynomial identities in d2,d1,d0,u2,u1,u0, not coincidences of
-		// this branch. dw2 is not formed at all: its only readers were the two
-		// lines below.
-		dw1:= m7;								//d2^2
-		dw0:= -m8;								//d2^2
+            //k:= (f - v*(v + h)) div u;
+			t2:= u2^2;
+			t3:= t2 - f6*u2;
+			t5:= f5 - h3*v2;
+			t6:= u1 - t3;
+			k2:= t5 + t2 - t6 - t6;
+			t01:= f6*u1;
+			t8:= u0 + u0;
+			t9:= u1 + u1;
+			k1:= f4 + v2*vh2 - h3*v1 - t8 - t01 - t01 + u2*(t9 + u1 + t6 - t5);
+			k0:= f3 - h1*v2 - h3*v0 - t8*f6 + u1*(u1 + t2 - t5) + u2*(t8 - k1) - v1*ht2;		// convenient precomputation
 
-		// if gcd(u,2va+h) = d
-		if (dw1 eq 0) then
-			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// gcd(u,2va+h) = d
-			// DA = P1+P2+P3 s.t. 2P1 = P0 and 2P2 = P0
-			// return 2P3
+            //b1:= R!((quo<R | u>!(ExactQuotient(v + v + h, dw2)))^-1);
+			b1:= t7^-1;
 
-            // k = (f - v*h - v^2)/u mod u
-			t02:= u2^2;
-			t03:= f6*u2;
-			t04:= h3*v2;
-			t05:= t02 - t03;
-			t06:= f5 - t04;
+			//u:= ExactQuotient(u, dw2);
+			u0:= u2 - t4*b1;
 
-			k2:= t06 + t02 - 2*(u1 - t05);
-			k1:= f4 - v2*vh2 - h3*v1 - 2*(u0 + f6*u1) + u2*(4*u1 - t05 - t06);
-			k0:= f3 - h1*v2 - h3*v0 - 2*f6*u0 + u1*(u1 + t02 - t06) + u2*(2*u0 - k1) - v1*(vh2 + v2);		// convenient precomputation
+			//s:= b1*k mod u;
+			s0:= ((k2*u0 - k1)*u0 + k0)*b1;
 
-			// a1 = 2va+h^-1 wrt u
-			//    = 1/d2
-			a1:= 1/d2;
-
-			// u = u/d	(where d is monic)
-			//u1:= 1;
-			u0:= u2 - d1*a1;
-
-			// s = k/(2va + h) mod u
-			//   = k/(  d2   ) mod u
-			//   = k*a1 mod u
-			s0:= ((k2*u0 - k1)*u0 + k0)*a1;
-
-			// upp = u^2
-			upp3:= 0;
-			upp2:= 1;
-			upp1:= 2*u0;
+			//upp:= u^2;
+			upp1:= u0 + u0;
 			upp0:= u0^2;
 
-			// vpp = (u*s + v) mod upp
-			vpp2:= 0;
+			//vpp:= (v + u*s) mod upp;
 			vpp1:= s0 + v1 - upp1*v2;
 			vpp0:= u0*s0 + v0 - upp0*v2;
 
 			if (DBL_DEBUG) then "Deg3DBL: gcd(u,2va+h) = d, DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = P0"; end if;
-			return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
-			// ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #3.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		end if;
+			return 0, 1, upp1, upp0, 0, vpp1, vpp0;
+		end if;//m7
 
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// gcd(u,2va+h) = dw
-		// DA = P1+P2+P3 s.t. 2P1 = P0
-		// return 2P2+2P3
-
-		// kp = (f - v*h - v^2)/u
-		t03:= u2^2;
-		t04:= f6*u2;
+		//k := (f - v*(v + h)) div u;
+		// kp, the quotient itself, degree 4
+		t2:= u2^2;
+		t3:= f6*u2;
 
 		//kp4:= 1;
 		kp3:= f6 - u2;
-		kp2:= f5 - u1 - t04 - h3*v2 + t03;
-		kp1:= f4 - u0 - f6*u1 - h3*v1 - v2*vh2 - u2*(kp2 - u1);                      // no karatsuba, use u2 multiplication
+		kp2:= f5 - u1 - t3 - h3*v2 + t2;
+		kp1:= f4 - u0 - f6*u1 - h3*v1 + v2*vh2 - u2*(kp2 - u1);                      // no karatsuba, use u2 multiplication
 		//kp0:= f3 - f6*u0 - h3*v0 - h2*v1 - u2*(kp1 - u0) - u1*(kp2) - v2*(h1 + 2*v1);
 
-		// k = kp mod u
+		// k = kp mod u -- s's reduction below, hoisted to where the original u is still live. The
+		// new u divides this one, so reducing against it here is equivalent and shortens s.
 		//k3:= kp3 - u2;
-		k2:= kp2 - u1 - t04 + 2*t03;
-		k1:= kp1 - u0 - u1*(kp3 - u2);
+		k2:= kp2 - u1 - t3 + t2 + t2;
+		t5:= kp1 - u0;
+		k1:= t5 - u1*(kp3 - u2);
 		//k0:= kp0 - u0*k3;
-		k0:= f3 - 2*f6*u0 - h3*v0 - h2*v1 - u2*(kp1 - 3*u0) - u1*(kp2) - v2*(vh1 + v1);
+		t6:= f6*u0;
+		k0:= f3 - t6 - t6 - h3*v0 - h2*v1 - u2*(t5 - u0 - u0) - u1*kp2 - v2*ht1;
 
-		// dm = dw/dw1, w1 = 1/dw1
-		w1:= 1/dw1;
+		//u  := ExactQuotient(u, dw2);
+		//b1 := R!((quo<R | u>!(ExactQuotient(v + v + h, dw2)))^-1);
+		// Both divide by dw2 made monic, so w1 = 1/m7 is formed once and serves dm and b1 alike.
+		w1:= m7^-1;
 
+		//dm = dw2/m7
 		//dm1:= 1;
-		dm0:= dw0*w1;
+		dm0:= -m8*w1;
 
-		// a1 = (2va + h)^-1
-		//    = -(u/d)/dw1
-		//    = -(u/d)*w1
-		a11:= - d2*w1;
-		a10:= (d1 - u2*d2)*w1;
+		// b1 = (2va + h)^-1 = -(u/d)*w1
+		b11:= - t7*w1;
+		b10:= t8*w1;
 
 		// u = u/dm
-		tx:= u2;
-		ty:= u1;
+		un1:= u2 - dm0;
+		un0:= u1 - un1*dm0;
 
-		//u2:= 1;
-		u1:= tx - dm0;
-		u0:= ty - u1*dm0;
+		//s := b1*k mod u;
+		// Fused: the same multiplications as forming sp = k/(2va+h) and then sp mod u with karatsuba
+		// twice, and fewer additions.
+		t8:= k2*un1 - k1;
+		t9:= k2*un0 - k0;
+		s1:= (t8*un1 - t9)*b11 - t8*b10;
+		s0:= (t8*un0)*b11 - t9*b10;
 
-		// s = k/(2va+h) mod u
-		// this has the same number of multiplications and fewer additions than calculating sp = k/(2va+h) and s = sp mod u and using karatsuba twice
-		t14:= k2*u1;
-		t15:= k2*u0;
-		t16:= t14 - k1;
-		t17:= t15 - k0;
-
-		s1:= (t16*u1 - t17)*a11 - t16*a10;
-		s0:= (t16*u0)*a11 - t17*a10;
-
-		// kt = kp*dm
-		//kt5:= 1;
-		kt4:= kp3 + dm0;
-		kt3:= kp2 + dm0*kp3;
-		kt2:= kp1 + dm0*kp2;
-
-		// M2 = (s*(2va + h) - kt)/u
+		//M2 := ExactQuotient(s*(v + v + h) - dw2*k, u);
 		//M23:= -1;
-		M22:= h3*s1 - kt4 + u1;
-		M21:= s1*(vh2 + v2) + h3*s0 - kt3 + u0 - u1*M22;
-		M20:= s1*(vh1 + v1) + s0*(vh2 + v2) - kt2 - u1*M21 - u0*M22;
+		M22:= h3*s1 - kp3 - dm0 + un1;
+		M21:= s1*ht2 + h3*s0 - kp2 - dm0*kp3 + un0 - un1*M22;
+		M20:= s1*ht1 + s0*ht2 - kp1 - dm0*kp2 - un1*M21 - un0*M22;
 
-		// upp = s^2 + M2	(made monic)
-		upp3:= 1;
+		//upp := -s^2 - M2;
+		//upp := upp/LeadingCoefficient(upp);
+		// M23 = -1, so -s^2 - M2 is already monic and the normalisation costs nothing.
 		upp2:= - s1^2 - M22;
 		upp1:= - 2*s0*s1 - M21;
 		upp0:= - s0^2 - M20;
 
-		// vpp = (-u*s - v - h) mod upp
-		vpp2:= s1*(upp2 - u1) + h3*upp2 - h2 - s0 - v2;
-		vpp1:= s1*(upp1 - u0) + h3*upp1 - s0*u1 - h1 - v1;
-		vpp0:= upp0*(h3 + s1) - s0*u0 - h0 - v0;
+		//vpp := (-u*s - v - h) mod upp;
+		vpp2:= s1*(upp2 - un1) + h3*upp2 - s0 + vh2;
+		vpp1:= s1*(upp1 - un0) + h3*upp1 - s0*un1 + vh1;
+		vpp0:= upp0*(h3 + s1) - s0*un0 + vh0;
 
 		if (DBL_DEBUG) then "Deg3DBL: gcd(u,2va+h) = dw, DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = P0"; end if;
-		return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #2.1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	end if;
+		return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
+	end if;//d
 	
-	// k = (f - v*h - v^2)/u mod u
-	t02:= u2^2;
-	t03:= f6*u2;
-	t04:= h3*v2;
-	t05:= t02 - t03;
-	t06:= f5 - t04;
+    //k:= (f - v*(v + h)) div u (mod u)
+	t2:= u2^2;
+	t3:= t2 - f6*u2;
+	t5:= f5 - h3*v2;
+	t6:= u1 - t3;	
+	k2:= t5 + t2 - t6 - t6;
+	t8:= u0 + u0;
+	t9:= u1 + u1;
+	k1:= f4 + v2*vh2 - h3*v1 - t8 - t9*f6 + u2*(t9 + t9 - t3 - t5);
+	k0:= f3 - h1*v2 - h3*v0 - t8*f6 + u1*(u1 + t2 - t5) + u2*(t8 - k1) - v1*ht2;     // convenient precomputation
 	
-	k2:= t06 + t02 - 2*(u1 - t05);
-	k1:= f4 - v2*vh2 - h3*v1 - 2*(u0 + f6*u1) + u2*(4*u1 - t05 - t06);
-	k0:= f3 - h1*v2 - h3*v0 - 2*f6*u0 + u1*(u1 + t02 - t06) + u2*(2*u0 - k1) - v1*(vh2 + v2);     // convenient precomputation
-	// 6m 1s 27a 3c   (t02..k0; the only annotated block here with a live C)
-
-    // adapted from Lindner's arb_splitG3_ADD
 	// the two adjugate entries the determinant did not need
 	m4 := m8 + u2*m7;
-	m6 := tf - u1*m8;
+	m6 := m2 - u1*m8;
 
-	// sp = s*det = M*k as a matrix-vector product. M is multiplication by
-	// q = det/(2va+h) mod u, so this is the same map as k*q mod u. Building all
-	// nine adjugate entries and solving this way costs 1 multiplication more and
-	// 12 additions fewer than taking the first column alone and reducing with
-	// Karatsuba twice -- counting the whole job, the adjugate block above
-	// included. This block by itself is 11m 8a against that route's 11m 20a.
+	//s  := b1*k mod u;
+	// sp = s*d = M*k as a matrix-vector product. M is multiplication by
+	// q = d/(2va+h) mod u, so this is the same map as k*q mod u.
     sp0 := k0*m1 + k1*m2 + k2*m3;
     sp1 := k0*m4 + k1*m5 + k2*m6;
     sp2 := k0*m7 + k1*m8 + k2*m9;
-	// 11m 0s 8a
 
 	if (sp2 eq 0) then
 		if (sp1 eq 0) then
-			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #1.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// gcd(u,2va+h) = 1 and deg(s) = 0
-			// DA = P1+P2+P3
-			// return 2P1+2P2+2P3
-
-			// s = sp/det
-			s0:= sp0/det;
+			// s = sp/d
+			s0:= sp0/d;
 
 			// M2 = (s*(2va + h) - kp)/u
 			// where kp = (f - v*h - v^2)/u
 			//M21:= -1;
 			//M20:= s0*h3 - f6 + 2*u2;
-
 			// upp = s^2 + M2	(made monic)
-			upp3:= 0;
-			upp2:= 0;
-			upp1:= 1;
-			upp0:= f6 - s0*h3 - 2*u2 - s0^2;
+			upp0:= f6 - s0*h3 - u2 - u2 - s0^2;
 
 			// vpp = (-u*s - v - h) mod upp
-			vpp2:= 0;
-			vpp1:= 0;
-			vpp0:=  upp0*(upp0*(s0*(upp0 - u2) + h3*upp0 - h2 - v2) + h1 + v1 + s0*u1) - h0 - v0 - s0*u0;
+			vpp0:=  upp0*(upp0*(s0*(upp0 - u2) + h3*upp0 + vh2) + s0*u1 - vh1 ) - s0*u0 + vh0 ;
 
 			if (DBL_DEBUG) then "Deg3DBL: gcd(u,2va+h) = 1 and deg(s) = 0"; end if;
-			return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
-			// ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #1.3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		end if;
+			return 0, 0, 1, upp0, 0, 0, vpp0;
+		end if;//sp1
 
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ CASE #1.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// gcd(u,2va+h) = 1 and deg(s) = 1
-		// DA = P1+P2+P3
-		// return 2P1+2P2+2P3
+		// s = sp/d, sm = s/s1, w3 = 1/s1
+		w1:= 1/(d*sp1);		    // 1/((d^2)*s1)
+		w2:= d*w1;              // d/((d^2)*s1) = 1/(d*s1)
+		w3:= d*w2;              // d/(d*s1) = 1/s1
+		w4:= w3^2;				// 1/s1^2
 
-		// s = sp/det, sm = s/s1, wi = 1/s1
-		w1:= 1/(det*sp1);		// 1/((det^2)*s1)
-		w2:= det*w1;            // det/((det^2)*s1) = 1/(det*s1)
-		wi:= det*w2;            // det/(det*s1) = 1/s1
-
-		sm0:= sp0*w2;      		// (s0*det)/(s1*det) = s0/s1
-		s1:= (sp1^2)*w1;        // (s1*det)^2/((det^2)*s1) = s1^2/s1 = s1
+		s0:= w2*sp0;      		// (s0*d)/(s1*d) = s0/s1
+		s1:= w1*(sp1^2);        // (s1*d)^2/((d^2)*s1) = s1^2/s1 = s1
 
 		// M2 = (s*(2va + h) - kp)/u
-		// where kp = (f - v*h - v^2)/u
-		t06:= wi^2;
-
-		M21:= h3*wi - t06;
-		M20:= (vh2 + v2 + h3*(sm0 - u2) - (f6 - 2*u2)*wi)*wi;
+		// where kp = (f - v*h - v^2)/u		
+		M21:= h3*w3 - w4;
+		M20:= (ht2 + h3*(s0 - u2) - (f6 - 2*u2)*w3)*w3;
 
 		// upp = s^2 + M2	(made monic)
-		upp3:= 0;
-		upp2:= 1;
-		upp1:= 2*sm0 + M21;
-		upp0:= sm0^2 + M20;
+		upp1:= s0 + s0 + M21;
+		upp0:= s0^2 + M20;
 
 		// vpp = (-u*s - v - h) mod upp
-		t12:= u2 - sm0 + t06;		//wi
-		t13:= s1*(upp0 - u1 + upp1*t12 - sm0*u2) - h2 - v2;
-
-		vpp2:= 0;
-		vpp1:= s1*(upp0*t12 - u0 - sm0*u1) - upp1*t13 - h1 - v1;
-		vpp0:= s1*(- sm0*u0) - upp0*t13 - h0 - v0;
+		t2:= u2 - s0 + w4;		//w3
+		t3:= s1*(upp0 - u1 + upp1*t2 - s0*u2) + vh2;
+		vpp1:= s1*(upp0*t2 - u0 - s0*u1) - upp1*t3 + vh1;
+		vpp0:= s1*(- s0*u0) - upp0*t3 + vh0;
 
 		if (DBL_DEBUG) then "Deg3DBL: gcd(u,2va+h) = 1 and deg(s) = 1"; end if;
-		return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~ /CASE #1.2 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	end if;
+		return 0, 1, upp1, upp0, 0, vpp1, vpp0;
+	end if;//sp2
 	
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~ TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// gcd(u,2va+h) = 1 and deg(s) = 2
-	// DA = P1+P2+P3
+	// Compute: w3 = 1/s2, spmonic = s*w3 = s/(d*s2), s2
 
-	// Compute: wi = 1/s2, spmonic = s*wi = s/(det*s2), s2
-
-	w1:= 1/(det*sp2);       // 1/((det^2)*s2)
-	w2:= det*w1;            // 1/(det*s2)
-	wi:= det*w2;            // 1/s2
+	w1:= (d*sp2)^-1;       // 1/((d^2)*s2)
+	w2:= d*w1;             // 1/(d*s2)
+	w3:= d*w2;             // 1/s2
 	
-	sm0:= sp0*w2;      // (s0*det)/(s2*det) = s0/s2
-	sm1:= sp1*w2;      // (s1*det)/(s2*det) = s1/s2
-	
-	s2:= (sp2^2)*w1;        // ((s2*det)^2)/((det^2)*s2)) = s2^2/s2 = s2
+	s0:= sp0*w2;      // (s0*d)/(s2*d) = s0/s2
+	s1:= sp1*w2;      // (s1*d)/(s2*d) = s1/s2
+	s2:= (sp2^2)*w1;        // ((s2*d)^2)/((d^2)*s2)) = s2^2/s2 = s2
 
 	// q = u/s
-	//q1:= 1;			//s2
-	q0:= u2 - sm1;		//s2
+	q0:= u2 - s1;		//s2
 	
 	// r = u mod s
-	t07:= sm1*q0;
-	r1:= (u1 - sm0 - t07)*s2;		//s2
-	r0:= (u0 - sm0*q0)*s2;			//s2
-	// 4m 0s 4a
+	t2:= s1*q0;
+	r1:= (u1 - s0 - t2)*s2;		//s2
+	r0:= (u0 - s0*q0)*s2;			//s2
 
 	// kp = (f - v*h - v^2)/u
 	//kp3:= f6 - u2;
 	//kp2:= f5 - u1 - f6*u2 - h3*v2 + u2^2;
 
 	// M2 = (r*(2va + h) + kp*q)/u
-	t08:= f6 - 2*u2;
-	
-	//M22:= q1;																										//s2
-	//M21:= h3*r1 + q1*(kp3 - u2) + q0;																			//s2
-	M21:= q0 + t08 + h3*r1;																							//s2
-	//M20:= - h3*r1*u2 - kp3*q1*u2 + q1*u2^2 + h2*r1 + h3*r0 + kp2*q1 + kp3*q0 - q0*u2 - q1*u1 + 2*r1*v2;		//s2
-	M20:= t06 - 2*u1 + t05 + h3*r0 - sm1*t08 + r1*d2;									//s2
-	//2m 0s 10a
+	t6:= f6 - u2 - u2;	
+	//M22:= q1;													
+	M21:= q0 + t6 + h3*r1;				
+	M20:= t5 + t3 - t9 + h3*r0 - s1*t6 + r1*t7;			//s2
 
 	// upp = r^2 - q*M2		(made monic)
-	upp3:= 1;
 	upp2:= M21 + q0 - r1^2;
-	upp1:= M20 + M21*q0 - 2*r0*r1;
+	t8:= r0*r1;
+	upp1:= M20 + M21*q0 - t8 - t8;
 	upp0:= M20*q0 - r0^2;
 	
-	// z = (u*r - upp)/q	(where upp is not monic)
-	//z3:= r1;
-	//z2:= r0 + wi - r1*(q0 - u2);
-	z1:= r1*(u1 - t07) + r0*sm1 + wi*(upp2 - q0);
-	//z0:= r0*u1 + wi*upp1 - q0*z1 + r1*u0;
+	// vpp = (l - v - h) mod upp, where l = (u*r - upp)/q needs no division:
+	// u*r - upp = r*(u - r) + q*M2 = q*(r*s + M2), so l = r*s + M2 outright.
+	// q0 - u2 = -s1, so the vpp2 bracket is one addition rather than two.
+	vpp2:= h3*upp2 - r1*(upp2 - s1) + vh2 + r0 + w3;
+	vpp1:= h3*upp1 - r1*(upp1 - s0) + r0*s1 + w3*M21 + vh1;
+	vpp0:= h3*upp0 - r1*upp0 + r0*s0 + w3*M20 + vh0;
 
-	// vpp = (z - v - h) mod upp
-	//vpp2:= h3*upp2 - upp2*z3 - h2 - v2 + z2;
-	//vpp1:= h3*upp1 - upp1*z3 - h1 - v1 + z1;
-	//vpp0:= h3*upp0 - upp0*z3 - h0 - v0 + z0;
-
-	vpp2:= h3*upp2 - r1*(upp2 + q0 - u2) - vh2 + r0 + wi;
-	vpp1:= h3*upp1 - upp1*r1 - vh1 + z1;
-	vpp0:= h3*upp0 - r1*(upp0 - u0) - vh0 + r0*u1 + wi*upp1 - q0*z1;
-
-	return upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0;
-	// ~~~~~~~~~~~~~~~~~~~~~~~~ /TYPICAL CASE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	if (DBL_DEBUG) then "Deg3DBL: gcd(u,2va+h) = 1 and deg(s) = 2"; end if;
+	return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
 end function;
 
 
@@ -790,13 +623,11 @@ end function;
 //
 // Description: Dispatches on the operand degree to the Deg*DBL cases above.
 ///////////////////////////////////////////////////////////////////////////////
-DBL:= function(D1, f, h)//startIGNORE
+DBL:= function(u, v, f, h)//startIGNORE
 
     f7:= Coeff(f, 7); f6:= Coeff(f, 6); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
 
     h3:= Coeff(h,3); h2:= Coeff(h,2); h1:= Coeff(h,1); h0:= Coeff(h,0);
-
-    u:= D1[1]; v:= D1[2];
         
     u3:= Coeff(u,3); u2:= Coeff(u,2); u1:= Coeff(u,1); u0:= Coeff(u,0);
     v2:= Coeff(v,2); v1:= Coeff(v,1); v0:= Coeff(v,0);
@@ -806,17 +637,13 @@ DBL:= function(D1, f, h)//startIGNORE
         return Deg3DBL(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0);
 
     elif (not IsZero(u2)) then
-        return Deg2DBL(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0);
+        return Deg2DBL(u1, u0, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0);
         
     elif (not IsZero(u1)) then
-        return Deg1DBL(u2, u1, u0, v2, v1, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0);
+        return Deg1DBL(u0, v0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0);
                 
     else
         return u3, u2, u1, u0, v2, v1, v0;
-        
-    end if;
-        
-    "THIS SHOULD NEVER HAPPEN";
-    return -1, -1, -1, -1, -1, -1, -1; 
-    
+
+    end if;    
 end function;//endIGNORE
