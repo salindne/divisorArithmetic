@@ -290,8 +290,7 @@ family:
 | genus 3 ramified `arb` | 100 | 10 trials |
 | genus 3 ramified `nch2` | 500 | 5 trials |
 
-**Not run by `test_all.sh`:** the two genus-3 ramified whitebox testers, which do not exist yet and are
-reported as deliberate skips rather than silently omitted;
+**Not run by `test_all.sh`:**
 [generic/reduced_basis_tester.mag](generic/reduced_basis_tester.mag);
 [generic/arbitrary/reduced_basis_tester.mag](generic/arbitrary/reduced_basis_tester.mag); and everything
 under [g2/timings/](g2/timings/) and [g3/timings/](g3/timings/).

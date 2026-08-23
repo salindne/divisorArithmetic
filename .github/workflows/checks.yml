@@ -149,13 +149,19 @@ jobs:
         # It could never gate on coverage without either failing honest runs or gating
         # on nothing.
         #
-        # 1,742 cases are read at run time out of the repository's own whitebox
-        # testers, so they cannot drift out of step with them, and those files are held
-        # to 100% coverage. The remaining 70 are for the two genus-3 ramified families
-        # that have no tester, harvested once offline into harvested_cases.json (the
-        # figures predating PR12 were 1,338 + 344 across three families). Expected coverage
-        # lives in coverage_baseline.json as a NAMED label set -- what is exempt, with
-        # the reason -- so a newly added branch fails by default and branches cannot
-        # be traded one-for-one. All three developed genus-3 ramified files are at
-        # 100%. Nothing here samples.
+        # ALL 1,838 cases are read at run time out of the repository's own whitebox
+        # testers -- 14 of them, one per family -- so they cannot drift out of step
+        # with the testers they come from, and every one of those files is held to
+        # 100% coverage. harvested_cases.json is EMPTY: it existed for the two
+        # genus-3 ramified families, which had no Magma tester, and PR6 wrote them
+        # generators and testers, so their coverage is extracted like everyone
+        # else's. The harvest channel is kept, not deleted -- the next family
+        # derived ADD-first needs it, which is ch2 at genus 3 between PR7 and PR8.
+        # (Earlier figures, for anyone reading old logs: 1,338 + 344 across three
+        # families before PR12; 1,742 + 96 before PR6.)
+        #
+        # Expected coverage lives in coverage_baseline.json as a NAMED label set --
+        # what is exempt, with the reason -- so a newly added branch fails by
+        # default and branches cannot be traded one-for-one. All four developed
+        # genus-3 ramified files are at 100%. Nothing here samples.
         run: python3 whitebox.py
