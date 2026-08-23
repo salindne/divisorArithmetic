@@ -48,6 +48,7 @@ printf "// - %o total trials.            \n", TRIALS;
 printf "// - %o divisor additions and doubles each per trial.            \n", DIVISORS;
 printf "//";
 errorFlag:= false;
+nCmp:= 0;
 
 for F in FIELDS do
   trial:= 1;
@@ -111,6 +112,7 @@ for F in FIELDS do
             va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
 
             upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := DBL(D1[1], D1[2], f, h);
+            nCmp+:= 1;
 
             if ((cantor[1] ne upp3*x^3 + upp2*x^2 + upp1*x + upp0) or (cantor[2] ne vpp2*x^2 + vpp1*x + vpp0)) and not (upp3 eq -1 and upp2 eq -1 and upp1 eq -1 and upp0 eq -1) then
                 errorFlag:= true;
@@ -143,6 +145,7 @@ for F in FIELDS do
             if D1 ne D2 then
 
                 upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := ADD(D1[1], D1[2], D2[1], D2[2], f);
+                nCmp+:= 1;
                 upp,vpp := Nucomp_g3_RAM(D1,D2,f,h);
 
                 // ensure ua is always the larger polynomial
@@ -197,8 +200,13 @@ for F in FIELDS do
   end while;
 end for;
 printf "\n///////////////////////////////////////////////////////////////////////\n";
-"TEST_ADD: ", TEST_ADD;
-"TEST_DBL: ", TEST_DBL;
+// E12: a tester that loaded nothing used to print the same green
+// summary as one that verified everything, because TEST_ADD/TEST_DBL
+// are configuration switches and "No errors." is true by vacuity.
+// The count makes an empty run loud, and the assert makes it fatal:
+// test_all.sh greps for "Runtime error|Assertion failed".
+printf "\n// Comparisons: %o", nCmp;
+assert nCmp gt 0;
 if errorFlag then
   printf "\n// Errors occurred!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
 else

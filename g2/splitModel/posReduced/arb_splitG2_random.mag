@@ -50,6 +50,7 @@ printf "// - %o divisor additions and doubles each per trial.            \n", DI
 printf "//";
 trial:=1;
 errorFlag:= false;
+nCmp:= 0;
 for F in FIELDS do
   printf "\n//    Trail # %o over FF(%o).", trial, F;
   trial+:=1;
@@ -93,6 +94,7 @@ for F in FIELDS do
     if DEBUG then "  "; end if;
     if TEST_DBL then
       nU2,nU1, nU0, nV1, nV0, nN := DBL(U1,V1,N1,curveConst);
+      nCmp+:= 1;
       nU:= R ! nU2*x^2 + nU1*x + nU0;
       nV:= R ! Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + nV1*x + nV0;
       result := <nU,nV,ExactQuotient(f - nV*(nV + h),nU), nN>;
@@ -106,6 +108,7 @@ for F in FIELDS do
     if TEST_ADD then
       if D1 ne D2 then
         nU2,nU1, nU0, nV1, nV0, nN := ADD(U1,V1,N1,U2,V2,N2,curveConst);
+        nCmp+:= 1;
         nU:= R ! nU2*x^2 + nU1*x + nU0;
         nV:= R ! Coeff(V,3)*x^3 + Coeff(V,2)*x^2 + nV1*x + nV0;
         result := <nU,nV,ExactQuotient(f - nV*(nV + h),nU), nN>;
@@ -119,6 +122,13 @@ for F in FIELDS do
   end while; 
 end for;
 printf "\n//";
+// E12: a tester that loaded nothing used to print the same green
+// summary as one that verified everything, because TEST_ADD/TEST_DBL
+// are configuration switches and "No errors." is true by vacuity.
+// The count makes an empty run loud, and the assert makes it fatal:
+// test_all.sh greps for "Runtime error|Assertion failed".
+printf "\n// Comparisons: %o", nCmp;
+assert nCmp gt 0;
 if errorFlag then
   printf "\n// Errors occured.";
 else

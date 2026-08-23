@@ -47,6 +47,7 @@ printf "// - %o divisor additions and doubles each per trial.            \n", DI
 printf "//";
 trial:=1;
 errorFlag:= false;
+nCmp:= 0;
 for F in FIELDS do
   printf "\n//    Trail # %o over FF(%o).", trial, F;
   trial+:=1;
@@ -92,6 +93,7 @@ for F in FIELDS do
     if DEBUG then "  "; end if;
     if TEST_DBL then
       un2,un1,un0,vn1,vn0 := DBL(u1,v1,f);
+      nCmp+:= 1;
       cantor:= D1 + D1;
       if (un2*x^2 + un1*x + un0) ne cantor[1] or (vn1*x + vn0) ne cantor[2] then
         printf "//     Doubling %o failed over finite field FF(%o) where f = %o and h = 0 \n", D1, F, f;
@@ -102,6 +104,7 @@ for F in FIELDS do
     if TEST_ADD then
       if D1 ne D2 then
         un2,un1,un0,vn1,vn0 := ADD(u1,v1,u2,v2,f);
+        nCmp+:= 1;
         cantor:= D1 + D2;
         if (un2*x^2 + un1*x + un0) ne cantor[1] or (vn1*x + vn0) ne cantor[2] then
           printf "//     Adding %o with %o failed over finite field FF(%o) where f = %o and h = 0 \n", D1, D2, F, f;
@@ -112,6 +115,13 @@ for F in FIELDS do
   end while; 
 end for;
 printf "\n//";
+// E12: a tester that loaded nothing used to print the same green
+// summary as one that verified everything, because TEST_ADD/TEST_DBL
+// are configuration switches and "No errors." is true by vacuity.
+// The count makes an empty run loud, and the assert makes it fatal:
+// test_all.sh greps for "Runtime error|Assertion failed".
+printf "\n// Comparisons: %o", nCmp;
+assert nCmp gt 0;
 if errorFlag then
   printf "\n// Errors occured.";
 else
