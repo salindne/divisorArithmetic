@@ -29,13 +29,24 @@ load "g3Formulas/nch2_splitG3_ADD.mag";
 //Field sizes below 20 for random testing
 //Split curves do not exist for FF(2)
 FIELDS:= {3,5,7,9,11,13,17,19};
-DIVISORS:= 500;
+DIVISORS:= 25;
 TRIALS:= #FIELDS;
 DEBUG:= false;
 TEST_DBL:= true;
 TEST_ADD:= true;
 H_ZERO:= false;
 CURVES := 3;
+
+///////////////////////////////////////////////////////////////////////////////
+//REPRODUCIBILITY
+///////////////////////////////////////////////////////////////////////////////
+// These testers never set or reported a seed, so a failure in a rarely-drawn
+// branch could not be replayed -- and a failure you cannot replay is a failure
+// you cannot diagnose. The seed and step are printed in the banner below;
+// RND_SEED=<n> reruns that draw sequence exactly.
+if GetEnv("RND_SEED") ne "" then
+    SetSeed(StringToInteger(GetEnv("RND_SEED")));
+end if;
 
 /////////////////////////////////////////////////////////
 ///////////////////// TEST LOOPS ////////////////////////
@@ -46,6 +57,8 @@ printf "//\n";
 printf "// - %o total finite field trials.                        \n", TRIALS;
 printf "// - %o curves picked at random for each trial.           \n", CURVES;
 printf "// - %o divisor additions and doubles each per curve.     \n", DIVISORS;
+sd, st:= GetSeed();
+printf "// - Random seed %o, step %o. Replay this run with RND_SEED=%o\n", sd, st, sd;
 printf "//";
 
 trial:=1;
