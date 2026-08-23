@@ -527,6 +527,164 @@ here so the register carries it rather than only a findings report.
 
 ## Not defects
 
+## E14: the inline `// Nm Ns Na` ledger comments are gate input, and nothing says so
+
+**Found 2026-08-21** by deleting one during a comment-tidying pass and watching `selftest`
+turn red two edits later.
+
+`verification/adjugate.py` prices three of its twelve candidate adjugate programs against
+**the operation-count comments in the formula files themselves** — `// top: 16m 0s 9a`,
+`// 11m 0s 8a`, `// total: 27m 0s 17a (equivalent 98a)` — parsed by `_ANNOT` and keyed by
+label. `selftest`'s `adjugate` section then requires that all four such comments across the
+`.mag` files be reproduced. Remove one and the section fails with
+
+    arb_ramifiedG3_ADD.mag no longer carries its `top` op-count comment,
+    so shipped_7 is measured against nothing
+
+which is the correct behaviour, but only because someone wrote that check. The comments carry
+no marker distinguishing them from ordinary annotation, and they sit in the middle of a
+straight-line block that invites tidying.
+
+**Two other comment classes in these files are already documented as load-bearing** — the
+`if (ADD_DEBUG) then "..."` branch labels, which `whitebox` uses as its coverage denominator
+and `harvested_cases.json` stores verbatim, and the `//Constant:` / `//Ignore:` directives,
+which decide the C column (E10). This is the third class and the only undocumented one.
+
+**Not fixed, because the fix is a convention rather than a patch.** Options considered: mark
+them (`//gate: top: 16m 0s 9a`), which invalidates `_ANNOT` and every existing comment; or move
+the expected figures into `adjugate.py`, which loses the property that the measurement lives
+beside the code it measures. Recorded here so the next tidying pass knows. Note the standing
+rule that if an annotated block moves, the number is **re-measured** rather than carried across
+— which is what was done when this one was restored: 16m 0s 9a and 11m 0s 8a, unchanged.
+
+**The failure mode was worse than "the check goes red", and that half IS fixed (2026-08-22).**
+On the third deletion the section did not report a missing comment at all — it reported a
+*difference*:
+
+    the .mag fragment for shipped_7_dbl: measured [16, 0, 9] against the file's own [4, 0, 4]
+
+`all_annotations` keyed the unlabelled comment as "the first unlabelled ledger anywhere after the
+file's cofactor block". With the genuine one deleted, the next unlabelled ledger **217 lines
+downstream** — `// 4m 0s 4a`, which prices the `r = u mod s` block of a different branch — was
+silently promoted into its place. So the gate compared a correct 16m 0s 9a fragment against an
+unrelated annotation and reported the *code* as wrong. A deletion has to read as a deletion.
+
+Two instruments were tried and rejected before the right one was found, and both rejections are
+informative. A **fixed line window** fails because the genuine ledger sits 28 lines below
+`block_end_line` in the doubling and **575** lines below it in the addition, so no window admits
+both. "Must precede the first guard" fails for the same reason. What separates them is that the
+*addition labels its ledgers* — its cofactor fragment is `top:`, so its first unlabelled ledger is
+unambiguously the lower half, wherever it sits — while the *doubling labels none*, so its single
+unlabelled ledger must be pinned to the code. `all_annotations` is now conditioned on exactly
+that: a file that labels has already said which is which; a file that does not must put its ledger
+within three lines of the determinant. Both deletions now leave the key **absent**, verified by
+deleting each in turn and confirming neither borrows a neighbour.
+
+**What is still not fixed is the original complaint:** nothing in the `.mag` files marks these
+comments as gate input, so the next tidying pass has no warning. Three deletions in three days.
+
+## E17: a scratch assignment onto a live matrix slot, which no static check can see
+
+**Found 2026-08-22**, twice in two days, in `arb_ramifiedG3_DBL.mag`'s `Deg3DBL`.
+
+Per PR21's convention `t1`–`t9` are reserved for the 3×3 matrix `T`'s entries and `m1`–`m9` for
+its adjugate, with `t01`–`t09` as generic scratch. The degenerate leaves of `Deg3DBL` violate it:
+they reuse `t2`, `t3`, `t5`, `t6`, `t8`, `t9` as scratch for a local `k` computation. Six of those
+are harmless, because each is assigned and then read within the leaf. The seventh was not:
+
+    t7 := vh2 + v2 - h3*u2;    // T's (3,1) entry, the deg-2 coefficient of (2v+h) mod u
+    ...
+    t7 := f6*u1;               // scratch, inside the IsZero(m7) leaf
+    ...
+    b1 := t7^-1;               // wants the T entry, gets f6*u1
+
+so `b1` was `1/(f6*u1)`, and the branch died outright with `Illegal negative power of zero
+element` whenever `f6` or `u1` was zero. The second instance was the same shape one level up: a
+saved copy `ty := u1` was removed as redundant, leaving `u0 := u1 - u1*dm0` reading the `u1`
+assigned on the line immediately above, where the exact division needs the value from before it —
+**105 of 116 wrong** in the one-ramified-point class.
+
+**No static check in this repository can see either.** `dominance.py` asks whether the name is
+assigned above the read: it is — twice. The name is
+live, in scope, and holds the wrong value, which is a class strictly harder than E15's
+sibling-path reads. `verification/blockcheck.py` caught both, because it executes the polynomial
+reference block against the explicit code and compares; real Magma caught the first as a runtime
+error. Neither `driver --strict` nor `whitebox` caught the first, the syntax being valid and the
+interpreter never reaching that leaf on the sampled inputs.
+
+**Not fixed as a checker**, because the check needed is value-level, not name-level, and that is
+what `blockcheck` already is. Recorded as a rule instead: **before reusing a `t`/`m` slot as
+scratch, enumerate its reads below the insertion point on every path.** The cheap structural fix
+is to honour PR21's convention and take a `t0x` slot, which is what was done here.
+
+## E18: `opcount.py` answers a parse failure by omitting the row, not by failing
+
+**Found 2026-08-22**, when a missing comma (`return 0, 1, upp1, upp0, 0 vpp1, vpp0;`) reached the
+tree during an edit.
+
+`python3 verification/opcount.py --family ramified/g3/arb` printed its `1DBL` and `2DBL` rows and
+simply **did not print `3DBL`**. No error, no warning, exit status unchanged. A reader checking
+"did my edit move the count" sees the rows that did not move and can easily miss the row that
+vanished — the same shape as `test_all.sh` being unable to fail and as E12's green summary over an
+empty run, and the reason this project's standing rule is that silence is not success.
+
+`blockcheck` reported the real problem immediately and by name (`User error: bad syntax`), and
+`dominance.py` passed, being a line scanner. **Not fixed:** the honest repair is for `opcount` to
+know which functions it *expected* to price and fail on any it could not, which means giving it a
+per-family manifest. Recorded so that a disappearing row is read as the error it is.
+
+## E15: no static check sees a read whose only assignment is on another path
+
+**Found 2026-08-21**, by four separate mid-edit breakages in one day, three of which the static
+checks passed and real Magma caught.
+
+The first checker written for this asked, per function, whether a name is assigned **anywhere**
+in the body. That question is satisfied by an assignment *below* the read, which is exactly what a
+half-finished rename leaves: a variable inlined at one site, its definition deleted, and a
+surviving read further up now resolving to a definition that has not run. Two of the day's
+breakages had that shape and it reported both files clean. **It is deliberately not committed**,
+because `dominance.py` below answers a strictly stronger question and reporting both would be two
+tools for one job.
+
+`verification/dominance.py` is added here and asks the ordered question instead: walking each body
+top to bottom, does every read have an assignment **above** it? That subsumes the weaker check --
+a name never assigned at all is reported too, verified directly -- so it is the only one shipped.
+Clean across all 36 formula files (0 reports) and shown to fire — deleting one live `k3:= f6 - u2;` from `arb_ramifiedG3_ADD.mag`
+produces 23 reports and exit 1.
+
+**What remains uncovered, stated because the gap is the point.** Statement order is not
+dominance. An assignment inside an `if` block above the read counts as reaching it, so a value
+defined only on a **sibling path** still passes. That was the fourth breakage: a dropped
+`w3:= d*w2;` in `arb_ramifiedG3_ADD.mag`'s typical case, where `w3` is assigned five times
+earlier in the function on paths that cannot reach the read. `dominance.py`
+passes, `driver --strict` passed **7,248 of 7,248** because its interpreter never reached the
+line, and only Magma refused the file. Closing it needs the branch structure, and the guards
+nest six deep with `end if;//name` closers a line scanner cannot match reliably.
+
+**So the honest statement of gate coverage for this defect class is:** `dominance.py` catches
+assigned-nowhere *and* assigned-below, and **only real Magma catches assigned-on-another-path.** A formula edit that cannot be run under Magma is not verified
+against this class.
+
+## E16: the genus-3 odd-characteristic `dw31`/`dw30` comment has `m7` and `m8` swapped
+
+**Found 2026-08-20** while reading the two genus-3 ramified additions against each other.
+
+`nch2_ramifiedG3_ADD.mag:1407` annotates the degree-1-gcd remainder as
+
+    //dw31:= -m8; dw30:= m7;   //t7^2
+
+against `arb_ramifiedG3_ADD.mag:1420`, which has the same line as
+
+    //dw31:= m7; dw30:= -m8;   //t7^2
+
+**arb is correct.** Verified independently of both files by constructing 300 one-common-point
+divisor pairs over GF(10007) and evaluating `t7^2*(up mod dw1)` directly: it equals `m7*x - m8`
+in 300 of 300, so `dw31 = m7` and `dw30 = -m8`.
+
+**Comment only, no arithmetic consequence.** Both lines are commented out — they document the
+weighted remainder the following code computes, and the live code in both files is right. Left
+unfixed only because it is in a file under active editing; it is a one-line correction.
+
 Two things that look wrong and are not, recorded so they are not "fixed" by mistake:
 
 - **The formula copies under `g2/timings/*/ramFormulas/` and `*/splitFormulas/`** are deliberate

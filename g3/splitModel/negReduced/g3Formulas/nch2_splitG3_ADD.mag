@@ -8098,7 +8098,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
     t2 := -up0*t7;
     t5 := t1 - up1*t7;
     t8 := t4 - up2*t7;
-    //t3 := -u20*t8;
+    //t3 := -up0*t8;
     t6 := t2 - up1*t8;
     t9 := t5 - up2*t8;
 

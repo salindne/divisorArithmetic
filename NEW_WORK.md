@@ -56,6 +56,14 @@ restating the detail.
 | N17 | The genus-3 ramified addition now beats the split-model one on M+S, C and A | **implemented**; superseded by N18 |
 | N18 | The doubling trades one multiplication for twenty-two additions; the ledger is closed but for two open items | **implemented**, measured, Magma-verified |
 | N19 | The specialised odd-characteristic addition had fallen behind the general one it specialises | **implemented**; the invariant is now asserted in CI |
+| N20 | The polynomial reference blocks are executable, so they became a second oracle | **established**; 12 functions checked, 3 defects found |
+| N21 | Two weights that were larger than the mathematics requires, and a Bézout cofactor that is a constant | **implemented and measured**; both addition files |
+| N22 | A degree-order convention adopted everywhere except one function | **implemented and measured**; pure refactor |
+| N23 | When to build the inverse and when the adjugate: the trade runs both ways | **implemented and measured**; both addition files |
+| N24 | What the reference block is for, and two facts found by making it say so | **established**; documentation plus two results |
+| N25 | Reduce before you divide: the second cofactor collapses to a scalar at `Deg23ADD` | **implemented and measured**; both addition files |
+| N26 | The same collapse at `Deg3ADD`, plus the reduce-first rule extended to multiplication and bounded | **implemented and measured**; both addition files |
+| N27 | A reference block written leaf-for-leaf against the code becomes a debugger; the defect class surviving every static check is the defined-with-the-wrong-value read; and `l = r*s + M2` needs no division | **implemented and verified**; the doubling at **54M 4S 84A 4C**, 3 defects found, 2 gates repaired, 6-lens sweep |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -1139,6 +1147,840 @@ multiplications inside it, and a report that prices only the arithmetic prices t
 easy part.
 
 ---
+
+## N20 — The polynomial reference blocks are executable, and that turned them into a test
+
+**Status:** established, 2026-08-13. PR36, in progress.
+
+Every case function in the genus-2 and genus-3 ramified formula files opens with a
+commented block holding the *polynomial-level* formulation the explicit coefficient
+arithmetic implements — `d := up mod u`, `k := (f - v*(v+h)) div u`, and so on. Their
+stated purpose is that deleting the explicit formulas and uncommenting the block leaves
+a working function. Until now that was an aspiration: nothing ever ran them.
+
+**They can now be extracted mechanically and checked, and doing so is worth more than
+reading them.** A parser lifts each block out of the source verbatim, wraps it in the
+host function's own signature, and the result is compared against the explicit formulas
+on genuinely on-curve divisor pairs — pairs built from affine points, with deliberate
+overlap so the degenerate branches are reached rather than hoped for. Across the two
+genus-3 ramified addition files that is **12 functions, 7,235 + 5,365 pairs over six
+fields, every one of the seven returned coefficients compared, zero disagreements and
+zero runtime errors.** The blocks are now a second oracle rather than a comment.
+
+Three things this found that reading could not:
+
+- **`ExactQuotient` and `div` are not interchangeable here, and the difference is
+  invisible until the block is executed.** Each block builds `f` truncated at the lowest
+  coefficient its own signature carries, because the omitted low coefficients have degree
+  below the divisor's and so cannot reach the quotient — measured, `div` returns the true
+  exact quotient on 3,000 of 3,000 degree-2 divisors. But the *numerator* is then not
+  divisible: `up | f - vp(vp+h)` holds for the full `f` and fails for the truncated one on
+  **0 of 3,000**. So `ExactQuotient` raises on every evaluation of that line, and `div`
+  is not a loose spelling of it but the correct operator. Both now carry an
+  `//Exact quotient` comment saying which it is.
+- **The genus-2 blocks are not runnable at all**, for a different reason: they reference
+  `f0`, which is not a parameter of the functions that contain them. Magma resolves free
+  identifiers at *definition* time, so uncommenting one does not merely fail at that line
+  — it refuses to define the function and aborts the load. The genus-3 blocks were
+  written extractable; the genus-2 ones were not, and the asymmetry had gone unnoticed
+  because neither had been tried.
+- **Two commented lines in the degree-2-plus-degree-3 addition were wrong, in both
+  files, and one had a correct twin 135 lines away.** `//t22:= -v2;` and `//t22:= vp2;`
+  annotate the same quantity in sibling branches and disagree; the first is right. The
+  companion `//vt2:=` line had its operands reversed. The value is load-bearing even
+  though the line is commented out: the Karatsuba immediately below expands
+  `(at1 + at2)*(vt1 + vt2)` with `vt2` folded in as `-vp2`, and the `mod up` reduction
+  two branches later folds the same coefficient in as `up*vp2`. A commented-out
+  coefficient can still document a live one.
+
+**For the paper.** The transferable point is that **a reference formulation shipped as a
+comment is untested documentation, and the cost of testing it is a parser, not a
+rewrite.** This project already treats the interpreter as the counter of record (N12)
+because interpreting the real source removes transcription drift; the same argument
+applies one level up, to the algorithm statement the formulas claim to implement. Two of
+the three findings above are exactly transcription drift between a formulation and its
+implementation, which is the class of defect a human reading both is worst at.
+
+**The blocks were then rewritten to say what the explicit code actually does.** They had
+been generic: one `XGCD(u,up)` call, a second `XGCD` on the gcd, and a three-way tail on
+`Degree(u) + Degree(up)`. That is a correct algorithm but it is not the algorithm below it,
+so no statement of it could serve as the comment above any particular explicit group. All
+four are now unfolded in the resultant form the house exemplars use — `arb_splitG3_ADD`'s
+`Deg22ADD` and genus-2 ramified's `Deg2ADD` — with every gcd case explicit and its own
+return. `Deg3ADD` goes from 51 lines to 178 and from 3 returns to 12.
+
+**How many leaves is settled by the parent, not by taste.** Each block's header names
+`Nucomp_g3_RAM` as what it specialises, and that function dispatches once on
+`Degree(s) lt 2`; thesis `alg:g3nucomp` writes the same single `\ElsIf{\deg(s) < 2}`. The
+author's own comment there says why — *"stay within these cases and go forward with the
+following output cases within each GCD case"* — the gcd axis and the output axis are
+orthogonal, and the explicit code's fifteen leaves are the pruned cross product of four
+gcd cases against three output cases. The block mirrors the algorithm's granularity, so
+its twelve leaves are right and the explicit code's extra `deg(s) = 0` versus `= 1` splits
+are degree bookkeeping. The same source settles a second point: it carries *"k should be
+pushed forward depending on case, should only compute k right before needed"*, which the
+old block violated by computing `k` unconditionally at the top. The new one computes it
+per branch, and never on the two paths that return without it.
+
+**One construct is load-bearing and looks like a hack.** Three lines read
+`dx := (Degree(dw2) eq 2) select (up mod dw2) else dw2;`. A linear `dw2` always divides
+`up`, so a plain remainder vanishes there and routes a degree-1 second gcd into the
+composition-only branch. Measured: the plain-`mod` spelling is **wrong on 15 of 1,890**
+degenerate-shape pairs and **never raises** — it silently returns a degree-1 or degree-2
+`upp` where the answer has degree 3. The alternative is an extra `if Degree(...) eq 2`
+guard level the explicit code does not have.
+
+**A defect the rewrite surfaced.** The `CASES` enumeration says case 4.2 is
+`DA = P3-P1-P2 (return 2P3)`, and the `ADD_DEBUG` label inside that case said
+`DA = P1-P2-P3`. The arithmetic decides it: `(P1+P2+P3) + (P3-P1-P2) = 2P3` matches the
+stated return, where `P1-P2-P3` would give `2P1`. Wrong in both addition files, at the
+label and at an in-case comment, with two frozen corpus records carrying the wrong string.
+Corrected in all six places.
+
+Landing alongside it, and behaviour-preserving: the genus-3 ramified case functions now
+take **the smaller-degree divisor first, unprimed**, matching genus 2, so `u, v` is
+always the lower-degree operand, `up, vp` the higher, and `upp, vpp` the result. Genus 3
+had `(u, v)` first but bound to the *larger* divisor, so a reader who knew genus 2 read
+every mixed-degree signature backwards. Verified as a pure refactor by comparing both
+addition dispatchers against their pre-change selves on 2,995 operations spanning all
+six degree pairs — zero mismatches — with every operation count identical per branch.
+
+---
+
+## N21 — Two weights larger than the mathematics requires, and a cofactor that is a constant
+
+**Status:** implemented and measured, 2026-08-14. Genus-3 ramified `Deg22ADD`, both
+the arbitrary and the odd-characteristic file.
+
+The degree-2-plus-degree-2 addition's degenerate branches carried three separate
+pieces of avoidable work. None is visible in the published frequent-case row, and
+none was found by reading the arithmetic — each came from asking what a *weight*
+was for.
+
+**A cube weight where linear suffices — and it was avoidable in both files, for
+different reasons.** The branch test needs `dw3 = (h+v+vp) mod S1` with `S1` linear,
+i.e. the cubic `h+v+vp` evaluated at `m4/m3`; clearing denominators for a cubic
+costs `m3^3`. But `S1` divides `up`, so reduction is transitive:
+
+    (h+v+vp) mod S1  =  ((h+v+vp) mod up) mod S1
+
+and `(h+v+vp) mod up` is **linear**, so the weight is `m3`. The arbitrary file was
+evaluating the cubic directly; its sibling branch one level up already performed
+exactly the `mod up` reduction, so the cheaper route was present in the same
+function and unused. Hoisting it serves both branches: **−2S −1C +2A** on the two
+degree-1-gcd cases. The odd-characteristic file had no cubic at all — at `h = 0`
+the quantity is linear from the start — and yet carried a `d1^2` factor copied from
+the arbitrary shape, which then forced a `d1^4` correction downstream to undo
+itself: **−1M −1S**. The same finding twice, reached from opposite directions.
+
+**The Bézout cofactor `a2` is a constant, not a quadratic.** The reference block
+computes it as `ExactQuotient((1 - b2*(h+v+vp)) mod up, S1)` — reduced mod `up`
+*first*, so the numerator is linear and the quotient by a linear `S1` has degree 0.
+The explicit code instead divided the unreduced cubic by the monic gcd and got a
+degree-2 `at`, then paid for a polynomial-by-polynomial product. Both are valid
+representatives, because `s` is taken mod `up`; they differ by a multiple of
+`up/S1`, which is *not* a multiple of `up`, so the interchange is legitimate here
+and would not be if the modulus changed.
+
+**But being a constant is a precondition, not the win.** `a2` never appears alone —
+only as `a2*a1`, and with `dw = m3*dw3` and `a1 = -1/m3` that product is `gt1/dw`:
+one multiplication of a subexpression the branch test already formed. That kills
+`a1`, the monic `dm`, both `at` coefficients and the entire `st` chain, and shrinks
+the inversion from `1/(m3*dw)` to `1/dw`, which also drops a squaring. Measured on
+constructed inputs over nine fields:
+
+| | before | after |
+|---|---|---|
+| arb, gcd degree 1, `dw != 0` | 44M 2S 78A 2C 1I | **38M 1S 68A 2C 1I** |
+| nch2, same branch | 38M 5S 55A 0C 1I | **34M 3S 51A 0C 1I** |
+
+**A redundant guard, with a one-line proof.** The `u = up` branch tested
+`IsZero(dw20) and IsZero(dw21)`. Subtracting the two curve conditions gives
+`u | (vp-v)(vp+v+h)`; if `dw21 = 0` then `vp+v+h` is the constant `dw20` mod `u`, so
+`u | (vp-v)*dw20`, and since `deg(vp-v) < deg u` with `vp != v` that forces
+`dw20 = 0`. No squarefree assumption needed. So `dw21 = 0` alone decides it, which
+is what the split model has always tested, and `dw20` moves below the guard:
+**−1M −3A** on the branch that returns the neutral element.
+
+**For the paper.** The transferable point is that **a weight is a claim about a
+degree, and it should be re-derived whenever the degree changes** — by a
+specialisation (`h = 0` collapsing a cubic to a linear form) or by an available
+reduction (`S1 | up` making the cubic unnecessary). Copying a parent's weighted
+shape into a child carries an assumption the child does not have; that is the same
+class of defect as N19's cost drift, seen in the arithmetic rather than the totals.
+Second point: the frequent case did not move in either file, so none of this
+appears in a published table. Rare-branch savings survive only in the commit
+record, which is an argument for measuring per branch rather than reporting the
+modal cost alone.
+
+## N22 — A convention adopted everywhere except one function
+
+**Status:** implemented and measured, 2026-08-15. Genus-3 ramified `Deg13ADD`,
+both the arbitrary and the odd-characteristic file. The frequent case moves in
+both, so this one *does* reach a published row.
+
+Neither finding is a new technique. Both are places where `Deg13ADD` alone fails
+to do what the rest of the repository already does — which is worth recording
+precisely because that is the class of defect an efficiency review reading a
+function in isolation cannot see.
+
+**The closing reduction is a difference of two monic cubics.** `vpp` is
+`(-up*s - vp - h) mod upp`, and `up` and `upp` are both monic of degree 3, so
+`up ≡ up - upp (mod upp)` — a subtraction, not a multiplication. Written out with
+`t = s0 + h3`, the identity is
+
+    t*upp_i - s0*up_i  =  s0*(upp_i - up_i) + h3*upp_i
+
+and `h3*X` is free under the file's `//Ignore: h3`, so each coefficient keeps one
+general multiplication where it had two. This is pure distributivity: it holds in
+any commutative ring, uses no branch invariant, and is therefore valid on every
+path of the function at once.
+
+**Every other `vpp` site in all three genus-3 ramified files already writes the
+folded form** — `arb_ramifiedG3_DBL.mag:332-333`, `:612-613`, `:673`, and
+`arb_ramifiedG3_ADD.mag` at `Deg22ADD:418`, `Deg23ADD:862`, `Deg3ADD:897-899`,
+`:1059-1061`, `:1138-1140`. The only unfolded lines anywhere were the four in the
+arb `Deg13ADD` and the four in the nch2 one.
+
+| | before | after |
+|---|---|---|
+| arb `Deg13ADD` frequent | 20M 1S 37A 1I | **18M 1S 39A 1I** |
+| arb `Deg13ADD` `d = 0`, `dw ≠ 0` | 26M 1S 48A 1I | **24M 1S 50A 1I** |
+| nch2 `Deg13ADD` frequent | 18M 3S 28A 1I | **16M 3S 28A 1I** |
+| nch2 `Deg13ADD` `d = 0`, `dw ≠ 0` | 23M 3S 38A 1I | **21M 3S 38A 1I** |
+
+**The nch2 half is the clean result, and it is free.** With `h = 0` there is no
+`h3` term to add back, so the fold is `−2M` at **zero** additions — the file was
+literally writing `s0*upp2 - s0*up2`, which is `s0*(upp2 - up2)` spelled as two
+multiplications.
+
+**The arb half is `−2M +2A`, and its honest scope must be stated.** The saving is
+real on the declared domain `h3 ∈ {0,1}`, where `h3*upp_i` is a zero or a copy;
+charged as a general multiplication it would be roughly neutral. That is the
+costing convention PR20 adopted and the file already applies at fourteen other
+sites, so this is consistency rather than a fresh bet — but it does widen the
+declared-versus-computed gap PR24 measured, and a reader is owed that.
+
+**Second finding: a Horner tail evaluated twice.** `d := up0 - u0*(up1 - u0*t1)`
+is `up(-u0)` by Horner, and its inner value `up1 - u0*t1` was recomputed verbatim
+as `upp0` on the `dw = 0` return. It is not a coincidence that they agree:
+`d = 0` means `up = u*(x² + t1*x + t0)`, so `t1` and `t0` **are** the coefficients
+of `ExactQuotient(up, u)`, which is exactly what that branch returns. Naming the
+intermediate costs nothing on any path — `d` still costs 2M 3A — and the return
+then reads it free: **7M 13A → 6M 12A**. The nch2 file already named it
+(`temp3`); only arb did not.
+
+**What was checked and found already optimal**, since a review that reports only
+what it changed is not evidence of much. Efficient exact division is applied
+tightly: only `k3…k0` are formed and `k0` is consumed solely by `s0`'s Horner
+evaluation, so no quotient coefficient is dead — the ODDADD-19 pattern does not
+recur here. Karatsuba is used at the one place it pays (`k1`, where `ta` and `tb`
+are needed anyway) and genuinely does not pay in `k0`: both regroupings of
+`vp1*vh2 + vp2*vh1` and of `up0*k3 + up2*k1` need a product that is not otherwise
+computed. Also refuted: the `M1`/`M2` route quoted in the reference block (9M+1S
+against the current 5M+1S); the l'Hôpital shortcut `k(-u0) = N'(-u0)/up'(-u0)`,
+which is a true identity here since `N(-u0) = 0`, but needs a second inversion;
+recomputing `dw` as `2*v0 + h(-u0)`, true on this branch but circular, since
+`vp(-u0) = v0` is only known after the test it would replace; Takahashi
+normalisation reordering, inapplicable because `upp` is monic for free at genus 3;
+Karatsuba modular reduction, inapplicable with a single multiplier; folding `vpp1`
+the same way, exactly cost-neutral because `s0*up1` is shared with `upp0`; folding
+`k0` into the Horner, `−1M +1S` and so neutral on M+S; and fusing `upp2`'s
+`h3*s0 + s0^2` into `s0*(s0 + h3)`, neutral and dominated once the `vpp` fold
+removes that temporary.
+
+**Evidence.** A rig that constructs inputs forcing each of the three paths —
+random pairs for the typical case, a shared point for `d = 0`, its opposite for
+`dw = 0` — checked against `reference.py` over GF(11), GF(13), GF(17), GF(25),
+GF(27): **1,368–2,044 cases per path per variant, zero mismatches**, with the
+operation counts taken from the repository's own counter under the file's
+directives. Then the standing gates: `driver --strict` 12,972/12,972,
+`whitebox` 1,812/1,812, `selftest` 14 sections including the child-never-dearer
+invariant, the reference blocks agreeing with the explicit code on 1,491
+`Deg13ADD` pairs under real Magma, and both random testers clean at 111s and
+216s — runtimes worth quoting, because E12 records that a sub-second run prints
+the same green summary having executed nothing.
+
+**For the paper:** the closing reduction of a divisor addition is a difference of
+two monic polynomials of the same degree, so the `s·up` products it appears to
+need are additions. Stated once, it applies to every branch of every addition and
+doubling in the family — and the one function that did not use it was measurably
+dearer for it, in the frequent case, in both characteristic families.
+
+## N23 — When to build the inverse, and when to build the adjugate
+
+**Status:** implemented and measured, 2026-08-16. Genus-3 ramified `Deg23ADD`, arbitrary
+characteristic. Degenerate branches only, so no published row moves.
+
+Both models must solve the same sub-problem in the degenerate cases of an addition: given
+`dw2 = (h+v+vp) mod u` and the reduced quotient `kp`, find `s` with `dw2·s ≡ kp (mod u)`. There are
+two ways, and this repository had been using **both, in different files, without the choice ever
+being stated**.
+
+- **Build the inverse.** Form `bt`, a weighted `dw2^{-1} mod u`, then multiply `bt·kp mod u` and
+  divide by the weight. This is what the genus-3 ramified addition does.
+- **Build the adjugate.** Write multiplication by `dw2` modulo `u` as a matrix in the basis
+  `{1,x}`, take its adjugate; the determinant *is* `Resultant(u,dw2)`, and the same entries then
+  give `s` by one matrix-vector product. This is what the genus-3 split addition does, everywhere,
+  without exception.
+
+**Measured across every shape in both models**, by classifying each function's solve: the split
+builds an inverse object **zero** times in the addition and **zero** times in the doubling. The
+ramified builds one 5 times in `Deg23ADD` and 11 times in `Deg3ADD`. Both doublings, `Deg22ADD`,
+and all three typical paths already agree — they use the adjugate.
+
+**The rule that decides it, which neither file states.** The adjugate always costs
+`4M 2A` to build and `4M 2A` to apply. The inverse route's cost depends entirely on whether `bt`'s
+coefficients fall out of the `dx` computation for free:
+
+| site | `bt` costs | verdict |
+|---|---|---|
+| `Deg23ADD` #3.2/#3.1 | `bt0 = dw20 - u1*dw21` — **1M 1A, and it duplicates a subexpression already inside `dx0`** | adjugate wins |
+| `Deg3ADD` #4.1 | `bt0 = -temp6`, and `temp6` was already formed for `dx1`/`dx0` — **2A, two negations** | inverse wins; leave it |
+
+So the answer is not "always use the adjugate". It is **use the adjugate exactly when the inverse's
+coefficients are not already lying around**, and `Deg23ADD` #3.x is the only site in either ramified
+file where they are not.
+
+**What landed.** `dx0`'s standalone weighted resultant and the separate `bt` + Karatsuba solve are
+replaced by
+
+    n3:= dw20 - u1*dw21;
+    n4:= u0*dw21;
+    dx0:= dw20*n3 + dw21*n4;        //Resultant(u,dw2) = the 2x2 determinant
+    ...
+    sp1:= dw20*kp1 - dw21*kp0;
+    sp0:= n3*kp0 + n4*kp1;
+
+`sp` is the same object under both routes — each equals `dx0·s` — so `#3.2`'s `sp0/dx0` and `#3.1`'s
+weight bookkeeping needed no change at all, which is the check that the substitution is faithful
+rather than merely agreeing numerically.
+
+| branch | before | after |
+|---|---|---|
+| #3.1, `deg(s) = 1` | 51M 4S 87A 1I | **50M 3S 82A 1I** |
+| #3.2, `deg(s) = 0` | 37M 2S 67A 1I | **36M 1S 62A 1I** |
+| #3.3 | 29M 1S 47A 1I | 30M 0S 47A 1I — M+S and A both unchanged |
+| #3.4, typical | — | unchanged |
+
+`#3.3` returns before the solve, so it pays the determinant's extra multiplication without
+collecting the saving; at 30 M+S and identical A it is a wash, not a loss.
+
+**Evidence.** A rig that constructs inputs forcing each of the four `d = 0` sub-paths — `u | up`
+with the second divisor carrying both points, one opposite point, or both opposite —
+**5,512 cases over GF(11), GF(13), GF(17), GF(25) against `reference.py`, zero mismatches**. Then
+the standing gates: `driver --strict` 1,818/1,818 on the family, `whitebox` 1,812/1,812, the
+reference blocks agreeing with the explicit code on 1,406 `Deg23ADD` pairs under real Magma, and the
+random tester clean at 113s.
+
+**Honest limit:** the `Deg3ADD` #4.1 verdict is derived from operation counting, not measured. No
+variant was built, because the direction is unambiguous — the adjugate would first have to reduce
+`dw2` modulo the shrunk quadratic `up` before it could start, which is 2M 2A the inverse route never
+pays.
+
+**For the paper:** an explicit-formula derivation should state which of the two inverse routes it is
+using and why, because the choice is not uniform even within one implementation — and the deciding
+question is not the degree of the modulus but whether the resultant computation has already produced
+the coefficients the inverse needs.
+
+### N23a — the same change in the specialisation, and a rare-branch cost charged to the frequent path
+
+The odd-characteristic `Deg23ADD` carried the identical `bt` construction and took the identical
+port, at `h = 0`: #3.1 `50M 4S 71A → 49M 4S 68A`, #3.2 `36M 2S 52A → 35M 2S 49A`.
+
+**But porting it did not clear the specialisation invariant, and what did is worth recording.** With
+arb's `Deg23ADD` improved to 39 M+S, `selftest`'s guard fired —
+`ramified/g3/nch2 23ADD: child M+S 40 > parent 39` — and the cause was nowhere near the branch being
+ported. It was the **prologue**:
+
+| | forms the x-coefficient of `up mod u` as |
+|---|---|
+| arb | `u1*t0` with `t0 = up2 - u1` — **1M** |
+| nch2 | `temp3 = u1^2 - u0` then `up1 - u1*up2 + temp3` — **1M 1S** |
+
+nch2 split one product into a multiplication *plus* a squaring so it could keep `temp3` for two
+degenerate branches that reuse it. Those branches are reached rarely; the squaring was paid on
+**every** call. Writing it arb's way as `d1 := up1 + u1*temp2 - u0` and letting the two consumers
+form `-u0 + u1*(u1 - k3)` locally — which is what arb already does — removes it:
+**35M 5S 46A → 35M 4S 45A**, i.e. 40 M+S → 39, and the invariant passes with the child now equal on
+M+S and ten additions cheaper.
+
+**The lesson is the one the invariant exists to catch, in a new form.** PR15 found a specialisation
+that had drifted dearer because improvements landed only in the parent. This is subtler: nch2 was
+*internally* consistent and correct, and the extra squaring looked like a sensible common
+subexpression — it is only visibly wrong when measured against the parent, on the frequent path,
+where the cached value is never read. **A temporary hoisted for a rare branch is a cost transfer
+from the rare branch to every call**, and nothing but a per-shape comparison against the parent will
+surface it.
+
+**Two more, found by the same comparison and specific to `h = 0`.** Where arb writes
+`- vp1*vh2 - vp2*vh1` — two genuinely different products — the specialisation collapses both to
+`vp1*vp2` and was computing it **twice**, and `vp2*vh2` became `vp2*vp2`, a squaring written as a
+product. Both appear in each of the function's two `k` blocks. The file's own `Deg13ADD` already had
+them right (`t5:= vp1*vp2` then `- t5 - t5`, and `vp2^2`), so this was an internal inconsistency, not
+a missing technique. Forming the product once and spelling the squaring as one gives **−2M +1S** on
+each of #3.1, #3.2, #3.3 and the two `#2.x` branches — one off the multiplicative total on five
+branches. The frequent path has its own shorter `k` block and is untouched.
+
+**Collapsing a specialisation is where disguised squarings are born.** `vh_i = h_i + vp_i` becomes
+`vp_i` at `h = 0`, so two distinct arb products silently become one repeated product and another
+becomes a square. Neither is visible in the parent, and neither shows up as an error — only as cost.
+Worth checking at every `h = 0` collapse rather than reading for correctness alone.
+
+Same evidence as N23: rig over all four `d = 0` sub-paths (5,690 nch2 cases, 0 mismatches),
+`driver --strict` 1,017/1,017, `whitebox` 1,812/1,812, blocks agreeing on 1,161 `Deg23ADD` pairs
+under Magma, tester clean at 215s, `selftest` 14/14.
+
+## N24 — What the reference block is for, and two facts found by making it say so
+
+**Status:** documentation change plus two established results, 2026-08-16. Genus-3 ramified
+`Deg23ADD`, both files. No formula changed; no operation count moved.
+
+The `//startIGNORE` reference blocks exist so that **each explicit part has the polynomial-level
+operation it implements written directly above it**. A block that computes the right answer by a
+different route fails that purpose while passing every gate — which is exactly what `Deg23ADD`'s did.
+
+**The mismatch.** The block tested `Resultant(u, h+v+vp)` on the outside with the `dw2 = 0` test
+nested inside it; the explicit code tests `dw2 = 0` first and the resultant second. The two are
+equivalent — `dw2 = 0` implies the resultant vanishes — but the block sat a nesting level deeper
+than the code it documents, computed `k` on both sides of a branch where the code computes it once,
+and gave a reader no way to pair a block statement with the case it belongs to. Both blocks now
+follow the code's order, with `CASE #3.4 / #3.3 / #3.2-#3.1 / #2.3 / #2.2-#2.1 / #1.2-#1.1` labels
+matching the explicit `ADD_DEBUG` strings.
+
+**First result: the continued-fraction arm is unreachable at this degree pair, so one formula
+covers two cases.** The explicit code splits `#3.2` from `#3.1` (and `#2.2` from `#2.1`, and the
+typical path from its `deg(s) = 0` twin). The block does not, and should not: `s` is reduced modulo
+the **quadratic** `u`, so `deg(s) < 2` always, and NUCOMP's `deg(s) >= 2` branch cannot be entered.
+Confirmed mechanically — `Quotrem` occurs in `Deg3ADD` and nowhere else in either file. The cases
+therefore differ only in the *degree of the output*, which the block's generic
+`upp := ExactQuotient(...); upp := upp/LeadingCoefficient(upp)` produces by itself. Splitting the
+block would have duplicated a formula to express nothing.
+
+**Second result: at `Deg23ADD` both coefficients of `dw2` must be tested, and at `Deg22ADD` only
+one must.** The guard reads `if (dw21 eq 0 and dw20 eq 0)`, and the natural question is whether the
+second conjunct is redundant, as it provably is one degree down. It is not.
+
+- At `Deg22ADD` the branch is `u = up`, so `u | (vp - v)(h + v + vp)` with `deg(vp - v) < deg u`
+  forces `vp = v` — that is `D1 = D2`, which the dispatcher has already routed to the doubling.
+  Hence `dw21 = 0` implies `dw20 = 0`.
+- At `Deg23ADD` the branch is `u | up` with `deg u = 2 < 3 = deg up`. The same argument yields only
+  `vp = v (mod u)`, which says `D2 = D1 + P3` — an ordinary configuration, not an excluded one. So
+  `dw2` can be a nonzero constant.
+
+Measured over GF(11) … GF(29) on 37,760 `u | up` pairs: **460 with `dw21 = 0` and `dw20 != 0`**, and
+1,389 the other way round. Witness over GF(11): `u = x^2 + 10x + 2`, `up = x*u`, `vp mod u = 4x + 9`
+which equals `v` exactly, giving `dw2 = (h + 2v) mod u = 9`. Both halves of the guard are load-bearing.
+
+**A corollary the guard below it does not need.** The next test reads
+`if (dw21 ne 0 and dx0 eq 0)`. Once `#3.4` has returned, `dw21 = 0` implies `dw20 != 0`, and then
+`dx0 = dw20*n3 + dw21*n4` collapses to `dw20^2 != 0`. So `dx0 = 0` already forces `dw21 != 0` and
+the first conjunct is redundant. **Removed in both files**, which also closed the last place where
+the block and the code disagreed — both now read `if IsZero(dx0)`. Cost-neutral, guards not being
+counted.
+
+**For the paper:** the two degenerate-case guards look like the same test one degree apart and are
+not. Whether a divisor's second coordinate can be tested by its leading coefficient alone depends on
+whether the branch's gcd condition makes the two divisors *equal* or merely makes one *contain* the
+other — and only the first is excluded by the equal-divisor dispatch.
+
+## N25 — Reduce before you divide: the second-cofactor collapse at `Deg23ADD`
+
+**Status:** implemented and measured, 2026-08-18. Genus-3 ramified `Deg23ADD`, both files. Degenerate
+branches only — the frequent case does not move, so no published row changes.
+
+`Deg22ADD` already carried the observation that `a2` collapses to a constant (N21). The same collapse
+was available in `Deg23ADD`'s `gcd(u,up) = dw1` family and had not been taken, and the reference block
+was already describing the cheaper route while the explicit code did something else:
+
+    t  := (1 - b2*(h + v + vp)) mod u;
+    a2 := ExactQuotient(t,S);
+
+**Reducing modulo `u` before dividing by `S` is the whole trick.** `deg u = 2` and `deg S = 1`, so
+`t` has degree ≤ 1 and the quotient is a **scalar**; `a1 = 1/m3` is a scalar too, so `a2*a1` is one
+field element. Concretely `a2 = -b2*g1` with `g1` the x-coefficient of `(h+v+vp) mod u`, giving
+`a2*a1 = -g1*m3^2/dw`, and then
+
+    s = (a2*a1*(v - vp) + b2*k) mod u   ->   sp = a21*vt + M3*kp,   s = sp/dw
+
+with `vt = (v - vp) mod u` and `kp = k mod u`, both degree ≤ 1. **Two products.**
+
+The explicit code had been reducing *late* instead: it built a degree-2 `at`, multiplied by the full
+`vt` to get a degree-4 `z` — a 3×3 Karatsuba at 6M — and only then reduced. The split-model addition
+has done it the block's way all along, carrying a single `a21` coefficient.
+
+**A squaring in the same tail.** The `deg(s) = 1` setup needs `1/s1`, `s0/s1` and `s1` from one
+inversion, and was forming both `dw^2` and `sp1^2`. But `dw*w1` *is* `1/sp1`, and that intermediate
+serves two of the three:
+
+    w1:= (dw*sp1)^-1;
+    w2:= dw*w1;        // = 1/sp1 -- serves both lines below
+    s0:= sp0*w2;       // = sp0/sp1
+    w2:= dw*w2;        // = dw/sp1 = 1/s1, so dw^2 need never be formed
+    s1:= sp1^2*w1;
+
+| branch | before | after |
+|---|---|---|
+| arb `#2.1`, `deg(s) = 1` | 59M 5S 97A 1I | **54M 4S 87A 1I** |
+| arb `#2.2`, `deg(s) = 0` | 46M 2S 81A 1I | **41M 2S 71A 1I** |
+| nch2 `#2.1` | 55M 6S 79A 1I | **50M 5S 72A 1I** |
+| nch2 `#2.2` | 42M 3S 64A 1I | **37M 3S 57A 1I** |
+| `#2.3`, `#3.x`, typical, both files | — | unchanged |
+
+**These are the most expensive branches in the function** — arb `#2.1` was 59M against the frequent
+case's 36M — which is why the collapse is worth more here than the `Deg22ADD` instance was.
+
+### What was checked and found already at its floor
+
+Stated because the negative half is the more reusable half.
+
+- **The `k` and `k mod u` chain is tight.** Liveness confirms `k3` and `k2` are read downstream while
+  `k1` and `k0` exist only to produce `kp1`/`kp0`, so that is the right place to attack — but every
+  temporary already has two consumers (`up2*k3` serves `k2` and `k1`'s Karatsuba; `up1*k2` serves
+  `k1` and `k0`; `u1*kp3` serves `kp2` and `kp1`'s Karatsuba; `u0*kp2` serves `kp0` and the same
+  Karatsuba), and both Karatsubas are the paying direction. Regrouping `up0*k3 + up2*k1`, or
+  `vp1*vh2 + vp2*vh1`, each needs one fresh product and is 2M either way.
+- **`kp` cannot be had more cheaply than by reducing `k`.** The identity `kp = (N mod u)*dw1^{-1}`
+  fails precisely here: this branch *is* the one where `gcd(u,up) != 1`, so `dw1` is not invertible
+  modulo `u`. And `(N mod (up*u))/up` costs far more than the division it replaces.
+- **The `vpp` block's 8M is at the Karatsuba floor.** Reducing `s*(up - upp)` naively costs 9M; with
+  the 2×3 Karatsuba it costs 8M, which is what the code already achieves by a different grouping.
+- **Expanding `vh` in the `k` block is refused, again.** `vp2*vh2 -> -vp2^2 - h2*vp2` and
+  `vp1*vh2 + vp2*vh1 -> -2*vp1*vp2 - h2*vp1 - h1*vp2` buy one M+S for three C. PR16/PR17 took this
+  family's C from 12 to 1; three C for one M+S moves against that. Recorded so it is not re-derived
+  a third time. At `h = 0` the same rewrites are free rather than trades, and nch2 already has them.
+- **One nch2 fold cannot transfer to arb.** nch2 writes `+ up2*(up0 - k1)` for
+  `- up0*k3 - up2*k1`, valid only because `k3 = -up2` there. In arb `k3 = f6 - up2` is a general
+  value. That single fold is part of why nch2's `#2.1` measures 50M against arb's 54M.
+
+### And the split model's weight scheme cannot come the other way
+
+Asked directly, and the answer is structural rather than a missed technique. The ramified `upp` is
+normalised by exactly `-s1^2`, a perfect square in one quantity, so dividing by it distributes as
+powers of `1/s1` term by term and rides along on brackets that had to be formed anyway — zero extra
+multiplications. Split's normaliser is `-s1*(s1 - c4)` with `c4` a curve constant from the balancing
+data: not a power of anything, so it needs one multiplication per coefficient, which is its three
+`w2*(...)`. Scaling `s` by `1/s1` there leaves a residual `s1/(s1 - c4)` and still costs three. The
+cause is the model — `deg f = 2g+2` with two points at infinity puts a `c4` term at the same degree
+as `s1^2`, and they add; the ramified's top degree is clean.
+
+**Evidence.** `rig23` was extended with the `gcd(u,up) = 1` family, which **no oracle in the
+repository reached before** — `whitebox` has one frozen case per branch and the random testers never
+hit `#2.3` at all. Per file: 8,352 (arb) and 8,641 (nch2) constructed cases over six sub-paths
+against `reference.py`, zero mismatches; `driver --strict` 1,818 and 1,017; `whitebox` 1,812/1,812;
+reference blocks agreeing with the explicit code on 1,420 and 1,151 `Deg23ADD` pairs under real
+Magma; testers clean at 114s and 216s; `selftest` 14 sections including the child-never-dearer
+invariant.
+
+**And the coverage gap it closed was not hypothetical.** Two sign errors in `#2.3` — one per file,
+the same `+ u0*vp2` where `-[(v - vp) mod u]` requires `- u0*vp2` — were live while
+**`whitebox`, `opcount`, the load checks and *both* Magma random testers all passed**. Only the
+constructed rig saw them. That branch is reached by one frozen case per file and by no random draw,
+so a single-case corpus cannot discriminate a sign there.
+
+**For the paper:** when a cofactor is obtained by dividing one polynomial by another, reduce modulo
+the eventual modulus *first*. If the modulus has degree `n` and the divisor degree `n-1`, the
+quotient is a constant, and a degree-`(n-1)` object that was going to be multiplied out and reduced
+never has to exist. The saving is not in the division but in everything downstream of it.
+
+## N26 — The same collapse at `Deg3ADD`, and the floor measured rather than derived
+
+**Status:** implemented and measured, 2026-08-21. Genus-3 ramified `Deg3ADD`, both files. Degenerate
+branches only — the frequent case does not move, so no published row changes.
+
+N21 found the constant cofactor at `Deg22ADD`, N25 took it at `Deg23ADD`. `Deg3ADD` is the last and
+largest instance, and it turned into a different kind of result: **the interesting question is not
+where the collapse applies but where it has already bottomed out**, and that is measurable rather
+than derivable.
+
+### The floor is a measurement
+
+`Deg3ADD` computes `a2 := ExactQuotient(t,S)` at four places, under four different guards. Hand
+deriving the achievable degree at each of them was attempted first and got **two of the four wrong,
+in both directions** — one site was called reducible when degree 1 is its floor, and the site with
+real slack was mis-costed by 2M. What settled it was instrumenting the reference block, which is
+executable since N24, and printing `Degree(t)`, `Degree(S)` and `Degree(a2)` at each site over
+thirteen fields:
+
+| block site | guard | `deg S` | `deg a2` reached | explicit code carried |
+|---|---|---|---|---|
+| 1 | `Degree(dw1) eq 1` | 1 | 1 | 1 — at floor |
+| 2 | `IsZero(dw)`, `#3.4` | 2 | **0**, in 585 of 585 non-degenerate hits | **1 — slack** |
+| 3 | `quo<R\|S>`, `#3.3/2/1` | 2 | 1 | 1 — at floor |
+| 4 | `quo<R\|up>`, `#2.x` | 1 | 1 | 1 — at floor |
+
+One site of four, not the four a degree-counting heuristic proposes. `a2 = -b2*(ht2 - h3*up2)`: the
+x² coefficient of `(vp + v + h) mod up`, which is `(vp + v + h) - h3*up` because `up` is monic, over
+the monic `S = dw1/t7`. **nch2 already had this site constant** — with `h = 0` the reduction is
+vacuous — and at `h3 = 0` the arb expression collapses to exactly nch2's shipped `-ht2*wi`, which is
+the cross-check that the weight is right.
+
+The load-bearing subtlety, and the reason this is legal only inside `#3.4`: the reduced `a2` is **not
+the Bezout cofactor for this `b2`**. It differs by `b2*h3*(up/S)`, and `s` survives only because
+`vp - v` vanishes modulo `S/S1` in this branch — the second shared point lies on both divisors. The
+double-root case needs its own argument: if `gcd(u,up) = (x-r)²` then `r` must be ramified, since
+otherwise the lift of `vp` at `r` is unique and equals `-v-h mod (x-r)²`, which is `#3.5`.
+
+### Reduce before you multiply
+
+The same principle, applied to a product rather than a division, is worth more here than the cofactor
+collapse. Three instances, all of the shape *the result is needed modulo `up`, so reduce the operand
+first and the product never has the degree you are about to throw away*:
+
+| where | was | now | delta |
+|---|---|---|---|
+| `s = (a2*a1*(vp-v) + b2*k) mod up`, `#3.3/2/1`, both files | 19M 36A | **18M 23A** | −1M −13A |
+| `#3.4`'s `a2` becoming a constant, arb | 14M 23A | **11M 17A** | −3M −6A |
+| `s`'s `vp - v` reduced before `a1*(vp-v)`, `dw4` guard, both | 37M 68A / 28M 56A | **36M 64A / 27M 52A** | −1M −4A |
+
+The first is the largest single item in the function. `b2*k` was built as a **degree-5** polynomial —
+six coefficients — and then 6M 22A were spent grinding degrees 5, 4 and 3 back off modulo the cubic
+`up`. Reducing `k` first costs 3M 6A and makes the product degree 3, matching the other summand, so
+the reduction becomes one step at 3M 7A. `Deg3ADD` already did this two hundred lines above, in the
+`u = up` family, which is what made the shape credible before it was measured.
+
+### Where reducing first is a loss
+
+Recorded because the rule is not unconditional, and the counter-example is one branch away. In the
+`#2.x` `s` section the same rewrite **costs** 2M and saves 5A — a loss at 1M : 3A. The difference is
+what else is degree-4: there, `lh = y*z` is degree 4 independently of `k`, so shortening `rh` does
+not shorten the reduction, and the `kp` chain is pure addition. In the `#3.3/2/1` case `rh` was the
+*only* long summand, so reducing it shortened the reduction itself. **The rule is not "reduce early";
+it is "reduce early when the operand you reduce is what makes the reduction long."**
+
+### What the specialisation can do that the parent cannot
+
+Four savings landed in nch2 with no arb counterpart, all traceable to `h = 0` zeroing one coefficient
+and leaving a Karatsuba that had paid for itself while the operand was full-degree:
+
+- `z1 = ta - (bt0 + bt1)*y0` is `-bt1*y0` once `y0` is a scalar: −2A, and two copies deleted.
+- `lh3`, `lh2` in two separate blocks lose their compensating sums once `y2 = 0`: −2A each.
+- **`lh4 = y2*z2 = 0` makes `sp4` the bare scalar `t6`**, so every `up_j*sp4` merges with the
+  neighbouring `k_i*t6` into one product `t6*(k_i - up_j)`: **−2M −7A**. In arb `sp4 = lh4 + t6` is
+  not a scalar multiple of `t6`, and the same fold has to pay `up_j*lh4` three times — measured
+  **+1M**, so arb keeps its Karatsuba form. This is the ordinary direction reversed: usually the
+  child inherits the parent's improvement, and here the child admits a restructure the parent cannot.
+
+### A weight the specialisation was carrying for no reason
+
+nch2 carried `at` one factor of `t7` heavier than arb throughout the `#3.3/2/1` family — `ht2*t7` and
+`t5*t7` where arb has `ht2` and `t5` — with the `s`-chain below dividing the extra factor back out at
+three sites. Six coordinated edits bring it onto arb's weight: **−2M on every call through the
+family, and −1M more in whichever of the three `deg(s)` cases is taken.** A first attempt that
+changed only the producer and not the consumer gave 248 wrong at `shared = 2`, which is recorded
+because the failure is instructive: a weight is a contract between two ends of a computation and
+cannot be renegotiated at one end.
+
+This is drift of the kind PR15 found, and **no gate in the repository compares a specialisation's
+weights against its parent's** — `selftest`'s invariant compares costs, which were never violated.
+
+### What was checked and found already at its floor
+
+- **The batched inversion** producing `s1`, `1/s1` and `s0/s1` from one inversion is 1I 5M 1S and
+  optimal: forming `1/s1` as `d²*w1` trades 1M for 1S+1M, and inverting `sp1` alone needs a second
+  inversion for `s1`.
+- **`at*vt` at 5M** is the Karatsuba optimum for degree 1 × degree 2; **`y*z` at 6M** is the standard
+  3×3; **the degree-4 reduction at 5M** is the 6M two-step with one Karatsuba recovered.
+- **Three Karatsubas are exact washes** at the thesis's 1M : 3A — 1M 4A against 2M 1A direct is 7
+  against 7. Left alone in both directions.
+- **Expanding a nested `w3`** to avoid multiplying by it twice costs 2M+1S against 2M.
+
+**Evidence.** Per file: reference blocks agreeing with the explicit code on 11,892 (arb) and 9,235
+(nch2) constructed `Deg3ADD` pairs under real Magma, every gcd class 0–3 hit; `driver --strict`
+174,700 comparisons across all fourteen families, zero mismatched; `whitebox` 1,836 frozen cases;
+`selftest` 16 sections; the full Magma suite 26 passed, 0 failed. The frequent-case rows are
+unchanged by design — `33ADD` 53M 3S 71A 1C and 53M 3S 59A 0C — so **`opcount` cannot see any of
+this**, and every figure above is hand-derived from the block text and cross-checked against a
+line-by-line M/S/A tally rather than measured by the counter.
+
+**Six live breakages were found and fixed in passing**, five of them mid-edit renames: a variable
+read before its only assignment, twice; a cofactor computed against the divided coefficients when
+`k := k*S` requires the undivided ones; a reduction lead overwriting the prologue's `t4`, which is
+read a hundred lines later; and a dropped `w3 := d*w2`. Only the last was invisible to every static
+check — see `ERRATA.md` E15.
+
+**For the paper:** the reduce-first rule extends from division to multiplication, but it is
+conditional, and the condition is about the *reduction* rather than the operand: reduce early when
+the operand you reduce is what makes the reduction long. And when a formula has many branches, the
+achievable degree at each is worth measuring on an executable statement of the algorithm rather than
+deriving — four sites, two hand-derived wrong, and the measurement was a dozen lines.
+
+## N27 — Writing the algorithm down four times, and what that surfaced in the doubling
+
+**Status:** implemented and verified, 2026-08-22. `arb_ramifiedG3_DBL.mag`, `Deg3DBL`. The
+restructure itself was cost-neutral — `57M 4S 92A 3C` to `56M 4S 93A 4C`, one multiplication
+reclassified M→C and one addition added, so total multiplicative work held at 64 — and **three live
+defects were found on the way**. A six-lens efficiency sweep afterwards took the frequent case to
+**`54M 4S 84A 4C`**, i.e. **−2M −9A** against the restructured form and −3M −8A against where PR16
+left it, with a further **−1M −7A** off the degenerate leaves. Both halves are below.
+
+### The reference block had one prelude serving four leaves, and that hid the arithmetic
+
+`Deg3DBL`'s polynomial reference block originally stated the shared work once — `k`, the gcd, the
+division of `u` — and then branched. That is the economical way to write it and the wrong way to
+*check* it, because the explicit code does not share those steps: each leaf recomputes `k` against
+a different modulus, and the whole point of the degenerate leaves is that they differ in which `u`
+and which `v` they use. A block that shares the prelude cannot be laid against the code line by
+line, so a reader cannot see which leaf is doing what.
+
+Rewriting it as **four self-contained leaves**, each ending in its own `return`, forced a derivation
+that the shared form had let us skip. The `deg gcd = 1` leaf had been written as "compose, then
+reduce": build `upp := u^2` at degree 4 and reduce. Correct, and not what the explicit computes.
+From `vpp = v + u*s`,
+
+    f - vpp*(vpp + h) = u*(dm*k - s*(2v + h) - u*s^2)
+
+so `upp = -s^2 - (s*(2v + h) - dm*k)/u` directly — the two steps at once, at degree 3 throughout.
+The `dm*k` in that expression is exactly the explicit code's `kt`, whose `// kt = kp*dm` comment was
+the clue that the block was one step behind the code. The leaf's own `M2` line now sits beside the
+generic one and the single difference between them is visible: the degenerate leaf carries `dm*k`
+where the generic carries plain `k`.
+
+**A naming collision fell out of the same exercise.** Three objects were competing for two names:
+`dw = (2v + h) mod u`, the raw gcd whose coefficients the explicit calls `m7` and `-m8`, and that
+gcd made monic. At `deg u = 3` the second and third are genuinely different objects — `dw` can be
+quadratic while the gcd is linear — which is *not* true at `deg u = 2`, where `Deg2DBL` may take
+`dw` directly. The block now says so in as many words, because the analogy from the lower degree is
+exactly the trap: an idiom that transfers between `Deg2DBL` and `Deg3DBL` for two of the four leaves
+and silently fails for the others.
+
+### Three defects, and none of them was findable by a static check
+
+Recorded in full as `ERRATA.md` **E17** and **E18**; the summary here is the part that generalises.
+
+1. **A scratch assignment onto a live matrix slot.** `t7` holds `T`'s (3,1) entry and was reused as
+   scratch (`t7 := f6*u1`) above a read that wanted the entry, so `b1` became `1/(f6*u1)` and the
+   branch died whenever `f6` or `u1` was zero.
+2. **A "redundant" saved copy that was not.** `tx := u2` genuinely was redundant, `u2` never being
+   overwritten; `ty := u1` was not, and removing it left `u0 := u1 - u1*dm0` reading the `u1`
+   assigned one line above where the exact division needs the earlier value. **105 of 116 wrong** in
+   the one-ramified-point class, and clean in every other class.
+3. **A missing comma**, which `opcount` answered by printing the other two rows and omitting the
+   third rather than failing.
+
+The generalisable point is about **gate coverage for value-level errors**. `dominance.py`, added the
+day before, asks whether every read has an assignment above it — which subsumes asking whether it is
+assigned at all. It passes on all three of these, because in every case the name *is* assigned above
+— with the wrong value. This is a strictly harder class than E15's sibling-path reads, and the only two instruments
+that see it are `blockcheck.py`, which executes the reference block against the explicit code and
+compares per ramification class, and real Magma. The class-wise report is what made the second
+defect diagnosable in one run rather than bisected: 105 of 116 wrong in exactly one class localises
+the error to one leaf before any code is read.
+
+**So the reference block earns its keep twice over.** N24 recorded that making it *runnable* found
+two facts. Making it *leaf-for-leaf congruent with the code* is what turned it into a debugger: the
+class breakdown is only informative because each class corresponds to exactly one leaf.
+
+### Two gate repairs, one of which had been reporting the wrong thing
+
+`blockcheck` labelled its doubling classes "shared x-coordinates", the addition's axis, where the
+driver it runs measures **ramified points** — right numbers, wrong name, for the axis that
+distinguishes every doubling branch.
+
+`adjugate.py`'s ledger lookup is the more interesting one, and it is E14's third firing. Deleting an
+inline `// Nm Ns Na` comment did not report a missing comment; it silently promoted the next
+unlabelled ledger 217 lines downstream and reported the *code* as wrong. Two candidate fixes were
+built and both fail, informatively: a fixed line window cannot work because the genuine ledger sits
+28 lines below the anchor in the doubling and 575 below it in the addition, and "must precede the
+first guard" fails for the same reason. What separates the two files is that the addition **labels**
+its ledgers, so its unlabelled one is unambiguous wherever it sits, while the doubling labels none
+and must therefore pin its single ledger to the determinant. The rule is now conditioned on that,
+and both deletions leave the key absent rather than borrowing a neighbour.
+
+### The frequent path had no name
+
+`Deg3DBL`'s generic branch — 94% of calls — carried no `DBL_DEBUG` label, so `whitebox` could not
+see it: exactly the gap PR16 demonstrated for `Deg3ADD` with a tripwire, where sabotaging the
+frequent path left the gate at 1812/1812 PASS. Labelled, and the corpus re-harvested to cover it:
+**94 → 96 cases, denominator 1,869 → 1,870, coverage 1,866/1,870.** `coverage_baseline.json` needed
+no change, the new branch being genuinely covered rather than exempted.
+
+Ten further returns in the file are unlabelled and correctly so — they are inside the
+`/* //startIGNORE ... */` reference blocks and never execute. Four more are the dispatcher's leaves,
+which are live; those are left alone deliberately, because the addition's dispatcher carries no
+labels either and labelling one file's dispatcher and not the other's would create the divergence
+this work exists to remove.
+
+### The efficiency sweep, and why independent convergence is the signal worth acting on
+
+Six searches were run over the same function, each given one lens and no knowledge of the others:
+reduce-before-multiply, Karatsuba in both directions, disguised squarings and shared subexpressions,
+liveness and code motion, weight and inversion scheduling, and cross-file technique comparison
+against `Deg3ADD`, the odd-characteristic sibling and split's `Deg3DBL`. They produced **40
+candidates over 22 distinct sites, plus 99 notes on ground already at its floor.**
+
+**What decided which to take was agreement between lenses that could not see each other.** Five of
+the five items applied were multi-lens; every single-lens candidate on the frequent path turned out
+to be either a duplicate or already covered.
+
+| taken | where | measured |
+|---|---|---|
+| `l = r*s + M2` outright, so the division by `q` is never performed | frequent, the `vpp` tail | **−2M −5A** |
+| `t9*f6` for `- t10 - t10`, and `t8*f6` for `- t11 - t11` | frequent, the `k` block | **−2A**, 2 statements gone |
+| `ht1`/`ht2` named once, the T setup already forming both | all four leaves | **−1A** frequent, −6A rare |
+| `t5 + t3 - t9` for `t5 - u1 - u1 + t3` | frequent, `M20` | **−1A** |
+| `b10 := t8*w1` | the `deg gcd = 1` leaf | **−1M −1A** |
+
+The largest, and the only one carrying real mathematics, is the first. `l := ExactQuotient(u*r - upp, q)`
+looks like a division and is not one: `u*r − upp = r*(u − r) + q*M2 = q*(r*s + M2)`, so **`l = r*s + M2`
+with the quotient never formed.** That deletes an entire temporary and the `q0*t9` product with it.
+Three lenses derived it independently and produced *the same replacement text*, and all three
+predicted `54M 4S 88A 4C` before it was applied — which is what it measured.
+
+**Two smaller ones are the same shape as PR16's B1** — a value already computed and then recomputed.
+`t8` at the T setup holds exactly `t4 - u2*t7`, and the degenerate leaf re-formed it; the T setup
+likewise already forms `vh1 + v1` and `vh2 + v2`, and six later sites re-formed them. Naming a
+quantity the code has already built is free, and it was worth −1M −7A here. **Six of six lenses found
+the `b10` one independently**, which is the strongest convergence in the set and says something about
+how visible this class is once you look for it — and how invisible it is otherwise, since it had
+survived PR14, PR16 and this session's own restructure.
+
+### The refutations, which are the more durable output
+
+Recorded because a negative result stops the next search, and several of these are proofs rather than
+failures to find anything:
+
+- **The three `k`/`kp` sites are at their floor.** The frequent path computes exactly the three
+  coefficients its consumers read, and none of `kp3..kp1` or `k2..k0` on the degenerate branch is
+  dead. This was the reduce-first lens's main question, answered negatively.
+- **Reducing `kp` mod the new `u` instead of the original is a LOSS** on the `d = 0`, `m7 ≠ 0`
+  branch, confirming the file's own comment. The same conditionality N26 established.
+- **No disguised squaring exists anywhere on the frequent path.** All 56 products were enumerated by
+  operand pair. PR17 found eleven in the sibling addition; there are none here.
+- **The `s2` weight on `r` is pinned by the mathematics, not chosen**, so the two `*s2` products
+  cannot ride along and be removed once — the weight lens's own hypothesis, refuted with a proof.
+- **The Karatsuba squaring of `r` loses**, and the `k = kp mod u` reduction is a *degenerate*
+  Karatsuba site in every instance because `kp` is monic. Both directions of the technique checked.
+- **`m2`, `m3`, `m5` are not deferrable** past `if IsZero(d)`: the determinant genuinely reads all
+  three. Refuted with a count, so the `m4`/`m6` deferral does not generalise.
+- **Hoisting `t6 := f6 - u2 - u2` above the `sp2` guard is an exact wash** — built, measured,
+  reverted.
+- **The single-inversion budget holds**, verified by enumerating all five inversion sites rather than
+  assumed; and both weight-inversion blocks are at their floor (1I 6M 1S and 1I 5M 2S), every weight
+  read.
+- **The adjugate and the matrix-vector product are at their floor**, and C2 was re-confirmed from the
+  split side — so that item stays closed rather than being reopened.
+
+**One candidate was refuted on location alone**, quoting text that is not in the function. That is
+the failure mode PR16 recorded when every line number in `EFFICIENCY_ARB_G3.md` had gone stale, and
+it is why a proposal is checked against the file before it is costed.
+
+**One available saving was deliberately NOT taken**, and the reason is this session's own scar
+tissue: a further −1A is available by making `M20`'s prefix a single live variable, but the proposal
+reuses `t4` — a live matrix slot — to free the name it needs. That is exactly the E17 defect class,
+twice over in two days, for one addition in eighty-four. It wants a `t0x` slot and a liveness proof,
+not a quick substitution.
+
+**For the paper:** an executable statement of the algorithm is worth writing in the same shape as
+the code it documents, not the shortest shape that is mathematically complete. The economical form —
+prelude once, then branch — is unusable as an oracle, because the branch-wise agreement report is
+only diagnostic when branches correspond one-to-one. The defect class that survives every static
+check is not the undefined read but the **defined-with-the-wrong-value** read; the instrument for it
+is differential execution against an independent statement of the same algorithm, per branch. And
+when several independent searches are run over one function, **agreement between searches that cannot
+see each other is a better filter than any single search's confidence** — every item that survived
+measurement here was found by two or more lenses, and the one six-lens item was a recomputation of a
+value the function already had.
 
 # Part IV — The comparison with prior work
 

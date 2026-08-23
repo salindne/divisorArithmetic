@@ -5711,8 +5711,8 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
                 n := 3 - Degree(upp);
             end if;
             return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0),n;
-            
         end if;
+
         a1 := LeadingCoefficient(dw1)^-1;
         S := R!dw1*a1;        
         dw3 := (vp+v+h) mod S;// = (b2^-1)*S for S,a2,b2 = XGCD(S1,v + vp + h);
@@ -5781,6 +5781,11 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
     dn0 := ccs[2][2][1];
 
     
+    //vh = h + vp; both gcd families below read it, so it is formed once here
+    vh0:= -v0 - h0;
+    vh1:= -v1 - h1;
+    vh2:= -v2 - h2;
+
     //d := Resultant(u,up); // computed with 2x2 system
     t0 := u2 - up1;
     m4 := u0 - up0*t0;      //m1
@@ -5793,37 +5798,37 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
         if IsZero(m3) then //u = up
             //dw2 := (vp+v+h) mod up;// = (b2^-1)*S for S,a2,b2 = XGCD(u,v + vp + h);
             //dw := Resultant(up,dw2);
-            vh1 := -vp1 - h1;
-            t0 := c4*up1 - c3;
-            t1 := c4*up0 + v2 - y2 - up1*t0;
-            m2 := vh1 - v1 + up0*t0 + up1*t1;
-            m1 := vp0 + v0 + h0 - up0*t1;
+            
+            t1 := c4*up1 - c3;
+            t2 := c4*up0 + v2 - y2 - up1*t1;
+            m2 := vh1 - vp1 + up0*t1 + up1*t2;
+            m1 := vp0 - vh0 - up0*t2;
 
             if IsZero(m1) and IsZero(m2) then //vp = -v-h
                 //upp := ExactQuotient(u,up);
                 //vpp := V - (V - v) mod upp;
-                upp0 := u2 - up1;                
-                vpp0 := v0 + upp0*(yn1 - v1 - upp0*(yn2 - v2));
+                //upp0 := t0;                
+                vpp0 := v0 + t0*(yn1 - v1 - t0*(yn2 - v2));
 
                 if ADD_DEBUG then "ADD194"; end if;
-                return 0,0,1,upp0,yn2,yn1,vpp0,1;
+                return 0,0,1,t0,yn2,yn1,vpp0,1;
             end if;//m1m2
         
             m3 := -m2*up0;
             m4 := m1 + m2*up1;
             dw := m1*m4 - m2*m3;
 
+            //k := ExactQuotient(f - v*(v + h), u);    
+            t0 := v0 - yn0;
+            t1 := v1 - yn1;
+            t2 := v2 - yn2;
+            k3 := c4*t2;       
+            k2 := c4*t1 + c3*t2 - u2*k3;                          
+            k1 := c4*t0 + c3*t1 + v2*vh2 - c10 - u1*k3 - u2*k2;     
+            k0 := dn5 + c3*v0 + v2*(vh1 - v1) - h2*v1 - u0*k3 - u1*k2 - u2*k1;
+
             if IsZero(dw) then
-                //k := ExactQuotient(f - v*(v + h), u);
-                vh1 := -v1 - h1;       
-                t0 := v0 - yn0;
-                t1 := v1 - yn1;
-                t2 := v2 - yn2;
-                k3 := c4*t2;       
-                k2 := c4*t1 + c3*t2 - u2*k3;                          
-                k1 := c4*t0 + c3*t1 - v2*(v2 + h2) - c10 - u1*k3 - u2*k2;     
-                k0 := dn5 + c3*v0 + v2*(vh1 - v1) - h2*v1 - u0*k3 - u1*k2 - u2*k1;
-            
+                
                 //b2 := LeadingCoefficient(dw2)^-1;
                 b2 := (-m2)^-1;
 
@@ -5854,18 +5859,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
                 return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
             end if;//dw
 
-            //k := ExactQuotient(f - v*(v + h), u);
-            vh1 := -v1 - h1;       
-            vh2 := -v2 - h2;       
-            t0 := v0 - yn0;
-            t1 := v1 - yn1;
-            t2 := v2 - yn2;
-            k3 := c4*t2;       
-            k2 := c4*t1 + c3*t2 - u2*k3;                          
-            k1 := c4*t0 + c3*t1 - v2*(v2 + h2) - c10 - u1*k3 - u2*k2;     
-            k0 := dn5 + c3*v0 + v2*(vh1 - v1) - h2*v1 - u0*k3 - u1*k2 - u2*k1;
-
-            //kp := k mod up;
+            //kp := k mod up;             
             t2 := up1*k3;
             t3 := k2 - t2;
             t4 := up0*t3;
@@ -5890,7 +5884,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
                     upp0 := w1*k2 - up1;
 
                     //vpp := V - (V + v + h) mod upp;
-                    vpp0 := -v0 - h0 + upp0*(v1 - y1 - upp0*(v2 - y2 + upp0*(c3 - upp0*c4)));
+                    vpp0 := vh0 + upp0*(v1 - y1 - upp0*(v2 - y2 + upp0*(c3 - upp0*c4)));
 
                     if ADD_DEBUG then "ADD197"; end if;
                     return 0,0,1,upp0,yn2,yn1,vpp0,2;
@@ -5903,13 +5897,13 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
                 w1 := w0*dw^2;
                 s0 := w0*sp0^2;                    
                 upp1 := c9 - c6*(s0 - w1*k3) - up1;
-                upp0 := c6*(vh2 - v2 - u2*s0 + w1*k2) - up0 - up1*upp1; 
+                upp0 := c6*(w1*k2 + vh2 - v2 - u2*s0) - up0 - up1*upp1; 
 
                 //vpp   := V - (V + s*u + v + h) mod upp;
                 t0 := upp1*c4 - c3 + s0;
                 t1 := s0*u2 + v2 - y2 + upp0*c4 - upp1*t0;
                 vpp1 := vh1 - s0*u1 + upp0*t0 + upp1*t1;
-                vpp0 := -v0 - h0 - s0*u0 + upp0*t1;
+                vpp0 := vh0 - s0*u0 + upp0*t1;
 
                 if ADD_DEBUG then "ADD198"; end if;
                 return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
@@ -5947,7 +5941,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
 
                     //vpp := V - (V + s*u + v + h) mod upp;
                     t3 := upp0*(v2 - y2 + l2 - upp0*(l3 - c3 - upp0*(s1 - c4)));
-                    vpp0 := -v0 - h0 - l0 + upp0*(v1 - y1 + l1 - t3);
+                    vpp0 := vh0 - l0 + upp0*(v1 - y1 + l1 - t3);
 
                     if ADD_DEBUG then "ADD200"; end if;
                     return 0,0,1,upp0,yn2,yn1,vpp0,0;
@@ -5981,7 +5975,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
                 t7 := l2 + v2 - y2 - upp0*t4 - t6;
                 t8 := upp0*t7;
                 vpp1 := vh1 - l1 + (upp0 + upp1)*(t5 + t7) - t6 - t8; 
-                vpp0 := -v0 - h0 - l0 + t8;
+                vpp0 := vh0 - l0 + t8;
 
                 if ADD_DEBUG then "ADD201"; end if;
                 return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
@@ -6018,7 +6012,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
             t9 := upp0*t7;
             vpp2 := vh2 - l2 + t8 + upp2*t7;
             vpp1 := vh1 - l1 + (upp0 + upp1)*(t4 + t7) - t8 - t9;
-            vpp0 := -v0 - h0 - l0 + t9;
+            vpp0 := vh0 - l0 + t9;
 
             if ADD_DEBUG then "ADD202"; end if;
             return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
@@ -6030,8 +6024,6 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
         M2 := m3^2;
         M3 := M2*m3;
         M4 := M2^2;
-        vh0 := -v0 - h0;
-        vh1 := -v1 - h1;
         t1 := vp1 - vh1;
 
         //a1 := LeadingCoefficient(dw1)^-1;
@@ -6044,13 +6036,13 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
             //a1 := LeadingCoefficient(dw1)^-1;
             //S1 := dw1*a1;
             a1 := -m3^-1;
-            S10 := m4*a1;
+            S1 := m4*a1;
 
             //u := ExactQuotient(u,S1);
             //up := ExactQuotient(up,S1);
-            un1 := u2 - S10;
-            un0 := u1 - S10*un1;             
-            up0 := up1 - S10;
+            un1 := u2 - S1;
+            un0 := u1 - S1*un1;             
+            up0 := up1 - S1;
 
             //s  := a1*(vp - v) mod up;
             s0 := a1*(vp0 - v0 - up0*(vp1 - v1 - up0*(yn2 - v2)));
@@ -6070,7 +6062,6 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
         end if;//dw
 
         //k := ExactQuotient(f - v*(v + h),u);
-        vh2 := -v2 - h2;
         t2 := v2 - yn2;
         t3 := v1 - yn1;
         k3 := c4*t2;
@@ -6087,7 +6078,6 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
         
         //s := (a2*a1*(vp - v) + b2*k) mod up;
         //sp := (a21*(vp - v) + M4*k) mod up;
-        //s := sp/dw;
         t0 := k2 - up1*k3;
         sp1 := M4*(k1 - up0*k3 - up1*t0) + a21*(vp1 - v1 - up1*(yn2 - v2));
         sp0 := M4*(k0 - up0*t0) + a21*(vp0 - v0 - up0*(yn2 - v2));
@@ -6105,7 +6095,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
                 upp0 := w1*k2 - up1;
 
                 //vpp := V - (V + v + h) mod upp;
-                vpp0 := -v0 - h0 + upp0*(v1 - y1 - upp0*(v2 - y2 + upp0*(c3 - upp0*c4)));
+                vpp0 := vh0 + upp0*(v1 - y1 - upp0*(v2 - y2 + upp0*(c3 - upp0*c4)));
 
                 if ADD_DEBUG then "ADD205"; end if;
                 return 0,0,1,upp0,yn2,yn1,vpp0,2;
@@ -6124,12 +6114,13 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
             t0 := upp1*c4 - c3 + s0;
             t1 := s0*u2 + v2 - y2 + upp0*c4 - upp1*t0;
             vpp1 := vh1 - s0*u1 + upp0*t0 + upp1*t1;
-            vpp0 := -v0 - h0 - s0*u0 + upp0*t1;
+            vpp0 := vh0 - s0*u0 + upp0*t1;
 
             if ADD_DEBUG then "ADD206"; end if;
             return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
         end if;//sp1
 
+        //s := sp/dw;
         w0 := -sp1*(sp1 - c4*dw);
         D := dw^2;
         
@@ -6162,7 +6153,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
 
                 //vpp := V - (V + s*u + v + h) mod upp;
                 t3 := upp0*(v2 - y2 + l2 - upp0*(l3 - c3 - upp0*(s1 - c4)));
-                vpp0 := -v0 - h0 - l0 + upp0*(v1 - y1 + l1 - t3);
+                vpp0 := vh0 - l0 + upp0*(v1 - y1 + l1 - t3);
 
                 if ADD_DEBUG then "ADD208"; end if;
                 return 0,0,1,upp0,yn2,yn1,vpp0,0;
@@ -6196,7 +6187,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
             t7 := l2 + v2 - y2 - upp0*t4 - t6;
             t8 := upp0*t7;
             vpp1 := vh1 - l1 + (upp0 + upp1)*(t5 + t7) - t6 - t8; 
-            vpp0 := -v0 - h0 - l0 + t8;
+            vpp0 := vh0 - l0 + t8;
 
             if ADD_DEBUG then "ADD209"; end if;
             return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
@@ -6233,7 +6224,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
         t9 := upp0*t7;
         vpp2 := vh2 - l2 + t8 + upp2*t7;
         vpp1 := vh1 - l1 + (upp0 + upp1)*(t4 + t7) - t8 - t9;
-        vpp0 := -v0 - h0 - l0 + t9;
+        vpp0 := vh0 - l0 + t9;
 
         if ADD_DEBUG then "ADD210"; end if;
         return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
@@ -6247,14 +6238,11 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
     sp0 := m2*vt1 + m1*vt0;
 
     //k := ExactQuotient(f - v*(v + h),u);
-    vh2 := -v2 - h2;
     z3 := v2 - yn2;
     t3 := v1 - yn1;
     k3 := c4*z3;
     z2 := v1 - yn1 + z3*(c9 - u2);
     k2 := z2*c4;
-    //k1 := c4*(v0 - yn0) + c3*t3 + v2*vh2 - c10 - u1*k3 - u2*k2;
-    //k0 := dn5 + c3*v0 + v1*(vh2 - v2) - h1*v2 - u0*k3 - u1*k2 - u2*k1; 
 
     if IsZero(sp1) then
         if IsZero(sp0) then
@@ -6269,7 +6257,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
             upp0 := w1*k2 - up1;
 
             //vpp := V - (V + v + h) mod upp;
-            vpp0 := -v0 - h0 + upp0*(v1 - y1 - upp0*(v2 - y2 + upp0*(c3 - upp0*c4)));
+            vpp0 := vh0 + upp0*(v1 - y1 - upp0*(v2 - y2 + upp0*(c3 - upp0*c4)));
 
             if ADD_DEBUG then "ADD212"; end if;
             return 0,0,1,upp0,yn2,yn1,vpp0,2;
@@ -6287,8 +6275,8 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
         //vpp   := V - (V + s*u + v + h) mod upp;
         t0 := upp1*c4 - c3 + s0;
         t1 := s0*u2 + v2 - y2 + upp0*c4 - upp1*t0;
-        vpp1 := -v1 - h1 - s0*u1 + upp0*t0 + upp1*t1;
-        vpp0 := -v0 - h0 - s0*u0 + upp0*t1;
+        vpp1 := vh1 - s0*u1 + upp0*t0 + upp1*t1;
+        vpp0 := vh0 - s0*u0 + upp0*t1;
 
         if ADD_DEBUG then "ADD213"; end if;
         return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
@@ -6322,11 +6310,11 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
             l3 := s1*u2 + s0;
             l2 := t1 + s0*u2;
             l1 := (s1 + s0)*(u1 + u0) - l0 - t1;
-            upp0 := w1*(-s0*(l2 + v2 - vh2) - s1*(l1 + v1 + v1 + h1) + k2) - up1;
+            upp0 := w1*(-s0*(l2 + v2 - vh2) - s1*(l1 + v1 - vh1) + k2) - up1;
 
             //vpp := V - (V + s*u + v + h) mod upp;
             t3 := upp0*(v2 - y2 + l2 - upp0*(l3 - c3 - upp0*(s1 - c4)));
-            vpp0 := -v0 - h0 - l0 + upp0*(v1 - y1 + l1 - t3);
+            vpp0 := vh0 - l0 + upp0*(v1 - y1 + l1 - t3);
 
             if ADD_DEBUG then "ADD215"; end if;
             return 0,0,1,upp0,yn2,yn1,vpp0,0;
@@ -6350,7 +6338,6 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
 
         t2 := l2 + v2 - vh2;
         t3 := l3 - c3;
-        vh1 := -v1 - h1;
         upp1 := w2*(-s0*t3 - s1*t2 + k3) - up1;
         upp0 := w2*(-s0*t2 - s1*(l1 + v1 - vh1) + k2) - up0 - up1*upp1;
 
@@ -6361,7 +6348,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
         t7 := l2 + v2 - y2 - upp0*t4 - t6;
         t8 := upp0*t7;
         vpp1 := vh1 - l1 + (upp0 + upp1)*(t5 + t7) - t6 - t8; 
-        vpp0 := -v0 - h0 - l0 + t8;
+        vpp0 := vh0 - l0 + t8;
 
         if ADD_DEBUG then "ADD216"; end if;
         return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
@@ -6388,7 +6375,6 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
     t4 := s1 - c4;
     t5 := s1*t3;
     t6 := s0*t2;
-    vh1 := -v1 - h1;
     upp2 := w2*(-s0*t4 - t5) - up1;
     upp1 := w2*(-(s0 + s1)*(t3 + t2) + t5 + t6 + k3) - up0 - up1*upp2;
     upp0 := w2*(-t6 - s1*(l1 + v1 - vh1) + k2) - up0*upp2 - up1*upp1;
@@ -6399,7 +6385,7 @@ Deg23ADD:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
     t9 := upp0*t7;
     vpp2 := vh2 - l2 + t8 + upp2*t7;
     vpp1 := vh1 - l1 + (upp0 + upp1)*(t4 + t7) - t8 - t9;
-    vpp0 := -v0 - h0 - l0 + t9;
+    vpp0 := vh0 - l0 + t9;
 
     if ADD_DEBUG then "ADD217"; end if;
     return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
@@ -6407,7 +6393,7 @@ end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Deg23ADD():         
+// Deg23ADDUP():         
 // Input:  u0,v0: Mumford coordinates for divisor D=<x + u0,v0,0> in reduced
 //                basis.
 //       up0,vp0: Mumford coordinates for divisor Dp=<x + up0,vp0,0> in reduced
@@ -6583,18 +6569,18 @@ Deg23ADDUP:= function(u2,u1,u0,v2,v1,v0,up1,up0,vp1,vp0,ccs)
             //dw2 := (vp+v+h) mod up;// = (b2^-1)*S for S,a2,b2 = XGCD(u,v + vp + h);
             //dw := Resultant(up,dw2);
             vh1 := -vp1 - h1;
-            t0 := c4*up1 - c3;
-            t1 := c4*up0 + v2 - y2 - up1*t0;
-            m2 := vh1 - v1 + up0*t0 + up1*t1;
-            m1 := vp0 + v0 + h0 - up0*t1;
+            t1 := c4*up1 - c3;
+            t2 := c4*up0 + v2 - y2 - up1*t1;
+            m2 := vh1 - v1 + up0*t1 + up1*t2;
+            m1 := vp0 + v0 + h0 - up0*t2;
             if IsZero(m1) and IsZero(m2) then //vp = -v-h
                 //upp := ExactQuotient(u,up);
                 //vpp := V - (V - v) mod upp;
-                upp0 := u2 - up1;                
-                vpp0 := v0 + upp0*(yn1 - v1 - upp0*(yn2 - v2));
+                //upp0 := t0;                
+                vpp0 := v0 + t0*(yn1 - v1 - t0*(yn2 - v2));
 
                 if ADD_DEBUG then "ADD218"; end if;
-                return 0,0,1,upp0,yn2,yn1,vpp0,0;
+                return 0,0,1,t0,yn2,yn1,vpp0,0;
             end if;//m1m2
 
             m3 := -m2*up0;
@@ -8104,7 +8090,6 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return Coeff(upp,3),Coeff(upp,2),Coeff(upp,1),Coeff(upp,0),Coeff(vpp,2),Coeff(vpp,1),Coeff(vpp,0),0;
                 end if;
 
-
                 k := ExactQuotient(f - v*(v + h),u);
                 b2 := LeadingCoefficient(dw2)^-1;
                 S := dw2*b2;
@@ -8384,6 +8369,11 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
     c10 := ccs[1][5][11];
     dn5 := ccs[2][2][6];
     
+    // vh = h + v
+    vh2 := -v2 - h2;
+    vh1 := -v1 - h1;
+    vh0 := -v0 - h0;
+
     //d := Resultant(u,up);
     // Original Setup T for (s*u1 = v2-v1) mod u2
     //|t1,t2,t3|
@@ -8415,10 +8405,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
         //dw12 := t7; dw11 := t4; dw10 := t1;  
         if IsZero(t7) then 
             if IsZero(t4) then 
-                //dw2 := (vp+v+h) mod up;// = (b2^-1)*S for S,a2,b2 = XGCD(u,v + vp + h);
-                vh2 := -v2 - h2; 
-                vh1 := -v1 - h1;       
-                vh0 := -v0 - h0; 
+                //dw2 := (vp+v+h) mod up;// = (b2^-1)*S for S,a2,b2 = XGCD(u,v + vp + h); 
                 t0 := up2*c4 - c3;
                 w2 := vp2 - vh2 + up1*c4 - up2*t0;
                 w1 := vp1 - vh1 + up0*c4 - up1*t0;
@@ -8534,7 +8521,6 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     u0 := un0*w4;
                     u1 := un1*w3;
 
-                    vh1 := -v1 - h1;
                     t1 := s1*u1;
                     l0 := s0*u0;
                     l2 := s1*u1 + s0;
@@ -8747,9 +8733,6 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             T2 := t4^2;
             T3 := T2*t4;
             T4 := T2^2;
-            vh0 := -v0 - h0;
-            vh1 := -v1 - h1;
-            vh2 := -v2 - h2;
             dw2 := T4*(v0 + vp0 + h0) - t1*(T3*(v1 + vp1 + h1) - t1*(T2*(v2 + vp2 + h2) + t1*(c3*t4 - c4*t1)));
             if IsZero(dw2) then   
                 //S,a2,b2 := XGCD(S,vp+v + h);
@@ -9154,9 +9137,6 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             //S := R!dw1*a1; //S = x^2 + (t4/t7)*x + t1/t7;
 
             //dw2 := (vp+v+h) mod S;// = (b2^-1)*S for S,a2,b2 = XGCD(S,v + vp + h)
-            vh2 := -v2 - h2;
-            vh1 := -v1 - h1;
-            vh0 := -v0 - h0;
             T1 := t7;
             T2 := T1^2;
             T3 := T1*T2;
@@ -9306,8 +9286,6 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 u0 := un0*w5;
                 u1 := un1*w4;
 
-                vh2 := -v2 - h2;
-                vh1 := -v1 - h1;
                 t1 := s1*u1;
                 l0 := s0*u0;
                 l2 := s1*u1 + s0;
@@ -9727,8 +9705,6 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             u0 := un0*w6;
             u1 := un1*w5;
 
-            vh2 := -v2 - h2;
-            vh1 := -v1 - h1;
             t1 := s1*u1;
             l0 := s0*u0;
             l2 := s1*u1 + s0;
@@ -9752,8 +9728,6 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
         end if;//dw2
 
         //k := ExactQuotient(f - v*(v + h), u);
-        vh2 := -v2 - h2;
-        vh1 := -v1 - h1;
         t1  := v1 - yn1;
         t2  := v2 - yn2;
         k3  := c4*t2;
@@ -10314,7 +10288,6 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
     //upp := r*M1 - q*M2;
     //upp := upp/LeadingCoefficient(upp);
     //M2p : = M2/(c4*r1) (negative of M2 monic)
-    vh2 := -v2 - h2;
     M21p := c6*(c3 - qr11*k3)  + rr01  - up2;
     M20p := c6*(rr01*c3 - vp2 + vh2 - qr11*k2 - qr01*k3) - up1 - up2*M21p;
 
@@ -10331,8 +10304,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
     t4 := upp1*c4;
 
     vpp2 := t2 + vh2 - t4 - upp2*t3;
-    vpp1 := t1 - v1 - h1 - (upp0 + upp1)*(c4 + t3) + t4 + t5;
-    vpp0 := rq11*u0 + rq01*u1 - w6*upp1 - qq01*t1 - v0 - h0 - t5;
+    vpp1 := t1 + vh1 - (upp0 + upp1)*(c4 + t3) + t4 + t5;
+    vpp0 := rq11*u0 + rq01*u1 - w6*upp1 - qq01*t1 + vh0 - t5;
 
     if ADD_DEBUG then "ADD341"; end if;
     return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0; 
