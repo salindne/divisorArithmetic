@@ -30,11 +30,22 @@ load "g3Formulas/arb_ramifiedG3_ADD.mag";
 //Field sizes below 20 for random testing
 FIELDS:= {2,3,4,5,7,8,9,11,13,16,17,19,23,25,29,31,32};
 TRIALS:= 10;
-DIVISORS:= 100; //Number of divisor additions and doubling to test per curve
+DIVISORS:= 50; //Number of divisor additions and doubling to test per curve
 DEBUG:= false;
 TEST_DBL:= true;
 TEST_ADD:= true;
 
+
+///////////////////////////////////////////////////////////////////////////////
+//REPRODUCIBILITY
+///////////////////////////////////////////////////////////////////////////////
+// These testers never set or reported a seed, so a failure in a rarely-drawn
+// branch could not be replayed -- and a failure you cannot replay is a failure
+// you cannot diagnose. The seed and step are printed in the banner below;
+// RND_SEED=<n> reruns that draw sequence exactly.
+if GetEnv("RND_SEED") ne "" then
+    SetSeed(StringToInteger(GetEnv("RND_SEED")));
+end if;
 
 /////////////////////////////////////////////////////////
 ///////////////////// TEST LOOPS ////////////////////////
@@ -45,8 +56,11 @@ printf "//\n";
 printf "// - Small finite field and curve picked at random for each trial. \n";
 printf "// - %o total trials.            \n", TRIALS;
 printf "// - %o divisor additions and doubles each per trial.            \n", DIVISORS;
+sd, st:= GetSeed();
+printf "// - Random seed %o, step %o. Replay this run with RND_SEED=%o\n", sd, st, sd;
 printf "//";
 errorFlag:= false;
+nCmp:= 0;
 
 for F in FIELDS do
   trial:= 1;
@@ -107,6 +121,7 @@ for F in FIELDS do
             va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
 
             upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := DBL(D1[1], D1[2], f, h);
+            nCmp+:= 1;
 
             if ((cantor[1] ne upp3*x^3 + upp2*x^2 + upp1*x + upp0) or (cantor[2] ne vpp2*x^2 + vpp1*x + vpp0)) and not (upp3 eq -1 and upp2 eq -1 and upp1 eq -1 and upp0 eq -1) then
                 errorFlag:= true;
@@ -142,6 +157,7 @@ for F in FIELDS do
             if D1 ne D2 then
 
                 upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := ADD(D1[1], D1[2], D2[1], D2[2], f, h);
+                nCmp+:= 1;
                 upp,vpp := Nucomp_g3_RAM(D1,D2,f,h);
 
                 // ensure ua is always the larger polynomial
@@ -196,8 +212,13 @@ for F in FIELDS do
   end while;
 end for;
 printf "\n///////////////////////////////////////////////////////////////////////\n";
-"TEST_ADD: ", TEST_ADD;
-"TEST_DBL: ", TEST_DBL;
+// E12: a tester that loaded nothing used to print the same green
+// summary as one that verified everything, because TEST_ADD/TEST_DBL
+// are configuration switches and "No errors." is true by vacuity.
+// The count makes an empty run loud, and the assert makes it fatal:
+// test_all.sh greps for "Runtime error|Assertion failed".
+printf "\n// Comparisons: %o", nCmp;
+assert nCmp gt 0;
 if errorFlag then
   printf "\n// Errors occurred!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
 else

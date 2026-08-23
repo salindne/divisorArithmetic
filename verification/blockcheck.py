@@ -176,10 +176,11 @@ class Target(object):
         self.add_rel = add[0]
         self.add_path = os.path.join(os.path.dirname(tester), self.add_rel)
 
-        # The DBL the tester loads, which for nch2 is arb's -- that family has no
-        # doubling of its own until PR6, and its tester says so by loading the
-        # general one. Read rather than assumed, so the borrow stops being
-        # invisible the day PR6 ends it.
+        # The DBL the tester loads. Read rather than assumed, which is what made
+        # the borrow visible while it lasted: nch2 genus-3 ramified had no doubling
+        # of its own and said so by loading arb's. PR6 gave it one, so every tester
+        # now names its own family's DBL -- and a future ADD-first specialisation
+        # will show up here as a borrow again without this needing to change.
         dbl = [p for p in self.loads if "_DBL" in p]
         self.dbl_rel = dbl[0] if len(dbl) == 1 else None
         self.dbl_path = (os.path.join(os.path.dirname(tester), self.dbl_rel)

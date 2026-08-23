@@ -51,27 +51,27 @@ echo
 # The pass run must also have actually run the testers rather than trivially
 # succeeding, and must report the remaining whitebox gaps as skipped.
 #
-# 26 and 2, not 25 and 3: the ch2 genus-3 split whitebox tester now exists, so what
-# used to be announced as a deliberate skip is a passing tester. The two skips left
-# are the genus-3 ramified whitebox testers, which PR6 writes. These numbers are
-# meant to be updated when a tester is added -- that is the point of asserting them,
-# so a tester cannot quietly vanish.
+# 28 and 0, not 26 and 2: the two genus-3 ramified whitebox testers now exist, so
+# what used to be announced as deliberate skips are passing testers. Every family
+# in the repository now has one, which is why there is nothing left to skip.
+# These numbers are meant to be updated when a tester is added -- that is the point
+# of asserting them, so a tester cannot quietly vanish.
 out=$(FAKE_MAGMA_MODE=pass MAGMA="$FAKE" SLEEP=0 LOGDIR="$WORK/verify" \
       "$ROOT/test_all.sh" 2>&1)
 npass=$(printf '%s\n' "$out" | sed -n 's/^  passed:  *\([0-9]*\)$/\1/p')
 nskip=$(printf '%s\n' "$out" | sed -n 's/^  skipped: *\([0-9]*\)$/\1/p')
 
-if [ "$npass" = "26" ]; then
-    printf 'ok    %-10s 26 testers passed, not a vacuous success\n' 'coverage'
+if [ "$npass" = "28" ]; then
+    printf 'ok    %-10s 28 testers passed, not a vacuous success\n' 'coverage'
 else
-    printf 'FAIL  %-10s expected 26 passing testers, got "%s"\n' 'coverage' "$npass"
+    printf 'FAIL  %-10s expected 28 passing testers, got "%s"\n' 'coverage' "$npass"
     fails=$((fails + 1))
 fi
 
-if [ "$nskip" = "2" ]; then
-    printf 'ok    %-10s both whitebox gaps reported, not hidden\n' 'skip'
+if [ "$nskip" = "0" ]; then
+    printf 'ok    %-10s no skips left to hide: every family has a whitebox tester\n' 'skip'
 else
-    printf 'FAIL  %-10s expected 2 skips, got "%s"\n' 'skip' "$nskip"
+    printf 'FAIL  %-10s expected 0 skips, got "%s"\n' 'skip' "$nskip"
     fails=$((fails + 1))
 fi
 

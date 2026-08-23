@@ -64,6 +64,7 @@ restating the detail.
 | N25 | Reduce before you divide: the second cofactor collapses to a scalar at `Deg23ADD` | **implemented and measured**; both addition files |
 | N26 | The same collapse at `Deg3ADD`, plus the reduce-first rule extended to multiplication and bounded | **implemented and measured**; both addition files |
 | N27 | A reference block written leaf-for-leaf against the code becomes a debugger; the defect class surviving every static check is the defined-with-the-wrong-value read; and `l = r*s + M2` needs no division | **implemented and verified**; the doubling at **54M 4S 84A 4C**, 3 defects found, 2 gates repaired, 6-lens sweep |
+| N28 | The sixth cell of the matrix: the odd-characteristic doubling, derived rather than borrowed; `M21 = -kp3`, a quotient coefficient recomputed under another name; and branch coverage by enumeration rather than sampling | **implemented and verified**; `25M 4S 44A 0C` and `53M 5S 61A 0C`, 48/48 branches by constructed case, E12 closed, 28 testers 0 skips |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -1981,6 +1982,189 @@ when several independent searches are run over one function, **agreement between
 see each other is a better filter than any single search's confidence** — every item that survived
 measurement here was found by two or more lenses, and the one six-lens item was a recomputation of a
 value the function already had.
+
+## N28 — The sixth cell, and a coefficient the formula already had under another name
+
+**Status:** implemented and verified, 2026-08-23. New file `nch2_ramifiedG3_DBL.mag`; both genus-3
+ramified doublings re-measured. This completes five of the six cells of the
+`{arb, nch2, ch2} x {ADD, DBL}` matrix at genus 3; only characteristic 2 remains.
+
+### The family had been doubling with the wrong formulas, correctly
+
+Since the import, odd-characteristic genus-3 doubling had no formulas of its own. It *borrowed* the
+arbitrary-characteristic ones — the tester loaded `arb_ramifiedG3_DBL.mag`, `driver.py` carried an
+explicit borrow, and the addition's equal-divisor dispatch passed `0*f` for the absent `h`. That was
+correct, because `h = 0` curves are a subset of what the arb file accepts, and it is exactly why
+nothing ever flagged it: **a specialisation that silently uses its parent produces right answers at
+the parent's price.** PR15 recorded the resulting mixed-domain state; this entry closes it.
+
+Deriving the file is mostly mechanical — `h = 0` kills 105 coefficient occurrences and `f6 = 0`
+another 29 — but the cost it removes is not evenly spread:
+
+| | parent (arb) | specialised | removed |
+|---|---|---|---|
+| `Deg1DBL` | 7M 1S 24A 4C | **5M 1S 15A 1C** | 2M, 9A, 3C |
+| `Deg2DBL` | 28M 4S 70A 9C | **25M 4S 44A 0C** | 3M, 26A, 9C |
+| `Deg3DBL` | 54M 4S 80A 4C | **53M 5S 61A 0C** | 1M, 19A, 4C (+1S) |
+
+**Every constant multiplication disappears.** That is the sharp structural result: at `h = 0` and
+`f6 = 0` the only surviving curve coefficients are `f5 … f0`, and each enters *additively* rather
+than as a multiplicand — the same property that makes every published odd-characteristic count
+C-free, and the reason those counts are now directly comparable with ours.
+
+**The reduction of `2v + h` mod `u` vanishes entirely.** At `h = 0` the first column of the
+multiplication matrix `T` is just `2v`, so `t1`, `t4`, `t7` become `2v0`, `2v1`, `2v2` and
+`Deg1DBL`'s resultant is `2*v0` outright with no `u`-dependence left to reduce. Two products above
+`Deg2DBL`'s `IsZero(d)` guard — `u1^2` and `u0*u1`, needed by arb for `m3` and `m4` — become dead
+there and move into the branches that use them.
+
+### `M21 = -kp3`: a coefficient the formula was recomputing under another name
+
+The largest single saving is not a specialisation effect at all; it is an identity the arb file
+cannot have. In `Deg2DBL`'s frequent case, `M2`'s x-coefficient is **exactly minus the reduced
+quotient's top coefficient**:
+
+    t5  = u0 - t1                     (t1 = u1^2)
+    kp3 = k3 - t5 + t1  = k3 - u0 + 2*u1^2
+    M21 = u0 - k3 - u1*M22            with M22 = 2*u1
+        = u0 - k3 - 2*u1^2  = -kp3
+
+So `M21`'s whole statement is redundant, and `u1*M21 = -t9` where `t9 = u1*kp3` was already formed
+four lines earlier. Two further products go the same way: `u1*M22 = 2*u1^2 = t1 + t1` and
+`u0*M22 = 2*u0*u1 = t2 + t2`, both already in hand for the resultant. Net **-3M -1A**, free on both
+axes — `28M 4S 45A` to `25M 4S 44A`. It holds only at `h = 0`: arb's `M21` carries `h2*s1 + h3*s0`
+and the identity fails.
+
+### The exact division that is not one, one branch further
+
+N27 recorded that `l := ExactQuotient(u*r - upp, q)` needs no division. The same shape appears in
+`Deg2DBL`'s `gcd = d` leaf and had not been taken: there the new `u` is **linear**, so `k` can be
+evaluated at its root by Horner instead of first being reduced modulo the original quadratic `u`.
+Both routes cost five multiplications; the Horner one costs six fewer additions (five in arb). The
+`kp` block — four statements and a Karatsuba — disappears.
+
+**This one was nearly broken by being "corrected".** Its sign handling looks wrong on inspection, and
+the reading that looks right fails every one of 120,000 trials while the code as proposed passes all
+of them. The test is only meaningful under the leaf's own precondition — the new linear `u` must
+divide the original quadratic one, so `u0 = u1*c - c^2` — and a random test without that constraint
+verifies nothing. **Recorded because the instinct to fix it was wrong and the measurement was right.**
+
+### Keeping a coefficient bare recovers the C column
+
+`ERRATA.md` **E13** records that a product by a *composite* over curve coefficients is charged M
+where it is honestly C, because the constant is no longer a bare name. `Deg1DBL` shows the reverse is
+exploitable: `t1*(f4 + f4)` is charged 1M, while `t10 := t1*f4; t10 + t10` computes the same value
+with `f4` bare and is charged **1C**, at identical additions. One multiplication moved to the cheaper
+column by multiplying first and doubling second. This is the first instance in the repository of
+*restructuring to keep the coefficient bare* rather than waiting for the counter to be fixed.
+
+### Every integer scalar multiple is now an explicit addition chain
+
+Both doubling files previously wrote `7*t1`, `5*f5`, `3*f3`, `6*(f6*t1)`, `4*f4`, `2*(...)`. The
+convention prices each at 1A (`chapter6.tex:2333`), which understates them: written out they cost 12A
+for the six. They are now addition chains, at a true cost of **+2A per file**, not +9A, because of
+three things worth stating:
+
+- **a joint chain beats two separate ones.** `7*t1 + 5*f5` reaches both coefficients at once through
+  `(1,1) -> (2,2) -> (3,2) -> (6,4) -> (7,5)`, five additions where `7a` alone is four and `5b` alone
+  is three.
+- **doubling after the offset beats doubling before.** `(3,2) -> (6,4) -> (7,5)` needs one doubling;
+  building `4t1 + 4f5` first and patching both coefficients needs three separate adds.
+- **an existing doubling can serve as a multiplier.** `upp1 = u0 + u0` is the `2*u0` the `k0` term
+  needs, so the factored form `2*u0*(t1*(3Y + 2f4) + Z)` pays that doubling once and uses it twice.
+
+The multipliers themselves are forced: `k0 = P'(-u0)` for `P = f - v*(v+h)`, so they are the
+derivative's `7,6,5,4,3,2` and no rewriting removes them. What is *not* forced is how they are built.
+
+### Two defects, and the second is a gate failing quietly
+
+Both arose in cleanup, not in the derivation.
+
+**A "free copy" that was not safe to collapse.** At `f6 = 0` the statement `t3 := t2` is a pure
+rename, so removing it and reading `t2` directly looks free. But `t2` is reused as scratch
+(`t2 := s1*q0`) between the assignment and the later read, so `M20` read the wrong value: **106 wrong
+of 120** on the generic path, clean in every other class. This is `ERRATA.md` **E17**'s fourth
+instance in four days. The rule it earns: **collapsing a copy requires a liveness proof on the
+SOURCE, not on the copy.** `dominance.py` passes on all four — the name is assigned above, with the
+wrong value.
+
+**A missing semicolon that `opcount` hid.** `vpp0:= vh0 - s1*(s0*u0) - upp0*t3` lost its terminator.
+`opcount` printed the `1DBL` and `2DBL` rows, **silently omitted `3DBL`, and exited 0** — the second
+firing of **E18**. `dominance.py` passed, being a line scanner. Only `blockcheck` named it, and
+loading the file under Magma gave the line and column. A disappearing row is an error, not a zero.
+
+### What the six-lens sweep says about consensus
+
+Forty-three candidates over both files, 111 notes on ground already at its floor. Six savings
+survived measurement. The methodological result is about **how** to read agreement between
+independent searches:
+
+- **convergence is a good filter for whether a saving exists.** Every item that survived was found by
+  at least one lens that located it in the real file; the item six lenses found independently
+  (`M22 = un1 + un1`) was real.
+- **convergence is a bad filter for how large it is.** On the two biggest items the *majority* was
+  correct but incomplete and a single lens had the full result: five lenses proposed `-2M` where one
+  found `-3M -1A`, and three proposed `-1A`/`-2A` where one found `-4A` by folding a third consumer.
+  A majority vote would have banked two thirds of the available saving and called it done.
+
+### The family got real whitebox testers, and every family in the repository now has one
+
+PR6's other half. Genus-3 ramified had **no Magma whitebox tester**: its branch coverage came from
+*harvested* cases -- found by the Python harness's own coverage-guided search and frozen -- which is
+weaker than the *extracted* cases every other family uses, because it is the same oracle checking
+itself rather than Magma's Jacobian arithmetic checking the formulas.
+
+The blocker was specific and recorded by PR4: `whitebox_auto_NEG.py` synthesises the expected label
+set as `ADD000..ADDnnn` from the *count* of DEBUG lines, so it could not consume this family's prose
+labels. The choice was to number the labels or teach the generator prose. **Numbering won**, matching
+genus-2 ramified and both split models -- 96 labels across four files became `ADD00..ADD36` and
+`DBL00..DBL10` -- with each branch's meaning kept in a trailing comment, since the prose was
+deliberately built and the plan itself calls the numeric tags opaque.
+
+**Coverage came from enumeration, not sampling, and that is the transferable part.** PR12 measured
+`RandomDivisorAB` reaching 25% of the reduced divisors on one split curve: it rejects an inseparable
+`u` and any `u` with an irreducible factor of degree > 1. The ramified model makes the fix far
+cheaper than it was there, because a ramified divisor is `<u,v>` with **no balancing weight**, so it
+maps straight onto a Magma Jacobian element:
+
+- `DivisorsWithU` lists every `v` with `u | v^2 + v*h - f`, so the divisor space is enumerated;
+- class targeting is Magma's own arithmetic -- `D2 := T - D1` is Jacobian subtraction, where the
+  split generator needed a local `InverseD` because `Negate` returns a non-inverse at odd genus (E8);
+- pair modes are built rather than waited for: equal `u`, a shared irreducible factor, forced class
+  sums, and a shape matrix over `(deg u1, deg u2)`.
+
+Result: **48 of 48 branch tags in each family**, 48 constructed cases per tester, every case asserted
+against `D1 + D2` on the Jacobian. Shown to be a real oracle rather than a label printer by
+perturbing `Deg1DBL`'s `upp1` and watching `Assertion failed`.
+
+**The instructive failure was the frequent case.** nch2 first reached 46 of 48, missing `ADD36` --
+`Typical, deg(s) = 2`, about 90% of calls. `AllDivisors` lists the identity first and the generic
+filler scanned row by row from `i = 1`, so all 200 filler pairs were `<identity, D>`, which route
+through an unlabelled dispatcher leaf and can never contribute a case. **A budget spent in list order
+is not a budget spent on variety**; the shape matrix fixed it by construction.
+
+Downstream, the harvested corpus that stood in for these testers is now **empty** -- the same 100%
+coverage comes from extracted cases -- and `test_all.sh` reports **28 testers, 0 skips**, the two
+skips having been exactly these two gaps. The harvest machinery stays for the next family derived
+before its tester exists, which is ch2 at genus 3.
+
+### E12 closed: a tester that verified nothing said so
+
+Fourteen canonical random testers now print a comparison count and assert it non-zero. `assert` was
+chosen over a warning because `test_all.sh` already greps `Runtime error|Assertion failed`, so the
+check is fatal without touching the parser. Demonstrated by reproducing the original discovery: run
+from a directory where every `load` fails, a tester used to print `TEST_ADD: true` and
+`// No errors.` in 0.469 seconds and now prints `// Comparisons: 0` and `Assertion failed`. The two
+genus-3 ramified testers also stopped echoing `TEST_ADD`/`TEST_DBL`, which are *configuration
+switches* -- printing them beside a verdict is what made a vacuous run look verified.
+
+**For the paper:** a specialisation that borrows its parent's formulas is correct and therefore
+invisible; the cost only becomes measurable once the child exists, and here it was 26 additions and
+every constant multiplication in one function. Separately, an integer multiplier priced at one
+addition by convention costs more than that in fact, and the honest cost depends on the chain — a
+joint chain over two coefficients, and reusing a doubling the result needs anyway, took the true
+price of removing six of them from +9A to +2A.
+
 
 # Part IV — The comparison with prior work
 

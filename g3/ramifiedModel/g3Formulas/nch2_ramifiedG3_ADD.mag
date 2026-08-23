@@ -69,7 +69,7 @@ Deg1ADD:= function(u0, v0, up0, vp0)
     d:= u0 - up0;
     
     if IsZero(d) then        
-		if (ADD_DEBUG) then "Deg1ADD | Case #2: gcd(u,up) = u"; end if;
+		if (ADD_DEBUG) then "ADD00"; end if;		// Deg1ADD | Case #2: gcd(u,up) = u
         return 0, 0, 0, 1, 0, 0, 0;
     end if;//d
    
@@ -85,16 +85,16 @@ Deg1ADD:= function(u0, v0, up0, vp0)
     //vpp1:= s0;
     vpp0:= v0 + u0*s0;
     
-	if (ADD_DEBUG) then "Deg1ADD | Typical"; end if;
+	if (ADD_DEBUG) then "ADD01"; end if;		// Deg1ADD | Typical
     return 0, 1, upp1, upp0, 0, s0, vpp0;
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg12ADD():
-// Input: u0, v0:   Mumford coordinates for degree 1 divisor D1
-//        up1..vp0: Mumford coordinates for degree 2 divisor D2
-//        f5..f2:     curve coefficients
+// Input:           u0, v0: Mumford coordinates for degree 1 divisor D1
+//        up1,up0, vp1,vp0: Mumford coordinates for degree 2 divisor D2
+//                  f5..f2: curve coefficients
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
@@ -152,7 +152,7 @@ Deg12ADD:= function(u0, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
             //vpp := vp mod upp;
             vpp0:= vp0 - vp1*upp0;
 
-			if (ADD_DEBUG) then "Deg12ADD | Case #2.2: gcd(u,up) = u, gcd(u,h+v+vp) = u"; end if;
+			if (ADD_DEBUG) then "ADD02"; end if;		// Deg12ADD | Case #2.2: gcd(u,up) = u, gcd(u,h+v+vp) = u
             return 0, 0, 1, upp0, 0, 0, vpp0;
         end if;//dw
 
@@ -184,7 +184,7 @@ Deg12ADD:= function(u0, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
         vpp1:= up1*s0 + vp1;
         vpp0:= up0*s0 + vp0;
 
-		if (ADD_DEBUG) then "Deg12ADD | Case #2.1: gcd(u,up) = u, gcd(u,h+v+vp) = 1"; end if;
+		if (ADD_DEBUG) then "ADD03"; end if;		// Deg12ADD | Case #2.1: gcd(u,up) = u, gcd(u,h+v+vp) = 1
         return 1, upp2, upp1, upp0, s0, vpp1, vpp0;
     end if;//d
 
@@ -202,16 +202,16 @@ Deg12ADD:= function(u0, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
     vpp1:= up1*s0 + vp1;
     vpp0:= up0*s0 + vp0;
 
-	if (ADD_DEBUG) then "Deg12ADD | Typical"; end if;
+	if (ADD_DEBUG) then "ADD04"; end if;		// Deg12ADD | Typical
     return 1, upp2, upp1, upp0, s0, vpp1, vpp0;
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg22ADD():
-// Input: u1..v0: Mumford coordinates for degree 2 divisor D1
-//        up1..vp0: Mumford coordinates for degree 2 divisor D2
-//        f5..f2:     curve coefficients
+// Input:      u1,u0 v1,v0: Mumford coordinates for degree 2 divisor D1
+//        up1,up0, vp1,vp0: Mumford coordinates for degree 2 divisor D2
+//                  f5..f2: curve coefficients
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
@@ -309,7 +309,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
             //dw2 := (v + vp) mod up;
             dw21:= vp1 + v1;
             if IsZero(dw21) then
-				if (ADD_DEBUG) then "Deg22ADD | Case #3.2: gcd(up,u) = up, gcd(up,h+vp+v) = up"; end if;
+				if (ADD_DEBUG) then "ADD05"; end if;		// Deg22ADD | Case #3.2: gcd(up,u) = up, gcd(up,h+vp+v) = up
                 return 0, 0, 0, 1, 0, 0, 0;
             end if;//dw21
 
@@ -339,7 +339,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
             vpp1:= s0 + v1;
             vpp0:= u0*s0 + v0;
 
-			if (ADD_DEBUG) then "Deg22ADD | Case #3.1: gcd(up,u) = up, gcd(up,h+vp+v) = dw (deg 1)"; end if;
+			if (ADD_DEBUG) then "ADD06"; end if;		// Deg22ADD | Case #3.1: gcd(up,u) = up, gcd(up,h+vp+v) = dw (deg 1)
             return 0, 1, upp1, upp0, 0, vpp1, vpp0;
         end if;//m3
 
@@ -374,7 +374,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
             vpp1:= s0 + v1;
             vpp0:= u0*s0 + v0;
 
-			if (ADD_DEBUG) then "Deg22ADD | Case #2.2: gcd(up,u) = d (deg 1), gcd(d,h+vp+v) = d"; end if;
+			if (ADD_DEBUG) then "ADD07"; end if;		// Deg22ADD | Case #2.2: gcd(up,u) = d (deg 1), gcd(d,h+vp+v) = d
             return 0, 1, upp1, upp0, 0, vpp1, vpp0;
         end if;//dw
 
@@ -416,7 +416,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
         vpp1:= upp1*s1 - t2;
         vpp0:= upp0*s1 - v0 - u0*s0;
 
-		if (ADD_DEBUG) then "Deg22ADD | Case #2.1: gcd(up,u) = d (deg 1), gcd(d,h+vp+v) = 1"; end if;
+		if (ADD_DEBUG) then "ADD08"; end if;		// Deg22ADD | Case #2.1: gcd(up,u) = d (deg 1), gcd(d,h+vp+v) = 1
         return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     end if;//d
 
@@ -448,16 +448,16 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f5, f4, f3, f2)
     vpp1:= s1*upp1 - t3;
     vpp0:= s1*upp0 - v0 - t1;
 
-	if (ADD_DEBUG) then "Deg22ADD | Typical"; end if;
+	if (ADD_DEBUG) then "ADD09"; end if;		// Deg22ADD | Typical
     return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg13ADD():
-// Input: u0, v0:   Mumford coordinates for degree 1 divisor D1
-//        up2..vp0: Mumford coordinates for degree 3 divisor D2
-//        f5..f1:     curve coefficients
+// Input:             u0, v0: Mumford coordinates for degree 1 divisor D1
+//        up2..up0, vp2..vp0: Mumford coordinates for degree 3 divisor D2
+//                    f5..f1: curve coefficients
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
@@ -524,7 +524,7 @@ Deg13ADD:= function(u0, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2, f1)
             vpp1:= vp1 - t1*vp2;
             vpp0:= vp0 - t0*vp2;
 
-            if (ADD_DEBUG) then "Deg13ADD: gcd(u,up) = u, DB = P1, DA = P2-P1+P3"; end if;
+            if (ADD_DEBUG) then "ADD10"; end if;		// Deg13ADD: gcd(u,up) = u, DB = P1, DA = P2-P1+P3
             return 0, 1, t1, t0, 0, vpp1, vpp0;
         end if;//dw
 
@@ -553,7 +553,7 @@ Deg13ADD:= function(u0, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2, f1)
         vpp1:= s0*(upp1 - up1) - vp1;
         vpp0:= s0*(upp0 - up0) - vp0;
 
-        if (ADD_DEBUG) then "Deg13ADD: gcd(u,up) = u, DB = P1, DA = P1+P2+P3"; end if;
+        if (ADD_DEBUG) then "ADD11"; end if;		// Deg13ADD: gcd(u,up) = u, DB = P1, DA = P1+P2+P3
         return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     end if;//d
 
@@ -577,16 +577,16 @@ Deg13ADD:= function(u0, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2, f1)
     vpp1:= s0*(upp1 - up1) - vp1;
     vpp0:= s0*(upp0 - up0) - vp0;
 
-    if (ADD_DEBUG) then "Deg13ADD: Typical"; end if;
+    if (ADD_DEBUG) then "ADD12"; end if;		// Deg13ADD: Typical
     return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg23ADD():
-// Input: u1..v0: Mumford coordinates for degree 2 divisor D1
-//        up2..vp0: Mumford coordinates for degree 3 divisor D2
-//        f5..f1:     curve coefficients
+// Input:        u1,u0 v1,v0: Mumford coordinates for degree 2 divisor D1
+//        up2..up0, vp2..vp0: Mumford coordinates for degree 3 divisor D2
+//                    f5..f1: curve coefficients
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
@@ -709,7 +709,7 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
                 //vpp := vp mod upp;
                 vpp0:= vp0 - t0*(vp1 - vp2*t0);
 
-                if (ADD_DEBUG) then "Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P3-P1-P2"; end if;
+                if (ADD_DEBUG) then "ADD13"; end if;		// Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P3-P1-P2
                 return 0, 0, 1, t0, 0, 0, vpp0;
             end if;//m1m2
 
@@ -754,7 +754,7 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
                 vpp1:= vp1 + un1*s0;
                 vpp0:= vp0 + un0*s0;
 
-                if (ADD_DEBUG) then "Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P2-P1+P3"; end if;
+                if (ADD_DEBUG) then "ADD14"; end if;		// Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P2-P1+P3
                 return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             end if;//dw
 
@@ -786,7 +786,7 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
                 vpp1:= s0*(upp1*t1 - up1 + upp0) + upp1*vp2 - vp1;
                 vpp0:= s0*(upp0*t1 - up0) + upp0*vp2 - vp0;
 
-                if (ADD_DEBUG) then "Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0"; end if;
+                if (ADD_DEBUG) then "ADD15"; end if;		// Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P1+P2+P3, deg(s) = 0
                 return 0, 1, upp1, upp0, 0, vpp1, vpp0;
             end if;//sp1
 
@@ -814,7 +814,7 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
             vpp1:= s1*(upp1*t2 - s0*t3 - t4) - vp1;
             vpp0:= s1*(upp0*t2 - s0*t4) - vp0;
 
-            if (ADD_DEBUG) then "Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1"; end if;
+            if (ADD_DEBUG) then "ADD16"; end if;		// Deg23ADD: gcd(u,up) = u, DB = P1+P2, DA = P1+P2+P3, deg(s) = 1
             return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         end if;//m3
 
@@ -851,7 +851,7 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
             vpp1:= vp1 + s0*un1;
             vpp0:= vp0 + s0*un0;
 
-            if (ADD_DEBUG) then "Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P3-P1+P4"; end if;
+            if (ADD_DEBUG) then "ADD17"; end if;		// Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P3-P1+P4
             return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         end if;//dw
 
@@ -895,7 +895,7 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
             vpp1:= s0*(upp1*ta - up1 + upp0) + upp1*tb - vp1;
             vpp0:= s0*(upp0*ta - up0) + upp0*tb - vp0;
 
-            if (ADD_DEBUG) then "Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0"; end if;
+            if (ADD_DEBUG) then "ADD18"; end if;		// Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 0
             return 0, 1, upp1, upp0, 0, vpp1, vpp0;
         end if;//sp1
 
@@ -923,7 +923,7 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
         vpp1:= s1*(upp1*t2 - s0*t3 - t4) - vp1;
         vpp0:= s1*(upp0*t2 - s0*t4) - vp0;
 
-        if (ADD_DEBUG) then "Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1"; end if;
+        if (ADD_DEBUG) then "ADD19"; end if;		// Deg23ADD: gcd(u,up) = d, DB = P1+P2, DA = P1+P3+P4, deg(s) = 1
         return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     end if;//d
 
@@ -950,7 +950,7 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
         vpp1:= s0*(upp1*t1 - up1 + upp0) + upp1*vp2 - vp1;
         vpp0:= s0*(upp0*t1 - up0) + upp0*vp2 - vp0;
 
-        if (ADD_DEBUG) then "Deg23ADD: Typical, deg(s) = 0"; end if;
+        if (ADD_DEBUG) then "ADD20"; end if;		// Deg23ADD: Typical, deg(s) = 0
         return 0, 1, upp1, upp0, 0, vpp1, vpp0;
     end if;//sp1
 
@@ -978,16 +978,16 @@ Deg23ADD:= function(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4, f3, f2
     vpp1:= s1*(upp1*t2 - s0*t3 - t4) - vp1;
     vpp0:= s1*(upp0*t2 - s0*t4) - vp0;
 
-    if (ADD_DEBUG) then "Deg23ADD: Typical"; end if;
+    if (ADD_DEBUG) then "ADD21"; end if;		// Deg23ADD: Typical
     return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg3ADD():
-// Input: u2..v0: Mumford coordinates for degree 3 divisor D1
-//        up2..vp0: Mumford coordinates for degree 3 divisor D2
-//        f5..f1:     curve coefficients
+// Input:     u2..u0, v2..v0: Mumford coordinates for degree 3 divisor D1
+//        up2..up0, vp2..vp0: Mumford coordinates for degree 3 divisor D2
+//                    f5..f1: curve coefficients
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
@@ -1301,7 +1301,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
             // dw2 = (v + vp) mod up   (h = 0)
             //w2:= vt2; w1:= vt1; w0:= vt0;
             if IsZero(ht2) and IsZero(ht1) and IsZero(ht0) then
-				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = up, DB = P1+P2-P3, DA = P3-P1-P2"; end if;
+				if (ADD_DEBUG) then "ADD22"; end if;		// Deg3ADD: gcd(up,u) = up, DB = P1+P2-P3, DA = P3-P1-P2
                 return 0, 0, 0, 1, 0, 0, 0;
             end if;//ht2ht1ht0
 
@@ -1341,7 +1341,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
                 vpp1:= s0 + v1 - upp1*v2;
                 vpp0:= u0*s0 + v0 - upp0*v2;
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P3-P1-P2"; end if;
+				if (ADD_DEBUG) then "ADD23"; end if;		// Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P3-P1-P2
                 return 0, 1, upp1, upp0, 0, vpp1, vpp0;
             end if;//w3w4
 
@@ -1392,7 +1392,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
             vpp1:= upp1*s1 - t3;
             vpp0:= upp0*s1 - v0 - un0*s0;
 
-			if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P3+P2-P1"; end if;
+			if (ADD_DEBUG) then "ADD24"; end if;		// Deg3ADD: gcd(up,u) = up, DB = P1+P2+P3, DA = P3+P2-P1
             return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         end if;//t7t4
 
@@ -1434,7 +1434,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
                 vpp1:= s0 + v1 - upp1*v2;
                 vpp0:= u0*s0 + v0 - upp0*v2;
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P4-P2-P1"; end if;
+				if (ADD_DEBUG) then "ADD25"; end if;		// Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P4-P2-P1
                 return 0, 1, upp1, upp0, 0, vpp1, vpp0;
             end if;
 
@@ -1502,7 +1502,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
 				vpp1:= upp1*s1 - t5;
 				vpp0:= upp0*s1 - v0 - un0*s0;
 
-				if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P4-P1+P2"; end if;
+				if (ADD_DEBUG) then "ADD26"; end if;		// Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P4-P1+P2
                 return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
             end if;//dw
 
@@ -1558,7 +1558,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
                     //vpp := (-s*u - v) mod upp;
                     vpp0:= upp0*(u1*s0 + v1 + upp0*(s0*(upp0 - u2) - v2)) - v0 - u0*s0;
 
-                    if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 0"; end if;
+                    if (ADD_DEBUG) then "ADD27"; end if;		// Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 0
                     return 0, 0, 1, upp0, 0, 0, vpp0;
                 end if;//sp1
 
@@ -1583,7 +1583,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
                 vpp1:= -s1*(u0 + u1*s0) - v1 - (upp0 + upp1)*(t5 + t3) + t4 + t6;		// karatsuba
                 vpp0:= -s1*(u0*s0) - v0 - t6;
 
-                if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 1"; end if;
+                if (ADD_DEBUG) then "ADD28"; end if;		// Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 1
                 return 0, 1, upp1, upp0, 0, vpp1, vpp0;
             end if;//sp2           
 
@@ -1621,7 +1621,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
             vpp1:= r1*(u1 - upp1) + t2 - v1;
 			vpp0:= r1*(u0 - upp0) + u1*t1 - q0*t2 + upp1*w3 - v0;
 
-            if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 2"; end if;
+            if (ADD_DEBUG) then "ADD29"; end if;		// Deg3ADD: gcd(up,u) = d, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 2
             return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         end if;//m7
 
@@ -1683,7 +1683,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
             vpp1:= s1*upp1 - t2 - t3 - v1;
             vpp0:= s1*upp0 - s0*un0 - v0;
 
-            if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = e, DB = P1+P2+P3, DA = P4-P1+P5"; end if;
+            if (ADD_DEBUG) then "ADD30"; end if;		// Deg3ADD: gcd(up,u) = e, DB = P1+P2+P3, DA = P4-P1+P5
             return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
         end if;//dw4
 
@@ -1739,7 +1739,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
                 //vpp := (-s*u - v) mod upp;
                 vpp0:= upp0*(u1*s0 + v1 + upp0*(s0*(upp0 - u2) - v2)) - v0 - u0*s0;
 
-                if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = e, DB = P1+P2+P3, DA = P1+P4+P5, deg(s) = 0"; end if;
+                if (ADD_DEBUG) then "ADD31"; end if;		// Deg3ADD: gcd(up,u) = e, DB = P1+P2+P3, DA = P1+P4+P5, deg(s) = 0
                 return 0, 0, 1, upp0, 0, 0, vpp0;
             end if;//sp1
 
@@ -1765,7 +1765,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
             vpp1:= -s1*(u0 + u1*s0) - v1 - (upp0 + upp1)*(t2 + t4) + t3 + t5;        // karatsuba
             vpp0:= -s1*(u0*s0) - v0 - t5;
 
-            if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = e, DB = P1+P2+P3, DA = P1+P4+P5, deg(s) = 1"; end if;
+            if (ADD_DEBUG) then "ADD32"; end if;		// Deg3ADD: gcd(up,u) = e, DB = P1+P2+P3, DA = P1+P4+P5, deg(s) = 1
             return 0, 1, upp1, upp0, 0, vpp1, vpp0;
         end if;//sp2
 
@@ -1804,7 +1804,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
         vpp1:= r1*(u1 - upp1) + t2 - v1;
         vpp0:= r1*(u0 - upp0) + u1*t1 - q0*t2 + upp1*w3 - v0;
 
-        if (ADD_DEBUG) then "Deg3ADD: gcd(up,u) = e, DB = P1+P2+P3, DA = P1+P4+P5, deg(s) = 2"; end if;
+        if (ADD_DEBUG) then "ADD33"; end if;		// Deg3ADD: gcd(up,u) = e, DB = P1+P2+P3, DA = P1+P4+P5, deg(s) = 2
         return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     end if;//d
 
@@ -1838,7 +1838,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
             //vpp := (-s*u - v) mod upp;
             vpp0:= upp0*(u1*s0 + v1 + upp0*(s0*(upp0 - u2) - v2)) - v0 - u0*s0;
 
-            if (ADD_DEBUG) then "Deg3ADD: Typical, deg(s) = 0"; end if;
+            if (ADD_DEBUG) then "ADD34"; end if;		// Deg3ADD: Typical, deg(s) = 0
             return 0, 0, 1, upp0, 0, 0, vpp0;
         end if;//sp1
 
@@ -1865,7 +1865,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
         vpp1:= -s1*(u0 + u1*s0) - v1 - (upp0 + upp1)*(t4 + t2) + t3 + t5;        // karatsuba
         vpp0:= -s1*(u0*s0) - v0 - t5;
 
-        if (ADD_DEBUG) then "Deg3ADD: Typical, deg(s) = 1"; end if;
+        if (ADD_DEBUG) then "ADD35"; end if;		// Deg3ADD: Typical, deg(s) = 1
         return 0, 1, upp1, upp0, 0, vpp1, vpp0;
     end if;//sp2
 
@@ -1905,31 +1905,32 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f5, f4,
     vpp1:= r1*(u1 - upp1) + t2 - v1;
     vpp0:= r1*(u0 - upp0) + u1*t1 - q0*t2 + upp1*w3 - v0;
 
-    if (ADD_DEBUG) then "Deg3ADD: Typical, deg(s) = 2"; end if;
+    if (ADD_DEBUG) then "ADD36"; end if;		// Deg3ADD: Typical, deg(s) = 2
     return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
 end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // ADD():
-// Input: D1, D2:     divisors as [u, v] polynomial pairs, any degrees
+// Input: u, v:       Mumford coordinates of the first divisor, any degree
+//        up, vp:     Mumford coordinates of the second divisor, any degree
 //        f:          curve polynomial (h = 0 in this class)
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = D1 + D2
 //
-// Description: Dispatches on the operand degrees to the Deg* cases above,
-//              normalising the larger-degree divisor first. D1 = D2 is routed
-//              to DBL, so the D1 != D2 assumption of the cases holds below.
+// Description: Dispatches on the operand degrees to the Deg* cases above. Each
+//              leaf names the operand its callee wants, so nothing is sorted --
+//              which is also what lets deg(u) = 0 be answered: with the operands
+//              ordered, D1 = 0 implied D2 = 0 too. D1 = D2 is routed to DBL, so
+//              the D1 != D2 assumption of the cases holds below.
 ///////////////////////////////////////////////////////////////////////////////
 ADD:= function(u, v, up, vp, f)//startIGNORE
     // D1 = D2 is a doubling, not an addition: the Deg* cases below assume
     // D1 != D2 (the thesis Require clause) and return wrong results without it.
-    // This family has no DBL of its own until PR6 derives one; it doubles with
-    // the general (arb) formula at h = 0, exactly as its own tester does --
-    // nch2_ramifiedG3_random.mag loads arb_ramifiedG3_DBL.mag for this. 0*f is
-    // the zero polynomial of f's ring.
+    // This family has its own doubling, specialised to h = 0 and f6 = 0, so no
+    // h argument is passed -- nch2_ramifiedG3_DBL.mag takes (u, v, f).
     if u eq up and v eq vp then
-        return DBL(u,v,f,0*f);
+        return DBL(u,v,f);
     end if;
     // D1 and D2 in the order given -- the dispatch below asks each callee
     // for the operand it wants, so neither has to be the larger.

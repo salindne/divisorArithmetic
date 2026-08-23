@@ -6,7 +6,7 @@ and table-generation machinery behind them.
 Sebastian Lindner. Companion code to *Explicit Formulas for Hyperelliptic Curve Arithmetic* (University
 of Calgary, 2020), built as `ucalgary_2020_lindner_sebastian.pdf` in this directory.
 
-**Last updated:** 2026-08-12.
+**Last updated:** 2026-08-23.
 
 | model | genus 2 | genus 3 |
 |---|---|---|
@@ -29,9 +29,9 @@ framework in [verification/](verification/) runs in CI, which a licensed tool ne
 
 | gate | result |
 |---|---|
-| Magma suite, `./test_all.sh` | **26 testers, 0 failures, 2 skips**, ~40 min |
+| Magma suite, `./test_all.sh` | **28 testers, 0 failures, 0 skips**, ~6 min |
 | frozen case corpus, [verification/whitebox.py](verification/whitebox.py) | **1,838 cases replayed, 1,838 matched** |
-| branch coverage | **1,866 of 1,870 labelled branches, 99.8%** |
+| branch coverage | **1,877 of 1,881 labelled branches, 99.8%** |
 | differential tester, [verification/driver.py](verification/driver.py) `--strict` | **12,972 operations compared, 0 wrong** |
 | framework selftest | **17 sections** |
 
@@ -47,19 +47,21 @@ is unreachable in characteristic 2.
 | genus 2 balanced split, each basis, each of `arb`/`nch2`/`ch2` | 80 | 100% except two `UTL0` |
 | genus 3 balanced split, `arb` and `nch2` | 413 | 100% except one `UTL4` |
 | genus 3 balanced split, `ch2` | 413 | 349/350 ADD, rest 100% |
-| genus 3 ramified, `arb` and `nch2` | 30 + 10 + 30 | 100% |
+| genus 3 ramified, each of `arb`/`nch2` | 37 ADD + 11 DBL | 100% |
 
-**Genus-3 ramified is the one family with no Magma whitebox tester.** Its branches are covered instead by
-cases harvested into `verification/harvested_cases.json`, at 100%, and its two random testers are
-transitional imports — `Random(Jac)` almost always yields degree 3, so low-degree branches are thinly
-sampled there. Purpose-built testers arrive with the `nch2` doubling.
+**Every family now has a Magma whitebox tester.** Genus-3 ramified was the exception until its two were
+generated — 48 constructed cases each, every one asserted against Magma's own Jacobian arithmetic — so
+`verification/harvested_cases.json` is now empty and all 1,838 cases are extracted from testers. Its two
+*random* testers remain transitional imports, and `Random(Jac)` almost always yields degree 3, so
+low-degree branches are thinly sampled there; that is what the whitebox testers exist to cover, by
+enumerating the divisor space rather than sampling it.
 
-**Two limits of the whitebox gate, worth knowing before trusting it.** Coverage is keyed on
-`ADD_DEBUG`/`DBL_DEBUG` label strings, so a branch with no label is invisible to it: `Deg3ADD`'s
-generic path in the genus-3 ramified files carries none, and sabotaging that path leaves the corpus
-gate reporting a clean pass. For those files the gates that bite are the differential tester and Magma. And
-`UTL` branches are instrumented at genus 3 only; the eight genus-2 split testers set
-`UTL_DEBUG := false`.
+**One limit of the whitebox gate, worth knowing before trusting it.** Coverage is keyed on
+`ADD_DEBUG`/`DBL_DEBUG` label strings, so a branch with no label is invisible to it. That gap used to
+include `Deg3ADD`'s generic path in the genus-3 ramified files — the frequent case — where sabotage left
+the corpus gate reporting a clean pass; those labels have since been added, and the four remaining
+unlabelled returns are dispatcher leaves, deliberately consistent between the two files. `UTL` branches
+are instrumented at genus 3 only; the eight genus-2 split testers set `UTL_DEBUG := false`.
 
 **Operation counts.** Every operation costs exactly one inversion, so `I` is omitted below.
 "Typical" means the non-degenerate path: trivial gcd, `deg s = 2`, a full-degree result. The
@@ -77,8 +79,8 @@ Highest-degree typical case per family, `M / S / A / C`:
 | **g2 split** arb | 27 / 1 / 37 / 3 | 30 / 2 / 44 / 8 | published |
 | **g2 split** nch2 | 26 / 2 / 36 / 0 | 29 / 3 / 39 / 0 | published |
 | **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | published |
-| **g3 ramified** arb | **53 / 3 / 71 / 1** | **57 / 4 / 92 / 3** | measured |
-| **g3 ramified** nch2 | **53 / 3 / 59 / 0** | *borrows arb* | measured |
+| **g3 ramified** arb | **53 / 3 / 71 / 1** | **54 / 4 / 80 / 4** | measured |
+| **g3 ramified** nch2 | **53 / 3 / 59 / 0** | **53 / 5 / 61 / 0** | measured |
 | **g3 split** arb | 65 / 3 / 87 / 12 | 73 / 3 / 101 / 19 | published |
 | **g3 split** nch2 | 65 / 3 / 85 / 0 | 72 / 4 / 97 / 0 | published |
 | **g3 split** ch2 | 65 / 3 / 80 / 0 | 71 / 4 / 86 / 1 | published |
@@ -148,7 +150,9 @@ docker build -f tools/magma-docker/Dockerfile -t magma-qemufix .
 MAGMA=tools/magma-docker/magma.sh ./test_all.sh
 ```
 
-That runs 26 testers in about 40 minutes and exits 0. The two genus-3 ramified whitebox gaps are reported as skips; see
+That runs 28 testers in about six minutes and exits 0 -- 4.3 min of Magma across 82,795 divisor
+comparisons, the rest inter-family pauses. Every family now has a whitebox tester, so there is nothing
+left to skip; see
 [Status](#status).
 
 Use [tools/magma-docker/](tools/magma-docker/) rather than a plain `docker build`. On Apple Silicon a
@@ -258,7 +262,7 @@ before trusting any cross-comparison.
 ./test_all.sh
 ```
 
-runs 26 testers across genus 2 and genus 3.
+runs 28 testers across genus 2 and genus 3.
 
 **Whitebox testers** compute one search-found divisor operation per computation path and assert the
 result against the reference implementation. Coverage is in [Status](#status). The cases are harvested by
@@ -278,20 +282,37 @@ python3 verification/selftest.py                                  # the framewor
 It is pure standard library — no install step, no lockfile.
 
 **Random testers** compute random divisor additions and doublings over a fixed, enumerated list of small
-fields. The field list is not random; the curves and divisors drawn on each are. Volumes differ by
-family:
+fields. The field list is not random; the curves and divisors drawn on each are. One curve is drawn per
+field, so **the field list is the characteristic coverage** — which is why the volumes below were reduced
+and the field lists were not.
 
-| tester | divisors | curves per trial |
+| tester | divisors per curve | was |
 |---|---|---|
-| genus 2, all families | 2500 or 5000 | 1 |
-| genus 3 split `arb` | 100 | 10 |
-| genus 3 split `nch2` | 500 | 3 |
-| genus 3 split `ch2` | 1000 | 5 |
-| genus 3 ramified `arb` | 100 | 10 trials |
-| genus 3 ramified `nch2` | 500 | 5 trials |
+| genus 2 ramified, all three | 500 | 2500 |
+| genus 2 split, all six | 250 | 2500 or 5000 |
+| genus 3 ramified, both | 50 | 100, 500 |
+| genus 3 split, all three | 25 | 100, 500, 1000 |
 
-**Not run by `test_all.sh`:** the two genus-3 ramified whitebox testers, which do not exist yet and are
-reported as deliberate skips rather than silently omitted;
+**Why these are enough, and what they are not for.** The rare branches are proved by the *whitebox*
+testers, deterministically: one constructed case per branch label, every one asserted against Magma's own
+Jacobian arithmetic, at about a second per tester. Leaving a degenerate case to a one-in-q² dice roll here
+was never how it was actually covered. What the random testers uniquely add is *within-branch* input
+variation against fresh inputs — and for that, volume was already far past the point of diminishing
+return: the one defect of that class this project ever found (E1) took **3,240,293 enumerated pairs**, so
+2500 per curve was three orders of magnitude short of catching it and 500 is no further away. The
+reduction cost wall-clock, not defect-finding power.
+
+**Replaying a failure.** Magma does not seed deterministically — two runs of the same tester draw
+different curves — so each of these testers now prints its seed and the command to reuse it:
+
+```
+// - Random seed 1804224007, step 0. Replay this run with RND_SEED=1804224007
+```
+
+`RND_SEED` is forwarded into the container unconditionally by
+[tools/magma-docker/magma.sh](tools/magma-docker/magma.sh), so that line works as printed.
+
+**Not run by `test_all.sh`:**
 [generic/reduced_basis_tester.mag](generic/reduced_basis_tester.mag);
 [generic/arbitrary/reduced_basis_tester.mag](generic/arbitrary/reduced_basis_tester.mag); and everything
 under [g2/timings/](g2/timings/) and [g3/timings/](g3/timings/).
@@ -471,11 +492,16 @@ rests on a structural argument. `diff -r ThesisPublished Thesis` shows the curre
 
 ## Known gaps and roadmap
 
-- **Genus 3 ramified is `arb` and `nch2` only.** The `ch2` specialisation, and an `nch2` doubling, are
-  still to be derived; `nch2` currently borrows the `arb` doubling and so pays for h-terms on every
-  double.
-- **No whitebox testers for genus 3 ramified.** Its branches are covered by harvested cases at 100%, but
-  the two Magma random testers are transitional imports and there is no Magma whitebox tester.
+- **Genus 3 ramified is `arb` and `nch2` only.** The `ch2` specialisation is still to be derived, so
+  five of the six `{arb, nch2, ch2} x {ADD, DBL}` cells exist. The `nch2` doubling no longer borrows
+  the `arb` one: it is derived at `h = 0` and `f6 = 0`, which removed 26 additions and every constant
+  multiplication from the degree-2 case.
+- ~~**No whitebox testers for genus 3 ramified.**~~ **Closed.** Both families now have
+  one, generated by `whitebox/genFiles/*_ramifiedG3_WB_gen.mag`: 48 constructed cases
+  each, one per branch label, every case asserted against Magma's own Jacobian
+  arithmetic. Coverage of those four formula files is 100% from *extracted* cases, so
+  the harvested corpus that stood in for them is now empty -- the machinery stays for
+  the next family derived before its tester exists.
 - **`verification/opcount.py` cannot measure split families**, so no split-model operation count can be
   quoted from it yet. The split figures in [RELATED_WORK.md](RELATED_WORK.md) come from an external
   harness.

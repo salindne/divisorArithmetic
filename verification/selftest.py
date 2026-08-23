@@ -540,6 +540,7 @@ def section_repros(rep, quick):
     fams, _excluded = D.discover_families()
     same = diff = dispatched = 0
     problems = []
+    skipped_domain = []
     for fname in present:
         data = json.loads(open(os.path.join(AUDIT_HARNESS, fname)).read())
         records = (list(data.values()) if isinstance(data, dict)
@@ -570,6 +571,32 @@ def section_repros(rep, quick):
                 cur = C.Curve(F, f, h, fam.kind, 3, "ramified")
             except AssertionError as exc:
                 problems.append("%s: curve rejected: %s" % (fname, str(exc)[:50]))
+                continue
+            # A record whose curve is outside the family's DECLARED domain can no
+            # longer be replayed against it. Every one of the audit's odd-
+            # characteristic records sits on an f6 != 0 curve, and until PR6 the
+            # family had no doubling of its own -- it borrowed the arb one, which
+            # takes general f6, so the equal-divisor records resolved against a
+            # file that accepted them. Now that nch2_ramifiedG3_DBL.mag exists and
+            # assumes f6 = 0 (PR17's depression, which the ADD already assumed),
+            # those records describe a curve this family does not claim. Skipping
+            # them is the honest outcome; comparing them would assert the
+            # specialisation wrong for answering correctly on its own domain.
+            # What the family's own dispatchers EXTRACT is the sharp test: a
+            # coefficient neither operation reads cannot influence a result, so a
+            # record with that coefficient nonzero is outside the domain. Index
+            # 2g+1 is excluded -- f monic of degree 7 is a property of the model,
+            # never an assumption a specialisation makes.
+            reads = set(D.read_support(fam.add_path, "ADD").get("f", ()))
+            if fam.dbl_path:
+                reads |= set(D.read_support(fam.dbl_path, "DBL").get("f", ()))
+            out_of_domain = sorted(
+                "f%d" % i for i in range(7)
+                if i not in reads and i <= f.degree() and f.coeff(i) != F.zero)
+            if out_of_domain:
+                skipped_domain.append(
+                    "%s %s: %s != 0" % (fname, r.get("branch", "?"),
+                                        ",".join(out_of_domain)))
                 continue
             # DBL merged for the same reason the testers load both files: the
             # dispatcher's equal-divisor route resolves against it. nch2 borrows
@@ -608,9 +635,13 @@ def section_repros(rep, quick):
                            "divisor record(s) wrong; first: %s"
                  % (diff, len(problems) - min(diff, len(problems)), problems[0]))
     else:
+        note = ""
+        if skipped_domain:
+            note = ("; %d record(s) skipped as outside the family's declared "
+                    "domain (%s)" % (len(skipped_domain), skipped_domain[0]))
         rep.ok("repros", "%d equal-divisor repros now give the reference sum; "
                          "%d unequal ones reproduce byte-for-byte across %d "
-                         "files" % (dispatched, same, len(present)))
+                         "files%s" % (dispatched, same, len(present), note))
 
 
 def section_swap(rep, quick):
@@ -856,6 +887,7 @@ def section_gate_guards(rep, quick):
     added guards; a guard never observed to fail is not known to be a guard, so each is
     provoked here and must fail the run.
     """
+    inapplicable = []
     import io                                                   # noqa: PLC0415
     import contextlib                                           # noqa: PLC0415
     import whitebox as W                                        # noqa: PLC0415
@@ -956,8 +988,18 @@ def section_gate_guards(rep, quick):
     expect_fail("a new branch appears in a baselined file", add_branch,
                 lambda: setattr(D, "labels_in", orig_labels))
     expect_fail("an arity anomaly is not pinned", fake_arity, restore_decode)
-    expect_fail("a harvested case drifted from its record", drift_case,
-                restore_harvest)
+    # The harvested-case drift guard can only be provoked when there ARE harvested
+    # cases. PR6 gave the two genus-3 ramified families real whitebox testers, so
+    # every family is now covered by EXTRACTED cases and the harvest is empty --
+    # the machinery stays for the next family derived without a tester (ch2 at
+    # genus 3), but there is nothing to drift today. Reported rather than skipped
+    # silently, because a provocation that cannot fire is not a passing guard.
+    if json.loads(harvest_src).get("cases"):
+        expect_fail("a harvested case drifted from its record", drift_case,
+                    restore_harvest)
+    else:
+        inapplicable.append("harvested-case drift: the corpus is empty, every "
+                            "family now has extracted cases")
 
     # The sentinel guard: declare a label that IS reached to be an unguarded marker.
     orig = D.sentinel_labels
@@ -975,7 +1017,10 @@ def section_gate_guards(rep, quick):
     if problems:
         rep.fail("gate_guards", problems[0])
     else:
-        rep.ok("gate_guards", "%d guards provoked, all fired" % len(shown))
+        note = ("; %d inapplicable (%s)" % (len(inapplicable), inapplicable[0])
+                if inapplicable else "")
+        rep.ok("gate_guards",
+               "%d guards provoked, all fired%s" % (len(shown), note))
 
 
 def section_domain(rep, quick):

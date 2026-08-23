@@ -413,7 +413,7 @@ The asymmetry is the check that the sixteen fields are not decoration.
 | `_parser.py` | expression parsing for the `.mag` subset: calls, indexing, sequence and tuple literals, full precedence |
 | `maginterp.py` | executes `.mag` function bodies. `python3 maginterp.py` reports parse coverage |
 | `whitebox.py` | replays the frozen cases; **this is what CI gates on** |
-| `harvested_cases.json` | frozen cases for every branch no Magma tester reaches -- currently 96 cases, all for the two genus-3 ramified families, which have no tester until PR6. The genus-3 split `ch2` entries left when PR12's regenerated tester made them redundant |
+| `harvested_cases.json` | frozen cases for every branch no Magma WHITEBOX tester reaches -- currently 96 cases, all for the two genus-3 ramified families, which have random testers but no whitebox generator. Re-harvested when the odd-characteristic genus-3 doubling was derived, since its branches had until then been the arb file's. The genus-3 split `ch2` entries left when PR12's regenerated tester made them redundant |
 | `coverage_baseline.json` | the branches exempt from coverage, **as a named label set with a reason each** — everything else must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Also pins any known arity anomalies by case identity, so a new one fails while known ones stay reported-not-fatal; the pin set is empty since PR5 fixed errata E2 |
 | `driver.py` | random differential testing, with per-branch coverage; not in CI |
 | `normal_form.py` | verifies the curve normal forms the formula banners declare, at both genera, including the negative controls. Standalone, no arguments, ~1 min; not in CI. Backs Part I of [`NEW_WORK.md`](../NEW_WORK.md) |
@@ -609,7 +609,7 @@ They are independent oracles and both are worth having. The Magma testers assert
 against Magma's own Jacobian arithmetic; this framework asserts against a
 from-scratch Cantor implementation, cross-checked three ways.
 
-They have been run against each other: the full Magma suite passes 26 testers with 0
+They have been run against each other: the full Magma suite passes 28 testers with 0
 failures (2 deliberate skips), and the driver reports 0 mismatches on the same families. Agreement is
 expected only where both can look, and the one asymmetry is the point — the driver
 sees the `D1 = D2` region and no Magma tester can.

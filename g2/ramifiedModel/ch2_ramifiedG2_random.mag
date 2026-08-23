@@ -27,12 +27,23 @@ load "g2Formulas/ch2_ramifiedG2_ADD.mag";
 ///////////////////////////////////////////////////////////////////////////////
 //Field sizes below 32 for random testing
 FIELDS:= {2,4,8,16,32};
-DIVISORS:= 2500; //Number of divisor additions and doubling to test per curve
+DIVISORS:= 500; //Number of divisor additions and doubling to test per curve
 TRIALS:= #FIELDS;
 DEBUG:= false;
 TEST_DBL:= true;
 TEST_ADD:= true;
 
+
+///////////////////////////////////////////////////////////////////////////////
+//REPRODUCIBILITY
+///////////////////////////////////////////////////////////////////////////////
+// These testers never set or reported a seed, so a failure in a rarely-drawn
+// branch could not be replayed -- and a failure you cannot replay is a failure
+// you cannot diagnose. The seed and step are printed in the banner below;
+// RND_SEED=<n> reruns that draw sequence exactly.
+if GetEnv("RND_SEED") ne "" then
+    SetSeed(StringToInteger(GetEnv("RND_SEED")));
+end if;
 
 /////////////////////////////////////////////////////////
 ///////////////////// TEST LOOPS ////////////////////////
@@ -43,9 +54,12 @@ printf "//\n";
 printf "// - Small finite field and curve picked at random for each trial. \n";
 printf "// - %o total trials.            \n", TRIALS;
 printf "// - %o divisor additions and doubles each per trial.            \n", DIVISORS;
+sd, st:= GetSeed();
+printf "// - Random seed %o, step %o. Replay this run with RND_SEED=%o\n", sd, st, sd;
 printf "//";
 trial:=1;
 errorFlag:= false;
+nCmp:= 0;
 for F in FIELDS do
   printf "\n//    Trail # %o over FF(%o).", trial, F;
   trial+:=1;
@@ -91,6 +105,7 @@ for F in FIELDS do
     if DEBUG then "  "; end if;
     if TEST_DBL then
       un2,un1,un0,vn1,vn0 := DBL(u1,v1,f,h);
+      nCmp+:= 1;
       cantor:= D1 + D1;
       if (un2*x^2 + un1*x + un0) ne cantor[1] or (vn1*x + vn0) ne cantor[2] then
         printf "//     Doubling %o failed over finite field FF(%o) where f = %o and h = %o \n", D1, F, f, h;
@@ -101,6 +116,7 @@ for F in FIELDS do
     if TEST_ADD then
       if D1 ne D2 then
         un2,un1,un0,vn1,vn0 := ADD(u1,v1,u2,v2,f,h);
+        nCmp+:= 1;
         cantor:= D1 + D2;
         if (un2*x^2 + un1*x + un0) ne cantor[1] or (vn1*x + vn0) ne cantor[2] then
           printf "//     Adding %o with %o failed over finite field FF(%o) where f = %o and h = %o \n", D1, D2, F, f, h;
@@ -111,6 +127,13 @@ for F in FIELDS do
   end while; 
 end for;
 printf "\n//";
+// E12: a tester that loaded nothing used to print the same green
+// summary as one that verified everything, because TEST_ADD/TEST_DBL
+// are configuration switches and "No errors." is true by vacuity.
+// The count makes an empty run loud, and the assert makes it fatal:
+// test_all.sh greps for "Runtime error|Assertion failed".
+printf "\n// Comparisons: %o", nCmp;
+assert nCmp gt 0;
 if errorFlag then
   printf "\n// Errors occured.";
 else

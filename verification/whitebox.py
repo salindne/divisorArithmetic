@@ -43,16 +43,18 @@ directly cannot go stale, and parsing eleven files costs a fraction of a second.
 
 Cases come from two places, and which one is always visible in the report:
 
-  **extracted** from a whitebox tester -- 11 families, 1,338 cases -- and held to
-  100% coverage. A tester was built by searching until every branch had a case, so a
-  file that now covers fewer branches than its tester holds is a regression.
+  **extracted** from a whitebox tester -- 14 families, 1,838 cases, which since PR6 is
+  every family in the repository -- and held to 100% coverage. A tester was built by
+  searching until every branch had a case, so a file that now covers fewer branches
+  than its tester holds is a regression.
 
-  **harvested** by `--harvest`, for every branch no extracted case reaches: because
-  the family has no tester at all (genus-3 ramified), or because the tester's own
-  search missed it (genus-3 split ch2, whose regenerated tester reaches 347 of 413).
-  Search for an input reaching the branch, then freeze it. Held to the coverage
-  recorded when it was harvested, since search cannot be assumed to reach a branch
-  needing an algebraic coincidence.
+  **harvested** by `--harvest`, for every branch no extracted case reaches: because a
+  family has no tester at all, or because the tester's own search missed a branch
+  (genus-3 split ch2, whose regenerated tester reaches 347 of 413). Search for an input
+  reaching the branch, then freeze it. Held to the coverage recorded when it was
+  harvested, since search cannot be assumed to reach a branch needing an algebraic
+  coincidence. **The corpus is empty today** -- genus-3 ramified was its only resident
+  and PR6 gave it real testers -- so this channel is currently dormant, not gone.
 
 **These two are the same kind of artefact.** Both are the frozen output of a
 coverage-guided random search; the difference is only which language ran the search
@@ -63,9 +65,10 @@ report labels each case's provenance rather than implying one is sounder.
 Either way, this replays frozen inputs and never samples. Randomness builds the
 corpus once, offline; it is not part of the gate.
 
-Genus-3 ramified has only three developed files -- arb ADD, arb DBL and nch2 ADD --
-and all three are harvested at 100%. Its other three cells (nch2 DBL, ch2 ADD, ch2
-DBL) do not exist yet, so there is nothing to cover until PR6 through PR8 derive them.
+Genus-3 ramified used to be the exception, harvested rather than extracted because it
+had no Magma whitebox tester. PR6 wrote its generators and testers, so it is extracted
+like everything else and the harvested corpus is empty. Its remaining two cells (ch2
+ADD, ch2 DBL) do not exist yet, so there is nothing to cover until PR7 and PR8.
 """
 
 from __future__ import annotations
@@ -606,12 +609,13 @@ def _de_poly(F, data):
 def harvest(families, seed=1, curves=40, pairs=12, already=None):
     """Find one input per branch for families that have no whitebox tester.
 
-    Genus-3 ramified is the reason this exists. It has no whitebox tester -- PR6
-    builds them -- and it is the family this merge series is for, so it cannot go
-    untested. Its three developed files (arb ADD, arb DBL, nch2 ADD) get constructed
-    cases the only way available: search for an input reaching each labelled branch,
-    then freeze it. The three undeveloped cells (nch2 DBL, ch2 ADD, ch2 DBL) have no
-    files, so there is nothing to cover until PR6 through PR8 derive them.
+    Genus-3 ramified is the reason this exists. It had no whitebox tester and was the
+    family this merge series is for, so it could not go untested: its files got
+    constructed cases the only way then available -- search for an input reaching each
+    labelled branch, then freeze it. PR6 ended that by writing real generators, so the
+    corpus is empty and this function currently supplements extracted testers only.
+    The remaining cells (ch2 ADD, ch2 DBL) have no files, so there is nothing to cover
+    until PR7 and PR8 derive them.
 
     The search uses the random generators, but **the result is a frozen case like any
     other**: CI replays frozen inputs and never samples. Randomness builds the corpus
@@ -624,7 +628,8 @@ def harvest(families, seed=1, curves=40, pairs=12, already=None):
     at all, which left no way to fill a branch a tester's own search had missed: the
     genus-3 split ch2 tester covers 347 of its 413 labels, and the remainder are
     reachable but rare. Harvesting the difference makes the corpus the union of both
-    searches, and keeps working unchanged when PR6 adds the genus-3 ramified testers.
+    searches -- and it kept working unchanged when PR6 added the genus-3 ramified
+    testers, which is what let their harvested cases be retired rather than migrated.
 
     For the split model the infinite-place root is pinned to the reference's own Vp, so
     Precompute's constants and the reference agree by construction rather than by
@@ -1225,12 +1230,15 @@ def _families_without_testers(testers):
     tester regenerated, so it is extracted like every other split family. Harvest still
     supplements it for the branches that tester's own search did not reach, which is a
     different thing and is reported by file coverage rather than here.
+
+    The two genus-3 ramified entries have been removed for the same reason: PR6 wrote
+    their generators and testers, so they are extracted too, and the harvested corpus
+    they existed for is now empty. THE LIST IS DELIBERATELY EMPTY -- every family in
+    the repository has a Magma whitebox tester. The next one derived ADD-first arrives
+    here before its tester does, which is ch2 at genus 3.
     """
     have = {family_of(t)[:3] + (family_of(t)[3],) for t in testers}
-    known = [
-        (("ramified", 3, "arb", None), "harvested at 100%; PR6 writes the tester"),
-        (("ramified", 3, "nch2", None), "harvested at 100%; PR6 writes the tester"),
-    ]
+    known = []
     out = []
     for key, why in known:
         if key in have:

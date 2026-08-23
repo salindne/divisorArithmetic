@@ -23,6 +23,11 @@
 # whitebox generators read via GetEnv:
 #     MAGMA_ENV="WB_TRIALS WB_SEED" WB_TRIALS=400 ... magma.sh gen.mag
 #
+# RND_SEED is forwarded ALWAYS, without needing to be named. The random testers
+# print "Replay this run with RND_SEED=<n>", and a command a program tells you to
+# run has to work as printed -- requiring the reader to also discover MAGMA_ENV
+# would make that line misleading rather than helpful.
+#
 # See README.md in this directory for why the image needs a patched emulator.
 
 set -uo pipefail
@@ -66,7 +71,7 @@ EOF
 fi
 
 ENV_ARGS=()
-for name in ${MAGMA_ENV:-}; do
+for name in RND_SEED ${MAGMA_ENV:-}; do
     ENV_ARGS+=(-e "$name")
 done
 

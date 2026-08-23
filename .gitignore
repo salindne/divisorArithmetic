@@ -29,6 +29,15 @@ whitebox/logs/*.new
 # Too large to track, and reproducible from the generator.
 whitebox/logs/*_ramifiedG2_log.txt
 
+# Regeneration logs for the genus-3 ramified families, 2.7M and 3.7M against a
+# 616K largest-committed. Same reason as the genus-2 ramified ones, and these are
+# strictly reproducible: their generators enumerate rather than search, so a run
+# is a function of (WB_SEED, budget) and both are recorded in each generator's
+# header. The committed logs above are kept only because they are the sole record
+# of how the retired orchestrator behaved -- that is history, not a convention to
+# follow for a new family.
+whitebox/logs/*_ramifiedG3_log.txt
+
 # macOS
 .DS_Store
 
