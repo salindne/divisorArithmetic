@@ -213,6 +213,9 @@ _BANNER_MEMBER = re.compile(r"\(\s*([fh])(\d+)\s+in\s*\{([^}]*)\}\s*\)")
 # wrong DBL4 doublings the restriction exists to exclude.
 _BANNER_EQ = re.compile(r"\b([fh])(\d+)\s*=\s*(\d+)\b")
 
+# Declarations are parenthesised; prose is not. See banner_members.
+_BANNER_PARENS = re.compile(r"\(([^)]*)\)")
+
 # `deg h = 2` states the degree exactly. Kept separate from the coefficient pins:
 # it is a statement about h, not a value for one coefficient, and it is what
 # `require_leading_pin` checks a ch2 banner for.
@@ -274,8 +277,19 @@ def banner_members(path):
             if vals:
                 out[(m.group(1), int(m.group(2)))] = vals
         # `h2 = 1`: a singleton, and the form the char-2 normal form uses.
-        for m in _BANNER_EQ.finditer(line):
-            out.setdefault((m.group(1), int(m.group(2))), set()).add(int(m.group(3)))
+        #
+        # Read ONLY inside parentheses, which is where the declarations live:
+        # `(deg h = 2, h2 = 1)`. Unrestricted, this matched explanatory PROSE in
+        # the same banner and silently redefined the tested domain -- a genus-3
+        # ch2 banner explaining that the reduction fails "at h3 = 0" was read as
+        # permitting h3 = 0, i.e. exactly the deg h < 3 family those formulas do
+        # not cover. The nch2 genus-3 banners have the same shape ("gives f6 = 0")
+        # and were harmless only because the prose happened to state the true
+        # constraint; that is luck, not a design. A sentence must not be able to
+        # move the domain.
+        for span in _BANNER_PARENS.finditer(line):
+            for m in _BANNER_EQ.finditer(span.group(1)):
+                out.setdefault((m.group(1), int(m.group(2))), set()).add(int(m.group(3)))
     return out
 
 

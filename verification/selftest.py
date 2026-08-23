@@ -1180,15 +1180,42 @@ def section_domain(rep, quick):
         if D.require_leading_pin(nch2g3, mem):
             problems.append("nch2/g3 wrongly required an h_g pin (its h is 0)")
         D.banner_members = real_bm
+
+        # (h) PROSE MUST NOT MOVE THE DOMAIN. Declarations are parenthesised --
+        # `(deg h = 3, h3 = 1)`. An unrestricted `h3 = 1` pattern also matched
+        # explanatory sentences in the same banner, and the effect was a silent
+        # redefinition of what gets tested: a ch2 genus-3 banner explaining that
+        # the reduction fails "at h3 = 0" was read as PERMITTING h3 = 0, which is
+        # precisely the deg h < 3 family ch2 does not cover. The genus-3 nch2
+        # banners have the same shape ("gives f6 = 0") and were harmless only
+        # because that sentence happened to state the truth.
+        probe = ("// Description: formulas where:\n"
+                 "//              h(x) = x^3 + h2*x^2 + h1*x + h0 (deg h = 3, h3 = 1)\n"
+                 "//              f(x) = x^7 + f2x^2 + f1x + f0\n"
+                 "// Domain: the y-shift clears f5 through a2*h3, so at h3 = 0 the\n"
+                 "//         reduction fails and f6 = 0 cannot be reached.\n")
+        with tempfile.NamedTemporaryFile("w", suffix="_ADD.mag", delete=False) as fh:
+            fh.write(probe)
+            probe_path = fh.name
+        try:
+            got = D.banner_members(probe_path)
+            if got.get(("h", 3)) != {1}:
+                problems.append("banner prose moved the domain: h3 read as %s, "
+                                "want {1}" % sorted(got.get(("h", 3), [])))
+            if ("f", 6) in got:
+                problems.append("banner prose pinned f6 from a sentence")
+        finally:
+            os.unlink(probe_path)
     finally:
         D.read_support, D.banner_members = real_rs, real_bm
 
-    rep.note("    domain: 7 mechanisms provoked (banner set + singleton + scope, "
-             "borrowed banner, singleton bite, leading coefficient, loud failure)")
+    rep.note("    domain: 8 mechanisms provoked (banner set + singleton + scope, "
+             "borrowed banner, singleton bite, leading coefficient, loud failure, "
+             "prose is not a declaration)")
     if problems:
         rep.fail("domain", problems[0])
     else:
-        rep.ok("domain", "7 mechanisms provoked, all correct")
+        rep.ok("domain", "8 mechanisms provoked, all correct")
 
 
 def section_specialisation(rep, quick):

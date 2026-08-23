@@ -728,6 +728,56 @@ nest six deep with `end if;//name` closers a line scanner cannot match reliably.
 assigned-nowhere *and* assigned-below, and **only real Magma catches assigned-on-another-path.** A formula edit that cannot be run under Magma is not verified
 against this class.
 
+## E19: a sentence in a banner could redefine the tested domain
+
+**Found 2026-08-23** while writing the genus-3 characteristic-2 banners, by the harness reporting a
+domain nobody had declared.
+
+`driver.banner_members` reads a file's own banner to learn which curve coefficients are pinned, and
+PR29 taught it the singleton form the char-2 normal form needs -- `h2 = 1`, not `h2 in {0,1}`. The
+pattern it used, `\b([fh])(\d+)\s*=\s*(\d+)\b`, was applied to **every comment line in the banner
+region**, so it could not distinguish a declaration from a sentence that happened to mention a
+coefficient and a value.
+
+**The reproducer is the banner this was found in.** A genus-3 ch2 header declaring the domain
+correctly:
+
+    //   h(x) = x^3 + h2*x^2 + h1*x + h0 (deg h = 3, h3 = 1)
+
+and then *explaining* it two lines later:
+
+    //   the y-shift that clears f5 does so through a2*h3, so at h3 = 0 the f
+    //   reduction fails as well
+
+yields `members[('h',3)] = {0,1}` -- the union of the declaration and the prose. `curve_in_domain`
+then treats `h3 = 0` as permitted and generates `deg h < 3` curves, which is **exactly the family
+those formulas do not cover** and which the declaration exists to exclude.
+
+**The genus-3 odd-characteristic files have the same shape and were harmless by luck.** Both
+`nch2_ramifiedG3_ADD.mag` and `nch2_ramifiedG3_DBL.mag` explain the depression as "the translation
+`x -> x - f6/7` gives `f6 = 0`", which parsed as `members[('f',6)] = {0}`. That is a *pin*, so
+`family_domain` **discarded 6 from the contrast-derived constraint** and then re-imposed it through
+the members channel. The two effects cancelled and `f6` came out zero either way -- but only because
+the sentence happened to state the truth. Measured before the fix: the contrast said
+`{'f': {6}}`, the banner reduced it to `{'f': set()}`, and 240 generated curves still had `f6 = 0`
+because the members pin replaced the constraint it had removed.
+
+**Class.** Same family as E14 (an inline ledger comment read as gate input) and the load-bearing
+label strings: text that looks like documentation and is machine input. Here it is worse than E14,
+because the effect is not a wrong report but a **silently different tested domain** -- the PR29
+failure mode that section exists to prevent, reintroduced through the prose channel rather than the
+parsing one.
+
+**FIXED 2026-08-23.** Declarations are parenthesised in every file that has one -- `(h2 in {0,1})`,
+`(deg h = 2, h2 = 1)` -- so the singleton pattern is now read only inside parentheses. Prose cannot
+reach it. Verified by reverting the one-line change and watching `selftest.py`'s `domain` section
+report `banner prose moved the domain: h3 read as [0, 1], want {1}`; that section is now **8
+mechanisms** and the new one is provoked on a synthetic banner rather than on a shipped file, so it
+keeps testing the parser after every real banner is corrected.
+
+**Side effect, in the right direction:** with the accidental pin gone, `ramified/g3/nch2` derives
+`f6 = 0` from the dispatcher contrast as designed, rather than from a sentence.
+
 ## E16: the genus-3 odd-characteristic `dw31`/`dw30` comment has `m7` and `m8` swapped
 
 **Found 2026-08-20** while reading the two genus-3 ramified additions against each other.
