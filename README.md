@@ -29,7 +29,7 @@ framework in [verification/](verification/) runs in CI, which a licensed tool ne
 
 | gate | result |
 |---|---|
-| Magma suite, `./test_all.sh` | **28 testers, 0 failures, 0 skips**, ~6 min |
+| Magma suite, `./test_all.sh` | **28 testers, 0 failures, 0 skips**, ~3.5 min |
 | frozen case corpus, [verification/whitebox.py](verification/whitebox.py) | **1,838 cases replayed, 1,838 matched** |
 | branch coverage | **1,877 of 1,881 labelled branches, 99.8%** |
 | differential tester, [verification/driver.py](verification/driver.py) `--strict` | **12,972 operations compared, 0 wrong** |
@@ -150,8 +150,9 @@ docker build -f tools/magma-docker/Dockerfile -t magma-qemufix .
 MAGMA=tools/magma-docker/magma.sh ./test_all.sh
 ```
 
-That runs 28 testers in about six minutes and exits 0 -- 4.3 min of Magma across 82,795 divisor
-comparisons, the rest inter-family pauses. Every family now has a whitebox tester, so there is nothing
+That runs 28 testers in about three and a half minutes and exits 0, essentially all of it Magma:
+3.3 min across 62,654 divisor comparisons. The script used to spend a further ~100 seconds in
+decorative inter-family `sleep` calls; those are gone. Every family now has a whitebox tester, so there is nothing
 left to skip; see
 [Status](#status).
 
@@ -282,9 +283,11 @@ python3 verification/selftest.py                                  # the framewor
 It is pure standard library — no install step, no lockfile.
 
 **Random testers** compute random divisor additions and doublings over a fixed, enumerated list of small
-fields. The field list is not random; the curves and divisors drawn on each are. One curve is drawn per
-field, so **the field list is the characteristic coverage** — which is why the volumes below were reduced
-and the field lists were not.
+fields. The field list is not random; the curves and divisors drawn on each are. **Exactly one curve is
+drawn per field, in every tester**, so the field list is the characteristic coverage — which is why the
+volumes below were reduced and the field lists were not. The two genus-3 ramified testers used to be the
+exception, nesting a ten- and five-curve loop inside the field loop; they now match the other twelve,
+where `trial` is a print counter and `TRIALS = #FIELDS`.
 
 | tester | divisors per curve | was |
 |---|---|---|

@@ -8,7 +8,6 @@
 # Usage:
 #   ./test_all.sh                        # requires `magma` on PATH
 #   MAGMA=tools/magma-docker/magma.sh ./test_all.sh    # through the patched container
-#   SLEEP=0 ./test_all.sh                # skip the decorative pauses
 #   LOGDIR=/somewhere ./test_all.sh      # where per-tester logs are written
 #
 # Exits 0 only if every tester ran to completion and reported no errors;
@@ -26,7 +25,6 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAGMA="${MAGMA:-magma}"
-SLEEP="${SLEEP:-1}"
 LOGDIR="${LOGDIR:-$ROOT/.test-logs}"
 
 # ---------------------------------------------------------------------------
@@ -90,12 +88,6 @@ heading() {
     printf '\n\n\n%s\n%s\n%s\n\n\n' "$rule" "$text" "$rule"
 }
 
-# pause <seconds> -- decorative, suppressed entirely by SLEEP=0
-pause() {
-    [ "$SLEEP" -eq 0 ] 2>/dev/null && return 0
-    sleep "$1"
-}
-
 # run_test <whitebox|random> <file>
 #
 # Magma cannot be gated on its exit status: it returns 0 even when an assertion
@@ -154,17 +146,14 @@ run_family() {
                   "no such tester exists in this repository"
     else
         boxed "White Box Testing Over $label"
-        pause 1
         run_test whitebox "$whitebox"
     fi
 
     boxed "Random Testing Over $label"
-    pause 1
     run_test random "$random"
 
     boxed "Finished Testing Over $label"
     echo
-    pause 3
 }
 
 ARB='Arbitrary Fields'
@@ -178,21 +167,18 @@ NCH2='Characteristic !=2 Fields'
 heading 'TESTING EXPLICIT GENUS 2 ARITHMETIC'
 
 heading 'TESTING EXPLICIT GENUS 2 BALANCED SPLIT MODEL ARITHMETIC (Positive Reduced)'
-pause 5
 cd "$ROOT/g2/splitModel/posReduced" || exit 1
 run_family "$ARB"  arb_splitG2_whiteBox_tester.mag  arb_splitG2_random.mag
 run_family "$CH2"  ch2_splitG2_whiteBox_tester.mag  ch2_splitG2_random.mag
 run_family "$NCH2" nch2_splitG2_whiteBox_tester.mag nch2_splitG2_random.mag
 
 heading 'TESTING EXPLICIT GENUS 2 BALANCED SPLIT MODEL ARITHMETIC (Negative Reduced)'
-pause 5
 cd "$ROOT/g2/splitModel/negReduced" || exit 1
 run_family "$ARB"  arb_splitG2_whiteBox_tester.mag  arb_splitG2_random.mag
 run_family "$CH2"  ch2_splitG2_whiteBox_tester.mag  ch2_splitG2_random.mag
 run_family "$NCH2" nch2_splitG2_whiteBox_tester.mag nch2_splitG2_random.mag
 
 heading 'TESTING EXPLICIT GENUS 2 RAMIFIED MODEL ARITHMETIC'
-pause 5
 cd "$ROOT/g2/ramifiedModel" || exit 1
 run_family "$ARB"  arb_ramifiedG2_whiteBox_tester.mag  arb_ramifiedG2_random.mag
 run_family "$CH2"  ch2_ramifiedG2_whiteBox_tester.mag  ch2_ramifiedG2_random.mag
@@ -205,7 +191,6 @@ run_family "$NCH2" nch2_ramifiedG2_whiteBox_tester.mag nch2_ramifiedG2_random.ma
 heading 'TESTING EXPLICIT GENUS 3 ARITHMETIC'
 
 heading 'TESTING EXPLICIT GENUS 3 BALANCED SPLIT MODEL ARITHMETIC (Negative Reduced)'
-pause 5
 cd "$ROOT/g3/splitModel/negReduced" || exit 1
 run_family "$ARB"  arb_splitG3_whitebox_tester.mag  arb_splitG3_random.mag
 
@@ -214,7 +199,6 @@ run_family "$CH2"  ch2_splitG3_whitebox_tester.mag  ch2_splitG3_random.mag
 run_family "$NCH2" nch2_splitG3_whitebox_tester.mag nch2_splitG3_random.mag
 
 heading 'TESTING EXPLICIT GENUS 3 RAMIFIED MODEL ARITHMETIC'
-pause 5
 cd "$ROOT/g3/ramifiedModel" || exit 1
 
 # The random testers are transitional imports and cannot see ADD(D,D), because

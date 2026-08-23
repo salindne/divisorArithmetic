@@ -24,7 +24,7 @@ expect() {
     local want=$1 mode=$2 desc=$3
     local out got
 
-    out=$(FAKE_MAGMA_MODE="$mode" MAGMA="$FAKE" SLEEP=0 LOGDIR="$WORK/$mode" \
+    out=$(FAKE_MAGMA_MODE="$mode" MAGMA="$FAKE"  LOGDIR="$WORK/$mode" \
           "$ROOT/test_all.sh" 2>&1)
     got=$?
 
@@ -56,7 +56,7 @@ echo
 # in the repository now has one, which is why there is nothing left to skip.
 # These numbers are meant to be updated when a tester is added -- that is the point
 # of asserting them, so a tester cannot quietly vanish.
-out=$(FAKE_MAGMA_MODE=pass MAGMA="$FAKE" SLEEP=0 LOGDIR="$WORK/verify" \
+out=$(FAKE_MAGMA_MODE=pass MAGMA="$FAKE"  LOGDIR="$WORK/verify" \
       "$ROOT/test_all.sh" 2>&1)
 npass=$(printf '%s\n' "$out" | sed -n 's/^  passed:  *\([0-9]*\)$/\1/p')
 nskip=$(printf '%s\n' "$out" | sed -n 's/^  skipped: *\([0-9]*\)$/\1/p')
