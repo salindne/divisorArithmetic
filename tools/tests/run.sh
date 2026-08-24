@@ -51,9 +51,10 @@ echo
 # The pass run must also have actually run the testers rather than trivially
 # succeeding, and must report the remaining whitebox gaps as skipped.
 #
-# 28 and 0, not 26 and 2: the two genus-3 ramified whitebox testers now exist, so
-# what used to be announced as deliberate skips are passing testers. Every family
-# in the repository now has one, which is why there is nothing left to skip.
+# 30 and 0. The count reached 28 when the two genus-3 ramified whitebox testers
+# were written, replacing what had been announced as deliberate skips, and 30 when
+# the characteristic-2 genus-3 pair completed the six-cell matrix. Every family in
+# the repository has a whitebox tester, which is why there is nothing left to skip.
 # These numbers are meant to be updated when a tester is added -- that is the point
 # of asserting them, so a tester cannot quietly vanish.
 out=$(FAKE_MAGMA_MODE=pass MAGMA="$FAKE"  LOGDIR="$WORK/verify" \
@@ -61,10 +62,10 @@ out=$(FAKE_MAGMA_MODE=pass MAGMA="$FAKE"  LOGDIR="$WORK/verify" \
 npass=$(printf '%s\n' "$out" | sed -n 's/^  passed:  *\([0-9]*\)$/\1/p')
 nskip=$(printf '%s\n' "$out" | sed -n 's/^  skipped: *\([0-9]*\)$/\1/p')
 
-if [ "$npass" = "28" ]; then
-    printf 'ok    %-10s 28 testers passed, not a vacuous success\n' 'coverage'
+if [ "$npass" = "30" ]; then
+    printf 'ok    %-10s 30 testers passed, not a vacuous success\n' 'coverage'
 else
-    printf 'FAIL  %-10s expected 28 passing testers, got "%s"\n' 'coverage' "$npass"
+    printf 'FAIL  %-10s expected 30 passing testers, got "%s"\n' 'coverage' "$npass"
     fails=$((fails + 1))
 fi
 

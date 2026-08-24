@@ -728,6 +728,136 @@ nest six deep with `end if;//name` closers a line scanner cannot match reliably.
 assigned-nowhere *and* assigned-below, and **only real Magma catches assigned-on-another-path.** A formula edit that cannot be run under Magma is not verified
 against this class.
 
+## E20: a 4%-of-calls branch covered by one case that cannot see it (cause 1 FIXED)
+
+**Found 2026-08-24** while sweeping the characteristic-2 genus-3 addition, by a
+negative control that refused to fire.
+
+Two independent lenses agreed that the `l = r*C + w3*M2` collapse landing in
+`Deg3ADD`'s typical family also applies at the `ADD29` and `ADD33` leaves, worth
+`-2M -2A` each. It was applied. The Magma probe reported **0 wrong across 2,119
+comparisons**, and `whitebox.py` replayed 48 of 48 cases matching.
+
+**Both were vacuous, and the negative control is what showed it:**
+
+| mutation | Magma probe | whitebox |
+|---|---|---|
+| drop `t8` from `ADD33`'s new `C0` | 0 wrong | 48/48 **matched** |
+| add `1` to `ADD33`'s `vpp0` — unmistakable | **0 wrong** | 1 mismatch |
+
+So the probe **never reaches `ADD33` at all**, and `whitebox` reaches it through
+exactly one frozen case whose `t8` happens to be zero — which is precisely the
+term the proposed change turns on. A leaf taking about 4% of `Deg3ADD` calls is
+therefore covered by a single case that cannot distinguish the edit from its
+replacement.
+
+**The change was reverted at first.** Not because it was believed wrong — two
+derivations agreed and neither had been faulted — but because nothing in the
+repository could tell, and landing it would have asserted a correctness claim no
+gate supported.
+
+**FIXED 2026-08-24, and the fix was arithmetic rather than cleverness.** The leaves
+are not unreachable; the probe simply *caps* its pair construction. Over GF(4) the
+whole divisor space is 107 elements, so all 11,342 ordered pairs can be run and
+nothing needs targeting because nothing is skipped:
+
+    whitebox/probes/ch2_ramifiedG3_exhaustive_ADD.mag
+
+It reports per BRANCH LABEL rather than per gcd class, which is the property the
+constructed-pair probe lacked — a label that never appears is exactly the failure
+this entry describes, and it names itself. Measured: **all 37 of ADD00..ADD36
+reached**, with the previously dark leaves at ADD29 200 hits, ADD30 1,252,
+ADD31 68, ADD32 128 and ADD33 668, over 17,236 comparisons with 0 wrong.
+
+And it sees what the old one could not, on the same two mutations:
+
+| mutation | constructed-pair probe | exhaustive probe |
+|---|---|---|
+| drop `t8` from `ADD33`'s `C0` | 0 wrong | **1,185 wrong** |
+| add `1` to `ADD33`'s `vpp0` | 0 wrong | **732 wrong** |
+
+So the refused saving was re-applied and is now verified rather than argued: 0
+wrong across the exhaustive run with the change in, and the control firing with it
+broken.
+
+**Cause 2 remains open.** The committed whitebox corpus still holds one case per
+branch, and the `ADD33` case still has `t8 = 0` — it is complete without being
+adequate. The exhaustive probe covers that gap from outside rather than closing it,
+so a regenerated corpus that prefers a non-degenerate case per branch is still
+worth having.
+
+**Two distinct causes, both worth fixing separately.**
+
+1. **The probe's pair construction has no mode for this family.** It builds equal
+   `u`, shared irreducible factors, forced class sums and a shape matrix over
+   `(deg u1, deg u2)` — none of which targets `gcd(u, up) = e` or `= ew`, so
+   `ADD30` through `ADD33` go unreached. The whitebox *generators* have the same
+   blind spot, which is why those branches have thin coverage there too.
+2. **One case per branch is complete but not sufficient.** The corpus is built to
+   reach every label, and it does. It is not built so that each case exercises the
+   arithmetic *inside* the branch, and a case whose coefficients zero a term
+   cannot see a change to that term. This is the same distinction PR11 drew
+   between coverage and adequacy, arriving from the other direction: there the
+   worry was branches never reached, here it is a branch reached by an input that
+   happens to be degenerate.
+
+**Relation to E15.** E15 records that a formula edit which cannot be run under
+Magma is not verified. This is its sharper form: the edit *was* run under Magma,
+the run was green, and the green was worthless. A pass on an unreached branch is
+indistinguishable from a pass on a correct one, and only a negative control
+separates them — which is the argument for running one per landed item rather
+than once at the end of a session.
+
+## E19: a sentence in a banner could redefine the tested domain
+
+**Found 2026-08-23** while writing the genus-3 characteristic-2 banners, by the harness reporting a
+domain nobody had declared.
+
+`driver.banner_members` reads a file's own banner to learn which curve coefficients are pinned, and
+PR29 taught it the singleton form the char-2 normal form needs -- `h2 = 1`, not `h2 in {0,1}`. The
+pattern it used, `\b([fh])(\d+)\s*=\s*(\d+)\b`, was applied to **every comment line in the banner
+region**, so it could not distinguish a declaration from a sentence that happened to mention a
+coefficient and a value.
+
+**The reproducer is the banner this was found in.** A genus-3 ch2 header declaring the domain
+correctly:
+
+    //   h(x) = x^3 + h2*x^2 + h1*x + h0 (deg h = 3, h3 = 1)
+
+and then *explaining* it two lines later:
+
+    //   the y-shift that clears f5 does so through a2*h3, so at h3 = 0 the f
+    //   reduction fails as well
+
+yields `members[('h',3)] = {0,1}` -- the union of the declaration and the prose. `curve_in_domain`
+then treats `h3 = 0` as permitted and generates `deg h < 3` curves, which is **exactly the family
+those formulas do not cover** and which the declaration exists to exclude.
+
+**The genus-3 odd-characteristic files have the same shape and were harmless by luck.** Both
+`nch2_ramifiedG3_ADD.mag` and `nch2_ramifiedG3_DBL.mag` explain the depression as "the translation
+`x -> x - f6/7` gives `f6 = 0`", which parsed as `members[('f',6)] = {0}`. That is a *pin*, so
+`family_domain` **discarded 6 from the contrast-derived constraint** and then re-imposed it through
+the members channel. The two effects cancelled and `f6` came out zero either way -- but only because
+the sentence happened to state the truth. Measured before the fix: the contrast said
+`{'f': {6}}`, the banner reduced it to `{'f': set()}`, and 240 generated curves still had `f6 = 0`
+because the members pin replaced the constraint it had removed.
+
+**Class.** Same family as E14 (an inline ledger comment read as gate input) and the load-bearing
+label strings: text that looks like documentation and is machine input. Here it is worse than E14,
+because the effect is not a wrong report but a **silently different tested domain** -- the PR29
+failure mode that section exists to prevent, reintroduced through the prose channel rather than the
+parsing one.
+
+**FIXED 2026-08-23.** Declarations are parenthesised in every file that has one -- `(h2 in {0,1})`,
+`(deg h = 2, h2 = 1)` -- so the singleton pattern is now read only inside parentheses. Prose cannot
+reach it. Verified by reverting the one-line change and watching `selftest.py`'s `domain` section
+report `banner prose moved the domain: h3 read as [0, 1], want {1}`; that section is now **8
+mechanisms** and the new one is provoked on a synthetic banner rather than on a shipped file, so it
+keeps testing the parser after every real banner is corrected.
+
+**Side effect, in the right direction:** with the accidental pin gone, `ramified/g3/nch2` derives
+`f6 = 0` from the dispatcher contrast as designed, rather than from a sentence.
+
 ## E16: the genus-3 odd-characteristic `dw31`/`dw30` comment has `m7` and `m8` swapped
 
 **Found 2026-08-20** while reading the two genus-3 ramified additions against each other.

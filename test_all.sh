@@ -207,9 +207,7 @@ cd "$ROOT/g3/ramifiedModel" || exit 1
 # per branch label, every one asserted against Magma's own Jacobian arithmetic.
 run_family "$ARB"  arb_ramifiedG3_whiteBox_tester.mag  arb_ramifiedG3_random.mag
 run_family "$NCH2" nch2_ramifiedG3_whiteBox_tester.mag nch2_ramifiedG3_random.mag
-
-# No ch2 genus-3 ramified formulas exist yet; that specialisation is derived
-# later in the series. Nothing to skip-announce because there is no file to run.
+run_family "$CH2"  ch2_ramifiedG3_whiteBox_tester.mag  ch2_ramifiedG3_random.mag
 
 # ---------------------------------------------------------------------------
 # summary

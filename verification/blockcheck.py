@@ -1030,7 +1030,16 @@ def main(argv=None):
             print("           curves %s, fields %s" %
                   (t.curve_fn, ",".join(str(q) for q in t.fields)))
             print("           %s" % blk)
-        print("\n  not covered: the split model, genus 2, and DBL blocks."
+        # DBL blocks ARE covered -- pass --function Deg1DBL/Deg2DBL/Deg3DBL. They
+        # classify on ramified points rather than shared x-coordinates, and the
+        # report says which axis it used. This line claimed otherwise for the whole
+        # life of the file, which is worse than a missing feature: it tells a
+        # reader an oracle does not exist when it does. The default is Deg3ADD
+        # only because that is the block most worth checking, not the only one.
+        print("\n  --function selects the block: Deg3ADD (default), Deg1DBL,"
+              "\n  Deg2DBL, Deg3DBL. Not covered: the split model and genus 2."
+              "\n  Families are discovered from the random testers above, so a"
+              "\n  family without one cannot be named here yet."
               "\n  needs real Magma via %s\n" % os.path.relpath(MAGMA, ROOT))
         return 0
 
