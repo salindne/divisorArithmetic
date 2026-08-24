@@ -66,9 +66,9 @@ Either way, this replays frozen inputs and never samples. Randomness builds the
 corpus once, offline; it is not part of the gate.
 
 Genus-3 ramified used to be the exception, harvested rather than extracted because it
-had no Magma whitebox tester. PR6 wrote its generators and testers, so it is extracted
-like everything else and the harvested corpus is empty. Its remaining two cells (ch2
-ADD, ch2 DBL) do not exist yet, so there is nothing to cover until PR7 and PR8.
+had no Magma whitebox tester. Its generators and testers exist now, so it is extracted
+like everything else and the harvested corpus is empty. Every family in the repository
+is covered: all six cells of {arb, nch2, ch2} x {genus 2, genus 3} in both models.
 """
 
 from __future__ import annotations
@@ -612,10 +612,10 @@ def harvest(families, seed=1, curves=40, pairs=12, already=None):
     Genus-3 ramified is the reason this exists. It had no whitebox tester and was the
     family this merge series is for, so it could not go untested: its files got
     constructed cases the only way then available -- search for an input reaching each
-    labelled branch, then freeze it. PR6 ended that by writing real generators, so the
-    corpus is empty and this function currently supplements extracted testers only.
-    The remaining cells (ch2 ADD, ch2 DBL) have no files, so there is nothing to cover
-    until PR7 and PR8 derive them.
+    labelled branch, then freeze it. Real generators ended that, so the corpus is empty
+    and this function now supplements extracted testers only -- filling a branch a
+    tester's own search happened to miss, which is a different thing from a family
+    having no tester at all.
 
     The search uses the random generators, but **the result is a frozen case like any
     other**: CI replays frozen inputs and never samples. Randomness builds the corpus
@@ -1231,11 +1231,12 @@ def _families_without_testers(testers):
     supplements it for the branches that tester's own search did not reach, which is a
     different thing and is reported by file coverage rather than here.
 
-    The two genus-3 ramified entries have been removed for the same reason: PR6 wrote
-    their generators and testers, so they are extracted too, and the harvested corpus
-    they existed for is now empty. THE LIST IS DELIBERATELY EMPTY -- every family in
-    the repository has a Magma whitebox tester. The next one derived ADD-first arrives
-    here before its tester does, which is ch2 at genus 3.
+    The three genus-3 ramified entries have been removed for the same reason: their
+    generators and testers exist, so they are extracted too, and the harvested corpus
+    they existed for is now empty. THE LIST IS DELIBERATELY EMPTY, and with the
+    six-cell matrix complete there is no family left to add: every one has a Magma
+    whitebox tester. A future family derived ADD-first would arrive here before its
+    tester does, which is what the channel is kept for.
     """
     have = {family_of(t)[:3] + (family_of(t)[3],) for t in testers}
     known = []

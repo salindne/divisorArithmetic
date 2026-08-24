@@ -65,6 +65,7 @@ restating the detail.
 | N26 | The same collapse at `Deg3ADD`, plus the reduce-first rule extended to multiplication and bounded | **implemented and measured**; both addition files |
 | N27 | A reference block written leaf-for-leaf against the code becomes a debugger; the defect class surviving every static check is the defined-with-the-wrong-value read; and `l = r*s + M2` needs no division | **implemented and verified**; the doubling at **54M 4S 84A 4C**, 3 defects found, 2 gates repaired, 6-lens sweep |
 | N28 | The sixth cell of the matrix: the odd-characteristic doubling, derived rather than borrowed; `M21 = -kp3`, a quotient coefficient recomputed under another name; and branch coverage by enumeration rather than sampling | **implemented and verified**; `25M 4S 44A 0C` and `53M 5S 61A 0C`, 48/48 branches by constructed case, E12 closed, 28 testers 0 skips |
+| N29 | The last two cells: characteristic 2 at genus 3, where the doubling's saving is mostly arithmetic that stops existing because half of every integer multiplier is zero; and E19, a sentence in a banner that could silently redefine the tested domain | **implemented and verified**; `53M 3S 66A 0C` and `51M 4S 55A 2C`, 1,777 additions and 2,223 doublings against Magma's Jacobian 0 wrong, six-cell matrix complete, 30 testers 0 skips |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -77,12 +78,15 @@ each declaration is a claim that an arbitrary curve can be brought to that shape
 by an isomorphism — so restricting to it costs no generality. Six such
 forms exist across two genera and three characteristic classes. **Five are
 declared by a shipped ramified banner today, and only three of those
-declarations are already the form derived here** — the genus-2 characteristic-2
-banner still declares `h₂ ∈ {0,1}` with `f₂` live (PR27), the genus-3 `nch2`
-banner still carries `f₆` (PR15/PR17), and the genus-3 characteristic-2 banner
-does not exist yet (PR7/PR8). They were inherited piecemeal from different
-sources, justified differently in each place, and one of them is wrong in the
-published thesis (N3).
+declarations were already the form derived here.** They had been inherited
+piecemeal from different sources, justified differently in each place, and one of
+them is wrong in the published thesis (N3). **All six now match**, and each
+arrived by its own route: the genus-2 characteristic-2 banner stopped declaring
+`h₂ ∈ {0,1}` with `f₂` live, and became `deg h = 2, h₂ = 1` with `f₂` gone; the
+genus-3 `nch2` banner dropped `f₆` when the depression was applied; and the
+genus-3 characteristic-2 banner was written to the derived form from the start,
+being the last of the six to exist at all. That the account produces all six, and
+that all six files now declare what it produces, is the claim Part I is making.
 
 What follows is **one account that produces all six**, uniform in the genus, and
 it is verified rather than argued: [`verification/normal_form.py`](verification/normal_form.py)
@@ -2166,6 +2170,112 @@ joint chain over two coefficients, and reusing a doubling the result needs anywa
 price of removing six of them from +9A to +2A.
 
 
+## N29 — Completing the matrix: characteristic 2 at genus 3, and a sentence that moved the tested domain
+
+The last two cells. `ch2_ramifiedG3_{ADD,DBL}.mag` specialise the arbitrary-characteristic
+formulas at `h` monic of degree exactly 3 and `f₆ = f₅ = f₄ = f₃ = 0`, in characteristic 2 —
+the form Part I derives and `RandomG3Char2Curve` has built since the generator work. With
+these, all six cells of `{arb, nch2, ch2} × {ADD, DBL}` exist at genus 3 ramified, and every
+one of the repository's fourteen families has a Magma whitebox tester.
+
+| | parent (arb) | ch2 |
+|---|---|---|
+| `Deg1DBL` | 7M 1S 24A 4C | **4M 2S 7A 2C** |
+| `Deg2DBL` | 28M 4S 70A 9C | **21M 4S 38A 5C** |
+| `Deg3DBL` | 54M 4S 80A 4C | **51M 4S 55A 2C** |
+| `Deg3ADD` | 53M 3S 71A 1C | **53M 3S 66A 0C** |
+
+**The doubling gains far more than the addition, and the reason is worth stating.** Nearly all
+of the doubling's saving is arithmetic that stops existing rather than arithmetic done better.
+Its integer multipliers had been rewritten as addition chains (N28), and in characteristic 2
+half of every chain is zero: the five-rung chain building `7t₁ + 5f₅` collapses to `t₁`
+because `7 ≡ 5 ≡ 1` and `f₅ = 0`; `3(f₃ − h₃v₀)` becomes `v₀`; `3(f₆t₁) + 2f₄` dies twice
+over, once through `6 ≡ 4 ≡ 0` and again through `f₆ = f₄ = 0`; and `2u₀ = 0` kills both a
+product and a returned coordinate. `k₃ = f₆ − 2u₂ = 0` removes an entire reduction step of
+`k = kp mod u`. The addition has no comparable structure to lose, which is why its frequent
+case saves one constant multiplication and five additions and no multiplications at all. That
+is thin, and it is the obvious target for an efficiency pass rather than a result to dress up.
+
+**`k₀` was derived twice and the two agree.** Reducing the parent's chains mod 2 gives
+`t₁(t₁² + v₀) + f₁ + h₁v₀`. Deriving it afresh: `k(u₀) = P'(u₀)` for `P = f − v(v+h)` holds in
+any characteristic, and in characteristic 2 only odd-degree terms differentiate, so
+`P' = x⁶ + v₀x² + f₁ + h₁v₀`. Same expression by two routes.
+
+### A sentence in a banner could redefine what gets tested
+
+The finding of independent interest, recorded as `ERRATA.md` **E19**. `driver.banner_members`
+reads a file's own banner to learn which curve coefficients are pinned, and the singleton form
+the characteristic-2 normal form needs — `h₂ = 1`, not `h₂ ∈ {0,1}` — was matched anywhere in
+the banner region. It therefore could not distinguish a declaration from a sentence.
+
+Writing the genus-3 characteristic-2 banner produced exactly that collision. It declares the
+domain correctly, `(deg h = 3, h₃ = 1)`, and then *explains* it two lines later: the y-shift
+clears `f₅` through `a₂h₃`, so at `h₃ = 0` the reduction fails. The parser read the union,
+`{0,1}`, and `curve_in_domain` would then have generated `deg h < 3` curves — precisely the
+family these formulas do not cover and the declaration exists to exclude.
+
+**The genus-3 odd-characteristic banners have the same shape and were harmless only by luck.**
+Both explain the depression as "the translation `x → x − f₆/7` gives `f₆ = 0`", which parsed as
+a pin — so `family_domain` *discarded* 6 from the contrast-derived constraint and then
+re-imposed it through the members channel. Measured: the contrast said `{'f': {6}}`, the banner
+reduced it to `{'f': set()}`, and 240 generated curves still came out with `f₆ = 0` because the
+pin replaced the constraint it had removed. The two effects cancelled because that sentence
+happens to state the truth.
+
+Declarations are parenthesised in every file that has one, so the singleton form is now read
+only inside parentheses. **For the paper:** this is the same class as an inline op-count comment
+being read as gate input (E14), and worse in effect — not a wrong report but a silently
+different tested domain. A project that puts machine-readable declarations in comments has to
+say where the comment stops being prose, and this one had not.
+
+### Two limits of the harness, found by trying to use it
+
+**The specialisation invariant compares only the modal leaf.** It was relaxed here from
+per-column M+S, A, C to an aggregate M+S+C, because ch2's `Deg23ADD` trades two multiplications
+for one squaring and one constant product: 39 multiplicative operations either way and nine
+fewer additions, which the per-column rule rejected as "C 1 > 0". The only way to satisfy the
+old rule was to write a constant product as though its operand were general — the dishonest
+accounting E13 exists to warn about — and S had already been pooled with M for exactly this
+reason. Re-demonstrating that it still catches drift is where the limit surfaced: an injected
++4M *passed*, because it had gone into a 3.7% leaf. Aimed at the 87% leaf it fails correctly.
+So this gate cannot see drift in a degenerate branch, which is the same blindness the operation
+counter has and for the same reason.
+
+**`blockcheck` withholds a verdict rather than passing vacuously, and that mattered.** Asked to
+check the new `Deg3DBL` reference block it reported `UNTESTED: gcd class(es) 3 produced no
+comparisons` and declined to say the block agreed — because the fully ramified class needs
+`u = h` exactly, which its default budget never reached. Twelve curves over GF(4), GF(8) and
+GF(16) reach it in 8 comparisons, and then it agrees. A gate that reports "nothing compared"
+instead of "0 wrong" is the difference between this being evidence and being decoration.
+
+### How it was verified
+
+Real Magma against its own Jacobian arithmetic, on curves from `RandomG3Char2Curve` with the
+declared domain asserted per curve, enumerating the divisors and **constructing** the pairs —
+a shape matrix over `(deg u₁, deg u₂)`, equal `u` with different `v`, shared irreducible
+factors, and forced class sums including `D₂ = −D₁`. Construction rather than sampling because
+the degenerate branches dispatch on `deg gcd(u, up)`, and independent draws share a factor with
+probability `O(1/q)`.
+
+**1,777 additions across all nine degree shapes and all four gcd classes, 0 wrong. 2,223
+doublings across all three degrees and all four ramification classes, 0 wrong.** Both oracles
+shown to bite, aimed at the leaves that matter: perturbing `Deg3ADD`'s 87% leaf gives 12 wrong
+of 1,001, and dropping `h₁v₀` from `Deg1DBL`'s `k₀` gives 12 wrong of 41 — only 12 because
+`h₁v₀` vanishes whenever either factor does, which is why the report is split per class rather
+than given as a single total.
+
+All four reference blocks agree with their explicit code. `whitebox` replays 1,886 cases with
+the new files at 37/37 and 11/11. `driver --strict` rises from 12,972 to 13,746 comparisons,
+0 wrong, now that the family is covered. The Magma suite is 30 testers, 0 failures, 0 skips.
+
+**One honest limit on the derivation.** `Deg3ADD` is 956 lines and was derived in five regions
+— prologue, and one per gcd family. The glue lines *between* regions belonged to no region, and
+one still read `h₃`: the file would not have loaded. It was found by grepping for live
+references to the dropped symbols, not by the splice being trusted. Region-wise assembly of a
+function needs that check as a standing step, because the regions are what get verified and the
+seams are what do not.
+
+
 # Part IV — The comparison with prior work
 
 Full detail in [`RELATED_WORK.md`](RELATED_WORK.md). The three results below are
@@ -2378,7 +2488,7 @@ them early, and so each arrives here with its evidence when it lands.
 | what | why it is not yet a result | owner |
 |---|---|---|
 | Apply the depression `x → x − f₆/7` to the genus-3 `nch2` formulas | Mathematics verified (Part I, and 310 transported additions); the formulas still take `f₆`. Until then our odd-characteristic counts sit on a curve form no published baseline uses | PR15/PR17 |
-| Characteristic-2 genus-3 formulas at `deg h = 3` | Normal form established (Part I). Formulas not derived. Must reconcile explicitly against Birkner's Type Ia and GKP's two variants, and beat GKP's 1I+62M+5S/100A | PR7/PR8 |
+| ~~Characteristic-2 genus-3 formulas at `deg h = 3`~~ | **DONE.** Derived, Magma-verified against the Jacobian (1,777 additions and 2,223 doublings, 0 wrong), and gated. `33ADD` 53M 3S 66A 0C, `3DBL` 51M 4S 55A 2C. **Still owed: the reconciliation against Birkner's Type Ia and GKP's two variants, and the comparison against GKP's 1I+62M+5S/100A** — the formulas exist, the published comparison does not | — |
 | Exploit `h₃ ∈ {0,1}` rather than merely declaring it | The assumption is currently free to *count* but still computed. Whether real work can be removed is unmeasured, and the genus-2 mechanism that would be the template is not yet understood (N6) | PR24 |
 | Implement the 27 confirmed efficiency findings | Report only so far; each must land with its own oracle run | PR16 |
 | Non-ordinary characteristic-2 curves (`deg h < 3`) | **Researched and declined.** Real uses exist — halving, Koblitz curves — but a curve is ordinary with probability `1 − O(1/q)`, there is no parameterised middle option (one file covering all four strata must keep `f₅…f₃` live — `f₆` stays killable by the translation, unconditionally, per Part I step 2 — at which point it *is* the `arb` file), and the remaining prize is a doubling prize on the most saturated ground. The `arb` formulas serve these curves correctly today | — |

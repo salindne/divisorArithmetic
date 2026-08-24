@@ -10,7 +10,7 @@ of Calgary, 2020), built as `ucalgary_2020_lindner_sebastian.pdf` in this direct
 
 | model | genus 2 | genus 3 |
 |---|---|---|
-| ramified (imaginary), `deg f = 2g+1` | ✅ `arb`, `nch2`, `ch2` | ⚠️ `arb`, `nch2` only, see [Status](#status) |
+| ramified (imaginary), `deg f = 2g+1` | ✅ `arb`, `nch2`, `ch2` | ✅ `arb`, `nch2`, `ch2` |
 | balanced split (real), `deg f = 2g+2` | ✅ `arb`, `nch2`, `ch2` | ✅ `arb`, `nch2`, `ch2` |
 
 Also here: generic-genus Cantor and NUCOMP reference implementations, a Python verification framework
@@ -29,10 +29,10 @@ framework in [verification/](verification/) runs in CI, which a licensed tool ne
 
 | gate | result |
 |---|---|
-| Magma suite, `./test_all.sh` | **28 testers, 0 failures, 0 skips**, ~3.5 min |
-| frozen case corpus, [verification/whitebox.py](verification/whitebox.py) | **1,838 cases replayed, 1,838 matched** |
-| branch coverage | **1,877 of 1,881 labelled branches, 99.8%** |
-| differential tester, [verification/driver.py](verification/driver.py) `--strict` | **12,972 operations compared, 0 wrong** |
+| Magma suite, `./test_all.sh` | **30 testers, 0 failures, 0 skips**, ~4 min |
+| frozen case corpus, [verification/whitebox.py](verification/whitebox.py) | **1,886 cases replayed, 1,886 matched** |
+| branch coverage | **1,925 of 1,929 labelled branches, 99.8%** |
+| differential tester, [verification/driver.py](verification/driver.py) `--strict` | **13,746 operations compared, 0 wrong** |
 | framework selftest | **17 sections** |
 
 The 4 uncovered branches are individually exempted with written reasons in
@@ -51,7 +51,7 @@ is unreachable in characteristic 2.
 
 **Every family now has a Magma whitebox tester.** Genus-3 ramified was the exception until its two were
 generated — 48 constructed cases each, every one asserted against Magma's own Jacobian arithmetic — so
-`verification/harvested_cases.json` is now empty and all 1,838 cases are extracted from testers. Its two
+`verification/harvested_cases.json` is now empty and all 1,886 cases are extracted from testers. Its two
 *random* testers remain transitional imports, and `Random(Jac)` almost always yields degree 3, so
 low-degree branches are thinly sampled there; that is what the whitebox testers exist to cover, by
 enumerating the divisor space rather than sampling it.
@@ -81,6 +81,7 @@ Highest-degree typical case per family, `M / S / A / C`:
 | **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | published |
 | **g3 ramified** arb | **53 / 3 / 71 / 1** | **54 / 4 / 80 / 4** | measured |
 | **g3 ramified** nch2 | **53 / 3 / 59 / 0** | **53 / 5 / 61 / 0** | measured |
+| **g3 ramified** ch2 | **53 / 3 / 66 / 0** | **51 / 4 / 55 / 2** | measured |
 | **g3 split** arb | 65 / 3 / 87 / 12 | 73 / 3 / 101 / 19 | published |
 | **g3 split** nch2 | 65 / 3 / 85 / 0 | 72 / 4 / 97 / 0 | published |
 | **g3 split** ch2 | 65 / 3 / 80 / 0 | 71 / 4 / 86 / 1 | published |
@@ -150,7 +151,7 @@ docker build -f tools/magma-docker/Dockerfile -t magma-qemufix .
 MAGMA=tools/magma-docker/magma.sh ./test_all.sh
 ```
 
-That runs 28 testers in about three and a half minutes and exits 0, essentially all of it Magma:
+That runs 30 testers in about four minutes and exits 0, essentially all of it Magma:
 3.3 min across 62,654 divisor comparisons. The script used to spend a further ~100 seconds in
 decorative inter-family `sleep` calls; those are gone. Every family now has a whitebox tester, so there is nothing
 left to skip; see
@@ -263,7 +264,7 @@ before trusting any cross-comparison.
 ./test_all.sh
 ```
 
-runs 28 testers across genus 2 and genus 3.
+runs 30 testers across genus 2 and genus 3.
 
 **Whitebox testers** compute one search-found divisor operation per computation path and assert the
 result against the reference implementation. Coverage is in [Status](#status). The cases are harvested by
@@ -429,9 +430,9 @@ What this project contributes beyond the published thesis — every correction, 
 with the argument for why it is right and the measurement that establishes it — is in
 [NEW_WORK.md](NEW_WORK.md). It is written to be lifted into the next publication, and it is kept
 current as the work proceeds rather than reconstructed afterwards. Its Part I gives one account of the
-curve normal forms, uniform in the genus, producing all six ramified forms; five of the six have a
-formula banner today (the genus-3 characteristic-2 file arrives with PR7/PR8), and Part I marks in place
-the banners that have not yet caught up with the form it derives.
+curve normal forms, uniform in the genus, producing all six ramified forms — and all six now have a
+formula banner declaring exactly that form, the genus-3 characteristic-2 file having been the last to
+exist.
 [verification/normal_form.py](verification/normal_form.py) reproduces every claim in it.
 
 ---
