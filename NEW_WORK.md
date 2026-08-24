@@ -188,9 +188,13 @@ left exactly where the trace obstruction bites — while normalising `h` further
 (to `x³ + x + h₀`, and only for irreducible `h`) and giving up monic `f`. Same
 budget, different allocation: **Birkner spends it on `h`, we spend it on `f`**,
 and our form applies to any degree-3 `h` rather than to irreducible `h` only.
-Reconciling the two forms explicitly, along with GKP's two variants, is
-PR7/PR8's stated obligation and should appear in the paper as a comparison
-rather than as a claim of priority.
+The two forms are worth reconciling explicitly in the paper, along with GKP's two
+variants, and as a **comparison rather than a claim of priority** — neither
+dominates, and saying which is preferable requires naming what you are optimising.
+That is publication work, not repository work: no formula, count or test here
+depends on it, and the material it needs is already committed in
+[`RELATED_WORK.md`](RELATED_WORK.md), which carries both normal forms and GKP's
+`1I + 62M + 5S / 100A` with citations.
 
 ## Odd characteristic: spend the budget on `h`, and stop one coefficient in
 
@@ -2599,7 +2603,7 @@ them early, and so each arrives here with its evidence when it lands.
 | what | why it is not yet a result | owner |
 |---|---|---|
 | Apply the depression `x → x − f₆/7` to the genus-3 `nch2` formulas | Mathematics verified (Part I, and 310 transported additions); the formulas still take `f₆`. Until then our odd-characteristic counts sit on a curve form no published baseline uses | PR15/PR17 |
-| ~~Characteristic-2 genus-3 formulas at `deg h = 3`~~ | **DONE.** Derived, Magma-verified against the Jacobian (1,777 additions and 2,223 doublings, 0 wrong), and gated. `33ADD` 53M 3S 66A 0C, `3DBL` 51M 4S 55A 2C. **Still owed: the reconciliation against Birkner's Type Ia and GKP's two variants, and the comparison against GKP's 1I+62M+5S/100A** — the formulas exist, the published comparison does not | — |
+| ~~Characteristic-2 genus-3 formulas at `deg h = 3`~~ | **DONE.** Derived, Magma-verified against the Jacobian (1,777 additions and 2,223 doublings, 0 wrong), and gated. `33ADD` 51M 3S 62A 0C, `3DBL` 51M 4S 55A 2C. The reconciliation against Birkner's Type Ia and GKP's two variants is **for the paper, and is not tracked here** (decided 2026-08-24): nothing in the code or the tests depends on it, and `RELATED_WORK.md` already carries both normal forms and GKP's counts with citations | — |
 | Exploit `h₃ ∈ {0,1}` rather than merely declaring it | The assumption is currently free to *count* but still computed. Whether real work can be removed is unmeasured, and the genus-2 mechanism that would be the template is not yet understood (N6) | PR24 |
 | Implement the 27 confirmed efficiency findings | Report only so far; each must land with its own oracle run | PR16 |
 | Non-ordinary characteristic-2 curves (`deg h < 3`) | **Researched and declined.** Real uses exist — halving, Koblitz curves — but a curve is ordinary with probability `1 − O(1/q)`, there is no parameterised middle option (one file covering all four strata must keep `f₅…f₃` live — `f₆` stays killable by the translation, unconditionally, per Part I step 2 — at which point it *is* the `arb` file), and the remaining prize is a doubling prize on the most saturated ground. The `arb` formulas serve these curves correctly today | — |
