@@ -2593,6 +2593,116 @@ hardest branches take inputs whose class sum is forced, which is an equation,
 not a coincidence. Steering curve generation is worth ~13× per operation over
 sampling harder, and took one family from 353 to **404 of 405** branches.
 
+
+## N31 — Measuring the split model, and a convention that was costing two additions a row
+
+**Status** — established, PR41. **Where** — `verification/opcount.py`,
+`verification/maginterp.py`; the published tables it is checked against are
+`Thesis/chapter5.tex` `tab:splitfcosts` and `chapter6.tex`
+`tab:g3splitfcosts{ADD,DBL}`.
+
+**What was there.** The counter of record measured **six of fifteen** families.
+The nine split ones were refused, and for a real reason rather than an unfinished
+one: the ramified domain is derived by *contrast* — what `arb` extracts from the
+curve and a specialisation does not is what the specialisation assumes away — and
+that argument has nothing to work with in the split model, whose dispatchers read
+neither `f` nor `h`. They take `ccs`, the constants `Precompute` derives. So
+`family_domain` returned `split family: see split_spec` and stopped.
+
+**What changed.** Three things, and only the third was new mathematics of any
+kind. `driver.split_spec` already derived the split domain from `Precompute`'s
+own source, and `split_curve_in_domain` already validated the places at infinity;
+`build_args_split` already mapped the `(u1,v1,n1,u2,v2,n2,ccs)` signature.
+Both are used verbatim. `Precompute` runs once per curve **outside** the measured
+call, being per-curve setup rather than part of an operation's cost.
+
+**The third thing is that a split operation's shape is not its degree.** The
+published tables price "Degree 1", "Degree 1 with Down Adjust" and "Degree 1 with
+two Up Adjusts" as separate rows, at 7M, 14M and 42M. Measured, **the input
+balancing weight is exactly what selects between them**: a genus-3 divisor of
+degree `d` admits weights `[0, 3-d]`, which gives six `(degree, weight)` pairs,
+and those six reproduce the six published doubling rows one for one. The weight
+is therefore part of the shape, not a nuisance parameter. Keying on degree alone
+pooled rows the thesis prices apart and reported whichever the sampler happened to
+favour — under which a degree-1 doubling reported as **42M**, the two-Up-Adjusts
+row, rather than 7M.
+
+### The disagreement, which was the tool's and not the thesis's
+
+First measurement put every split row **+2A** above its published cell — all four
+genus-3 arbitrary cells checked by hand, `33ADD` 89 against 87, `3DBL` 103 against
+101, and both two-Up-Adjust doublings likewise, with `M`, `S` and `C` exact
+everywhere. A *systematic* offset is one cause, not four errata, and the standing
+adjudication rule says presume the published count correct and hand-count the
+divergence.
+
+The cause is that a split divisor carries a **balancing weight**, and the weight
+is a small integer in `[0, g]`, not a field element. Every addition runs
+`n := n1 + n2 - 2` and every genus-3 doubling `np := n + n - 2`. Charged as field
+additions that is a flat `+2A` on every row. The thesis is right not to count
+them: they are bookkeeping, of the same kind as a loop index.
+
+So the interpreter gained `INT_ARITH_FREE`, testing operand **type** — sound
+because a field element is an `FFElement` in every field this repository builds
+and never a Python `int`, so no field addition can be freed by it. Testing by
+syntax, the form already used for integer-literal products, cannot work here:
+`n1 + n2` contains no literal.
+
+**The convention is not uniform, and assuming it was is a refutation worth
+recording.** The guard was first written to assert `+2A` everywhere and **failed
+on three cells**. Measured per shape: every addition at both genera and both bases
+moves `+2A`, every genus-3 doubling moves `+2A`, and **the genus-2 doublings move
+nothing** — they carry no weight addition on the counted path, deriving the new
+weight as `2 - Degree(upp)` instead. Nothing but `A` ever moves, in any family.
+The pins now carry the measured delta per cell.
+
+### Evidence
+
+With the convention applied, **168 measured shapes reproduce their published cell
+exactly**: 42 shapes in each of the three genus-3 split families against
+`tab:g3splitfcosts`, and 14 in each of the three genus-2 `posReduced` families
+against `tab:splitfcosts` — zero unmatched, and no published row left
+unreproduced. Both tables are parsed out of the `.tex` rather than retyped,
+because a table retyped by hand is a third place for a number to be wrong. Every
+priced row comes out at exactly **one inversion**, which chapter 6 claims in prose
+and nothing had checked for the split model.
+
+**This also settles the genus-2 basis question from the other direction.**
+`posReduced` matches the published table 14 of 14 in all three characteristic
+classes; `negReduced` differs on three to five rows, each by one or two
+operations. That is a different algorithm, not a defect — and it independently
+confirms `posReduced` as the genus-2 basis of record, which had been decided on a
+39/39-against-11/39 comparison made by other means.
+
+**Honest limits.** The genus-2 `negReduced` families are measured but their
+figures are checked against nothing, no published table pricing that basis. Both
+genus-3 `posReduced` families do not exist to measure. And thirteen genus-3 shapes
+per family cost *nothing at all* — inputs the dispatcher answers without
+arithmetic; they are verified against `reference.py` like every other sample and
+carried in `--json`, but summarised rather than listed, since no published row
+prices them.
+
+**One further defect fixed in passing, of the E12 class.** The module's header
+claimed every contributing execution was compared against `reference.py`'s
+independent Cantor arithmetic. It never was — `measure_call` returned the value
+and the histogram discarded it, so a call that left the domain and returned a
+wrong answer was histogrammed as a legitimate count. That is the failure mode
+that yields a *plausible* wrong number rather than an obvious one, and it is
+exactly the risk the split work adds. The check is now performed; a disagreeing
+sample is dropped rather than counted. Turning it on moved **no** ramified figure,
+which says the previous numbers were not masking anything — but they were
+unguarded.
+
+**For the paper.** The operation counts for all fifteen families are now
+reproducible from the sources by execution, and the entire arbitrary,
+odd-characteristic and characteristic-2 columns of both published split tables
+have been independently confirmed — 168 cells, by a method sharing no code with
+the one that produced them. The transferable point is the smaller one: an
+operation count must decide what is a *field* operation, and a model with a
+balancing weight carries integer bookkeeping that looks like arithmetic and is
+not. Two additions a row, on every split row in the thesis, hung on that
+distinction.
+
 ---
 
 # Part VII — In flight
