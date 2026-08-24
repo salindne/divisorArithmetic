@@ -1,0 +1,239 @@
+clear;
+///////////////////////////////////////////////////////////////////////////////
+////// TESTING RAMIFIED MODEL GENUS-3 ARITHMETIC, CHARACTERISTIC 2 FIELDS /////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Generates whitebox cases: one constructed input per branch label, each verified
+// against Magma's own Jacobian arithmetic before it is emitted.
+//
+// WHY THIS ENUMERATES RATHER THAN SAMPLES. PR12 established, for the genus-3
+// split family, that the remaining branches are not reached by *more* random
+// pairs: they are reached by pairs that are RELATED, and RandomDivisorAB cannot
+// even produce most reduced divisors (25% on one measured curve -- it rejects an
+// inseparable u and any u with an irreducible factor of degree > 1). The ramified
+// model makes the fix cheaper than it was there, because a ramified divisor is
+// just <u,v> with no balancing weight, so it maps straight onto a Magma Jacobian
+// element and the class arithmetic is Magma's own. Over a small field every
+// reduced divisor can simply be listed.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+WB_LOG := GetEnv("WB_LOG") eq "" select "logs/ch2_ramifiedG3_log.txt" else GetEnv("WB_LOG");
+Write(WB_LOG, "Loaded ...");
+
+UTL_DEBUG := false;
+DBL_DEBUG := true;
+ADD_DEBUG := true;
+
+// genFiles/ramifiedUtilities.mag is the GENUS-2 copy and has no RandomG3Curve.
+load "../g3/ramifiedModel/ramifiedUtilities.mag";
+load "../g3/ramifiedModel/g3Formulas/ch2_ramifiedG3_DBL.mag";
+load "../g3/ramifiedModel/g3Formulas/ch2_ramifiedG3_ADD.mag";
+"     ";
+
+SetOutputFile(WB_LOG);
+SetAutoColumns(false);
+SetColumns(0);
+
+///////////////////////////////////////////////////////////////////////////////
+// BUDGET
+///////////////////////////////////////////////////////////////////////////////
+// WB_FIELDS  comma separated field sizes. Small on purpose: enumeration is
+//            q^3 monic u times q^3 candidate v, so q <= 9 is seconds and q = 16
+//            is minutes. Ramified curves exist over GF(2), unlike split ones.
+// WB_TRIALS  curves per field.
+// WB_SEED    Magma seed, so a regenerated tester is a function of (seed, budget)
+//            rather than of the moment a `while true` loop was interrupted.
+// WB_PAIRS   ordered ADD pairs per curve. 0 means every ordered pair.
+// This family requires characteristic 2 AND h monic of degree exactly 3, so the
+// admissible sizes are the powers of two. Enumeration is q^6 divisibility tests
+// and the pair loop squares that, so q = 16 is minutes and q = 32 is hours for no
+// new branch: the ramification classes are all reachable over GF(2), GF(4) and
+// GF(8), because deg gcd(u,h) is what selects them and h has degree 3 regardless
+// of the field size.
+//
+// Budget of record: recorded here once measured.
+FIELDS := [2,4,8];
+if GetEnv("WB_FIELDS") ne "" then
+    FIELDS := [ StringToInteger(s) : s in Split(GetEnv("WB_FIELDS"), ",") ];
+end if;
+TRIALS := StringToInteger(GetEnv("WB_TRIALS") eq "" select "2"    else GetEnv("WB_TRIALS"));
+PAIRS  := StringToInteger(GetEnv("WB_PAIRS")  eq "" select "200"  else GetEnv("WB_PAIRS"));
+SetSeed(StringToInteger(GetEnv("WB_SEED")     eq "" select "1"    else GetEnv("WB_SEED")));
+GENUS := 3;
+
+///////////////////////////////////////////////////////////////////////////////
+// DIVISOR ENUMERATION
+///////////////////////////////////////////////////////////////////////////////
+// Every reduced divisor with this exact monic u. A ramified divisor carries no
+// weight, so validity is just u | v^2 + v*h - f with deg v < deg u.
+DivisorsWithU := function(f,h,u)
+    R := Parent(f); FF := BaseRing(f); d := Degree(u); out := [];
+    if d eq 0 then return [<R!1, R!0>]; end if;
+    for cs in CartesianPower(FF, d) do
+        v := R![cs[i] : i in [1..d]];
+        if IsDivisibleBy(v^2 + v*h - f, u) then Append(~out, <u,v>); end if;
+    end for;
+    return out;
+end function;
+
+// Every reduced divisor on the curve, deg u = 0..g. The count is exactly the
+// order of the Jacobian, so the divisor space stops being sampled and becomes
+// enumerated.
+AllDivisors := function(f,h,g)
+    R := Parent(f); x := R.1; FF := BaseRing(f);
+    out := DivisorsWithU(f,h,R!1);
+    for d in [1..g] do
+        for cs in CartesianPower(FF, d) do
+            u := x^d;
+            for i in [1..d] do u := u + cs[i]*x^(i-1); end for;
+            out := out cat DivisorsWithU(f,h,u);
+        end for;
+    end for;
+    return out;
+end function;
+
+///////////////////////////////////////////////////////////////////////////////
+// PAIR SELECTION
+///////////////////////////////////////////////////////////////////////////////
+// The degenerate ADD branches dispatch on deg gcd(u,up) and then on the gcd of
+// the reduced (vp + v + h). Independent draws share a factor with probability
+// O(1/q), so the pairs that reach them are built rather than waited for:
+//
+//   MODE 1  equal u              -- gcd(u,up) = u, the deepest family
+//   MODE 2  one or two shared factors of u
+//   MODE 3  class targets D2 = T - D1 for every T with deg u(T) <= 1, which
+//           includes the identity and therefore D2 = -D1, the full cancellation
+//   MODE 4  the remaining ordered pairs, to fill the generic branches
+BuildPairs := function(Ds, Jac, cap)
+    n := #Ds;
+    seen := {};          // dedupe: the modes overlap heavily and a repeat is a wasted call
+    out  := [];
+    // deg u = 0 is the identity, which the dispatcher answers from an unlabelled
+    // leaf, so a pair containing it can never contribute a case. AllDivisors
+    // lists it first, so without this the generic filler below burns its whole
+    // budget on <identity, D> and never reaches the frequent Deg3ADD branch.
+    Add1 := procedure(i,j,~seen,~out)
+        if i ne j and Degree(Ds[i][1]) ge 1 and Degree(Ds[j][1]) ge 1
+           and not <i,j> in seen then
+            Include(~seen, <i,j>); Append(~out, <i,j>);
+        end if;
+    end procedure;
+    // MODE 0: the shape matrix. One cell per (deg u1, deg u2) with COPRIME u, so
+    // every Deg*ADD's generic branch is reached by construction rather than by
+    // hoping the filler wanders into that shape.
+    for d1 in [1..3] do
+        for d2 in [1..3] do
+            got := 0;
+            for i in [1..n] do
+                if Degree(Ds[i][1]) ne d1 then continue; end if;
+                for j in [1..n] do
+                    if got ge 6 then break i; end if;
+                    if Degree(Ds[j][1]) eq d2
+                       and Degree(GCD(Ds[i][1], Ds[j][1])) eq 0 then
+                        before := #out; Add1(i,j,~seen,~out);
+                        if #out gt before then got := got + 1; end if;
+                    end if;
+                end for;
+            end for;
+        end for;
+    end for;
+    // MODE 1: same u, different v -- gcd(u,up) = u, the deepest family
+    for i in [1..n] do
+        for j in [1..n] do
+            if Ds[i][1] eq Ds[j][1] then Add1(i,j,~seen,~out); end if;
+        end for;
+    end for;
+    // MODE 2: a shared irreducible factor without being equal
+    for i in [1..n] do
+        for j in [1..n] do
+            if Ds[i][1] ne Ds[j][1] and Degree(GCD(Ds[i][1], Ds[j][1])) ge 1 then
+                Add1(i,j,~seen,~out);
+            end if;
+        end for;
+    end for;
+    // MODE 3: forced class sums. D2 := T - D1 for every T of small degree, which
+    // includes the identity and therefore D2 = -D1, the full cancellation.
+    Ts := [k : k in [1..n] | Degree(Ds[k][1]) le 1];
+    for i in [1..n] do
+        for k in Ts do
+            D2 := (Jac ! [Ds[k][1], Ds[k][2]]) - (Jac ! [Ds[i][1], Ds[i][2]]);
+            for j in [1..n] do
+                if Ds[j][1] eq D2[1] and Ds[j][2] eq D2[2] then
+                    Add1(i,j,~seen,~out); break;
+                end if;
+            end for;
+        end for;
+    end for;
+    // MODE 4: generic filler, capped. Modes 1-3 are already banked, so the cap
+    // only ever truncates the pairs that are easy to reach anyway.
+    keep := #out;
+    for i in [1..n] do
+        for j in [1..n] do
+            if cap gt 0 and #out ge keep + cap then break i; end if;
+            Add1(i,j,~seen,~out);
+        end for;
+    end for;
+    return out;
+end function;
+
+///////////////////////////////////////////////////////////////////////////////
+// TEST LOOP
+///////////////////////////////////////////////////////////////////////////////
+for F in FIELDS do
+  for trial in [1..TRIALS] do
+    FF := GF(F);
+    R<x> := PolynomialRing(FF);
+    f,h := RandomG3Char2Curve(F);
+    C   := HyperellipticCurve(f,h);
+    Jac := Jacobian(C);
+
+    Ds := AllDivisors(f,h,GENUS);
+
+    // DOUBLING: every divisor, so every ramification class of gcd(u,2v+h) that
+    // this curve admits is hit without being searched for.
+    for k in [1..#Ds] do
+      U1 := Ds[k][1]; V1 := Ds[k][2];
+      // deg u = 0 is the identity, which the dispatcher answers from an
+      // unlabelled leaf, so it can never contribute a case.
+      if Degree(U1) eq 0 then continue; end if;
+      D1 := Jac ! [U1, V1];
+      "@B";
+      nU3,nU2,nU1,nU0,nV2,nV1,nV0 := DBL(U1,V1,f,h);
+      nU := R ! (nU3*x^3 + nU2*x^2 + nU1*x + nU0);
+      nV := R ! (nV2*x^2 + nV1*x + nV0);
+      cantor := D1 + D1;
+      if nU eq cantor[1] and nV eq cantor[2] then
+        F; f, h, <U1, V1>, <U1, V1>, <nU,nV>;
+        "@E";
+      else
+        "failed";
+      end if;
+    end for;
+
+    // ADDITION: the built pairs.
+    for p in BuildPairs(Ds, Jac, PAIRS) do
+      U1 := Ds[p[1]][1]; V1 := Ds[p[1]][2];
+      U2 := Ds[p[2]][1]; V2 := Ds[p[2]][2];
+      D1 := Jac ! [U1, V1];
+      D2 := Jac ! [U2, V2];
+      if D1 ne D2 then
+        "@B";
+        nU3,nU2,nU1,nU0,nV2,nV1,nV0 := ADD(U1,V1,U2,V2,f,h);
+        nU := R ! (nU3*x^3 + nU2*x^2 + nU1*x + nU0);
+        nV := R ! (nV2*x^2 + nV1*x + nV0);
+        cantor := D1 + D2;
+        if nU eq cantor[1] and nV eq cantor[2] then
+          F; f, h, <U1, V1>, <U2, V2>, <nU,nV>;
+          "@E";
+        else
+          "failed";
+        end if;
+      end if;
+    end for;
+
+  end for;
+end for;
+
+UnsetOutputFile();
+quit;

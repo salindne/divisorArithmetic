@@ -1241,18 +1241,23 @@ def section_specialisation(rep, quick):
     import opcount as O                                         # noqa: PLC0415
     import driver as D                                          # noqa: PLC0415
 
-    PAIRS = [("ramified/g3/nch2", "ramified/g3/arb")]
+    # (child, parent, field). The field is per-pair because the CLASS decides it:
+    # nch2 needs characteristic neither 2 nor 7, ch2 needs characteristic exactly
+    # 2. A single shared field cannot measure both, and the parent is arb, which
+    # is valid over either.
+    PAIRS = [("ramified/g3/nch2", "ramified/g3/arb", 31),
+             ("ramified/g3/ch2",  "ramified/g3/arb", 32)]
 
     fams, _excluded = D.discover_families()
     by_name = {f.name: f for f in fams}
     target = 400 if quick else 1500
+    checked = []
 
-    for child_name, parent_name in PAIRS:
+    for child_name, parent_name, field in PAIRS:
         child, parent = by_name.get(child_name), by_name.get(parent_name)
         if child is None or parent is None:
             rep.skip("specialisation", "%s or %s not discovered" % (child_name, parent_name))
             continue
-        field = 31
         kid, why_kid = O.count_family(child, fams, field, target=target)
         par, why_par = O.count_family(parent, fams, field, target=target)
         if kid is None or par is None:
@@ -1280,9 +1285,10 @@ def section_specialisation(rep, quick):
             for b in bad:
                 rep.note("    " + b)
         else:
-            rep.ok("specialisation",
-                   "%s never exceeds %s on %d shared shape(s)"
-                   % (child_name, parent_name, len(shared)))
+            checked.append("%s <= %s on %d shape(s) over GF(%d)"
+                           % (child_name, parent_name, len(shared), field))
+    if checked:
+        rep.ok("specialisation", "; ".join(checked))
 
 
 
