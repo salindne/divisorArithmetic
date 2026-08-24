@@ -63,9 +63,33 @@ COUNT = {}
 #         (chapter6.tex:2333), and `1/x` is an inversion with no product. Without
 #         this every `/` is charged I+M, which is right for `sp0/dw0` and wrong
 #         for both of those.
+# INT_ARITH_FREE
+#         `+`/`-` between two plain integers is bookkeeping, not a field
+#         operation, so it is not an A. This exists for the split model, whose
+#         divisors carry a balancing weight: every addition runs
+#         `n := n1 + n2 - 2` and every doubling `np := n + n - 2` on small
+#         integers in [0, g], and the `Degree(...)` arithmetic in the balancing
+#         branches is the same thing. Charged as field additions they put a flat
+#         +2A on every split row -- which is precisely the disagreement against
+#         all four published arbitrary cells that this flag explains.
+#         Testing by operand TYPE is sound here because a field element is an
+#         `FFElement` in every field this repository builds and never a Python
+#         `int`, so no field addition can be freed by it. Testing by syntax --
+#         the `node[1][0] == "int"` form used for products just above -- would
+#         not work: `n1 + n2` has no integer literal in it.
 CONSTS = set()
 IGNORED = set()
 DIV_LITERAL_AS_ADD = False
+INT_ARITH_FREE = False
+
+
+def _plain_int(x):
+    """A Python integer, not a field element and not a bool.
+
+    `bool` is excluded explicitly because it subclasses `int`, so a comparison
+    result reaching an arithmetic node would otherwise be silently free.
+    """
+    return isinstance(x, int) and not isinstance(x, bool)
 
 
 def _bump(k, n=1):
@@ -423,7 +447,8 @@ def ev(node, env, F, funcs=None):
         _bump("M")
         return a / b
     if k in ("+", "-"):
-        _bump("A")
+        if not (INT_ARITH_FREE and _plain_int(a) and _plain_int(b)):
+            _bump("A")
         return a + b if k == "+" else a - b
     raise ParseError("unhandled node %r" % (k,))
 
