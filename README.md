@@ -6,114 +6,86 @@ and table-generation machinery behind them.
 Sebastian Lindner. Companion code to *Explicit Formulas for Hyperelliptic Curve Arithmetic* (University
 of Calgary, 2020), built as `ucalgary_2020_lindner_sebastian.pdf` in this directory.
 
-**Last updated:** 2026-08-23.
-
-| model | genus 2 | genus 3 |
-|---|---|---|
-| ramified (imaginary), `deg f = 2g+1` | ✅ `arb`, `nch2`, `ch2` | ✅ `arb`, `nch2`, `ch2` |
-| balanced split (real), `deg f = 2g+2` | ✅ `arb`, `nch2`, `ch2` | ✅ `arb`, `nch2`, `ch2` |
+Both models, both genera, all three characteristic classes: `{arb, nch2, ch2}` for ramified
+(imaginary, `deg f = 2g+1`) and balanced split (real, `deg f = 2g+2`). "Balanced split" without
+qualification means the basis each genus actually uses — positive reduced at genus 2, negative reduced
+at genus 3. See [Reduced basis](#reduced-basis).
 
 Also here: generic-genus Cantor and NUCOMP reference implementations, a Python verification framework
 that runs in CI, timing experiments against prior art, a whitebox test-case generator, a LaTeX
 operation-count table generator, and a Rust port in a submodule.
 
-Throughout, "balanced split" without qualification means the basis each genus actually uses: positive
-reduced at genus 2, negative reduced at genus 3. See [Reduced basis](#reduced-basis).
+**Last updated:** 2026-08-24.
 
 ---
 
-## Status
+## Operation counts
 
-**Two independent gates.** Magma runs the full tester suite locally; a pure-standard-library Python
-framework in [verification/](verification/) runs in CI, which a licensed tool never can.
-
-| gate | result |
-|---|---|
-| Magma suite, `./test_all.sh` | **30 testers, 0 failures, 0 skips**, ~4 min |
-| frozen case corpus, [verification/whitebox.py](verification/whitebox.py) | **1,886 cases replayed, 1,886 matched** |
-| branch coverage | **1,925 of 1,929 labelled branches, 99.8%** |
-| differential tester, [verification/driver.py](verification/driver.py) `--strict` | **13,746 operations compared, 0 wrong** |
-| framework selftest | **17 sections** |
-
-The 4 uncovered branches are individually exempted with written reasons in
-`verification/coverage_baseline.json`; one of them, `ch2_splitG3_ADD`'s `ADD227`, carries a proof that it
-is unreachable in characteristic 2.
-
-**Branch coverage by family**, from `python3 verification/whitebox.py`:
-
-| family | branches | covered |
-|---|---|---|
-| genus 2 ramified, each of `arb`/`nch2`/`ch2` | 22 | 100% |
-| genus 2 balanced split, each basis, each of `arb`/`nch2`/`ch2` | 80 | 100% except two `UTL0` |
-| genus 3 balanced split, `arb` and `nch2` | 413 | 100% except one `UTL4` |
-| genus 3 balanced split, `ch2` | 413 | 349/350 ADD, rest 100% |
-| genus 3 ramified, each of `arb`/`nch2` | 37 ADD + 11 DBL | 100% |
-
-**Every family now has a Magma whitebox tester.** Genus-3 ramified was the exception until its two were
-generated — 48 constructed cases each, every one asserted against Magma's own Jacobian arithmetic — so
-`verification/harvested_cases.json` is now empty and all 1,886 cases are extracted from testers. Its two
-*random* testers remain transitional imports, and `Random(Jac)` almost always yields degree 3, so
-low-degree branches are thinly sampled there; that is what the whitebox testers exist to cover, by
-enumerating the divisor space rather than sampling it.
-
-**One limit of the whitebox gate, worth knowing before trusting it.** Coverage is keyed on
-`ADD_DEBUG`/`DBL_DEBUG` label strings, so a branch with no label is invisible to it. That gap used to
-include `Deg3ADD`'s generic path in the genus-3 ramified files — the frequent case — where sabotage left
-the corpus gate reporting a clean pass; those labels have since been added, and the four remaining
-unlabelled returns are dispatcher leaves, deliberately consistent between the two files. `UTL` branches
-are instrumented at genus 3 only; the eight genus-2 split testers set `UTL_DEBUG := false`.
-
-**Operation counts.** Every operation costs exactly one inversion, so `I` is omitted below.
-"Typical" means the non-degenerate path: trivial gcd, `deg s = 2`, a full-degree result. The
-condition differs per operation — coprime input supports for an addition, no ramification
-point in the support for a doubling — but the role is the same, and it is the case published
-tables price.
-
-Highest-degree typical case per family, `M / S / A / C`:
+The frequent case of the highest-degree operation in each family, as `M / S / A / C`. "Frequent" is
+the non-degenerate path — trivial gcd, full-degree result — which is the case published tables price.
+Every operation costs exactly one inversion, so `I` is omitted.
 
 | family | addition | doubling | source |
 |---|---|---|---|
 | **g2 ramified** arb | 21 / 2 / 31 / 0 | 22 / 4 / 42 / 2 | measured |
 | **g2 ramified** nch2 | 21 / 2 / 23 / 0 | 21 / 5 / 25 / 0 | measured |
 | **g2 ramified** ch2 | 20 / 3 / 26 / 0 | 21 / 4 / 24 / 0 | measured |
-| **g2 split** arb | 27 / 1 / 37 / 3 | 30 / 2 / 44 / 8 | published |
-| **g2 split** nch2 | 26 / 2 / 36 / 0 | 29 / 3 / 39 / 0 | published |
-| **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | published |
 | **g3 ramified** arb | **53 / 3 / 71 / 1** | **54 / 4 / 80 / 4** | measured |
 | **g3 ramified** nch2 | **53 / 3 / 59 / 0** | **53 / 5 / 61 / 0** | measured |
 | **g3 ramified** ch2 | **51 / 3 / 62 / 0** | **51 / 4 / 55 / 2** | measured |
+| **g2 split** arb | 27 / 1 / 37 / 3 | 30 / 2 / 44 / 8 | published |
+| **g2 split** nch2 | 26 / 2 / 36 / 0 | 29 / 3 / 39 / 0 | published |
+| **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | published |
 | **g3 split** arb | 65 / 3 / 87 / 12 | 73 / 3 / 101 / 19 | published |
 | **g3 split** nch2 | 65 / 3 / 85 / 0 | 72 / 4 / 97 / 0 | published |
 | **g3 split** ch2 | 65 / 3 / 80 / 0 | 71 / 4 / 86 / 1 | published |
 
-**Two sources, because only one is reproducible here.** *Measured* rows come from
-`python3 verification/opcount.py --family <name>`, which executes the formulas over a real
-field and identifies the frequent case by observing which branch is taken. *Published* rows
-are read from the thesis — `tab:splitfcosts` and `tab:g3splitfcosts{ADD,DBL}` — because
-**the counter cannot measure split families yet** and refuses rather than guessing. Until it
-can, no split figure here is independently checked.
+**The `source` column is the important one, and it is not decoration.** *Measured* rows come from
+`python3 verification/opcount.py --family <name>`, which executes the formulas over a real field and
+identifies the frequent case by observing which branch is taken. *Published* rows are read from the
+thesis, because **`verification/opcount.py` cannot measure split families and refuses rather
+than guessing** — so
+no split figure here is independently checked by this repository. Where both methods exist they agree
+exactly: the genus-2 ramified rows match `tab:ramfcosts` cell for cell across all three characteristic
+columns, execution against static counting, two methods sharing no code.
 
-**Where both exist, they agree exactly.** The genus-2 ramified rows are measured, and they match
-`tab:ramfcosts` cell for cell across **all three** characteristic columns — arbitrary, char != 2
-and char = 2 — including the lower-degree rows not shown here. Execution against static counting,
-two methods sharing no code, same answer. That agreement is the evidence for trusting the measured
-genus-3 ramified figures, which have no published counterpart at all: the thesis deferred genus-3
-ramified entirely (`chapter6.tex:15`, "ramified models are developed by another student").
+**The genus-3 ramified rows have no published counterpart at all** — the thesis defers those formulas
+(`chapter6.tex:15`, "ramified models are developed by another student") — and all three beat its own
+split Degree-3 rows on `M+S`, `C` and `A`. Each specialisation is also cheaper than the `arb` it
+specialises on every shared shape, which `verification/selftest.py` asserts rather than assumes.
 
-Both genus-3 ramified rows beat the thesis's own split Degree-3 rows on M+S, C and A. And
-`nch2` is now cheaper than the `arb` it specialises on every shared operation — equal M+S,
-strictly fewer additions — which `verification/selftest.py` asserts rather than assumes, so
-the drift that once let the child overtake its parent cannot recur silently. See
-[EFFICIENCY_NCH2_G3.md](EFFICIENCY_NCH2_G3.md).
-
-See [Operation-count tables](#operation-count-tables) for the counter of record and the one
-known misclassification in it.
-
-**Not currently runnable:** `latexTables/latexConverter.py`, whose input paths are stale. It has been
-demoted to a LaTeX renderer — counting moved to `verification/opcount.py` — so the committed `.tex`
-tables cannot be regenerated, and nothing else depends on it. See [ERRATA.md](ERRATA.md).
+See [Operation-count tables](#operation-count-tables) for the counter of record and the one known
+misclassification in it, and [RELATED_WORK.md](RELATED_WORK.md) for the comparison against prior work.
 
 ---
+
+## Current and planned work
+
+What is missing, in progress, or knowingly deferred. Verification figures live under
+[Testing](#testing); this section is about what is *not* done.
+
+- **The characteristic-2 genus-3 formulas have no published comparison yet.** They must be reconciled
+  deliberately against three normal forms — ours (any degree-3 `h`, `f₆ = 0`), Birkner's Type Ia
+  (`h` irreducible, `f₆ ∈ F₂`, `f₇` non-monic) and GKP's two variants — and measured against GKP's
+  `1I + 62M + 5S / 100A`. The formulas exist and are gated; the comparison does not.
+- **`verification/opcount.py` cannot measure split families**, which is why half the table above is
+  *published* rather than *measured*; the split figures in [RELATED_WORK.md](RELATED_WORK.md) come
+  from an external harness. Extending it is the prerequisite for two known savings in the split model
+  whose identities are already proved: the adjugate trade (`+1M −12A`) and a redundant 2×2 system
+  (`11M 6A` deletable).
+- **The whitebox corpus is complete without being adequate.** It holds one case per branch — every
+  branch is reached, but a case whose coefficients happen to zero a term cannot see a change to that
+  term. Recorded as `ERRATA.md` **E20**, found when a deliberate break went undetected.
+- **No positive-reduced basis at genus 3.**
+- **`latexTables/latexConverter.py` is not runnable**; its input paths are stale. It has been demoted
+  to a LaTeX renderer — counting moved to `verification/opcount.py` — so the committed `.tex` tables
+  cannot be regenerated, and nothing else depends on it.
+- **Errata are recorded before they are fixed, deliberately.** A defect goes into
+  [ERRATA.md](ERRATA.md) with a reproducer and waits for a gate that can see the fix. Entries whose
+  reproducer already runs get fixed; the rest name the tooling they wait on.
+
+---
+
 
 ## Reduced basis
 
@@ -154,8 +126,7 @@ MAGMA=tools/magma-docker/magma.sh ./test_all.sh
 That runs 30 testers in about four minutes and exits 0, essentially all of it Magma:
 3.3 min across 62,654 divisor comparisons. The script used to spend a further ~100 seconds in
 decorative inter-family `sleep` calls; those are gone. Every family now has a whitebox tester, so there is nothing
-left to skip; see
-[Status](#status).
+left to skip; see [Testing](#testing).
 
 Use [tools/magma-docker/](tools/magma-docker/) rather than a plain `docker build`. On Apple Silicon a
 plain image cannot run most of this repository.
@@ -264,10 +235,24 @@ before trusting any cross-comparison.
 ./test_all.sh
 ```
 
-runs 30 testers across genus 2 and genus 3.
+runs 30 testers across genus 2 and genus 3, in about four minutes.
+
+**Where the project stands**, each figure reproduced by the command beside it:
+
+| gate | result | command |
+|---|---|---|
+| Magma suite | **30 testers, 0 failures, 0 skips** | `./test_all.sh` |
+| frozen case corpus | **1,886 cases replayed, 1,886 matched** | `python3 verification/whitebox.py` |
+| branch coverage | **1,925 of 1,929 labelled branches, 99.8%** | as above |
+| differential tester | **13,746 operations compared, 0 wrong** | `python3 verification/driver.py --strict` |
+| framework selftest | **17 sections** | `python3 verification/selftest.py` |
+
+The 4 uncovered branches are individually exempted with written reasons in
+`verification/coverage_baseline.json`; one of them, `ch2_splitG3_ADD`'s `ADD227`, carries a proof that
+it is unreachable in characteristic 2. Every family is at 100% except those four.
 
 **Whitebox testers** compute one search-found divisor operation per computation path and assert the
-result against the reference implementation. Coverage is in [Status](#status). The cases are harvested by
+result against the reference implementation. The cases are harvested by
 coverage-guided search, not hand-designed; what earns them a place in CI is that they are complete and
 deterministic.
 
@@ -491,28 +476,6 @@ rebuilt from either directory as it stands.
 Corrections are made only where they are justified, and
 [Thesis/ERRATA.md](Thesis/ERRATA.md) says for each one whether it was verified by measurement or
 rests on a structural argument. `diff -r ThesisPublished Thesis` shows the current divergence.
-
----
-
-## Known gaps and roadmap
-
-- **Genus 3 ramified is `arb` and `nch2` only.** The `ch2` specialisation is still to be derived, so
-  five of the six `{arb, nch2, ch2} x {ADD, DBL}` cells exist. The `nch2` doubling no longer borrows
-  the `arb` one: it is derived at `h = 0` and `f6 = 0`, which removed 26 additions and every constant
-  multiplication from the degree-2 case.
-- ~~**No whitebox testers for genus 3 ramified.**~~ **Closed.** Both families now have
-  one, generated by `whitebox/genFiles/*_ramifiedG3_WB_gen.mag`: 48 constructed cases
-  each, one per branch label, every case asserted against Magma's own Jacobian
-  arithmetic. Coverage of those four formula files is 100% from *extracted* cases, so
-  the harvested corpus that stood in for them is now empty -- the machinery stays for
-  the next family derived before its tester exists.
-- **`verification/opcount.py` cannot measure split families**, so no split-model operation count can be
-  quoted from it yet. The split figures in [RELATED_WORK.md](RELATED_WORK.md) come from an external
-  harness.
-- **No positive-reduced basis at genus 3.**
-- **Errata are recorded before they are fixed, deliberately.** A defect goes into
-  [ERRATA.md](ERRATA.md) with a reproducer and waits for a gate that can see the fix. Entries whose
-  reproducer already runs get fixed; the rest name the tooling they wait on.
 
 ---
 
