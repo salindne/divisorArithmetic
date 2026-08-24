@@ -1997,9 +1997,6 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
         // t2 is s1*(up2 + s0 + w4).
         t2:= s1*(up2 + s0 + w4);
         t3:= upp1*t2;
-		// t6, not t4: the shared prologue's t4 is u1 + up1 and is read by upp0
-		// above. Reusing the name would leave a live value overwritten -- the E17
-		// defect class -- and an assignment is free, so there is nothing to save.
         t6:= s1*(upp0 + u1 + t1) + vh2 + t3;
         t5:= upp0*t6;
         vpp1:= s1*(u0 + u1*s0) + vh1 + (upp0 + upp1)*(t6 + t2) + t3 + t5;        // karatsuba
