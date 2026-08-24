@@ -505,10 +505,22 @@ rather than disappearing.
 `Deg3ADD` cost rows moved `76M → 75M`, `50M → 49M` and `79M → 78M`, with the
 modal row untouched. Expect the same shape here, since the statements are the same.
 
-**Not applied to this file.** These formulas are merged, and the odd-characteristic
-counts derived from them are published, so the change wants its own commit with
-its own gate run rather than riding in behind a different family's work. Recorded
-here so it is not rediscovered a third time.
+**APPLIED 2026-08-24** in its own commit, with its own gate run, as the plan's
+PR37. The adjudication question was settled first: every genus-3 ramified count in
+`README.md` is marked *measured*, and the thesis defers these formulas outright
+(`chapter6.tex:15`, "ramified models are developed by another student"), so no
+published cell could move.
+
+**And the frequent case saves nothing, which is the part worth stating.** The
+region annotated `total: 27m 0s 17a` is *all nine entries, `d`, and `sp = M*vt`* --
+and `sp0` reads `m3`, so the path that reaches the typical case still pays for it.
+The multiplication MOVED, from the top block into the `sp` block: `top` 16m -> 15m,
+the `sp` block 11m -> 12m, total unchanged. The saving is exactly and only on the
+leaves that return before `sp0`, which never wanted `m3`.
+
+That correction came from the gate, not from reading: `adjugate.py` rejected a
+"total: 26m" that seemed to follow from `top: 15m`, because it measures the region
+and the region had not changed.
 
 **Verification available.** `verification/opcount.py --family ramified/g3/<class>`
 shows the per-leaf distribution, which is where the saving is visible — the modal

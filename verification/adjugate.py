@@ -968,15 +968,21 @@ def shipped_7(t1, t4, t7, up0, up1, up2):
     m8 = t2 * t7 - t1 * t8
     m9 = t1 * t5 - t2 * t4
     m5 = m9 + up2 * m8
-    m3 = -(up0 * m8)
     m2 = -(up0 * m7)
     m1 = m5 + up1 * m7
-    d = t1 * m1 + t4 * m2 + t7 * m3
-    return dict(m1=m1, m2=m2, m3=m3, m5=m5, m7=m7, m8=m8, m9=m9, d=d)
+    # t7*m3 = t7*(-up0*m8) = (-up0*t7)*m8 = t2*m8. m3 is therefore NOT computed
+    # here: the determinant does not need it and its only other reader is the
+    # typical case's sp0, which now forms it. The block prices 15M, not 16M, and
+    # the entry it no longer produces is still checked -- the nine-entry
+    # comparison against an independently built adj(T) locates m3 wherever the
+    # file computes it, which is why that check kept passing when the shipped
+    # files moved it.
+    d = t1 * m1 + t4 * m2 + t2 * m8
+    return dict(m1=m1, m2=m2, m5=m5, m7=m7, m8=m8, m9=m9, d=d)
 
 
 def shipped_7_dbl(t1, t4, t7, up0, up1, up2):
-    """arb_ramifiedG3_DBL.mag, `ta := u2*d2;` .. `det := d0*m1 + d1*m2 + d2*m3;`.
+    """arb_ramifiedG3_DBL.mag, `ta := u2*d2;` .. `d := t1*m1 + t4*m2 + t2*m8;`.
 
     The same block written differently.
 
@@ -998,11 +1004,13 @@ def shipped_7_dbl(t1, t4, t7, up0, up1, up2):
     m7 = temp4 - t7 * t5
     tf = -(up0 * m7)
     m5 = m9 + up2 * m8
-    m3 = -(up0 * m8)
     m2 = tf
     m1 = m5 + up1 * m7
-    d = t1 * m1 + t4 * m2 + t7 * m3
-    return dict(m1=m1, m2=m2, m3=m3, m5=m5, m7=m7, m8=m8, m9=m9, d=d)
+    # Same collapse as shipped_7: t7*m3 = t2*m8, so m3 is not formed here. This
+    # transcription keeps tc = up0*t7 UNNEGATED where the .mag names t2 = -u0*t7,
+    # so the term carries the sign explicitly: t2*m8 = -tc*m8.
+    d = t1 * m1 + t4 * m2 - tc * m8
+    return dict(m1=m1, m2=m2, m5=m5, m7=m7, m8=m8, m9=m9, d=d)
 
 
 def shipped_9(t1, t4, t7, up0, up1, up2):
@@ -1158,9 +1166,12 @@ class Candidate(object):
 
 
 CANDIDATES = [
-    Candidate("shipped_7", shipped_7, 6, (16, 0, 9),
+    # 15M, not 16M: t7*m3 = t2*m8, so the block does not form m3. The entry is
+    # still checked -- the nine-entry comparison finds it wherever the file
+    # computes it, which is now the typical case that alone reads it.
+    Candidate("shipped_7", shipped_7, 6, (15, 0, 9),
               ("arb_ramifiedG3_ADD.mag", "top")),
-    Candidate("shipped_7_dbl", shipped_7_dbl, 6, (16, 0, 9),
+    Candidate("shipped_7_dbl", shipped_7_dbl, 6, (15, 0, 9),
               ("arb_ramifiedG3_DBL.mag", "block")),
     Candidate("shipped_9", shipped_9, 6, (18, 0, 11)),
     Candidate("split_q", split_q, 6, (15, 0, 9)),
@@ -1912,13 +1923,13 @@ def section_bound(primes=(2, 3, 5, 7, 11), verbose=False):
 # (candidate, file, first statement, last statement, {mag name: our name})
 MAG_BLOCKS = (
     ("shipped_7", "g3/ramifiedModel/g3Formulas/arb_ramifiedG3_ADD.mag",
-     "t2:= -up0*t7;", "d:= t1*m1 + t4*m2 + t7*m3;", {}),
+     "t2:= -up0*t7;", "d:= t1*m1 + t4*m2 + t2*m8;", {}),
     # The DBL's block was brought onto the ADD's notation on 2026-08-22, so the
     # rename map is now nearly empty: `d0/d1/d2` became `t1/t4/t7` and `det`
     # became `d` in the file itself. Only u -> up remains, the DBL naming its
     # single divisor u where the ADD's fragment reads the second operand.
     ("shipped_7_dbl", "g3/ramifiedModel/g3Formulas/arb_ramifiedG3_DBL.mag",
-     "t2 := -u0*t7;", "d := t1*m1 + t4*m2 + t7*m3;",
+     "t2 := -u0*t7;", "d := t1*m1 + t4*m2 + t2*m8;",
      {"u0": "up0", "u1": "up1", "u2": "up2"}),
     ("split_q", "g3/splitModel/negReduced/g3Formulas/arb_splitG3_ADD.mag",
      "t2 := -up0*t7;", "d := t1*m1 + t2*m4 + t3*m7;", {}),

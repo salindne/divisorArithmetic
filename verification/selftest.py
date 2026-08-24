@@ -1656,11 +1656,13 @@ def section_adjugate(rep, quick):
         m8 = t2 * t7 - t1 * t8
         m9 = t1 * t5 - t2 * t1
         m5 = m9 + up2 * m8
-        m3 = -(up0 * m8)
         m2 = -(up0 * m7)
         m1 = m5 + up1 * m7
-        return dict(m1=m1, m2=m2, m3=m3, m5=m5, m7=m7, m8=m8, m9=m9,
-                    d=t1 * m1 + t4 * m2 + t7 * m3)
+        # mirrors shipped_7: m3 is not formed here either, and d reads t2*m8.
+        # The provocation must match the base's op count exactly, or it stops
+        # demonstrating that VALUES are what the check compares.
+        return dict(m1=m1, m2=m2, m5=m5, m7=m7, m8=m8, m9=m9,
+                    d=t1 * m1 + t4 * m2 + t2 * m8)
 
     def flipped_sign(t1, t4, t7, up0, up1, up2):
         """shipped_7 with `t5 = t1 + up1*t7`. Invisible in characteristic 2."""
@@ -1671,11 +1673,13 @@ def section_adjugate(rep, quick):
         m8 = t2 * t7 - t1 * t8
         m9 = t1 * t5 - t2 * t4
         m5 = m9 + up2 * m8
-        m3 = -(up0 * m8)
         m2 = -(up0 * m7)
         m1 = m5 + up1 * m7
-        return dict(m1=m1, m2=m2, m3=m3, m5=m5, m7=m7, m8=m8, m9=m9,
-                    d=t1 * m1 + t4 * m2 + t7 * m3)
+        # mirrors shipped_7: m3 is not formed here either, and d reads t2*m8.
+        # The provocation must match the base's op count exactly, or it stops
+        # demonstrating that VALUES are what the check compares.
+        return dict(m1=m1, m2=m2, m5=m5, m7=m7, m8=m8, m9=m9,
+                    d=t1 * m1 + t4 * m2 + t2 * m8)
 
     good = ADJ.check(ADJ.shipped_7, 6, trials=trials)
     nfields = len(good["fields"])

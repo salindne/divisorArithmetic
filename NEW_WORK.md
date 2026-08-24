@@ -66,6 +66,7 @@ restating the detail.
 | N27 | A reference block written leaf-for-leaf against the code becomes a debugger; the defect class surviving every static check is the defined-with-the-wrong-value read; and `l = r*s + M2` needs no division | **implemented and verified**; the doubling at **54M 4S 84A 4C**, 3 defects found, 2 gates repaired, 6-lens sweep |
 | N28 | The sixth cell of the matrix: the odd-characteristic doubling, derived rather than borrowed; `M21 = -kp3`, a quotient coefficient recomputed under another name; and branch coverage by enumeration rather than sampling | **implemented and verified**; `25M 4S 44A 0C` and `53M 5S 61A 0C`, 48/48 branches by constructed case, E12 closed, 28 testers 0 skips |
 | N29 | The last two cells: characteristic 2 at genus 3, where the doubling's saving is mostly arithmetic that stops existing because half of every integer multiplier is zero; E19, a sentence in a banner that could silently redefine the tested domain; and E20, a green Magma run that carried no information | **implemented and verified**; `51M 3S 62A 0C` and `51M 4S 55A 2C`, 1,777 additions and 2,223 doublings against Magma's Jacobian 0 wrong, six-cell matrix complete, 30 testers 0 skips, one saving refused for want of an oracle |
+| N30 | A multiplication that moved rather than vanished: `t7*m3 = t2*m8` by associativity, so the determinant needs `m8` and `m3` belongs with its only other reader | **implemented and verified**; `-1M` on every degenerate `Deg3ADD` leaf across all three families and the arb doubling, frequent case unchanged, and the op-count ledger corrected by the gate rather than by reading |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -2340,6 +2341,51 @@ references to the dropped symbols, not by the splice being trusted. Region-wise 
 function needs that check as a standing step, because the regions are what get verified and the
 seams are what do not.
 
+
+## N30 — A multiplication that moved, and the ledger that would not let it be miscounted
+
+`Deg3ADD` computes, above the `d` guard, `m3 := -up0*m8` and then
+`d := t1*m1 + t4*m2 + t7*m3`. But `t7*m3 = t7*(-up0*m8) = (-up0*t7)*m8 = t2*m8`,
+and the prologue already holds `t2 = -up0*t7` — the signs cancelling because `t2`
+and `m3` carry the same `-up0` factor. **Pure associativity: no characteristic
+assumption, no domain restriction, true on every curve.**
+
+With `d` reading `t2*m8`, `m3`'s only remaining reader is the typical case's `sp0`,
+so it is computed there. Applied to all three genus-3 ramified additions and the
+arbitrary doubling, whose determinant block has the same shape.
+
+**What it is worth, stated exactly.** Nothing on the frequent path, and a
+multiplication on every leaf that returns before `sp0`:
+
+| file | degenerate leaves | frequent |
+|---|---|---|
+| `arb_ramifiedG3_ADD` | 50→49M, 77→76M, 82→81M | unchanged, `53M 3S 71A 1C` |
+| `nch2_ramifiedG3_ADD` | 73→72M, 49→48M, 29→28M | unchanged, `53M 3S 59A 0C` |
+| `ch2_ramifiedG3_ADD` | 76→75M, 50→49M, 79→78M | unchanged, `51M 3S 62A 0C` |
+
+**The gate corrected the accounting, which is the reason this entry exists.** The
+file annotates its determinant region `top: 16m` / `11m` / `total: 27m`, and with
+`top` falling to 15m it seemed to follow that the total was 26m. `adjugate.py`
+refused that: it measures the region, and the region is *all nine entries, `d`, and
+`sp = M*vt`* — in which `sp0` reads `m3`, so the path still pays. The
+multiplication had moved, not vanished: `top` 16→15, the `sp` block 11→12, total
+unchanged at 27m. A saving on the degenerate leaves was very nearly written down
+as a saving on the frequent one.
+
+**For the paper:** the inline `// Nm Ns Na` ledgers in these files are gate input,
+not decoration (`ERRATA.md` E14), and this is the first time that has *paid*
+rather than merely bitten. Four separate places had to agree before the change
+would pass — the fragment anchors, both Python transcriptions, the file's own
+ledger comments, and the two provocations, which are copies of the shipped
+fragment and must match its op count exactly or they stop demonstrating that
+values rather than counts are what the check compares. A change that is only
+"obviously right" cannot satisfy five independent statements of the same number.
+
+**Provenance.** Found while sweeping the characteristic-2 specialisation (N29),
+where it applies identically, and deliberately *not* applied there — those two
+parents are merged, so it was recorded in both efficiency reports and carried as
+its own PR with its own gate run rather than riding in behind another family's
+work.
 
 # Part IV — The comparison with prior work
 
