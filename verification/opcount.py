@@ -267,7 +267,15 @@ def main(argv=None):
                 print("   ", f.name)
             return 2
     else:
-        families_sel = [f for f in families if f.model == "ramified"]
+        # EVERY family, not just the ramified ones. Selecting by model here put the
+        # nine split families outside the skip machinery entirely: the run reported
+        # six results and an empty `skipped` list, so a reader -- or a --json
+        # consumer -- saw a complete-looking answer covering 6 of 15 families with
+        # nothing to say the other nine were never attempted. The refusal already
+        # existed and was honest when a split family was named explicitly; only the
+        # default path bypassed it. Nothing is silently capped in this repository,
+        # and the counter of record is the last place that rule should lapse.
+        families_sel = list(families)
 
     results, skipped = {}, []
     for fam in families_sel:
@@ -292,8 +300,11 @@ def main(argv=None):
             m, s, add, c, i = r["modal"]
             print("     %-4s %3dM %2dS %3dA %2dC %2dI    share %.2f of %d calls"
                   % (op, m, s, add, c, i, r["share"], r["n"]))
-    for name, why in skipped:
+    for name, why in sorted(skipped):
         print("  %-24s skipped: %s" % (name, (why or "")[:60]))
+    if skipped:
+        print("\n  %d of %d families measured, %d skipped."
+              % (len(results), len(results) + len(skipped), len(skipped)))
     if not results:
         print("  nothing measured")
         return 1
