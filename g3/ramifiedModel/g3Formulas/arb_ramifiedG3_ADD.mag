@@ -1296,11 +1296,14 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5,
     m9:= t1*t5 - t2*t4;
 
     m5:= m9 + up2*m8;
-    m3:= -up0*m8;
     m2:= -up0*m7;
     m1:= m5 + up1*m7;
 
-    d:= t1*m1 + t4*m2 + t7*m3;
+    // t7*m3 = t7*(-up0*m8) = (-up0*t7)*m8 = t2*m8, the signs cancelling because t2
+    // and m3 carry the same -up0 factor. So d needs m8, not m3, and m3 is left
+    // wanted only by the typical case's sp0 -- computed there, so no degenerate
+    // leaf pays for it.
+    d:= t1*m1 + t4*m2 + t2*m8;
     if IsZero(d) then
 
         // ht = vh + vp
@@ -1852,12 +1855,16 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5,
     // partially solve system to get sp = s*d
     //m6:= m2 - up1*m8;
     //m4:= m8 + up2*m7;
+    m3:= -up0*m8;
     sp0:= vt0*m1 + vt1*m2 + vt2*m3;
     sp1:= vt0*(m8 + up2*m7) + vt1*m5 + vt2*(m2 - up1*m8);
     sp2:= vt0*m7 + vt1*m8 + vt2*m9;
-	// 11m 0s 8a
-	// top: 16m 0s 9a
+	// 12m 0s 8a
+	// top: 15m 0s 9a
 	// total: 27m 0s 17a (equivalent 98a)
+	// The total is unchanged by m3's move: sp0 reads m3, so this path still pays
+	// for it -- the multiplication went from the top block into this one. The
+	// saving is on the leaves that return BEFORE here, which never wanted it.
 
     if IsZero(sp2) then
         if IsZero(sp1) then           
