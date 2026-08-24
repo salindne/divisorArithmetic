@@ -1684,7 +1684,9 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
             r0:= s2*(up0 + s0*q0);
 
             //M1 := ExactQuotient(u*r + (vp - v)*q, up);
-            M10:= vt2 + r0 + r1*t7;
+            // 2*r0 = 0, so M10 + r0 is vt2 + r1*t7, which is what upp1 wants.
+            t9:= vt2 + r1*t7;		// M10 + r0
+            M10:= t9 + r0;
 
             //M2 := ExactQuotient(r*(vp + v + h) + k*q, up);
             // k3 = u2 and h monic, so M21 is three additions, and k3 + up2 is the
@@ -1694,7 +1696,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
 
             //upp := r*M1 - q*M2;
             upp2:= M21 + r1^2 + q0;
-            upp1:= M20 + r1*(M10 + r0) + M21*q0;
+            upp1:= M20 + r1*t9 + M21*q0;
             upp0:= M20*q0 + r0*M10;
 
             //l := ExactQuotient(u*r - upp, q);
@@ -1894,7 +1896,9 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
 
         //M1 := ExactQuotient(u*r + (vp - v)*q, up);
         //M11:= r1;
-        M10:= vt2 + r0 + r1*t7;
+        // 2*r0 = 0, so M10 + r0 is vt2 + r1*t7, which is what upp1 wants.
+        t9:= vt2 + r1*t7;		// M10 + r0
+        M10:= t9 + r0;
 
         //M2 := ExactQuotient(r*(vp + v + h) + k*q, up);
         // k3 = u2 and h3 = 1, so M21 is two additions and k3 + up2 = t7 in M20.
@@ -1903,7 +1907,7 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
 
         //upp := r*M1 - q*M2;
         upp2:= M21 + r1^2 + q0;
-        upp1:= M20 + r1*(M10 + r0) + M21*q0;
+        upp1:= M20 + r1*t9 + M21*q0;
         upp0:= M20*q0 + r0*M10;
 
         //l := ExactQuotient(u*r - upp, q);
@@ -1921,9 +1925,10 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
 
     //k := (f - v*(v + h)) div u;         //Exact quotient
     // f6..f3 = 0 and h monic, so k reads no coefficient of f: k3 is u2 outright,
-    // and k2 costs one squaring. Only the deg(s) = 2 leaf reads k2.
+    // and k2 is u1 + v2 + u2^2. Only the deg(s) = 2 leaf reads k2, and it reads
+    // it only as k2 + up1 = t4 + v2 + u2^2, so k2 is never formed and the other
+    // two leaves do not pay for it.
     //k3:= u2;
-    k2:= u1 + v2 + u2^2;
 
     //s := R!((Q!u)^-1)*(vp - v) mod up;
     vt2:= vp2 + v2;
@@ -1972,16 +1977,21 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
         // the second bracket a curve constant.
         t1:= s0*u2;
         upp1:= t7 + w3 + w4;
-        upp0:= (s0 + up2)*(upp1 + s0) + t1 + t4 + (h2 + (s0 + u2)*w3)*w3;
+        // s0*(t7 + u2 + up2) = 0 and the two s0*w4 terms cancel, which leaves one
+        // w3 product and one t7 product where the grouped form paid three.
+        upp0:= t4 + s0^2 + w3*(s0 + h2 + up2) + t7*(up2 + w4);
 
         //vpp := (-s*u - v - h) mod upp;
         // s1*w3 = 1 cancels the h3 the reduction contributes and u2 + t7 = up2, so
         // t2 is s1*(up2 + s0 + w4).
         t2:= s1*(up2 + s0 + w4);
         t3:= upp1*t2;
-        t4:= s1*(upp0 + u1 + t1) + vh2 + t3;
-        t5:= upp0*t4;
-        vpp1:= s1*(u0 + u1*s0) + vh1 + (upp0 + upp1)*(t4 + t2) + t3 + t5;        // karatsuba
+		// t6, not t4: the shared prologue's t4 is u1 + up1 and is read by upp0
+		// above. Reusing the name would leave a live value overwritten -- the E17
+		// defect class -- and an assignment is free, so there is nothing to save.
+        t6:= s1*(upp0 + u1 + t1) + vh2 + t3;
+        t5:= upp0*t6;
+        vpp1:= s1*(u0 + u1*s0) + vh1 + (upp0 + upp1)*(t6 + t2) + t3 + t5;        // karatsuba
         vpp0:= s1*(u0*s0) + vh0 + t5;
 
         if (ADD_DEBUG) then "ADD35"; end if;		// Deg3ADD: Typical, deg(s) = 1
@@ -2003,28 +2013,38 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
 
     //M1 := ExactQuotient(u*r + (vp - v)*q, up);
     //M11:= r1;
-    M10:= vt2 + r0 + r1*t7;
+    // 2*r0 = 0, so M10 + r0 is vt2 + r1*t7. upp1 wants that sum and only upp0
+    // wants M10 itself, so the sum is named and M10 is the extra addition.
+    t9:= vt2 + r1*t7;				// M10 + r0
+    M10:= t9 + r0;
 
     //M2 := ExactQuotient(r*(vp + v + h) + k*q, up);
     // h monic and k3 = u2, so k3 + up2 is t7 and vp2 + vh2 is vt2 + h2.
     t3:= t7 + r1;		// M21 + q0
     M21:= t3 + q0;
-    M20:= k2 + up1 + r0 + s1*t7 + r1*(vt2 + h2 + up2);
+    t6:= s1*t7;
+    M20:= t4 + v2 + u2^2 + r0 + t6 + r1*(vt2 + h2 + up2);
 
     //upp := r*M1 - q*M2;
     // 2*s1 = 0, so M21 + q0 is t3 and upp2 is one addition on top of r1^2.
     upp2:= t3 + r1^2;
-    upp1:= M20 + r1*(M10 + r0) + M21*q0;
+    upp1:= M20 + r1*t9 + M21*q0;
     upp0:= M20*q0 + r0*M10;
 
     //l := ExactQuotient(u*r - upp, q);
     //upp := upp/LeadingCoefficient(upp);
     //vpp := (l - v - h) mod upp;
-    t1:= r0 + r1*q0;
-    t2:= (u2 + q0)*t1 + (upp2 + q0)*w3;
-    vpp2:= r1*(u2 + upp2) + t1 + w3 + vh2 + upp2;
-    vpp1:= r1*(u1 + upp1) + t2 + vh1 + upp1;
-    vpp0:= r1*(u0 + upp0) + u1*t1 + q0*t2 + upp1*w3 + vh0 + upp0;
+    // The quotient by q is never formed. With C := (u*s) div (up*s2), monic of
+    // degree 2, u + w3*M1 = q*C, so u*r - upp = q*(r*C + w3*M2) and l = r*C +
+    // w3*M2. C1 is u2 + q0; C0 is s0 + t8 + t6, because q0*t7 = up2*t7 + s1*t7
+    // and the prologue's t8 = t4 + up2*t7 cancels the t4 that u1 + up1 supplies.
+    // Then vpp = l + v + h + (r1 + 1)*upp, so each r1*C_i pairs with the
+    // r1*upp_i beside it and one product serves both.
+    t1:= u2 + q0;					// C1
+    t2:= s0 + t8 + t6;				// C0
+    vpp2:= r0 + w3 + vh2 + upp2 + r1*(t1 + upp2);
+    vpp1:= r0*t1 + M21*w3 + vh1 + upp1 + r1*(t2 + upp1);
+    vpp0:= r0*t2 + M20*w3 + vh0 + upp0 + r1*upp0;
 
     if (ADD_DEBUG) then "ADD36"; end if;		// Deg3ADD: Typical, deg(s) = 2
     return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
