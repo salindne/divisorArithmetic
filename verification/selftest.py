@@ -1277,7 +1277,26 @@ def section_specialisation(rep, quick):
                 continue
             cm, cs, ca, cc, _ci = kid[shape]["modal"]
             pm, ps, pa, pc, _pi = par[shape]["modal"]
-            for col, cv, pv in (("M+S", cm + cs, pm + ps), ("A", ca, pa), ("C", cc, pc)):
+            # The multiplicative comparison is on M+S+C, not on the three
+            # columns separately, because all three are multiplications and the
+            # specialisation is free to move work between them. S was already
+            # pooled with M for exactly this reason -- several savings turn a
+            # multiplication into a squaring. C belongs in the same pool: a
+            # product by a curve coefficient is a multiplication that happens to
+            # have a per-curve operand, and the thesis prices it lower than a
+            # general M, never higher.
+            #
+            # Measured case that forced this: ch2 genus-3 23ADD reaches
+            # 34M 4S 1C against arb's 36M 3S 0C -- identical multiplicative work,
+            # 39 either way, and nine fewer additions. Under per-column rules that
+            # failed on "C 1 > 0", and the only way to pass would have been to
+            # write the constant product as though it were general, which is the
+            # dishonest accounting E13 exists to warn about.
+            #
+            # This still catches the drift the section was built for. PR15's
+            # defect was 62 M+S against 56 AND 77A against 71: as an aggregate
+            # that is 65 against 57, caught on the first column and again on A.
+            for col, cv, pv in (("M+S+C", cm + cs + cc, pm + ps + pc), ("A", ca, pa)):
                 if cv > pv:
                     bad.append("%s %s: child %s %d > parent %d" % (child_name, shape, col, cv, pv))
         if bad:

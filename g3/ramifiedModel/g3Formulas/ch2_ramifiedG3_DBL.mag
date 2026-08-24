@@ -445,16 +445,16 @@ Deg3DBL:= function(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
 		// M23 = 1, so s^2 + M2 is already monic and the normalisation costs nothing.
 		// 2*s0*s1 = 0, so upp1 is M21 outright.
 		upp2:= s1^2 + s1;
-		upp1:= M21;
+		//upp1:= M21;
 		upp0:= s0^2 + M20;
 
 		//vpp := (u*s + v + h) mod upp;
 		vpp2:= s1*(upp2 + un1) + upp2 + s0 + vh2;
-		vpp1:= s1*(upp1 + un0) + upp1 + s0*un1 + vh1;
+		vpp1:= s1*(M21 + un0) + M21 + s0*un1 + vh1;
 		vpp0:= upp0*s1 + upp0 + s0*un0 + vh0;
 
 		if (DBL_DEBUG) then "DBL07"; end if;		// Deg3DBL: gcd(u,2va+h) = dw, DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = P0
-		return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
+		return 1, upp2, M21, upp0, vpp2, vpp1, vpp0;
 	end if;//d
 	
     //k:= (f - v*(v + h)) div u (mod u)

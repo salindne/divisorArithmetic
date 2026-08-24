@@ -1,0 +1,229 @@
+clear;
+///////////////////////////////////////////////////////////////////////////////
+////// TESTING RAMIFIED MODEL ARITHMETIC OVER CHARACTERISTIC 2 FIELDS ////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Sebastian Lindner, 2019
+// - Adapted by Randall Apperley
+//-----------------------------------------------------------------------------
+// OVERVIEW
+//-----------------------------------------------------------------------------
+// This script tests divisor arithmetic functions from ch2_ramifiedG3_DBL.mag,
+// and ch2_ramifiedG3_ADD.mag.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//LOAD FILES
+///////////////////////////////////////////////////////////////////////////////
+DBL_DEBUG:= false;
+ADD_DEBUG:= false;
+load "ramifiedUtilities.mag";
+load "g3Formulas/ch2_ramifiedG3_DBL.mag";
+load "g3Formulas/ch2_ramifiedG3_ADD.mag";
+"     ";
+
+
+///////////////////////////////////////////////////////////////////////////////
+//GLOBAL TESTING VARIABLES
+///////////////////////////////////////////////////////////////////////////////
+//Field sizes below 20 for random testing
+//This class needs characteristic 2 and h monic of degree exactly 3, so the
+//admissible field sizes are the powers of two.
+FIELDS:= {2,4,8,16,32};
+TRIALS:= #FIELDS;
+DIVISORS:= 50; //Number of divisor additions and doubling to test per curve
+DEBUG:= false;
+TEST_DBL:= true;
+TEST_ADD:= true;
+
+
+///////////////////////////////////////////////////////////////////////////////
+//REPRODUCIBILITY
+///////////////////////////////////////////////////////////////////////////////
+// These testers never set or reported a seed, so a failure in a rarely-drawn
+// branch could not be replayed -- and a failure you cannot replay is a failure
+// you cannot diagnose. The seed and step are printed in the banner below;
+// RND_SEED=<n> reruns that draw sequence exactly.
+if GetEnv("RND_SEED") ne "" then
+    SetSeed(StringToInteger(GetEnv("RND_SEED")));
+end if;
+
+/////////////////////////////////////////////////////////
+///////////////////// TEST LOOPS ////////////////////////
+/////////////////////////////////////////////////////////
+
+printf "///////////////////////////////////////////////////////////////////////\n";
+printf "//\n";
+printf "// - Small finite field and curve picked at random for each trial. \n";
+printf "// - %o total trials.            \n", TRIALS;
+printf "// - %o divisor additions and doubles each per trial.            \n", DIVISORS;
+sd, st:= GetSeed();
+printf "// - Random seed %o, step %o. Replay this run with RND_SEED=%o\n", sd, st, sd;
+printf "//";
+errorFlag:= false;
+nCmp:= 0;
+
+trial:= 1;
+for F in FIELDS do
+  printf "\n//    Trial # %o over FF(%o).", trial, F;
+  trial+:=1;
+  // Random finite field FF and polynomial ring over FF
+  FF:=GF(F);
+  R<x>:=PolynomialRing(FF);
+
+  f,h:= RandomG3Char2Curve(F);
+  C:= HyperellipticCurve(f,h);
+  Jac:= Jacobian(C);
+
+  if DEBUG then
+    "\n";
+    FF, "f is: ", f, "h is: ", h;
+    " ";
+  end if;
+
+  divisor:= 1;
+  while divisor le DIVISORS do
+    divisor+:=1;
+
+    /////////////////////////////////////////////////////
+    ///RANDOM DIVISORS
+    /////////////////////////////////////////////////////
+    D1:= Random(Jac);
+    if DEBUG then
+      "Divisor D1 is: ", D1;
+    end if;
+    u:= D1[1];
+    v:= D1[2];
+
+    D2:= Random(Jac);
+    if DEBUG then
+      "Divisor D2 is: ", D2;
+    end if;
+    up:= D2[1];
+    vp:= D2[2];
+
+
+    /////////////////////////////////////////////////////
+    ///TEST FORMULAS ON DIVISORS
+    /////////////////////////////////////////////////////
+    if DEBUG then "  "; end if;
+    if TEST_DBL then
+
+        cantor:= D1 + D1;
+
+        f7:= Coeff(f, 7); f6:= Coeff(f, 6); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
+
+        h3:= Coeff(h,3); h2:= Coeff(h,2); h1:= Coeff(h,1); h0:= Coeff(h,0);
+
+        ua:= D1[1]; va:= D1[2];
+
+        ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
+        va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
+
+        upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := DBL(D1[1], D1[2], f, h);
+        nCmp+:= 1;
+
+        if ((cantor[1] ne upp3*x^3 + upp2*x^2 + upp1*x + upp0) or (cantor[2] ne vpp2*x^2 + vpp1*x + vpp0)) and not (upp3 eq -1 and upp2 eq -1 and upp1 eq -1 and upp0 eq -1) then
+            errorFlag:= true;
+            "ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+            "the input divisors: ", D1;
+            "Cantor result: ", cantor;
+            "Explicit result: ", upp3*x^3 + upp2*x^2 + upp1*x + upp0, vpp2*x^2 + vpp1*x + vpp0;
+        end if;
+
+        if DEBUG then "cantor doubling: ", cantor; end if;
+    end if;
+
+    if TEST_ADD then
+
+        f7:= Coeff(f, 7); f6:= Coeff(f, 6); f5:= Coeff(f, 5); f4:= Coeff(f, 4); f3:= Coeff(f, 3); f2:= Coeff(f, 2); f1:= Coeff(f, 1); f0:= Coeff(f, 0);
+
+        h3:= Coeff(h,3); h2:= Coeff(h,2); h1:= Coeff(h,1); h0:= Coeff(h,0);
+
+
+        ua:= D1[1]; va:= D1[2];
+        ub:= D2[1]; vb:= D2[2];
+
+        ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
+        va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
+
+        ub3:= Coeff(ub,3); ub2:= Coeff(ub,2); ub1:= Coeff(ub,1); ub0:= Coeff(ub,0);
+        vb2:= Coeff(vb,2); vb1:= Coeff(vb,1); vb0:= Coeff(vb,0);
+
+
+        cantor:= D1 + D2;
+        //cantor_dub:= D1*2;
+
+        if D1 ne D2 then
+
+            upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 := ADD(D1[1], D1[2], D2[1], D2[2], f, h);
+            nCmp+:= 1;
+            upp,vpp := Nucomp_g3_RAM(D1,D2,f,h);
+
+            // ensure ua is always the larger polynomial
+            if D2[1] le D1[1] then
+                ua:= D1[1]; va:= D1[2];
+                ub:= D2[1]; vb:= D2[2];
+
+            else
+                ub:= D1[1]; vb:= D1[2];
+                ua:= D2[1]; va:= D2[2];
+
+            end if;
+
+            ua3:= Coeff(ua,3); ua2:= Coeff(ua,2); ua1:= Coeff(ua,1); ua0:= Coeff(ua,0);
+            va2:= Coeff(va,2); va1:= Coeff(va,1); va0:= Coeff(va,0);
+
+            ub3:= Coeff(ub,3); ub2:= Coeff(ub,2); ub1:= Coeff(ub,1); ub0:= Coeff(ub,0);
+            vb2:= Coeff(vb,2); vb1:= Coeff(vb,1); vb0:= Coeff(vb,0);
+
+            // this is here to ensure that I didn't miss any cases
+            if (upp3 eq -1 and upp2 eq -1 and upp1 eq -1 and upp0 eq -1) and (F mod 2 ne 0)  then
+                "-1 detected";
+                "input: (", u, v, "), (", up, vp, ")";
+                "result: ", cantor;
+
+            else
+                if (cantor[1] ne upp3*x^3 + upp2*x^2 + upp1*x + upp0) or (cantor[2] ne vpp2*x^2 + vpp1*x + vpp0) then
+                    errorFlag:= true;
+                    "ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+                    "the input divisors: ", D1, D2;
+                    "Cantor result: ", cantor;
+                    "Explicit result: ", upp3*x^3 + upp2*x^2 + upp1*x + upp0, vpp2*x^2 + vpp1*x + vpp0;
+                    the_gcd, a1, a2 := Xgcd(ub, ua);
+                    the_gcd2, a1, a2 := Xgcd(h+va+vb, the_gcd);
+                    "the gcd(ub,ua) = ", the_gcd;
+                    "the gcd(h+va+vb,the_gcd) = ", the_gcd2;
+                end if;
+
+                if (upp ne cantor[1] or vpp ne cantor[2]) then
+                    errorFlag:= true;
+                    "NUCOMP ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+                    "the input divisors: ", D1, D2;
+                    "Cantor result: ", cantor;
+                    "NUCOMP result: ", upp, vpp;
+                end if;
+
+            end if;
+
+        end if;
+    end if;
+  end while;
+end for;
+printf "\n///////////////////////////////////////////////////////////////////////\n";
+// E12: a tester that loaded nothing used to print the same green
+// summary as one that verified everything, because TEST_ADD/TEST_DBL
+// are configuration switches and "No errors." is true by vacuity.
+// The count makes an empty run loud, and the assert makes it fatal:
+// test_all.sh greps for "Runtime error|Assertion failed".
+printf "\n// Comparisons: %o", nCmp;
+assert nCmp gt 0;
+if errorFlag then
+  printf "\n// Errors occurred!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+else
+  printf "\n// No errors.";
+end if;
+printf "\n//";
+printf "\n///////////////////////////////////////////////////////////////////////\n";
+quit;

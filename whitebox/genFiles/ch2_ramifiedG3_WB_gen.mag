@@ -52,7 +52,8 @@ SetColumns(0);
 // GF(8), because deg gcd(u,h) is what selects them and h has degree 3 regardless
 // of the field size.
 //
-// Budget of record: recorded here once measured.
+// Budget of record: WB_FIELDS=2,4,8 WB_TRIALS=3 WB_PAIRS=200 WB_SEED=1 reaches
+// all 48 branch tags in 279,496 blocks.
 FIELDS := [2,4,8];
 if GetEnv("WB_FIELDS") ne "" then
     FIELDS := [ StringToInteger(s) : s in Split(GetEnv("WB_FIELDS"), ",") ];
