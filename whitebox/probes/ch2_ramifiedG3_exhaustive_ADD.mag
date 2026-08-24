@@ -20,30 +20,28 @@ clear;
 // most degenerate available.
 ///////////////////////////////////////////////////////////////////////////////
 
-// HOW TO RUN. The load paths are relative to g3/ramifiedModel, which is the
-// directory Magma must be started from, because the docker wrapper mounts the
-// working directory:
+// HOW TO RUN, from the repository root -- the docker wrapper mounts the working
+// directory, so root-relative loads resolve and nothing has to be copied about:
 //
-//     cp whitebox/probes/ch2_ramifiedG3_exhaustive_ADD.mag g3/ramifiedModel/
-//     cd g3/ramifiedModel && ../../tools/magma-docker/magma.sh ch2_ramifiedG3_exhaustive_ADD.mag
-//     rm g3/ramifiedModel/ch2_ramifiedG3_exhaustive_ADD.mag
-//
-// It is kept HERE rather than beside the testers because dominance.py scans
-// g3/ramifiedModel and this file's several-assignments-per-line style produces
-// false findings there. whitebox/ is not scanned.
+//     tools/magma-docker/magma.sh whitebox/probes/ch2_ramifiedG3_exhaustive_ADD.mag
 //
 // Coverage is read from the printed labels:
-//     grep -oE '\bADD[0-9]{2}\b' log | sort | uniq -c
-// All 37 of ADD00..ADD36 should appear. A missing label is the E20 failure --
-// a branch reporting 0 wrong because it was never entered.
+//     ... | grep -oE '\bADD[0-9]{2}\b' | sort | uniq -c
+// All 37 of ADD00..ADD36 should appear. A MISSING LABEL is the E20 failure -- a
+// branch reporting 0 wrong because it was never entered, which is
+// indistinguishable from a branch that is correct.
+//
+// It lives here rather than beside the testers because dominance.py scans
+// g3/ramifiedModel, and this file's several-assignments-per-line style produces
+// false findings there (214 of them, the first time a probe was left in it).
 
 UTL_DEBUG := false;
 ADD_DEBUG := true;          // the labels ARE the coverage instrument here
 DBL_DEBUG := false;
 
-load "ramifiedUtilities.mag";
-load "g3Formulas/ch2_ramifiedG3_DBL.mag";
-load "g3Formulas/ch2_ramifiedG3_ADD.mag";
+load "g3/ramifiedModel/ramifiedUtilities.mag";
+load "g3/ramifiedModel/g3Formulas/ch2_ramifiedG3_DBL.mag";
+load "g3/ramifiedModel/g3Formulas/ch2_ramifiedG3_ADD.mag";
 
 FIELDS := [2,4];
 CURVES := 3;

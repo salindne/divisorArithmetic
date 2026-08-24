@@ -7,10 +7,11 @@
 # should only ever shrink. `tools/check_paths.py --strict` fails if an entry
 # here has started resolving, so stale entries cannot accumulate either.
 #
-# Not listed, because it is a rule rather than debt: whitebox/testerFiles/ holds
-# generator output meant to be copied into the formula directory it tests and
-# run from there, so its `load` lines resolve at the destination. See
-# is_relocatable() in tools/check_paths.py.
+# Not listed, because they are rules rather than debt: whitebox/testerFiles/
+# holds generator output meant to be copied into the formula directory it tests
+# and run from there, so its `load` lines resolve at the destination; and
+# whitebox/probes/ holds Magma probes driven from the repository root, so theirs
+# are root-relative. See is_relocatable() in tools/check_paths.py.
 
 # ---------------------------------------------------------------------------
 # latexConverter.py: all live input paths are missing the negReduced/ component,

@@ -60,8 +60,15 @@ def is_relocatable(path: Path) -> bool:
     to be copied into the formula directory it tests and run from there, so its
     `load "g2Formulas/..."` lines resolve at the destination, not here. Checking
     them in place would report two dozen phantom breakages.
+
+    whitebox/probes/ is the same category by a different route: a probe is driven
+    from the repository root, because the Magma wrapper mounts the working
+    directory, so its loads are root-relative and do not resolve beside the file.
+    The alternative was three allowlist entries, and this is a rule rather than
+    debt -- the same distinction the allowlist's own header draws.
     """
-    return path.relative_to(ROOT).parts[:2] == ("whitebox", "testerFiles")
+    head = path.relative_to(ROOT).parts[:2]
+    return head in (("whitebox", "testerFiles"), ("whitebox", "probes"))
 
 
 def references() -> list[tuple[str, str, Path]]:
