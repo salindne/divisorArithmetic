@@ -1830,6 +1830,136 @@ def section_dominance(rep, quick):
            % (len(files), len(provoked)))
 
 
+def section_split_counts(rep, quick):
+    """The split families are measurable, and they reproduce published cells.
+
+    `opcount.py` measured six of fifteen families for most of this project's
+    life; the nine split ones were refused because their domain cannot be got at
+    by the arb-contrast the ramified families use. This section is the standing
+    guard on that being fixed, and it pins the answer rather than merely the
+    fact of an answer -- a counter that produces split figures nobody has checked
+    is worse than one that refuses.
+
+    Every cell below is quoted from the published thesis tables, `tab:splitfcosts`
+    at genus 2 and `tab:g3splitfcosts{ADD,DBL}` at genus 3, and is reproduced here
+    BY MEASUREMENT from the .mag sources alone. The two share no code and no
+    input: one is a LaTeX table typed in 2020, the other is the formulas being
+    executed over GF(31).
+
+    Note which basis is pinned at genus 2. The published table prices
+    **posReduced**, and `splitneg/g2` legitimately differs from it by one or two
+    operations on several rows -- a different algorithm, not a defect, and the
+    reason posReduced is this repository's genus-2 basis of record. Pinning a
+    negReduced row against that table would assert the wrong thing.
+
+    The provocation disables the integer-bookkeeping convention. A split
+    divisor's balancing weight is a small integer, so `n := n1 + n2 - 2` in every
+    addition and `np := n + n - 2` in the genus-3 doublings are bookkeeping, not
+    field additions. Charged as field additions they are exactly the disagreement
+    against the published tables that identified them.
+
+    The expected movement is pinned per cell rather than assumed uniform, because
+    measured it is NOT uniform: every addition shape at both genera and both bases
+    moves +2A, the genus-3 doublings move +2A, and the genus-2 doublings move
+    nothing at all -- they carry no weight addition on the counted path, deriving
+    the new weight as `2 - Degree(upp)` instead. Nothing but A ever moves. A
+    uniform "+2A everywhere" assertion was written first and is wrong on three
+    cells; this is the measured shape of it.
+    """
+    import maginterp as M                                         # noqa: PLC0415
+    import opcount as O                                           # noqa: PLC0415
+    import driver as D                                            # noqa: PLC0415
+
+    # (family, field, {shape: ((M,S,A,C,I), A-delta when the convention is off)}),
+    # every tuple a published cell and every delta measured.
+    PINS = [
+        ("splitneg/g3/arb", 31, {
+            "33ADD n=0,0": ((65, 3, 87, 12, 1), 2),   # Degree 3
+            "13ADD n=1,0": ((22, 2, 43, 7, 1), 2),    # Degree 1 and 3, Up Adjust
+            "3DBL n=0": ((73, 3, 101, 19, 1), 2),     # Degree 3
+            "1DBL n=1": ((7, 1, 19, 6, 1), 2),        # Degree 1
+            "1DBL n=2": ((14, 3, 25, 8, 1), 2),       # Degree 1 with Down Adjust
+        }),
+        ("splitpos/g2/arb", 31, {
+            "2DBL n=0": ((30, 2, 44, 8, 1), 0),       # Degree 2
+            "1DBL n=0": ((12, 2, 20, 3, 1), 0),       # Degree 1 with Up Adjust
+            "12ADD n=1,0": ((14, 2, 26, 3, 1), 2),    # Degree 1 and 2
+        }),
+    ]
+
+    fams, _excluded = D.discover_families()
+    by_name = {f.name: f for f in fams}
+    target = 120 if quick else 400
+
+    split = [f for f in fams if f.is_split]
+    if not split:
+        rep.fail("split_counts", "no split family discovered at all")
+        return
+
+    def measure(name, field):
+        fam = by_name.get(name)
+        if fam is None:
+            return None, "%s not discovered" % name
+        return O.count_family(fam, fams, field, target=target)
+
+    hit = 0
+    for name, field, cells in PINS:
+        got, why = measure(name, field)
+        if got is None:
+            rep.fail("split_counts", "%s not measurable: %s" % (name, why))
+            return
+        for shape, (want, _delta) in sorted(cells.items()):
+            if shape not in got:
+                rep.fail("split_counts",
+                         "%s never reached shape %s" % (name, shape))
+                return
+            saw = tuple(got[shape]["modal"])
+            if saw != want:
+                rep.fail("split_counts", "%s %s measured %s, published %s"
+                         % (name, shape, saw, want))
+                return
+            hit += 1
+
+    # The provocation: make integer bookkeeping cost a field addition again, and
+    # require every pinned cell to move by exactly +2A and nothing else. Patching
+    # `_plain_int` rather than the flag exercises the real decision site.
+    saved = M._plain_int
+    M._plain_int = lambda x: False
+    try:
+        moved, wrong = 0, []
+        for name, field, cells in PINS:
+            got, _why = measure(name, field)
+            if got is None:
+                continue
+            for shape, (want, delta) in sorted(cells.items()):
+                if shape not in got:
+                    continue
+                saw = tuple(got[shape]["modal"])
+                expect = want[:2] + (want[2] + delta,) + want[3:]
+                if saw != expect:
+                    wrong.append("%s %s gave %s, wanted %s"
+                                 % (name, shape, saw, expect))
+                elif delta:
+                    moved += 1
+    finally:
+        M._plain_int = saved
+
+    if wrong:
+        rep.fail("split_counts",
+                 "provocation did not land as +2A: " + "; ".join(wrong[:3]))
+        return
+    if not moved:
+        rep.fail("split_counts",
+                 "disabling the integer-bookkeeping convention changed nothing, "
+                 "so the convention is not doing what this section claims")
+        return
+    rep.ok("split_counts",
+           "%d of %d split families measurable; %d published cell(s) reproduced "
+           "by measurement; charging the balancing-weight bookkeeping as field "
+           "additions moved %d of them by exactly +2A"
+           % (len(split), len(split), hit, moved))
+
+
 SECTIONS = [
     ("fields", section_fields),
     ("parse", section_parse),
@@ -1845,6 +1975,7 @@ SECTIONS = [
     ("gate_guards", section_gate_guards),
     ("domain", section_domain),
     ("specialisation", section_specialisation),
+    ("split_counts", section_split_counts),
     ("dominance", section_dominance),
     ("adjugate", section_adjugate),
     ("blocks", section_blocks),
