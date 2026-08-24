@@ -64,10 +64,12 @@ misclassification in it, and [RELATED_WORK.md](RELATED_WORK.md) for the comparis
 What is missing, in progress, or knowingly deferred. Verification figures live under
 [Testing](#testing); this section is about what is *not* done.
 
-- **The characteristic-2 genus-3 formulas have no published comparison yet.** They must be reconciled
-  deliberately against three normal forms — ours (any degree-3 `h`, `f₆ = 0`), Birkner's Type Ia
-  (`h` irreducible, `f₆ ∈ F₂`, `f₇` non-monic) and GKP's two variants — and measured against GKP's
-  `1I + 62M + 5S / 100A`. The formulas exist and are gated; the comparison does not.
+- **The characteristic-2 genus-3 formulas have no published comparison, and one is not planned here.**
+  Three normal forms differ — ours (any degree-3 `h`, `f₆ = 0`), Birkner's Type Ia (`h` irreducible,
+  `f₆ ∈ F₂`, `f₇` non-monic) and GKP's two variants — and reconciling them against GKP's
+  `1I + 62M + 5S / 100A` is work for a paper, not for this repository: no formula, count or test here
+  depends on the outcome. [RELATED_WORK.md](RELATED_WORK.md) carries the forms and the counts with
+  citations, which is what that work would start from.
 - **`verification/opcount.py` cannot measure split families**, which is why half the table above is
   *published* rather than *measured*; the split figures in [RELATED_WORK.md](RELATED_WORK.md) come
   from an external harness. Extending it is the prerequisite for two known savings in the split model
