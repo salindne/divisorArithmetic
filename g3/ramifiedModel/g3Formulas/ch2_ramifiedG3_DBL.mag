@@ -22,21 +22,21 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deg1DBL():
-// Input:          u0,v0: Mumford coordinates for degree one divisor D
-//        f6..f1, h3..h0: curve coefficients
+// Input:         u0,v0: Mumford coordinates for degree one divisor D
+//        f2,f1, h2..h0: curve coefficients
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D
 //
 // Description: Computes the explicit formula for doubling a degree one
 //              divisor.
 ///////////////////////////////////////////////////////////////////////////////
-Deg1DBL(u0, v0, f2, f1, h2, h1, h0)
+Deg1DBL:= function(u0, v0, f2, f1, h2, h1, h0)
     /* //startIGNORE
     //Poly Dev Testing
     FF := Parent(u0);
     R<x> := PolynomialRing(FF);
-    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
-    h := h3*x^3 + h2*x^2 + h1*x + h0;
+    f := x^7 + f2*x^2 + f1*x;
+    h := x^3 + h2*x^2 + h1*x + h0;
     u := x + u0;
     v := R!v0;
 
@@ -54,30 +54,19 @@ Deg1DBL(u0, v0, f2, f1, h2, h1, h0)
     */ //endIGNORE
     
 	//d := (v + v + h) mod u;
-    t1:= u0^2;    
-    d:= h0 + v0 + v0 - h1*u0 + t1*(h2 - h3*u0);
+    t1:= u0^2;
+    d:= h0 + h1*u0 + t1*(h2 + u0);		// v + v = 0, so d = h(u0)
 	if IsZero(d) then
 		if (DBL_DEBUG) then "DBL00"; end if;		// Deg1DBL: gcd(u,2va+h) = u, DA = P1 s.t. 2P1 = P0
 		return 0, 0, 0, 1, 0, 0, 0;
 	end if;
 
 	//k := (f - v*(v + h)) div u;
-	//k0:= t1*(t1*(7*t1 + 5*f5) + 3*(f3 - h3*v0)) + f1 - h1*v0 - u0*(t1*(6*(f6*t1) + 4*f4) + 2*(f2 - h2*v0));
-	t2:= u0 + u0;
-	t3:= t1 + f5;
-	t4:= t3 + t3;
-	t5:= t4 + t1;
-	t6:= t5 + t5;
-	t7:= t6 + t3;						// 7*t1 + 5*f5
-	t8:= f3 - h3*v0;
-	t9:= t8 + t8;
-	t10:= t9 + t8;						// 3*(f3 - h3*v0)
-	t11:= f6*t1;
-	t12:= t11 + f4;
-	t13:= t12 + t11;
-	t14:= t13 + t12;					// 3*(f6*t1) + 2*f4
-	t15:= t1*t14 + f2 - h2*v0;
-	k0:= t1*(t1*t7 + t10) + f1 - h1*v0 - t2*t15;
+	// u divides P = f - v*(v + h), so k mod u = P'(u0). In characteristic 2 only the
+	// odd-degree terms of P differentiate, leaving P' = x^6 + v0*x^2 + f1 + h1*v0, so
+	// k0 = u0^6 + v0*u0^2 + f1 + h1*v0, built on t2 = u0^4.
+	t2:= t1^2;
+	k0:= t1*(t2 + v0) + f1 + h1*v0;
 	
 	//b1 := FF!d^-1;
     //s := b1*k mod u;
@@ -86,14 +75,14 @@ Deg1DBL(u0, v0, f2, f1, h2, h1, h0)
 	
 	//upp := u^2;
 	//upp0 := t1;
-	//upp1 := t2;
+	//upp1 := 0;						// squaring is linear, so u^2 = x^2 + t1
 
 	//vpp := (v + u*s) mod upp;
 	//vpp1:= s0;
 	vpp0:= u0*s0 + v0;
 	
 	if (DBL_DEBUG) then "DBL01"; end if;		// Deg1DBL: Typical
-	return 0, 1, t2, t1, 0, s0, vpp0;
+	return 0, 1, 0, t1, 0, s0, vpp0;
 end function;
 
 
@@ -102,20 +91,20 @@ end function;
 // Input:    u1,u0,v1,v0: Mumford coordinates for degree two divisor D
 //                       (shares the degree-3 signature; coefficients above
 //                       degree two are structurally zero here)
-//        f6..f1, h3..h0: curve coefficients
+//         f2,f1, h2..h0: curve coefficients
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D
 //
 // Description: Computes the explicit formula for doubling a degree two
 //              divisor.
 ///////////////////////////////////////////////////////////////////////////////
-Deg2DBL(u1, u0, v1, v0, f2, f1, h2, h1, h0)
+Deg2DBL:= function(u1, u0, v1, v0, f2, f1, h2, h1, h0)
     /* //startIGNORE
     //Poly Dev Testing
     FF := Parent(u0);
     R<x> := PolynomialRing(FF);
-    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
-    h := h3*x^3 + h2*x^2 + h1*x + h0;
+    f := x^7 + f2*x^2 + f1*x;
+    h := x^3 + h2*x^2 + h1*x + h0;
     u := x^2 + u1*x + u0;
     v := v1*x + R!v0;
     Q := quo<R | u>;
@@ -150,14 +139,16 @@ Deg2DBL(u1, u0, v1, v0, f2, f1, h2, h1, h0)
     */ //endIGNORE
 
     //d := Resultant(u, v + v + h);
-    ht1:= h1 + v1 + v1; 
+    // 2v = 0, so d and dw1 read u and h alone: x^3 mod u = k3*x + t2, hence
+    // dw1 = (v + v + h) mod u = m3*x + m4 with m3 = h1 + h2*u1 + k3.
 	t1:= u1^2;
     t2:= u0*u1;
-    m4:= h0 + v0 + v0 - h2*u0 + h3*t2;           
-    m3:= h2*u1 - ht1 - h3*(t1 - u0);   
+    k3:= u0 + t1;				// x^3 mod u, and k's degree-3 coefficient
+    m4:= h0 + h2*u0 + t2;
+    m3:= h1 + h2*u1 + k3;
     m1:= m4 + m3*u1;
-    m2:= -m3*u0;
-    d:= m4*m1 - m2*m3;
+    m2:= m3*u0;
+    d:= m4*m1 + m2*m3;
 	
 	if IsZero(d) then
 		//dw1 := (v + v + h) mod u;
@@ -170,31 +161,19 @@ Deg2DBL(u1, u0, v1, v0, f2, f1, h2, h1, h0)
 		b1:= m3^-1;
         
 		//k := (f - v*(v + h)) div u;     //exact 
-		t3:= u0 + u1;
-		t4:= f6*u1 - t1;		// (u1*k4)
-		t5:= u0 + t4;	
-		t6:= f6*u0 - t2;		// (u0*k4)
-
-		//k4:= f6 - u1;
-		k3:= f5 - t5;
-		t7:= u1*k3;
-		k2:= f4 - h3*v1 - t6 - t7;
-		t8:= u0*k2;
-		k1:= f3 - h3*v0 - h2*v1 - (t3)*(k2 + k3) + t8 + t7;		// karatsuba
-		k0:= f2 - h2*v0 - h1*v1 - v1^2 - t8 - u1*k1;
-		
+		//s := b1*k mod u;
+		// The new u divides the old one, so k mod the old u serves here as well,
+		// and s is that linear remainder read at the new u0.
+		kp1:= v0 + h2*v1 + k3^2;
+		kp0:= f2 + v1*(v1 + h1 + t1) + h2*v0 + u1*kp1;
 
         //u := ExactQuotient(u, dw1*b1);
         u0:= u1 + m4*b1;
 
-		//s := b1*k mod u;
-        t9:= (u0 + u1 - f6)*u0 + k3;
-        t9:= t9*u0 - k2;
-        t9:= t9*u0 + k1;
-        s0:= b1*(t9*u0 - k0);
+        s0:= b1*(kp1*u0 + kp0);
         
         //upp := u^2;
-        upp1:= u0 + u0;
+        //upp1:= 0;				// (x + u0)^2 = x^2 + u0^2
         upp0:= u0^2;
         
         //vpp := (v + u*s) mod upp;
@@ -202,31 +181,16 @@ Deg2DBL(u1, u0, v1, v0, f2, f1, h2, h1, h0)
         vpp0:= u0*s0 + v0;
         
 		if (DBL_DEBUG) then "DBL03"; end if;		// Deg2DBL: gcd(u,2va+h) = d, DA = P1+P2 s.t. 2P1 = P0
-        return 0, 1, upp1, upp0, 0, vpp1, vpp0;
+        return 0, 1, 0, upp0, 0, vpp1, vpp0;
 	end if;//d
 	
 	//k := (f - v*(v + h)) div u;
-	t3:= u0 + u1;
-	t4:= f6*u1 - t1;		// (u1*k4)
-	t5:= u0 + t4;	
-	t6:= f6*u0 - t2;		// (u0*k4)
-
-	k4:= f6 - u1;
-	k3:= f5 - t5;
-	t7:= u1*k3;
-	k2:= f4 - h3*v1 - t6 - t7;
-	t8:= u0*k2;
-	k1:= f3 - h3*v0 - h2*v1 - (t3)*(k2 + k3) + t8 + t7;		// karatsuba
-	k0:= f2 - h2*v0 - h1*v1 - v1^2 - t8 - u1*k1;
-	
 	//s := b1*k mod u;
-	//kp4:= k4 - u1;
-	kp3:= k3 - t5 + t1;
-	t9:= u1*kp3;
-	kp2:= k2 - t6 + t2 - t9;
-	t10:= u0*kp2;	
-	kp1:= k1 - (t3)*(kp2 + kp3) + t9 + t10;		// karatsuba
-	kp0:= k0 - t10;
+	// k mod u, straight to the two coefficients s is built from. The reduction's
+	// own coefficients are kp4 = 0, kp3 = t1 and kp2 = v1, so k4, k2, k1 and k0
+	// never need forming, and kp1 = v0 + h2*v1 + (u0 + u1^2)^2 is one squaring.
+	kp1:= v0 + h2*v1 + k3^2;
+	kp0:= f2 + v1*(v1 + h1 + t1) + h2*v0 + u1*kp1;
 	sp0:= kp0*m1 + kp1*m2;
 	sp1:= kp1*m4 + kp0*m3;
 	
@@ -236,22 +200,23 @@ Deg2DBL(u1, u0, v1, v0, f2, f1, h2, h1, h0)
 	s0:= sp0*w1;
 	
 	//M2 := ExactQuotient(s*(v + v + h) - k, u);
-	//M23:= -1;
-	M22:= h3*s1 - k4 + u1;
-	M21:= h2*s1 + h3*s0 - k3 + u0 - u1*M22;
-	M20:= ht1*s1 + h2*s0 - k2 - u0*M22 - u1*M21;
+	//M23:= 1;
+	//M22:= s1;				// h monic and k4 = u1, so only s1 survives
+	t3:= s0 + s1*(h2 + u1);		// M21 + t1, and u1*t3 absorbs k2's u1^3
+	M20:= s1*(h1 + u0) + h2*s0 + v1 + u1*t3;
 	
 	//upp := -s^2 - M2;
     //upp := upp/LeadingCoefficient(upp);
-	upp2:= - s1^2 - M22;
-	t11:= -s0*s1;
-	upp1:= t11 + t11  - M21;
-	upp0:= - s0^2 - M20;
+	// M23 = 1, so s^2 + M2 is monic and the normalisation costs nothing. Squaring
+	// is Frobenius, so s^2 has no x term and upp1 is M21 alone.
+	upp2:= s1^2 + s1;
+	upp1:= t3 + t1;
+	upp0:= s0^2 + M20;
 	
 	//vpp := (-u*s - v - h) mod upp;
-	vpp2:= s1*(upp2 - u1) + h3*upp2 - h2 - s0;
-	vpp1:= s1*(upp1 - u0) + h3*upp1 - s0*u1 - h1 - v1;
-	vpp0:= upp0*(h3 + s1) - s0*u0 - h0 - v0;
+	vpp2:= s1*(upp2 + u1) + upp2 + h2 + s0;
+	vpp1:= s1*(upp1 + u0) + upp1 + s0*u1 + h1 + v1;
+	vpp0:= upp0*(s1 + 1) + s0*u0 + h0 + v0;
 	
 	if (DBL_DEBUG) then "DBL04"; end if;		// Deg2DBL: Typical
 	return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
@@ -261,20 +226,20 @@ end function;
 ///////////////////////////////////////////////////////////////////////////////
 // Deg3DBL():
 // Input: u2..u0, v2..v0: Mumford coordinates for degree three divisor D
-//        f6..f1, h3..h0: curve coefficients
+//        f2, f1, h2..h0: curve coefficients
 //
 // Output: Mumford coordinates upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0 for D3 = 2*D
 //
 // Description: Computes the explicit formula for doubling a degree three
 //              divisor.
 ///////////////////////////////////////////////////////////////////////////////
-Deg3DBL(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
+Deg3DBL:= function(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
     /* //startIGNORE
     //Poly Dev Testing
     FF := Parent(u0);
     R<x> := PolynomialRing(FF);
-    f := x^7 + f6*x^6 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x;
-    h := h3*x^3 + h2*x^2 + h1*x + h0;
+    f := x^7 + f2*x^2 + f1*x;
+    h := x^3 + h2*x^2 + h1*x + h0;
     u := x^3 + u2*x^2 + u1*x + u0;
     v := v2*x^2 + v1*x + v0;
     Q := quo<R | u>;
@@ -350,9 +315,9 @@ Deg3DBL(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
 	
 
 	// h + v
-	vh2:= -h2 - v2;
-	vh1:= -h1 - v1;
-	vh0:= -h0 - v0;
+	vh2:= h2 + v2;
+	vh1:= h1 + v1;
+	vh0:= h0 + v0;
 
     // Original Setup T for (s*up1 = vp-v) mod up2
     // |t1,t2,t3|
@@ -364,98 +329,84 @@ Deg3DBL(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
     // | m4= t6*t7-t4*t9,  m5= t1*t9-t3*t7, m6= t3*t4-t1*t6 |
     // | m7= t4*t8-t5*t7,  m8= t2*t7-t1*t8, m9= t1*t5-t2*t4 |
 
-    ht2:= v2 - vh2;
-    ht1:= v1 - vh1;
-
-    t1 := v0 - vh0 - h3*u0;
-    t4 := ht1 - h3*u1;
-    t7 := ht2 - h3*u2;
-	t2 := -u0*t7;
-    t5 := t1 - u1*t7;
-    t8 := t4 - u2*t7;
+    // 2v + h = h, and h and u are both monic of degree 3, so column 1 of T is
+    // dw = h mod u = h + u: three additions, with no v in it at all. ht2 = 2*v2 + h2
+    // is h2 and ht1 = 2*v1 + h1 is h1, so h2 and h1 stand in for them below.
+    t1 := u0 + h0;
+    t4 := u1 + h1;
+    t7 := u2 + h2;
+	t2 := u0*t7;
+    t5 := t1 + u1*t7;
+    t8 := t4 + u2*t7;
     
-    //t3 := -u0*t8;
-    //t6 := t2 - u1*t8;
-    //t9 := t5 - u2*t8;
+    //t3 := u0*t8;
+    //t6 := t2 + u1*t8;
+    //t9 := t5 + u2*t8;
 
 	// Bottom row of the adjugate needs only columns 1 and 2 of T.
-	m9 := t1*t5 - t4*t2;
-	m8 := t7*t2 - t1*t8;
-	m7 := t4*t8 - t7*t5;
+	m9 := t1*t5 + t4*t2;
+	m8 := t7*t2 + t1*t8;
+	m7 := t4*t8 + t7*t5;
 
 	// Column 3 of T is x*(column 2) reduced mod u, so the remaining six
 	// adjugate entries are shifts of the bottom row with one multiplication each,
 	// not a 2x2 minor. m4 and m6 are the only two the determinant does not
 	// read, so they wait until the generic path below.
 	m5 := m9 + u2*m8;
-	m3 := -u0*m8;
-	m2 := -u0*m7;
+	m3 := u0*m8;
+	m2 := u0*m7;
 	m1 := m5 + u1*m7;
 
     d := t1*m1 + t4*m2 + t7*m3; //Determinant of T = t1*m1 + t4*m2 + t7*m3
-	// 16m 0s 9a
 
 	// if gcd(u,2va+h) != 1
 	if IsZero(d) then
-		//dw := (v + v + h) mod u; //dw1 = t7, dw0 = t4
+		//dw := h mod u; //dw2 = t7, dw1 = t4, dw0 = t1
 		if IsZero(t4) and IsZero(t7) then
 			if (DBL_DEBUG) then "DBL05"; end if;		// Deg3DBL: gcd(u,2va+h) = u, DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = P0 & 2P3 = P0
 			return 0, 0, 0, 1, 0, 0, 0;
 		end if;//t4t7
-		//dw2 := GCD(u, dw); //dw21:= m7, dw20:= -m8;
+		//dw2 := GCD(u, dw); //dw21:= m7, dw20:= m8;
 		if IsZero(m7) then
 
             //k:= (f - v*(v + h)) div u;
+			// f6..f3 = 0, so k reads no coefficient of f at all, and 2*u0 = 2*u1 = 0.
 			t2:= u2^2;
-			t3:= t2 - f6*u2;
-			t5:= f5 - h3*v2;
-			t6:= u1 - t3;
-			k2:= t5 + t2 - t6 - t6;
-			t01:= f6*u1;
-			t8:= u0 + u0;
-			t9:= u1 + u1;
-			k1:= f4 + v2*vh2 - h3*v1 - t8 - t01 - t01 + u2*(t9 + u1 + t6 - t5);
-			k0:= f3 - h1*v2 - h3*v0 - t8*f6 + u1*(u1 + t2 - t5) + u2*(t8 - k1) - v1*ht2;		// convenient precomputation
+			k2:= t2 + v2;
+			k1:= v2*vh2 + v1 + u2*k2;
+			k0:= u1*(u1 + k2) + u2*k1 + h1*v2 + h2*v1 + v0;		// convenient precomputation
 
             //b1:= R!((quo<R | u>!(ExactQuotient(v + v + h, dw2)))^-1);
 			b1:= t7^-1;
 
 			//u:= ExactQuotient(u, dw2);
-			u0:= u2 - t4*b1;
+			u0:= u2 + t4*b1;
 
 			//s:= b1*k mod u;
-			s0:= ((k2*u0 - k1)*u0 + k0)*b1;
+			s0:= ((k2*u0 + k1)*u0 + k0)*b1;
 
 			//upp:= u^2;
-			upp1:= u0 + u0;
+			// upp1 = 2*u0 = 0, so upp = x^2 + u0^2 and vpp1 carries no upp1*v2 term.
 			upp0:= u0^2;
 
 			//vpp:= (v + u*s) mod upp;
-			vpp1:= s0 + v1 - upp1*v2;
-			vpp0:= u0*s0 + v0 - upp0*v2;
+			vpp1:= s0 + v1;
+			vpp0:= u0*s0 + v0 + upp0*v2;
 
 			if (DBL_DEBUG) then "DBL06"; end if;		// Deg3DBL: gcd(u,2va+h) = d, DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = P0
-			return 0, 1, upp1, upp0, 0, vpp1, vpp0;
+			return 0, 1, 0, upp0, 0, vpp1, vpp0;
 		end if;//m7
 
 		//k := (f - v*(v + h)) div u;
-		// kp, the quotient itself, degree 4
+		// kp, the quotient itself, degree 4: f6..f3 = 0 leaves no coefficient of f in
+		// it and kp3 = u2. Its reduction has k3 = 2*u2 = 0, so k2 and k1 are kp2 and
+		// kp1 less one coefficient of u each, and k0 = kp0.
 		t2:= u2^2;
-		t3:= f6*u2;
-		kp3:= f6 - u2;
-		kp2:= f5 - u1 - t3 - h3*v2 + t2;
-		kp1:= f4 - u0 - f6*u1 - h3*v1 + v2*vh2 - u2*(kp2 - u1);                      // no karatsuba, use u2 multiplication
-		//kp0:= f3 - f6*u0 - h3*v0 - h2*v1 - u2*(kp1 - u0) - u1*(kp2) - v2*(h1 + 2*v1);
-
-		// k = kp mod u -- s's reduction below, hoisted to where the original u is still live. The
-		// new u divides this one, so reducing against it here is equivalent and shortens s.
-		//k3:= kp3 - u2;
-		k2:= kp2 - u1 - t3 + t2 + t2;
-		t5:= kp1 - u0;
-		k1:= t5 - u1*(kp3 - u2);
-		//k0:= kp0 - u0*k3;
-		t6:= f6*u0;
-		k0:= f3 - t6 - t6 - h3*v0 - h2*v1 - u2*(t5 - u0 - u0) - u1*kp2 - v2*ht1;
+		k2:= t2 + v2;
+		k1:= v2*vh2 + v1 + u2*k2;
+		kp2:= k2 + u1;
+		kp1:= k1 + u0;
+		k0:= u1*kp2 + u2*k1 + h1*v2 + h2*v1 + v0;
 
 		//u  := ExactQuotient(u, dw2);
 		//b1 := R!((quo<R | u>!(ExactQuotient(v + v + h, dw2)))^-1);
@@ -464,61 +415,59 @@ Deg3DBL(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
 
 		//dm = dw2/m7
 		//dm1:= 1;
-		dm0:= -m8*w1;
+		dm0:= m8*w1;
 
-		// b1 = (2va + h)^-1 = -(u/d)*w1
-		b11:= - t7*w1;
+		// b1 = (2va + h)^-1 = (u/d)*w1
+		b11:= t7*w1;
 		b10:= t8*w1;
 
 		// u = u/dm
-		un1:= u2 - dm0;
-		un0:= u1 - un1*dm0;
+		un1:= u2 + dm0;
+		un0:= u1 + un1*dm0;
 
 		//s := b1*k mod u;
 		// Fused: the same multiplications as forming sp = k/(2va+h) and then sp mod u with karatsuba
 		// twice, and fewer additions.
-		t8:= k2*un1 - k1;
-		t9:= k2*un0 - k0;
-		s1:= (t8*un1 - t9)*b11 - t8*b10;
-		s0:= (t8*un0)*b11 - t9*b10;
+		t8:= k2*un1 + k1;
+		t9:= k2*un0 + k0;
+		s1:= (t8*un1 + t9)*b11 + t8*b10;
+		s0:= (t8*un0)*b11 + t9*b10;
 
 		//M2 := ExactQuotient(s*(v + v + h) - dw2*k, u);
-		//M23:= -1;
-		M22:= h3*s1 - kp3 - dm0 + un1;
-		M21:= s1*ht2 + h3*s0 - kp2 - dm0*kp3 + un0 - un1*M22;
-		M20:= s1*ht1 + s0*ht2 - kp1 - dm0*kp2 - un1*M21 - un0*M22;
+		//M23:= 1;
+		// M22 = s1 + kp3 + dm0 + un1 = s1, since kp3 + dm0 = u2 + dm0 = un1, and in
+		// M21 dm0*kp3 + un0 = u1 + dm0^2 with kp2 + u1 = k2.
+		M21:= s0 + k2 + dm0^2 + s1*(h2 + un1);
+		M20:= s1*(h1 + un0) + s0*h2 + kp1 + dm0*kp2 + un1*M21;
 
-		//upp := -s^2 - M2;
+		//upp := s^2 + M2;
 		//upp := upp/LeadingCoefficient(upp);
-		// M23 = -1, so -s^2 - M2 is already monic and the normalisation costs nothing.
-		upp2:= -s1^2 - M22;
-		t10:= -s0*s1;
-		upp1:= t10 + t10 - M21;
-		upp0:= -s0^2 - M20;
+		// M23 = 1, so s^2 + M2 is already monic and the normalisation costs nothing.
+		// 2*s0*s1 = 0, so upp1 is M21 outright.
+		upp2:= s1^2 + s1;
+		upp1:= M21;
+		upp0:= s0^2 + M20;
 
-		//vpp := (-u*s - v - h) mod upp;
-		vpp2:= s1*(upp2 - un1) + h3*upp2 - s0 + vh2;
-		vpp1:= s1*(upp1 - un0) + h3*upp1 - s0*un1 + vh1;
-		vpp0:= upp0*(h3 + s1) - s0*un0 + vh0;
+		//vpp := (u*s + v + h) mod upp;
+		vpp2:= s1*(upp2 + un1) + upp2 + s0 + vh2;
+		vpp1:= s1*(upp1 + un0) + upp1 + s0*un1 + vh1;
+		vpp0:= upp0*s1 + upp0 + s0*un0 + vh0;
 
 		if (DBL_DEBUG) then "DBL07"; end if;		// Deg3DBL: gcd(u,2va+h) = dw, DA = P1+P2+P3 s.t. 2P1 = P0 & 2P2 = P0
 		return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
 	end if;//d
 	
     //k:= (f - v*(v + h)) div u (mod u)
+	// f6..f3 = 0, so k reads no coefficient of f, and 2*u0 = 2*u1 = 0. k2 is also
+	// M20's prefix in the deg s = 2 leaf below.
 	t2:= u2^2;
-	t3:= t2 - f6*u2;
-	t5:= f5 - h3*v2;
-	t8:= u0 + u0;
-	t9:= u1 + u1;
-	t11:= t5 + t3 - t9;			// M20's prefix below, and k2 is two additions from it
-	k2:= t11 + t2 + t3;
-	k1:= f4 + v2*vh2 - h3*v1 - t8 - t9*f6 + u2*(t9 - t11);
-	k0:= f3 - h1*v2 - h3*v0 - t8*f6 + u1*(u1 + t2 - t5) + u2*(t8 - k1) - v1*ht2;     // convenient precomputation
+	k2:= t2 + v2;
+	k1:= v2*vh2 + v1 + u2*k2;
+	k0:= u1*(u1 + k2) + u2*k1 + h1*v2 + h2*v1 + v0;     // convenient precomputation
 	
 	// the two adjugate entries the determinant did not need
 	m4 := m8 + u2*m7;
-	m6 := m2 - u1*m8;
+	m6 := m2 + u1*m8;
 
 	//s  := b1*k mod u;
 	// sp = s*d = M*k as a matrix-vector product. M is multiplication by
@@ -535,14 +484,14 @@ Deg3DBL(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
 
 			// M2 = (s*(2va + h) - kp)/u
 			// where kp = (f - v*h - v^2)/u
-			//M21:= -1;
-			//M20:= s0*h3 - f6 + 2*u2;
+			//M21:= 1;
+			//M20:= s0, since f6 = 0 and 2*u2 = 0
 
 			// upp = s^2 + M2	(made monic)
-			upp0:= f6 - s0*h3 - u2 - u2 - s0^2;
+			upp0:= s0^2 + s0;
 
-			// vpp = (-u*s - v - h) mod upp
-			vpp0:=  upp0*(upp0*(s0*(upp0 - u2) + h3*upp0 + vh2) + s0*u1 - vh1 ) - s0*u0 + vh0 ;
+			// vpp = (u*s + v + h) mod upp
+			vpp0:= upp0*(upp0*(s0*(upp0 + u2) + upp0 + vh2) + s0*u1 + vh1) + s0*u0 + vh0;
 
 			if (DBL_DEBUG) then "DBL08"; end if;		// Deg3DBL: gcd(u,2va+h) = 1 and deg(s) = 0
 			return 0, 0, 1, upp0, 0, 0, vpp0;
@@ -559,18 +508,19 @@ Deg3DBL(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
 
 		// M2 = (s*(2va + h) - kp)/u
 		// where kp = (f - v*h - v^2)/u		
-		//M21:= h3*w3 - w4;
-		//M20:= (ht2 + h3*(s0 - u2) - (f6 - u2 - u2)*w3)*w3;
+		//M21:= w3 + w4;
+		//M20:= (t7 + s0)*w3, since f6 - 2*u2 = 0 and h2 + u2 = t7
 
 		// upp = s^2 + M2	(made monic)
-		upp1:= s0 + s0 + h3*w3 - w4;
-		upp0:= s0^2 + (ht2 + h3*(s0 - u2) - (f6 - u2 - u2)*w3)*w3;
+		// 2*s0 = 0, so upp1 is M21 outright.
+		upp1:= w3 + w4;
+		upp0:= s0^2 + (t7 + s0)*w3;
 
-		// vpp = (-u*s - v - h) mod upp
-		t2:= u2 - s0 + w4;		//w3
-		t3:= s1*(upp0 - u1 + upp1*t2 - s0*u2) + vh2;
-		vpp1:= s1*(upp0*t2 - u0 - s0*u1) - upp1*t3 + vh1;
-		vpp0:= vh0 - s1*(s0*u0) - upp0*t3;
+		// vpp = (u*s + v + h) mod upp
+		t2:= u2 + s0 + w4;		//w3
+		t3:= s1*(upp0 + u1 + upp1*t2 + s0*u2) + vh2;
+		vpp1:= s1*(upp0*t2 + u0 + s0*u1) + upp1*t3 + vh1;
+		vpp0:= vh0 + s1*(s0*u0) + upp0*t3;
 
 		if (DBL_DEBUG) then "DBL09"; end if;		// Deg3DBL: gcd(u,2va+h) = 1 and deg(s) = 1
 		return 0, 1, upp1, upp0, 0, vpp1, vpp0;
@@ -587,34 +537,36 @@ Deg3DBL(u2, u1, u0, v2, v1, v0, f2, f1, h2, h1, h0)
 	s2:= (sp2^2)*w1;        // ((s2*d)^2)/((d^2)*s2)) = s2^2/s2 = s2
 
 	// q = u/s
-	q0:= u2 - s1;		//s2
+	q0:= u2 + s1;		//s2
 	
 	// r = u mod s
-	r1:= (u1 - s0 - s1*q0)*s2;		//s2
-	r0:= (u0 - s0*q0)*s2;			//s2
+	r1:= (u1 + s0 + s1*q0)*s2;		//s2
+	r0:= (u0 + s0*q0)*s2;			//s2
 
 	// kp = (f - v*h - v^2)/u
-	//kp3:= f6 - u2;
-	//kp2:= f5 - u1 - f6*u2 - h3*v2 + u2^2;
+	//kp3:= u2;
+	//kp2:= u1 + v2 + u2^2;
 
 	// M2 = (r*(2va + h) + kp*q)/u
-	t6:= f6 - u2 - u2;	
-	//M22:= q1;													
-	M21:= q0 + t6 + h3*r1;				
-	M20:= t11 + h3*r0 - s1*t6 + r1*t7;			//s2
+	// f6 - 2*u2 = 0, so that term is absent from both M21 and M20, and k2 above is
+	// M20's prefix.
+	//M22:= q1;
+	M21:= q0 + r1;
+	M20:= k2 + r0 + r1*t7;			//s2
 
 	// upp = r^2 - q*M2		(made monic)
-	upp2:= M21 + q0 - r1^2;
-	t8:= r0*r1;
-	upp1:= M20 + M21*q0 - t8 - t8;
-	upp0:= M20*q0 - r0^2;
+	// M21 + q0 = r1, so upp2 is one addition, and 2*r0*r1 = 0 leaves upp1 with no
+	// cross term.
+	upp2:= r1^2 + r1;
+	upp1:= M20 + M21*q0;
+	upp0:= M20*q0 + r0^2;
 	
-	// vpp = (l - v - h) mod upp, where l = (u*r - upp)/q needs no division:
-	// u*r - upp = r*(u - r) + q*M2 = q*(r*s + M2), so l = r*s + M2 outright.
-	// q0 - u2 = -s1, so the vpp2 bracket is one addition rather than two.
-	vpp2:= h3*upp2 - r1*(upp2 - s1) + vh2 + r0 + w3;
-	vpp1:= h3*upp1 - r1*(upp1 - s0) + r0*s1 + w3*M21 + vh1;
-	vpp0:= h3*upp0 - r1*upp0 + r0*s0 + w3*M20 + vh0;
+	// vpp = (l + v + h) mod upp, where l = (u*r + upp)/q needs no division:
+	// u*r + upp = r*(u + r) + q*M2 = q*(r*s + M2), so l = r*s + M2 outright.
+	// q0 + u2 = s1, so the vpp2 bracket is one addition rather than two.
+	vpp2:= upp2 + r1*(upp2 + s1) + vh2 + r0 + w3;
+	vpp1:= upp1 + r1*(upp1 + s0) + r0*s1 + w3*M21 + vh1;
+	vpp0:= upp0 + r1*upp0 + r0*s0 + w3*M20 + vh0;
 
 	if (DBL_DEBUG) then "DBL10"; end if;		// Deg3DBL: gcd(u,2va+h) = 1 and deg(s) = 2
 	return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
