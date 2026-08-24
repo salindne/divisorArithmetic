@@ -1,0 +1,137 @@
+clear;
+///////////////////////////////////////////////////////////////////////////////
+// Exhaustive oracle for the characteristic-2 genus-3 ramified addition.
+//
+// Closes the gap recorded as ERRATA E20: the constructed-pair probe never reaches
+// ADD30..ADD33, and the whitebox corpus covers them with one case each. The cause
+// is that those leaves need a particular gcd(u,up) structure AND a particular
+// relation among the v values, which no pair-construction mode targets.
+//
+// The fix is not a cleverer construction, it is arithmetic: over GF(4) the whole
+// divisor space is 107 elements, so ALL 11,342 ordered pairs can simply be run.
+// Nothing has to be targeted, because nothing is skipped.
+//
+// Reports per BRANCH LABEL, not per class, so an unreached leaf names itself. That
+// is the property the other probe lacked -- it reported 0 wrong for a branch it
+// never entered, which is indistinguishable from a branch that is correct.
+//
+// GF(8) is 433 divisors and 187,056 pairs, feasible but slow; GF(2) is only 3
+// divisors and 6 pairs, kept because it costs nothing and its arithmetic is the
+// most degenerate available.
+///////////////////////////////////////////////////////////////////////////////
+
+// HOW TO RUN. The load paths are relative to g3/ramifiedModel, which is the
+// directory Magma must be started from, because the docker wrapper mounts the
+// working directory:
+//
+//     cp whitebox/probes/ch2_ramifiedG3_exhaustive_ADD.mag g3/ramifiedModel/
+//     cd g3/ramifiedModel && ../../tools/magma-docker/magma.sh ch2_ramifiedG3_exhaustive_ADD.mag
+//     rm g3/ramifiedModel/ch2_ramifiedG3_exhaustive_ADD.mag
+//
+// It is kept HERE rather than beside the testers because dominance.py scans
+// g3/ramifiedModel and this file's several-assignments-per-line style produces
+// false findings there. whitebox/ is not scanned.
+//
+// Coverage is read from the printed labels:
+//     grep -oE '\bADD[0-9]{2}\b' log | sort | uniq -c
+// All 37 of ADD00..ADD36 should appear. A missing label is the E20 failure --
+// a branch reporting 0 wrong because it was never entered.
+
+UTL_DEBUG := false;
+ADD_DEBUG := true;          // the labels ARE the coverage instrument here
+DBL_DEBUG := false;
+
+load "ramifiedUtilities.mag";
+load "g3Formulas/ch2_ramifiedG3_DBL.mag";
+load "g3Formulas/ch2_ramifiedG3_ADD.mag";
+
+FIELDS := [2,4];
+CURVES := 3;
+
+DivisorsWithU := function(f,h,u)
+    R := Parent(f);
+    FF := BaseRing(f);
+    d := Degree(u);
+    out := [];
+    if d eq 0 then
+        return [<R!1, R!0>];
+    end if;
+    for cs in CartesianPower(FF, d) do
+        v := R![cs[i] : i in [1..d]];
+        if IsDivisibleBy(v^2 + v*h - f, u) then
+            Append(~out, <u,v>);
+        end if;
+    end for;
+    return out;
+end function;
+
+AllDivisors := function(f,h,g)
+    R := Parent(f);
+    x := R.1;
+    FF := BaseRing(f);
+    out := [];
+    for d in [1..g] do
+        for cs in CartesianPower(FF, d) do
+            u := x^d;
+            for i in [1..d] do
+                u := u + cs[i]*x^(i-1);
+            end for;
+            out := out cat DivisorsWithU(f,h,u);
+        end for;
+    end for;
+    return out;
+end function;
+
+total := 0;
+wrong := 0;
+
+for q in FIELDS do
+    FF := GF(q);
+    R<x> := PolynomialRing(FF);
+    for trial in [1..CURVES] do
+        f,h := RandomG3Char2Curve(q);
+        assert Degree(h) eq 3 and IsMonic(h);
+        assert Coefficient(f,6) eq 0 and Coefficient(f,5) eq 0;
+        assert Coefficient(f,4) eq 0 and Coefficient(f,3) eq 0;
+
+        C := HyperellipticCurve(f,h);
+        Jac := Jacobian(C);
+        Ds := AllDivisors(f,h,3);
+        n := #Ds;
+
+        // EVERY ordered pair. No construction, no cap, no stride.
+        for i in [1..n] do
+            for j in [1..n] do
+                if i eq j then continue; end if;
+                U1 := Ds[i][1]; V1 := Ds[i][2];
+                U2 := Ds[j][1]; V2 := Ds[j][2];
+                D1 := Jac ! [U1, V1];
+                D2 := Jac ! [U2, V2];
+                if D1 eq D2 then continue; end if;
+
+                // the label the formulas print is captured by the caller's grep;
+                // marking each call lets an unreached leaf be seen as absent
+                printf "@CASE ";
+                upp3,upp2,upp1,upp0,vpp2,vpp1,vpp0 := ADD(U1,V1,U2,V2,f,h);
+                nU := R ! (upp3*x^3 + upp2*x^2 + upp1*x + upp0);
+                nV := R ! (vpp2*x^2 + vpp1*x + vpp0);
+                cantor := D1 + D2;
+                total +:= 1;
+                if (nU ne cantor[1]) or (nV ne cantor[2]) then
+                    wrong +:= 1;
+                    printf "@WRONG q=%o D1=<%o,%o> D2=<%o,%o> got=<%o,%o> want=<%o,%o>\n",
+                           q, U1, V1, U2, V2, nU, nV, cantor[1], cantor[2];
+                end if;
+            end for;
+        end for;
+    end for;
+end for;
+
+printf "\n@TOTAL %o compared, %o wrong\n", total, wrong;
+assert total gt 0;
+if wrong eq 0 then
+    printf "// No errors.\n";
+else
+    printf "// Errors occurred!!!\n";
+end if;
+quit;

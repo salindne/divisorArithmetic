@@ -1694,7 +1694,8 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
             // k3 = u2 and h monic, so M21 is three additions, and k3 + up2 is the
             // prologue's t7.
             M21:= u2 + r1 + s1;
-            M20:= k2 + r0 + s1*t7 + r1*htp2 + up1;
+            t6:= s1*t7;
+            M20:= k2 + r0 + t6 + r1*htp2 + up1;
 
             //upp := r*M1 - q*M2;
             upp2:= M21 + r1^2 + q0;
@@ -1704,11 +1705,14 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
             //l := ExactQuotient(u*r - upp, q);
             //upp := upp/LeadingCoefficient(upp);
             //vpp := (l - v - h) mod upp;
-            t1:= r0 + r1*q0;
-			t2:= (u2 + q0)*t1 + (upp2 + q0)*w3;
-			vpp2:= r1*(u2 + upp2) + t1 + w3 + vh2 + upp2;
-            vpp1:= r1*(u1 + upp1) + t2 + vh1 + upp1;
-			vpp0:= r1*(u0 + upp0) + u1*t1 + q0*t2 + upp1*w3 + vh0 + upp0;
+            // The quotient by q is never formed: u + w3*M1 = q*C with C monic of degree
+            // 2, so l = r*C + w3*M2. C1 is u2 + q0 and C0 is s0 + t8 + t6, the prologue's
+            // t8 = t4 + up2*t7 cancelling the t4 that u1 + up1 supplies.
+            t1:= u2 + q0;				// C1
+            t2:= s0 + t8 + t6;			// C0
+            vpp2:= r0 + w3 + vh2 + upp2 + r1*(t1 + upp2);
+            vpp1:= r0*t1 + M21*w3 + vh1 + upp1 + r1*(t2 + upp1);
+            vpp0:= r0*t2 + M20*w3 + vh0 + upp0 + r1*upp0;
 
             if (ADD_DEBUG) then "ADD29"; end if;		// Deg3ADD: gcd(u,up) = dw1, DB = P1+P2+P3, DA = P1+P2+P4, deg(s) = 2
             return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
@@ -1905,7 +1909,8 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
         //M2 := ExactQuotient(r*(vp + v + h) + k*q, up);
         // k3 = u2 and h3 = 1, so M21 is two additions and k3 + up2 = t7 in M20.
         M21:= u2 + r1 + s1;
-        M20:= k2 + r0 + s1*t7 + r1*(ht2 + up2) + up1;
+        t6:= s1*t7;
+        M20:= k2 + r0 + t6 + r1*(ht2 + up2) + up1;
 
         //upp := r*M1 - q*M2;
         upp2:= M21 + r1^2 + q0;
@@ -1915,11 +1920,14 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f2, f1,
         //l := ExactQuotient(u*r - upp, q);
         //upp := upp/LeadingCoefficient(upp);
         //vpp := (l - v - h) mod upp;
-        t1:= r0 + r1*q0;
-        t2:= (u2 + q0)*t1 + (upp2 + q0)*w3;
-        vpp2:= r1*(u2 + upp2) + t1 + w3 + vh2 + upp2;
-        vpp1:= r1*(u1 + upp1) + t2 + vh1 + upp1;
-        vpp0:= r1*(u0 + upp0) + u1*t1 + q0*t2 + upp1*w3 + vh0 + upp0;
+        // The quotient by q is never formed: u + w3*M1 = q*C with C monic of degree
+        // 2, so l = r*C + w3*M2. C1 is u2 + q0 and C0 is s0 + t8 + t6, the prologue's
+        // t8 = t4 + up2*t7 cancelling the t4 that u1 + up1 supplies.
+        t1:= u2 + q0;				// C1
+        t2:= s0 + t8 + t6;			// C0
+        vpp2:= r0 + w3 + vh2 + upp2 + r1*(t1 + upp2);
+        vpp1:= r0*t1 + M21*w3 + vh1 + upp1 + r1*(t2 + upp1);
+        vpp0:= r0*t2 + M20*w3 + vh0 + upp0 + r1*upp0;
 
         if (ADD_DEBUG) then "ADD33"; end if;		// Deg3ADD: gcd(u,up) = ew, DB = P1+P2+P3, DA = P1+P4+P5, deg(s) = 2
         return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;

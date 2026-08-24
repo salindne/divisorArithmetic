@@ -1855,6 +1855,9 @@ Deg3ADD:= function(u2, u1, u0, v2, v1, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5,
     sp0:= vt0*m1 + vt1*m2 + vt2*m3;
     sp1:= vt0*(m8 + up2*m7) + vt1*m5 + vt2*(m2 - up1*m8);
     sp2:= vt0*m7 + vt1*m8 + vt2*m9;
+	// 11m 0s 8a
+	// top: 16m 0s 9a
+	// total: 27m 0s 17a (equivalent 98a)
 
     if IsZero(sp2) then
         if IsZero(sp1) then           

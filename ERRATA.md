@@ -728,7 +728,7 @@ nest six deep with `end if;//name` closers a line scanner cannot match reliably.
 assigned-nowhere *and* assigned-below, and **only real Magma catches assigned-on-another-path.** A formula edit that cannot be run under Magma is not verified
 against this class.
 
-## E20: a 4%-of-calls branch covered by one case that cannot see it
+## E20: a 4%-of-calls branch covered by one case that cannot see it (cause 1 FIXED)
 
 **Found 2026-08-24** while sweeping the characteristic-2 genus-3 addition, by a
 negative control that refused to fire.
@@ -751,9 +751,40 @@ term the proposed change turns on. A leaf taking about 4% of `Deg3ADD` calls is
 therefore covered by a single case that cannot distinguish the edit from its
 replacement.
 
-**The change was reverted.** Not because it is believed wrong — two derivations
-agree and neither has been faulted — but because nothing in the repository can
-tell, and landing it would mean asserting a correctness claim no gate supports.
+**The change was reverted at first.** Not because it was believed wrong — two
+derivations agreed and neither had been faulted — but because nothing in the
+repository could tell, and landing it would have asserted a correctness claim no
+gate supported.
+
+**FIXED 2026-08-24, and the fix was arithmetic rather than cleverness.** The leaves
+are not unreachable; the probe simply *caps* its pair construction. Over GF(4) the
+whole divisor space is 107 elements, so all 11,342 ordered pairs can be run and
+nothing needs targeting because nothing is skipped:
+
+    whitebox/probes/ch2_ramifiedG3_exhaustive_ADD.mag
+
+It reports per BRANCH LABEL rather than per gcd class, which is the property the
+constructed-pair probe lacked — a label that never appears is exactly the failure
+this entry describes, and it names itself. Measured: **all 37 of ADD00..ADD36
+reached**, with the previously dark leaves at ADD29 200 hits, ADD30 1,252,
+ADD31 68, ADD32 128 and ADD33 668, over 17,236 comparisons with 0 wrong.
+
+And it sees what the old one could not, on the same two mutations:
+
+| mutation | constructed-pair probe | exhaustive probe |
+|---|---|---|
+| drop `t8` from `ADD33`'s `C0` | 0 wrong | **1,185 wrong** |
+| add `1` to `ADD33`'s `vpp0` | 0 wrong | **732 wrong** |
+
+So the refused saving was re-applied and is now verified rather than argued: 0
+wrong across the exhaustive run with the change in, and the control firing with it
+broken.
+
+**Cause 2 remains open.** The committed whitebox corpus still holds one case per
+branch, and the `ADD33` case still has `t8 = 0` — it is complete without being
+adequate. The exhaustive probe covers that gap from outside rather than closing it,
+so a regenerated corpus that prefers a non-degenerate case per branch is still
+worth having.
 
 **Two distinct causes, both worth fixing separately.**
 
