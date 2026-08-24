@@ -728,6 +728,55 @@ nest six deep with `end if;//name` closers a line scanner cannot match reliably.
 assigned-nowhere *and* assigned-below, and **only real Magma catches assigned-on-another-path.** A formula edit that cannot be run under Magma is not verified
 against this class.
 
+## E20: a 4%-of-calls branch covered by one case that cannot see it
+
+**Found 2026-08-24** while sweeping the characteristic-2 genus-3 addition, by a
+negative control that refused to fire.
+
+Two independent lenses agreed that the `l = r*C + w3*M2` collapse landing in
+`Deg3ADD`'s typical family also applies at the `ADD29` and `ADD33` leaves, worth
+`-2M -2A` each. It was applied. The Magma probe reported **0 wrong across 2,119
+comparisons**, and `whitebox.py` replayed 48 of 48 cases matching.
+
+**Both were vacuous, and the negative control is what showed it:**
+
+| mutation | Magma probe | whitebox |
+|---|---|---|
+| drop `t8` from `ADD33`'s new `C0` | 0 wrong | 48/48 **matched** |
+| add `1` to `ADD33`'s `vpp0` — unmistakable | **0 wrong** | 1 mismatch |
+
+So the probe **never reaches `ADD33` at all**, and `whitebox` reaches it through
+exactly one frozen case whose `t8` happens to be zero — which is precisely the
+term the proposed change turns on. A leaf taking about 4% of `Deg3ADD` calls is
+therefore covered by a single case that cannot distinguish the edit from its
+replacement.
+
+**The change was reverted.** Not because it is believed wrong — two derivations
+agree and neither has been faulted — but because nothing in the repository can
+tell, and landing it would mean asserting a correctness claim no gate supports.
+
+**Two distinct causes, both worth fixing separately.**
+
+1. **The probe's pair construction has no mode for this family.** It builds equal
+   `u`, shared irreducible factors, forced class sums and a shape matrix over
+   `(deg u1, deg u2)` — none of which targets `gcd(u, up) = e` or `= ew`, so
+   `ADD30` through `ADD33` go unreached. The whitebox *generators* have the same
+   blind spot, which is why those branches have thin coverage there too.
+2. **One case per branch is complete but not sufficient.** The corpus is built to
+   reach every label, and it does. It is not built so that each case exercises the
+   arithmetic *inside* the branch, and a case whose coefficients zero a term
+   cannot see a change to that term. This is the same distinction PR11 drew
+   between coverage and adequacy, arriving from the other direction: there the
+   worry was branches never reached, here it is a branch reached by an input that
+   happens to be degenerate.
+
+**Relation to E15.** E15 records that a formula edit which cannot be run under
+Magma is not verified. This is its sharper form: the edit *was* run under Magma,
+the run was green, and the green was worthless. A pass on an unreached branch is
+indistinguishable from a pass on a correct one, and only a negative control
+separates them — which is the argument for running one per landed item rather
+than once at the end of a session.
+
 ## E19: a sentence in a banner could redefine the tested domain
 
 **Found 2026-08-23** while writing the genus-3 characteristic-2 banners, by the harness reporting a

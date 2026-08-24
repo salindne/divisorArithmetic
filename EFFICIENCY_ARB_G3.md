@@ -473,3 +473,44 @@ separate measurements, not measured composites**, except A1+A2 which was.
 
 Not for PR16: **C4**, which touches published split-model formulas, and the
 nch2 half of A1, which is PR15/PR17's.
+
+---
+
+## Addendum, 2026-08-24 — `t7*m3` is `t2*m8`, and the family already holds `t2`
+
+Found while sweeping the characteristic-2 genus-3 addition, which is a
+specialisation of this file and carries the same statements. It applies **here**,
+unchanged, and it is not a characteristic-2 result: the derivation is pure
+associativity.
+
+`Deg3ADD` computes, before the `d` guard:
+
+    t7:= u2 - up2;
+    t2:= -up0*t7;
+    m8:= t2*t7 - t1*t8;
+    m3:= -up0*m8;
+    d := t1*m1 + t4*m2 + t7*m3;
+
+and `t7*m3 = t7*(-up0*m8) = (-up0*t7)*m8 = t2*m8`. The signs cancel because `t2`
+and `m3` carry the same `-up0` factor, so the identity is exact in every
+characteristic and on every curve — no domain reasoning at all.
+
+**What it buys.** With `d` reading `t2*m8`, the only remaining reader of `m3` is
+the typical family's `sp0`. So `m3:= -up0*m8;` moves from the shared prologue into
+that family, and **every leaf reached through `IsZero(d)` stops paying for a
+multiplication it never uses.** The typical case is unchanged: the product moves
+rather than disappearing.
+
+**Measured in the specialisation**, where it has landed: the three degenerate
+`Deg3ADD` cost rows moved `76M → 75M`, `50M → 49M` and `79M → 78M`, with the
+modal row untouched. Expect the same shape here, since the statements are the same.
+
+**Not applied to this file.** These formulas are merged, and the odd-characteristic
+counts derived from them are published, so the change wants its own commit with
+its own gate run rather than riding in behind a different family's work. Recorded
+here so it is not rediscovered a third time.
+
+**Verification available.** `verification/opcount.py --family ramified/g3/<class>`
+shows the per-leaf distribution, which is where the saving is visible — the modal
+figure cannot show it. `dominance.py` will catch the move if `m3` is left read
+above its new assignment on any path.

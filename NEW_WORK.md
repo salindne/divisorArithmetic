@@ -65,7 +65,7 @@ restating the detail.
 | N26 | The same collapse at `Deg3ADD`, plus the reduce-first rule extended to multiplication and bounded | **implemented and measured**; both addition files |
 | N27 | A reference block written leaf-for-leaf against the code becomes a debugger; the defect class surviving every static check is the defined-with-the-wrong-value read; and `l = r*s + M2` needs no division | **implemented and verified**; the doubling at **54M 4S 84A 4C**, 3 defects found, 2 gates repaired, 6-lens sweep |
 | N28 | The sixth cell of the matrix: the odd-characteristic doubling, derived rather than borrowed; `M21 = -kp3`, a quotient coefficient recomputed under another name; and branch coverage by enumeration rather than sampling | **implemented and verified**; `25M 4S 44A 0C` and `53M 5S 61A 0C`, 48/48 branches by constructed case, E12 closed, 28 testers 0 skips |
-| N29 | The last two cells: characteristic 2 at genus 3, where the doubling's saving is mostly arithmetic that stops existing because half of every integer multiplier is zero; and E19, a sentence in a banner that could silently redefine the tested domain | **implemented and verified**; `53M 3S 66A 0C` and `51M 4S 55A 2C`, 1,777 additions and 2,223 doublings against Magma's Jacobian 0 wrong, six-cell matrix complete, 30 testers 0 skips |
+| N29 | The last two cells: characteristic 2 at genus 3, where the doubling's saving is mostly arithmetic that stops existing because half of every integer multiplier is zero; E19, a sentence in a banner that could silently redefine the tested domain; and E20, a green Magma run that carried no information | **implemented and verified**; `51M 3S 62A 0C` and `51M 4S 55A 2C`, 1,777 additions and 2,223 doublings against Magma's Jacobian 0 wrong, six-cell matrix complete, 30 testers 0 skips, one saving refused for want of an oracle |
 | — | [In flight](#part-vii--in-flight) | decided, not yet established |
 
 ---
@@ -2200,6 +2200,71 @@ is thin, and it is the obvious target for an efficiency pass rather than a resul
 `t₁(t₁² + v₀) + f₁ + h₁v₀`. Deriving it afresh: `k(u₀) = P'(u₀)` for `P = f − v(v+h)` holds in
 any characteristic, and in characteristic 2 only odd-degree terms differentiate, so
 `P' = x⁶ + v₀x² + f₁ + h₁v₀`. Same expression by two routes.
+
+### The efficiency pass, and the saving that was refused
+
+The specialisation had bought `1C` and `5A` on the frequent addition and **not one
+multiplication**, which is why it was swept: six lenses, 18 findings, 104 notes on
+ground already at its floor.
+
+    Deg3ADD typical   53M 3S 66A 0C   ->   51M 3S 62A 0C     (parent: 53M 3S 71A 1C)
+
+**`l := ExactQuotient(u*r - upp, q)` is not a division.** With `C := (u*s) div
+(up*s2)`, monic of degree 2, `u + w3*M1 = q*C`, so `u*r - upp = q*(r*C + w3*M2)`
+and `l = r*C + w3*M2` — the quotient is never formed. `C1` is `u2 + q0`, and `C0`
+collapses to `s0 + t8 + t6` because `q0*t7 = up2*t7 + s1*t7` and the prologue's
+`t8 = t4 + up2*t7` cancels the `t4` that `u1 + up1` supplies, so `C0` costs two
+additions and no new multiplication. Then `vpp = l + v + h + (r1 + 1)*upp` lets
+each `r1*C_i` pair with the `r1*upp_i` beside it. The block goes from 9M 19A to
+7M 17A.
+
+This is **N27's phenomenon through a different identity**. In the doubling `up = u`,
+so the analogue collapses all the way to `l = r*s + M2`; here it stops at `r*C`.
+Three lenses reached it independently and one derived it as `A := u*s div up`
+rather than as `C` — which is what makes it a confirmation, because the brief had
+*told* them the doubling result and agreement on the conclusion alone would have
+proved nothing.
+
+**Two duplicate computations.** `k2 + up1 = t4 + v2 + u2²` with `t4 = u1 + up1`
+already in the prologue, so `u1 + up1` was being formed twice and `k2` need never
+be formed at all — which also stops the other two leaves paying for a value they
+never read. And `M10 + r0 = vt2 + r1*t7` is what `upp1` wants, built on the way to
+`M10` and then discarded; naming the sum and letting `M10` be the extra addition
+saves an addition in three separate leaves.
+
+**One finding escapes the family.** `t7*m3 = t7*(up0*m8) = (up0*t7)*m8 = t2*m8`,
+and the prologue already holds `t2 = up0*t7`. Pure associativity — no
+characteristic assumption and no domain restriction — so it holds in the
+arbitrary-characteristic and odd-characteristic parents verbatim, where the signs
+cancel because `t2` and `m3` carry the same `-up0` factor. With `d` reading
+`t2*m8`, `m3` is wanted only by the typical family and moves there, so every
+degenerate leaf stops paying for it. Recorded in both efficiency reports rather
+than applied: those files are merged and one is published.
+
+### The refusal, which is the part worth reading
+
+Two lenses agreed the `l` collapse also applies at `ADD29` and `ADD33`, `-2M -2A`
+each. It was applied, and **Magma reported 0 wrong across 2,119 comparisons.**
+
+That pass was worthless. Breaking `ADD33`'s `C0` left Magma at 0 wrong and
+whitebox at 48/48 *matched*; breaking its `vpp0` unmistakably left Magma **still**
+at 0 wrong, and only whitebox caught it. So the probe never reaches `ADD33`, and
+whitebox reaches it through one frozen case whose `t8` happens to be zero — the
+very term the change turns on.
+
+The change was reverted. Not because it is thought wrong, but because nothing in
+the repository can tell, and landing it would assert a correctness claim no gate
+supports. Recorded as `ERRATA.md` **E20**, with the two independent causes: the
+probe has no pair-construction mode for `gcd(u, up) = e` or `= ew`, and one case
+per branch is complete without being adequate — a case whose coefficients zero a
+term cannot see a change to that term.
+
+**For the paper.** This is the sharpest form of the rule E15 states. There the
+edit could not be run at all; here it *was* run, under real Magma, and came back
+green — and the green carried no information. A pass on an unreached branch is
+indistinguishable from a pass on a correct one, which is the entire argument for
+running a negative control per landed item rather than once at the end. Every
+saving above is reported with the control that fires for it.
 
 ### A sentence in a banner could redefine what gets tested
 
