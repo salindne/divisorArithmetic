@@ -421,7 +421,8 @@ The asymmetry is the check that the sixteen fields are not decoration.
 | `blockcheck.py` | executes a reference block and compares it against the explicit code it documents. The only thing here that runs a block, and the only thing here that needs Magma; not in CI |
 | `adjugate.py` | the genus-3 addition/doubling adjugate-and-determinant block: candidate programs verified and operation-counted over sixteen fields and once symbolically, the span of the nine cofactors as quadratic forms, and two lower bounds. Backs `NEW_WORK.md` N23. Standard library only, no Magma, ~32s |
 | `dominance.py` | reads with no assignment above them, in statement order -- which also covers a name never assigned at all, so it is the only checker of this class shipped. Asking merely "is it assigned *somewhere*" is satisfied by an assignment *below* the read, which is exactly what a half-finished rename leaves behind. Standard library only, no Magma, instant. What it cannot see -- an assignment on a sibling path, or a name assigned above with the WRONG value -- is `ERRATA.md` E15 and E17 |
-| `selftest.py` | checks the framework itself, seventeen sections |
+| `detect.py` | how much of the formulas the frozen corpus can SEE, as against merely reach. Perturbs every executed assignment by one and compares the returned divisor; an assignment whose perturbation changes nothing is invisible to the corpus, however well covered its branch. Scored per BRANCH over the `Deg*` bodies, so more cases can never lower a score, and an assignment is identified by (function, variable, occurrence) rather than by trace position -- position breaks as soon as two cases reach a branch through different `Precompute` exits. Exists because `ERRATA.md` E20 is a correct optimisation reverted for want of exactly this measurement. A RELATIVE instrument: 100% is unreachable, since a guard variable a branch requires to be zero cannot be seen. Standard library only, no Magma |
+| `selftest.py` | checks the framework itself, nineteen sections |
 
 ## Current state
 
@@ -429,11 +430,11 @@ Measured with `driver.py --curves 30 --pairs 16`:
 
 | | |
 |---|---|
-| families covered | **14** — ramified and split, genus 2 and 3, both reduced bases |
+| families covered | **15** — ramified and split, genus 2 and 3, both reduced bases |
 | operations compared | **674,528** |
 | wrong on the formulas' documented domains | **0** |
 | branch coverage | **86.9%** overall; **100% on all nine ramified files** |
-| `selftest.py` | 16 sections, 16 passing (`blocks` needs Magma and skips without it) |
+| `selftest.py` | 19 sections, 19 passing |
 | parse coverage | 240 of 246 functions |
 
 The 6 functions not interpreted are `Random*Curve` generators, which are not formulas
