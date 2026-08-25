@@ -807,15 +807,22 @@ defect of.
 
 | family | cases | detectable |
 |---|---|---|
-| `arb` g3 ram | 48 → 382 | 81.8% → **96.2%** |
-| `nch2` g3 ram | 48 → 96 | 80.0% → **93.3%** |
-| `ch2` g3 ram | 48 → 96 | 81.4% → **88.3%** |
-| `arb` g2 ram | 22 → 175 | 86.1% → **96.5%** |
-| `nch2` g2 ram | 22 → 44 | 93.2% → **94.1%** |
-| `ch2` g2 ram | 22 → 43 | 87.9% → **95.7%** |
-| `arb` g2 split | 77 → 606 | 77.2% → **82.2%** (neg) |
-| `nch2` g2 split | 77 → 153 | 84.6% → measured per basis |
-| `ch2` g2 split | 77 → 149 | 82.0% → measured per basis |
+| `arb` g3 ramified | 48 → 382 | 81.8% → **96.2%** |
+| `nch2` g3 ramified | 48 → 96 | 80.0% → **93.3%** |
+| `ch2` g3 ramified | 48 → 96 | 81.4% → **88.3%** |
+| `arb` g2 ramified | 22 → 175 | 86.1% → **96.5%** |
+| `nch2` g2 ramified | 22 → 44 | 93.2% → **94.1%** |
+| `ch2` g2 ramified | 22 → 43 | 87.9% → **95.7%** |
+| `arb` g2 split, neg | 77 → 606 | 77.2% → **83.0%** |
+| `nch2` g2 split, neg | 77 → 153 | 84.6% → **85.0%** |
+| `ch2` g2 split, neg | 77 → 149 | 82.0% → **84.1%** |
+| `arb` g2 split, pos | 77 → 606 | 65.0% → **69.4%** |
+| `nch2` g2 split, pos | 77 → 153 | 75.1% → **76.1%** |
+| `ch2` g2 split, pos | 77 → 149 | 67.2% → **70.3%** |
+
+Every one of the twelve improves. The before-figures are comparable under either
+keying, because a one-case-per-branch corpus has nothing to intersect and the
+grouping flaw could not bite it.
 
 Corpus 1,886 → 3,866. Coverage **rose** to 1,927 of 1,929: two baseline exemptions
 died of progress, `Precompute` leaves that fire on 0.88% of curves and that a corpus

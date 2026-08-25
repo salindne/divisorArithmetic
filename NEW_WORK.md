@@ -2802,12 +2802,26 @@ characteristic. It is now 94 against 96.
 | `arb` g2 ramified | 22 → 175 | 86.1% → **96.5%** |
 | `nch2` g2 ramified | 22 → 44 | 93.2% → **94.1%** |
 | `ch2` g2 ramified | 22 → 43 | 87.9% → **95.7%** |
-| `arb` g2 split, neg | 77 → 606 | 77.2% → **82.2%** |
-| `nch2` g2 split | 77 → 153 | 84.6% → per basis |
-| `ch2` g2 split | 77 → 149 | 82.0% → per basis |
+| `arb` g2 split, neg | 77 → 606 | 77.2% → **83.0%** |
+| `nch2` g2 split, neg | 77 → 153 | 84.6% → **85.0%** |
+| `ch2` g2 split, neg | 77 → 149 | 82.0% → **84.1%** |
+| `arb` g2 split, pos | 77 → 606 | 65.0% → **69.4%** |
+| `nch2` g2 split, pos | 77 → 153 | 75.1% → **76.1%** |
+| `ch2` g2 split, pos | 77 → 149 | 67.2% → **70.3%** |
+
+Every one of the twelve improves. The before-figures are comparable under either
+keying, because a one-case-per-branch corpus has nothing to intersect and the
+grouping flaw could not bite it.
 
 Twelve of the fifteen families; the three genus-3 split ones are 405 branches each
-with `Precompute` in the loop and are regenerated separately. Corpus 1,886 → 3,866,
+with `Precompute` in the loop and are regenerated separately.
+
+**Repository-wide the figure is 82.5%, and that number is dominated by the three
+families not yet done.** Genus-3 split accounts for 54,431 of the 67,931 scored
+assignments -- 80% of the total -- so the headline barely moves until those are
+regenerated, while every family that has been moved ten to fourteen points. Quoting
+the repository total as the result of this work would understate it by a wide margin,
+which is why the per-family table above is the honest presentation. Corpus 1,886 → 3,866,
 and coverage ROSE, 1,925 → 1,927 of 1,929: two baseline exemptions died of progress,
 `Precompute` leaves firing on 0.88% of curves that a corpus drawing hundreds across
 four fields now reaches.
