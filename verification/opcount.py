@@ -1,9 +1,9 @@
 """
 Operation counts for the explicit formulas, measured by running them.
 
-    python3 verification/opcount.py                     # every family it can reach
+    python3 verification/opcount.py                     # all fifteen families
     python3 verification/opcount.py --family ramified/g2/ch2
-    python3 verification/opcount.py --verify            # against the published tables
+    python3 verification/opcount.py --family splitneg/g3/arb --json
 
 WHY THIS AND NOT THE CONVERTER
 
@@ -41,7 +41,26 @@ resulting (M,S,A,C,I) tuples; the modal tuple is the frequent case. Its share is
 reported, and a share near 1 is the signal that the answer is not an artifact of
 sampling. Every execution that contributes is also compared against
 `reference.py`'s independent Cantor arithmetic, so an input outside the formulas'
-domain shows up as a mismatch rather than as a plausible wrong count.
+domain is dropped rather than histogrammed as a plausible wrong count.
+
+BOTH MODELS
+
+All fifteen families are measured. The split half needs three things the
+ramified half does not, which is why it was refused for so long: its domain
+cannot be derived by the arb-contrast (the dispatchers read `ccs`, not curve
+coefficients), its dispatcher signature needs `Precompute` run once per curve to
+build that `ccs`, and its shapes are indexed by the balancing weight as well as
+the degree. `driver.split_spec` and `driver.build_args_split` supply the first
+two; the third is `_count_split`'s own, and it matters -- genus 3 prices
+"Degree 1", "Degree 1 with Down Adjust" and "Degree 1 with two Up Adjusts"
+separately, at 7M, 14M and 42M, and the input weight is exactly what selects
+between them.
+
+Two counting conventions are split-specific and both are the interpreter's
+(`maginterp.INT_ARITH_FREE`, `DIV_LITERAL_AS_ADD`) rather than tabulated here.
+The first is the one worth knowing: a split divisor's balancing weight is a small
+integer, so `n := n1 + n2 - 2` is bookkeeping and not two field additions. Charged
+as field additions it put a flat +2A on every split row.
 """
 
 from __future__ import annotations
@@ -57,6 +76,7 @@ import sys
 import curves as C
 import driver as D
 import maginterp as M
+import reference as R
 from ff import GF
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -102,12 +122,15 @@ class conventions(object):
             self.ignored |= i
 
     def __enter__(self):
-        self._saved = (M.CONSTS, M.IGNORED, M.DIV_LITERAL_AS_ADD)
-        M.CONSTS, M.IGNORED, M.DIV_LITERAL_AS_ADD = self.consts, self.ignored, True
+        self._saved = (M.CONSTS, M.IGNORED, M.DIV_LITERAL_AS_ADD,
+                       M.INT_ARITH_FREE)
+        M.CONSTS, M.IGNORED = self.consts, self.ignored
+        M.DIV_LITERAL_AS_ADD = M.INT_ARITH_FREE = True
         return self
 
     def __exit__(self, *exc):
-        M.CONSTS, M.IGNORED, M.DIV_LITERAL_AS_ADD = self._saved
+        (M.CONSTS, M.IGNORED, M.DIV_LITERAL_AS_ADD,
+         M.INT_ARITH_FREE) = self._saved
         return False
 
 
@@ -135,6 +158,38 @@ def measure_call(fn, args, subs, F, path=None):
     return _tuple_of(M.COUNT), out
 
 
+def _agrees(fam, cur, V, D1, D2, op, vals):
+    """Does a measured call's RESULT match `reference.py`'s Cantor arithmetic?
+
+    The module header has always claimed this check; until now nothing performed
+    it. `measure_call` returned the value and the histogram discarded it, so a
+    call that left the formulas' domain and came back with a wrong answer was
+    histogrammed as a legitimate operation count -- the one failure mode that
+    produces a plausible wrong number rather than an obvious one.
+
+    Returns True (agrees, count it), False (disagrees, do not) or None (the
+    reference could not be evaluated, so nothing is known and the sample is
+    neither counted nor blamed).
+    """
+    F = cur.F
+    try:
+        if fam.is_split:
+            gu, gv, gn, note = D.decode_split(F, fam.genus, vals, V)
+            if gu is None:
+                return False
+            pos = (fam.basis == "pos")
+            want = (R.split_add(cur, D1, D2, V, pos) if op == "ADD"
+                    else R.split_double(cur, D1, V, pos))
+            return gu == want[0] and gv == want[1] and gn == want[3]
+        gu, gv, note = D.decode_divisor(F, fam.genus, vals)
+        if gu is None:
+            return False
+        want = R.add(cur, D1, D2) if op == "ADD" else R.double(cur, D1)
+        return gu == want[0] and gv == want[1]
+    except Exception:
+        return None
+
+
 def count_family(fam, families, field, target=400, seed=7, verbose=False):
     """{label: {"modal":…, "share":…, "n":…, "dist":…}} keyed by operation shape.
 
@@ -147,6 +202,9 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
     often enough that an unfiltered sample is mostly `D + 0`, which costs nothing
     and would swamp the histogram.
     """
+    if fam.is_split:
+        return _count_split(fam, families, field, target, seed, verbose)
+
     cons, members, why = D.family_domain(fam, families, "ADD")
     if cons is None:
         return None, why
@@ -203,7 +261,8 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
                         except Exception:
                             continue
                         got = measure_call(subs["DBL"], args, subs, F)
-                        if got:
+                        if got and _agrees(fam, cur, None, D1, None,
+                                           "DBL", got[1]):
                             hist[_label("DBL", (d,))][got[0]] += 1
 
             if "ADD" in subs:
@@ -218,7 +277,8 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
                         except Exception:
                             continue
                         got = measure_call(subs["ADD"], args, subs, F)
-                        if got:
+                        if got and _agrees(fam, cur, None, D1, D2,
+                                           "ADD", got[1]):
                             hist[_label("ADD", (i, j))][got[0]] += 1
 
     out = {}
@@ -236,9 +296,168 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
     return out, None
 
 
+def _count_split(fam, families, field, target=400, seed=7, verbose=False):
+    """The split-model half of `count_family`; same contract, same return.
+
+    Three things differ from the ramified path, and each is why the counter used
+    to refuse rather than guess:
+
+    DOMAIN.  `family_domain`'s arb-contrast sees nothing here, because the split
+    dispatchers read neither f nor h -- they take `ccs`, the constants
+    `Precompute` derives. `driver.split_spec` already derives the domain from
+    Precompute's own source instead, and `split_curve_in_domain` already
+    validates that the places at infinity are rational. Both are used verbatim;
+    nothing about the domain is re-derived here.
+
+    ARGUMENTS.  A split divisor carries a balancing weight alongside (u, v), and
+    the dispatcher takes `ccs` rather than curve coefficients, so `build_args`
+    cannot map the signature. `build_args_split` can, and `Precompute` is run
+    once per curve OUTSIDE the measured call -- it is per-curve setup, not part
+    of an operation's cost.
+
+    SHAPE.  The published split tables are not indexed by degree alone: genus 3
+    prices "Degree 1", "Degree 1 with Down Adjust" and "Degree 1 with two Up
+    Adjusts" separately, at 7M, 14M and 42M. Measured, the input balancing weight
+    is exactly what selects between them -- the six (degree, weight) pairs a
+    genus-3 divisor admits reproduce the six published doubling rows one for one
+    -- so the weight is part of the shape here, not a nuisance parameter. Keying
+    on degree alone pooled rows the thesis prices apart and reported whichever
+    the sampler happened to favour, which is how a degree-1 doubling would have
+    been reported as 42M.
+
+    Weights are therefore driven rather than drawn: every legal weight for a
+    shape is asked for, so no published row can go unsampled because the sampler
+    never happened to pick its weight.
+    """
+    spec = D.split_spec(fam, families)
+    try:
+        subs = dict(M.discover(fam.utl_path)) if fam.utl_path else {}
+        add_subs = M.discover(fam.add_path)
+        add_params, _ = D._dispatcher_body(fam.add_path, "ADD")
+        subs.update(add_subs)
+    except Exception as e:
+        return None, "cannot load ADD: %s: %s" % (type(e).__name__, e)
+    if "Precompute" not in subs:
+        return None, "no Precompute available, so ccs cannot be built"
+
+    dbl_params = None
+    if fam.dbl_path:
+        try:
+            dsubs = M.discover(fam.dbl_path)
+            dbl_params, _ = D._dispatcher_body(fam.dbl_path, "DBL")
+            merged = dict(dsubs)
+            merged.update(subs)
+            subs = merged
+        except Exception:
+            pass
+
+    g = fam.genus
+    F = GF(field)
+    rng = random.Random("%s|%d|%d" % (fam.name, field, seed))
+    hist = collections.defaultdict(collections.Counter)
+
+    # A weight is legal in [0, g - deg u], which is what
+    # reference.split_check_divisor enforces. Degree 0 is the identity and is a
+    # real addition shape here -- the tables carry "Degree 0 and 1" rows -- but
+    # not a doubling one, and 0 + 0 is priced nowhere, so it is excluded.
+    dbl_shapes = [(d, n) for d in range(1, g + 1) for n in range(0, g - d + 1)]
+    add_shapes = [((i, ni), (j, nj))
+                  for i in range(0, g + 1) for j in range(i, g + 1)
+                  if (i, j) != (0, 0)
+                  for ni in range(0, g - i + 1) for nj in range(0, g - j + 1)]
+    per_shape = max(4, target // max(1, len(dbl_shapes) + len(add_shapes)))
+
+    def _draw(cur, V, d, n):
+        D0 = C.random_divisor(cur, rng, degs=(d,))
+        if not D0:
+            return None
+        try:
+            return C.to_split_divisor(cur, D0, V, rng, n=n)
+        except Exception:
+            return None
+
+    with conventions(fam.add_path, fam.dbl_path):
+        curves_used = curves_tried = 0
+        while curves_tried < 60 and curves_used < max(3, 60 // max(1, per_shape)):
+            curves_tried += 1
+            cur = D.split_curve_in_domain(F, fam, spec, rng)
+            if cur is None:
+                continue
+            try:
+                V = C.split_basis(cur, fam.basis)
+            except ArithmeticError:
+                continue
+            try:
+                # Precompute returns ONE value, the nested constants sequence, so
+                # the interpreter's return tuple is unwrapped. Passing the tuple
+                # through adds a nesting level and every ccs[2][...] raises.
+                raw = subs["Precompute"](cur.f, cur.h, F.q, funcs=subs, F=F)
+                ccs = raw[0] if len(raw) == 1 else list(raw)
+            except Exception:
+                continue
+            curves_used += 1
+
+            if dbl_params is not None and "DBL" in subs:
+                for (d, n) in dbl_shapes:
+                    for _ in range(per_shape):
+                        D1 = _draw(cur, V, d, n)
+                        if not D1:
+                            continue
+                        try:
+                            args = D.build_args_split(dbl_params, cur, ccs, D1)
+                        except Exception:
+                            continue
+                        got = measure_call(subs["DBL"], args, subs, F)
+                        if got and _agrees(fam, cur, V, D1, None, "DBL", got[1]):
+                            hist[_split_label("DBL", ((d, n),))][got[0]] += 1
+
+            if "ADD" in subs:
+                for ((i, ni), (j, nj)) in add_shapes:
+                    for _ in range(per_shape):
+                        D1 = _draw(cur, V, i, ni)
+                        D2 = _draw(cur, V, j, nj)
+                        if not D1 or not D2 or D1 == D2:
+                            continue
+                        try:
+                            args = D.build_args_split(add_params, cur, ccs,
+                                                      D1, D2)
+                        except Exception:
+                            continue
+                        got = measure_call(subs["ADD"], args, subs, F)
+                        if got and _agrees(fam, cur, V, D1, D2, "ADD", got[1]):
+                            hist[_split_label("ADD",
+                                              ((i, ni), (j, nj)))][got[0]] += 1
+
+    if not hist:
+        return None, ("no curve in the family's domain with rational places at "
+                      "infinity over GF(%d)" % field)
+    out = {}
+    for label, h in sorted(hist.items()):
+        modal, n = h.most_common(1)[0]
+        total = sum(h.values())
+        out[label] = {
+            "modal": list(modal),
+            "share": round(n / float(total), 4),
+            "n": total,
+            "dist": [[list(k), v] for k, v in h.most_common(5)],
+        }
+    return out, None
+
+
 def _label(op, degs):
     """"2DBL", "12ADD", "2ADD" -- the thesis's own row naming."""
     return "".join(str(d) for d in degs) + op
+
+
+def _split_label(op, shape):
+    """"3DBL n=0", "13ADD n=2,0" -- degree shape plus the balancing weights.
+
+    The weight suffix is not decoration: it is what distinguishes the published
+    rows from one another within a degree. See `_count_split`.
+    """
+    degs = "".join(str(d) for d, _ in shape)
+    ns = ",".join(str(n) for _, n in shape)
+    return "%s%s n=%s" % (degs, op, ns)
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +486,16 @@ def main(argv=None):
                 print("   ", f.name)
             return 2
     else:
-        families_sel = [f for f in families if f.model == "ramified"]
+        # EVERY family. All fifteen are measurable now, so this no longer decides
+        # what gets counted -- but it still decides what a skip would be allowed to
+        # do silently, which is why it does not filter. Selecting by model here
+        # once put the nine split families outside the skip machinery entirely:
+        # the run reported six results and an empty `skipped` list, so a reader --
+        # or a --json consumer -- saw a complete-looking answer covering 6 of 15
+        # families with nothing to say the other nine were never attempted. A
+        # family that stops being measurable for any reason must show up in the
+        # skip list and in the tally, not vanish from the denominator.
+        families_sel = list(families)
 
     results, skipped = {}, []
     for fam in families_sel:
@@ -287,13 +515,31 @@ def main(argv=None):
     for name in sorted(results):
         blob = results[name]
         print("  %-24s GF(%d)" % (name, blob["field"]))
+        free = 0
         for op in sorted(blob["ops"]):
             r = blob["ops"][op]
             m, s, add, c, i = r["modal"]
+            if not any(r["modal"]):
+                # A shape the dispatcher answers with no arithmetic at all -- an
+                # identity or already-balanced input it can return directly. Real,
+                # verified against reference.py like every other sample, and priced
+                # by no published row, so it is counted rather than listed. --json
+                # carries it either way; this only shortens the human report.
+                free += 1
+                continue
+            # Width stays %-4s so the ramified rows print exactly as they always
+            # have; the longer split labels simply run past it, and they are all
+            # the same length within a group so those columns still line up.
             print("     %-4s %3dM %2dS %3dA %2dC %2dI    share %.2f of %d calls"
                   % (op, m, s, add, c, i, r["share"], r["n"]))
-    for name, why in skipped:
+        if free:
+            print("     (%d further shapes cost nothing: answered without "
+                  "arithmetic)" % free)
+    for name, why in sorted(skipped):
         print("  %-24s skipped: %s" % (name, (why or "")[:60]))
+    if skipped:
+        print("\n  %d of %d families measured, %d skipped."
+              % (len(results), len(results) + len(skipped), len(skipped)))
     if not results:
         print("  nothing measured")
         return 1

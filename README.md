@@ -33,21 +33,27 @@ Every operation costs exactly one inversion, so `I` is omitted.
 | **g3 ramified** arb | **53 / 3 / 71 / 1** | **54 / 4 / 80 / 4** | measured |
 | **g3 ramified** nch2 | **53 / 3 / 59 / 0** | **53 / 5 / 61 / 0** | measured |
 | **g3 ramified** ch2 | **51 / 3 / 62 / 0** | **51 / 4 / 55 / 2** | measured |
-| **g2 split** arb | 27 / 1 / 37 / 3 | 30 / 2 / 44 / 8 | published |
-| **g2 split** nch2 | 26 / 2 / 36 / 0 | 29 / 3 / 39 / 0 | published |
-| **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | published |
-| **g3 split** arb | 65 / 3 / 87 / 12 | 73 / 3 / 101 / 19 | published |
-| **g3 split** nch2 | 65 / 3 / 85 / 0 | 72 / 4 / 97 / 0 | published |
-| **g3 split** ch2 | 65 / 3 / 80 / 0 | 71 / 4 / 86 / 1 | published |
+| **g2 split** arb | 27 / 1 / 37 / 3 | 30 / 2 / 44 / 8 | measured |
+| **g2 split** nch2 | 26 / 2 / 36 / 0 | 29 / 3 / 39 / 0 | measured |
+| **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | measured |
+| **g3 split** arb | 65 / 3 / 87 / 12 | 73 / 3 / 101 / 19 | measured |
+| **g3 split** nch2 | 65 / 3 / 85 / 0 | 72 / 4 / 97 / 0 | measured |
+| **g3 split** ch2 | 65 / 3 / 80 / 0 | 71 / 4 / 86 / 1 | measured |
 
-**The `source` column is the important one, and it is not decoration.** *Measured* rows come from
-`python3 verification/opcount.py --family <name>`, which executes the formulas over a real field and
-identifies the frequent case by observing which branch is taken. *Published* rows are read from the
-thesis, because **`verification/opcount.py` cannot measure split families and refuses rather
-than guessing** — so
-no split figure here is independently checked by this repository. Where both methods exist they agree
-exactly: the genus-2 ramified rows match `tab:ramfcosts` cell for cell across all three characteristic
-columns, execution against static counting, two methods sharing no code.
+**Every row is now measured**, which it was not until recently: half this table used to read
+*published*, because `verification/opcount.py` could measure only the six ramified families and
+refused the nine split ones rather than guess. It measures all fifteen, so each figure comes from
+`python3 verification/opcount.py --family <name>` executing the formulas over a real field and
+identifying the frequent case by observing which branch is taken.
+
+**Where a published cell exists, the two agree exactly.** The genus-2 ramified rows match
+`tab:ramfcosts` cell for cell across all three characteristic columns — execution against static
+counting, two methods sharing no code. The split rows are the same story against `tab:splitfcosts` and
+`tab:g3splitfcosts{ADD,DBL}`: **168 measured shapes, every one reproducing its published cell**, and
+every one at exactly one inversion, which is the thesis's prose claim and had never been checked for
+the split model. One disagreement showed up and was informative — see
+[NEW_WORK.md](NEW_WORK.md) N31. Note the genus-2 split figures are `posReduced`, the basis of record;
+`negReduced` is a different algorithm and differs by an operation or two on several rows.
 
 **The genus-3 ramified rows have no published counterpart at all** — the thesis defers those formulas
 (`chapter6.tex:15`, "ramified models are developed by another student") — and all three beat its own
@@ -70,11 +76,11 @@ What is missing, in progress, or knowingly deferred. Verification figures live u
   `1I + 62M + 5S / 100A` is work for a paper, not for this repository: no formula, count or test here
   depends on the outcome. [RELATED_WORK.md](RELATED_WORK.md) carries the forms and the counts with
   citations, which is what that work would start from.
-- **`verification/opcount.py` cannot measure split families**, which is why half the table above is
-  *published* rather than *measured*; the split figures in [RELATED_WORK.md](RELATED_WORK.md) come
-  from an external harness. Extending it is the prerequisite for two known savings in the split model
-  whose identities are already proved: the adjugate trade (`+1M −12A`) and a redundant 2×2 system
-  (`11M 6A` deletable).
+- **Two known savings in the split model are unapplied**, both with their identities already proved:
+  the adjugate trade (`+1M −12A`, six sites) and a redundant 2×2 system (`11M 6A` deletable). Their
+  prerequisite is discharged — `verification/opcount.py` measures the split families now, so a
+  per-branch delta can be demonstrated — but they edit published formulas, so each moved cell owes a
+  hand count and a `Thesis/ERRATA.md` entry.
 - **The whitebox corpus is complete without being adequate.** It holds one case per branch — every
   branch is reached, but a case whose coefficients happen to zero a term cannot see a change to that
   term. Recorded as `ERRATA.md` **E20**, found when a deliberate break went undetected.
