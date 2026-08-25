@@ -728,7 +728,7 @@ nest six deep with `end if;//name` closers a line scanner cannot match reliably.
 assigned-nowhere *and* assigned-below, and **only real Magma catches assigned-on-another-path.** A formula edit that cannot be run under Magma is not verified
 against this class.
 
-## E20: a 4%-of-calls branch covered by one case that cannot see it (cause 1 FIXED)
+## E20: a 4%-of-calls branch covered by one case that cannot see it (BOTH CAUSES FIXED)
 
 **Found 2026-08-24** while sweeping the characteristic-2 genus-3 addition, by a
 negative control that refused to fire.
@@ -780,13 +780,54 @@ So the refused saving was re-applied and is now verified rather than argued: 0
 wrong across the exhaustive run with the change in, and the control firing with it
 broken.
 
-**Cause 2 remains open.** The committed whitebox corpus still holds one case per
-branch, and the `ADD33` case still has `t8 = 0` — it is complete without being
-adequate. The exhaustive probe covers that gap from outside rather than closing it,
-so a regenerated corpus that prefers a non-degenerate case per branch is still
-worth having.
+**CAUSE 2 FIXED 2026-08-25 for the ramified families, and it was a selection rule
+rather than bad luck.** The generators emit every verified block, looping
+`for F in FIELDS` with FIELDS ascending, and `_takeCase` kept the FIRST per label —
+so every branch's one case came from the **smallest field reaching it**, the most
+degenerate arithmetic available. `ADD33`'s `t8 = 0` was not a coincidence; it was
+the predictable consequence of picking GF(2) when GF(8) was in the same log.
 
-**Two distinct causes, both worth fixing separately.**
+Measured with `verification/detect.py`, which perturbs every executed assignment by
+one and asks whether the returned divisor moves. Across the whole corpus, **18.7%
+of `Deg*` formula-body assignments were invisible** and **every one of the 1,886
+cases had at least one**. So this was systemic, not a handful of branches.
+
+The corpus now holds **two cases per branch per characteristic class, each from a
+different field** — four for `arb`, which admits both. One per (label, field) is a
+constraint and not a preference: two cases at GF(3) leave 11.8% invisible, *worse
+than one case at GF(5)* at 9.7%, because same-field failures are correlated.
+
+| family | cases | fields | detectable |
+|---|---|---|---|
+| `arb` g3 | 48 → 190 | GF(2,3,4,5) | 81.8% → **95.8%** |
+| `nch2` g3 | 48 → 96 | GF(3,5) | 80.0% → **93.3%** |
+| `ch2` g3 | 48 → 96 | GF(4,8) | 81.4% → **88.3%** |
+| `ch2` g2 | 22 → 44 | GF(4,8) | 87.9% → **94.4%** |
+
+`arb` gains most because it gains a *characteristic*: it was 45 cases in
+characteristic 2 against 3 in odd characteristic, so 45 of its 48 branches had
+never been whiteboxed in odd characteristic at all, in the one family that must
+work in both. It is now 94 against 96.
+
+**Verified by this entry's own mutation.** Dropping `t8` from `ADD33`'s `C0` — the
+edit that started all this — is **MISSED** by the committed 48-case corpus, 48/48
+matched, and **CAUGHT** by the new 96-case corpus, 94 of 96. Branch coverage is
+unchanged at 1,925 of 1,929, so nothing was traded for it.
+
+**Still open, and narrowly.** `arb` and `nch2` at genus 2 keep one case per branch:
+their generators are the older generation — `while true`, `Random(FIELDS)` over a
+set rather than an ascending loop, and no `WB_TRIALS`/`WB_FIELDS` — so they cannot
+be re-driven without modernising them first. The four split families need real
+generation runs, their committed logs being partial (rebuilding `nch2_splitG3` from
+its log reaches 86 of 405 branches).
+
+**And detectability will not reach 100%, which is not a defect count.** `f7` is
+assigned and never read and is deliberately not deletable; a branch guarded on
+`d = 0` must have `d = 0` to be reached at all; and the adjugate entries `m1`–`m9`
+are genuinely dead on the degenerate paths that do not consume them. Measured,
+those are exactly the names that survive every field.
+
+**Two distinct causes, both now fixed for the families that could be reached.**
 
 1. **The probe's pair construction has no mode for this family.** It builds equal
    `u`, shared irreducible factors, forced class sums and a shape matrix over

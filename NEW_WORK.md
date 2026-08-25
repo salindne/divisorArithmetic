@@ -2703,6 +2703,137 @@ balancing weight carries integer bookkeeping that looks like arithmetic and is
 not. Two additions a row, on every split row in the thesis, hung on that
 distinction.
 
+
+## N32 — Complete is not adequate: what a test corpus can reach against what it can see
+
+**Status** — established, PR38. **Where** — `whitebox/whitebox_auto_NEG.py`,
+`verification/detect.py`, and the four regenerated ramified testers. **Errata** —
+`ERRATA.md` **E20**, both causes now closed.
+
+**What was there.** The frozen whitebox corpus reached **every** labelled branch in
+the repository — 1,925 of 1,929 — and had done for a long time. That is
+*completeness*, and this entry is about the discovery that it is not *adequacy*: a
+branch reached by one case whose arithmetic happens to zero a term cannot
+distinguish a change to that term. The branch is covered; the change is invisible.
+
+**Why it is worth an entry rather than a changelog line: the gap cost a correct
+result.** Two independent derivations agreed that the `l = r*C + w3*M2` collapse
+applied at `Deg3ADD`'s `ADD29` and `ADD33` leaves, `−2M −2A` each. It was applied.
+Real Magma reported 0 wrong across 2,119 comparisons and `whitebox` matched 48 of
+48. Both were vacuous, and only the negative control showed it: breaking `ADD33`'s
+`C0` left *both* oracles green, and breaking its `vpp0` unmistakably left Magma
+green. The saving was reverted — not believed wrong, but unverifiable. It was later
+recovered from **outside** the corpus, by exhausting all 11,342 ordered pairs over
+GF(4), so the operations are not owed. The corpus that could not see it was
+unchanged, and that is what this closes.
+
+### The instrument, and two ways to get it wrong
+
+`verification/detect.py` perturbs every assignment the corpus executes by one and
+compares the operation's returned divisor. If the divisor does not move, that
+assignment is **invisible**. Three causes — dead, overwritten before use, or
+multiplied by zero — are deliberately not distinguished, because for this purpose
+they are the same thing.
+
+Two decisions in the metric matter more than the machinery, and a naive version
+gets both wrong.
+
+**Scope it to the formula bodies.** Counting every layer gives **48.2%** invisible
+where the `Deg*` bodies are at **18.7%**. The difference is the split dispatchers
+unpacking `ccs` into some sixty named constants of which any branch reads a handful;
+perturbing one a branch never reads is dead unpacking, not a blind spot. Reporting
+48.2% would have been a plausible wrong number of exactly the kind this project
+keeps having to undo.
+
+**Score by branch, not by case.** An assignment is invisible only if *every* case
+covering that branch misses it. Summed per case instead, the two-case corpus scores
+85.9% where its union is **93.3%** — and worse, adding a redundant case could
+*lower* the score, which is incoherent for a metric whose whole premise is that
+more cases cannot hurt.
+
+### The cause was a selection rule, not bad luck
+
+Generators emit every verified block, looping `for F in FIELDS` with FIELDS
+ascending; the selector kept the **first** block per label. So every branch's one
+case came from the **smallest field reaching it** — the most degenerate arithmetic
+available. `ADD33`'s `t8 = 0` was not a coincidence but the predictable consequence
+of taking GF(2) when GF(8) sat in the same log. Measured: **every one of the 1,886
+cases had at least one invisible assignment.** Systemic, not a handful.
+
+### Two cases per branch, from different fields — and why not one bigger one
+
+| corpus | invisible |
+|---|---|
+| one case at GF(3), as shipped | 20.0% |
+| one case at GF(5) | 9.7% |
+| one case at GF(9) | 9.7% |
+| **two cases both at GF(3)** | **11.8%** |
+| two cases, GF(3) + GF(5) | 7.1% |
+| two cases, GF(5) + GF(9) | 6.5% |
+
+Three results worth keeping, none of them obvious in advance:
+
+**Same-field pairs are correlated, so "different fields" is a constraint and not a
+preference.** Two cases at GF(3) do *worse* than one case at GF(5): the second draw
+shares the first's coincidence probabilities and is blind to most of what it is
+blind to. This is the result that decided the rule.
+
+**Field size saturates immediately.** GF(3) to GF(5) halves blindness; GF(5) to
+GF(9) gains nothing at all. And the cost does not saturate — enumeration is
+`q² + q⁴ + q⁶` divisibility tests, so GF(9) ran over twenty minutes without
+finishing where GF(5) is seconds. Climbing only as far as the quota requires is both
+cheaper and no worse, which is a pleasant direction for a trade-off to run.
+
+**The quota belongs to the characteristic class, not the family.** `nch2` admits
+only odd fields and `ch2` only even ones, so two each; `arb` admits both and takes
+two of each. One parameter, no per-family table — and it repairs something nobody
+had looked for: `arb`'s genus-3 corpus was **45 cases in characteristic 2 against 3
+in odd characteristic**, so 45 of its 48 branches had never been whiteboxed in odd
+characteristic at all, in the one family whose entire purpose is working in every
+characteristic. It is now 94 against 96.
+
+### Evidence
+
+| family | cases | fields | detectable |
+|---|---|---|---|
+| `arb` g3 | 48 → 190 | GF(2,3,4,5) | 81.8% → **95.8%** |
+| `nch2` g3 | 48 → 96 | GF(3,5) | 80.0% → **93.3%** |
+| `ch2` g3 | 48 → 96 | GF(4,8) | 81.4% → **88.3%** |
+| `ch2` g2 | 22 → 44 | GF(4,8) | 87.9% → **94.4%** |
+
+**The acceptance test is E20's own mutation.** Dropping `t8` from `ADD33`'s `C0` is
+**missed** by the committed 48-case corpus (48/48 matched) and **caught** by the new
+96-case corpus (94 of 96). Branch coverage is unchanged at 1,925 of 1,929, and
+`coverage_baseline.json` needed no edit, coverage being label-keyed. No formula file
+is touched, and `opcount` is byte-identical across all fifteen families.
+
+**Honest limits, and the first is a correction to my own record.** PR7+8's outcome
+summary said the `ADD29`/`ADD33` saving was reverted and left it there, so the plan
+for this work claimed it would be recovered. It had already been recovered, in
+PR7+8 itself, once the exhaustive probe gave it an oracle. **This work therefore
+recovers no operations**, and its case rests on detectability alone. Two things
+follow: a summary that records a refusal must record its resolution, and the errata
+entry — which did say so — was the reliable record where the summary was not.
+
+The rest: `arb` and `nch2` at genus 2 keep one case per branch, their generators
+being the older generation (`while true`, `Random(FIELDS)` over a set, no
+`WB_TRIALS`) and not re-drivable without modernising them. The four split families
+need real generation runs, their committed logs being partial — 86 of 405 branches.
+And detectability will not reach 100%: `f7` is assigned and never read and is not
+deletable, a branch guarded on `d = 0` must have `d = 0` to be reached, and the
+adjugate entries are dead on the degenerate paths that never consume them. Measured,
+those are exactly the names that survive every field.
+
+**For the paper.** A test suite can reach every branch of a program and still be
+unable to see a change to it, and the distinction is measurable rather than
+rhetorical: perturb each computed value and ask whether the output moves. Applied to
+formulas verified against an independent implementation of the group law, it found
+that 18.7% of the arithmetic was unobserved — and that the cause was not sampling
+luck but a selection rule preferring the smallest field, where degeneracies are
+cheapest. The remedy is two cases per branch drawn from *different* fields, and the
+non-obvious part is that two from the same field is worse than one from a bigger
+one.
+
 ---
 
 # Part VII — In flight
