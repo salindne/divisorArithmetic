@@ -146,6 +146,16 @@ def _run(blk, env, F, path, funcs=None):
             raise M.Ret(vals)
 
 
+def _label_for(path):
+    """A tester's shortest unambiguous name: basename, plus the basis when it has one."""
+    parts = path.replace(os.sep, "/").split("/")
+    base = parts[-1]
+    for p in parts:
+        if p in ("posReduced", "negReduced"):
+            return "%s [%s]" % (base, p[:3])
+    return base
+
+
 def layer_of(fn):
     """Which layer an assignment belongs to. Only Deg* bodies are scored."""
     if fn.startswith("Deg"):
@@ -243,7 +253,12 @@ def measure_tester(tester, per_case=False):
 
     f_tot, f_blind = layers["formulas"]
     return {
-        "tester": os.path.basename(tester),
+        # Disambiguated, not basenamed. `arb_splitG2_whiteBox_tester.mag` exists
+        # under BOTH posReduced/ and negReduced/, which are different algorithms
+        # with different costs -- reporting by basename gives two identically
+        # labelled rows and no way to tell which basis each belongs to. PR12 fixed
+        # this at 19 call sites elsewhere for the same reason.
+        "tester": _label_for(tester),
         "cases": len(captured),
         "unusable": unusable,
         "assigns": f_tot,
@@ -287,20 +302,20 @@ def main(argv=None):
     print("detectability = 1 - invisible/total over the Deg* formula bodies.")
     print("Higher is better; 100% is not reachable and is not the target -- see "
           "the module docstring.\n")
-    print("  %-44s %5s %7s %9s %6s" % ("tester", "cases", "assigns",
+    print("  %-52s %5s %7s %9s %6s" % ("tester", "cases", "assigns",
                                        "invisible", "detect"))
     tot = blind = 0
     for r in out:
         tot += r["assigns"]
         blind += r["invisible"]
-        print("  %-44s %5d %7d %9d %5.1f%%"
+        print("  %-52s %5d %7d %9d %5.1f%%"
               % (r["tester"], r["cases"], r["assigns"], r["invisible"],
                  100.0 * r["detectability"]))
         if r["unusable"]:
             print("      %d case(s) had no usable baseline and were not scored"
                   % r["unusable"])
     if len(out) > 1:
-        print("\n  %-44s %5s %7d %9d %5.1f%%"
+        print("\n  %-52s %5s %7d %9d %5.1f%%"
               % ("TOTAL", "", tot, blind,
                  100.0 * (1.0 - blind / float(max(1, tot)))))
     if len(out) == 1:

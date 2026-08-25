@@ -404,8 +404,13 @@ class Magma(object):
             # genus-3 testers so a regenerated file can be diffed against them.
             returned = 'un' + str(g)
             polyU = 'un' + str(g) + '*x^' + str(g)
-            polyV = ('Coeff(Vn,' + str(g+1) + ')*x^' + str(g+1)
-                     + ' + Coeff(Vn,' + str(g) + ')*x^' + str(g))
+            # The formulas return v only up to degree g-1; its top two
+            # coefficients come from the BASIS polynomial, which differs by basis.
+            # Hardcoding Vn here would have made a posReduced tester rebuild v
+            # against the negative basis and compare a different divisor.
+            _bp = "V" if self.file.BASIS == "pos" else "Vn"
+            polyV = ('Coeff(' + _bp + ',' + str(g+1) + ')*x^' + str(g+1)
+                     + ' + Coeff(' + _bp + ',' + str(g) + ')*x^' + str(g))
 
             i = g - 1
             while i >= 0:
@@ -432,33 +437,84 @@ class Magma(object):
             # what the deployed testers do, and it is also the only comparison the
             # formulas' output supports: they return v only up to degree g-1, with
             # the top two coefficients taken from Vn.
+            # The WEIGHT IS THE LAST ELEMENT of the emitted divisor, not index 2.
+            # The two genuses talk to different reference libraries and those
+            # libraries disagree on the divisor's shape: genus 2 loads
+            # reduced_basis_arithmetic.mag, whose divisor is <u, v, w, n> with
+            # w = (f - v(v+h))/u carried explicitly, and genus 3 loads
+            # poly_balanced_arithmetic.mag, whose divisor is <u, v, n> --
+            # `AdaptedBasis` there returns <D[1], vhat, D[3]>, three slots.
+            #
+            # Reading index 2 is right at genus 3 and picks up the COFACTOR at
+            # genus 2, so `N2 := x + FF.1^2` -- a polynomial where an integer
+            # weight belongs, and the case is then unparseable. This is the exact
+            # inverse of the defect PR12 fixed: it changed the emitter from the
+            # 4-tuple form to the 3-tuple one for genus 3 and thereby broke genus
+            # 2, which went unnoticed because no genus-2 split tester has been
+            # regenerated since. `d[-1]` is correct under both conventions.
             def _divisor(d, k):
                 self.magma.append('U' + k + ' := R! ' + d[0] + ';\n')
                 self.magma.append('V' + k + ' := R! ' + d[1] + ';\n')
-                self.magma.append('N' + k + ' := ' + d[2] + ';\n')
+                self.magma.append('N' + k + ' := ' + d[-1] + ';\n')
+
+            # w is redundant rather than extra -- derivable from (u, v, f, h) --
+            # so genus 2 reconstructs it inline exactly as its deployed testers
+            # do, instead of carrying the generator's copy through the log.
+            def _tuple(k):
+                if g == 2:
+                    return ('<U%s, V%s, ExactQuotient(f - V%s*(V%s + h),U%s), N%s>'
+                            % (k, k, k, k, k, k))
+                return '<U%s, V%s, N%s>' % (k, k, k)
+
+            # Genus 2 hands its divisors straight to the generic library, so it
+            # needs no basis conversion; genus 3 converts with AdaptedBasis. And
+            # the library's own operation is basis-specific at genus 2, where both
+            # bases ship -- Add_SPLIT_POS against Add_SPLIT_NEG -- so a posReduced
+            # tester asserting against the NEG operation would compare the wrong
+            # divisor and fail for the right reason.
+            suffix = "POS" if self.file.BASIS == "pos" else "NEG"
+            basisPoly = "V" if self.file.BASIS == "pos" else "Vn"
 
             if 'DBL' in case[0]:
                 _divisor(case[1][2][0], '1')
-                self.magma.append('D1 := <U1, V1, N1>;\n')
-                self.magma.append('AD1 := AdaptedBasis(D1,f,h);\n')
-                self.magma.append(returned + ',nN := DBL(U1,V1,N1,ccs);\n')
-                self.magma.append('nU:= R! ' + polyU + ';\n')
-                self.magma.append('nV:= R! ' + polyV + ';\n')
-                self.magma.append('Cantor:= NegativeReducedBasis(Double(AD1,f,h,V),f,h);\n')
-                self.magma.append('assert <nU,nV,nN> eq Cantor;\n\n')
+                self.magma.append('D1 := ' + _tuple('1') + ';\n')
+                if g == 2:
+                    self.magma.append(returned + ',nN := DBL(U1,V1,N1,ccs);\n')
+                    self.magma.append('nU:= R! ' + polyU + ';\n')
+                    self.magma.append('nV:= R! ' + polyV + ';\n')
+                    self.magma.append('Cantor:= Double_SPLIT_%s(D1,f,h,%s,2);\n'
+                                      % (suffix, basisPoly))
+                    self.magma.append('assert <nU,nV,ExactQuotient(f - nV*(nV + '
+                                      'h),nU), nN> eq Cantor;\n\n')
+                else:
+                    self.magma.append('AD1 := AdaptedBasis(D1,f,h);\n')
+                    self.magma.append(returned + ',nN := DBL(U1,V1,N1,ccs);\n')
+                    self.magma.append('nU:= R! ' + polyU + ';\n')
+                    self.magma.append('nV:= R! ' + polyV + ';\n')
+                    self.magma.append('Cantor:= NegativeReducedBasis(Double(AD1,f,h,V),f,h);\n')
+                    self.magma.append('assert <nU,nV,nN> eq Cantor;\n\n')
 
             else:
                 _divisor(case[1][2][0], '1')
                 _divisor(case[1][2][1], '2')
-                self.magma.append('D1 := <U1, V1, N1>;\n')
-                self.magma.append('AD1 := AdaptedBasis(D1,f,h);\n')
-                self.magma.append('D2 := <U2, V2, N2>;\n')
-                self.magma.append('AD2 := AdaptedBasis(D2,f,h);\n')
-                self.magma.append(returned + ', nN := ADD(U1,V1,N1,U2,V2,N2,ccs);\n')
-                self.magma.append('nU:= R! ' + polyU + ';\n')
-                self.magma.append('nV:= R! ' + polyV + ';\n')
-                self.magma.append('Cantor:= NegativeReducedBasis(Add(AD1,AD2,f,h,V),f,h);\n')
-                self.magma.append('assert <nU,nV,nN> eq Cantor;\n\n')
+                self.magma.append('D1 := ' + _tuple('1') + ';\n')
+                self.magma.append('D2 := ' + _tuple('2') + ';\n')
+                if g == 2:
+                    self.magma.append(returned + ', nN := ADD(U1,V1,N1,U2,V2,N2,ccs);\n')
+                    self.magma.append('nU:= R! ' + polyU + ';\n')
+                    self.magma.append('nV:= R! ' + polyV + ';\n')
+                    self.magma.append('Cantor:= Add_SPLIT_%s(D1,D2,f,h,%s,2);\n'
+                                      % (suffix, basisPoly))
+                    self.magma.append('assert <nU,nV,ExactQuotient(f - nV*(nV + '
+                                      'h),nU), nN> eq Cantor;\n\n')
+                else:
+                    self.magma.append('AD1 := AdaptedBasis(D1,f,h);\n')
+                    self.magma.append('AD2 := AdaptedBasis(D2,f,h);\n')
+                    self.magma.append(returned + ', nN := ADD(U1,V1,N1,U2,V2,N2,ccs);\n')
+                    self.magma.append('nU:= R! ' + polyU + ';\n')
+                    self.magma.append('nV:= R! ' + polyV + ';\n')
+                    self.magma.append('Cantor:= NegativeReducedBasis(Add(AD1,AD2,f,h,V),f,h);\n')
+                    self.magma.append('assert <nU,nV,nN> eq Cantor;\n\n')
 
         else:
             self.magma.append('C:= HyperellipticCurve(f,h);\n')
