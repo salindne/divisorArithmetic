@@ -250,7 +250,7 @@ runs 30 testers across genus 2 and genus 3, in about four minutes.
 | gate | result | command |
 |---|---|---|
 | Magma suite | **30 testers, 0 failures, 0 skips** | `./test_all.sh` |
-| frozen case corpus | **4,664 cases replayed, 4,664 matched** | `python3 verification/whitebox.py` |
+| frozen case corpus | **7,043 cases replayed, 7,043 matched** | `python3 verification/whitebox.py` |
 | branch coverage | **1,928 of 1,929 labelled branches, 99.9%** | as above |
 | corpus detectability | **82.5%** of formula-body assignments observable | `python3 verification/detect.py` |
 | differential tester | **13,746 operations compared, 0 wrong** | `python3 verification/driver.py --strict` |
