@@ -25,6 +25,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+U2 := R!x;
+V2 := R!1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+U2 := R!x+1;
+V2 := R!FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+3;
+V1 := R!1;
+U2 := R!x+3;
+V2 := R!3;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -35,6 +95,66 @@ J:= Jacobian(C);
 U1 := R!x;
 V1 := R!0;
 U2 := R!x+1;
+V2 := R!1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+U2 := R!x+1;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+U2 := R!x+FF.1;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+2;
+V1 := R!0;
+U2 := R!x+3;
 V2 := R!1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
@@ -65,6 +185,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+U2 := R!x^2;
+V2 := R!2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+U2 := R!x^2+1;
+V2 := R!FF.1^2*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+2;
+V1 := R!0;
+U2 := R!x^2+1;
+V2 := R!4*x+3;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -85,6 +265,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+U2 := R!x^2;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+U2 := R!x^2+1;
+V2 := R!x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+3;
+V1 := R!1;
+U2 := R!x^2+1;
+V2 := R!4*x+3;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -96,6 +336,66 @@ U1 := R!x;
 V1 := R!0;
 U2 := R!x^2+x+1;
 V2 := R!1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+U2 := R!x^2+1;
+V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+U2 := R!x^2+FF.1*x+1;
+V2 := R!FF.1*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+2;
+V1 := R!0;
+U2 := R!x^2+3*x+1;
+V2 := R!4*x;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -127,15 +427,115 @@ assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x
 
 FF := GF(3);
 R<x>:=PolynomialRing(FF);
-f:= R! x^7 + 2*x^6 + x^5 + 2*x^4 + 2*x^3 + 1;
-h:= R! x;
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
 C:= HyperellipticCurve(f,h);
 J:= Jacobian(C);
 
-U1 := R!x^2+2*x;
-V1 := R!x+1;
-U2 := R!x^2+2*x;
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^2;
 V2 := R!2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^2+1;
+V2 := R!x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^2+1;
+V2 := R!2*x+4;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + 2*x^5 + x^4 + 2*x^3 + 2*x^2 + 2*x + 1;
+h:= R! x^2 + 2*x;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+x;
+V1 := R!1;
+U2 := R!x^2+x;
+V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+FF.1^2*x+FF.1;
+V1 := R!FF.1*x;
+U2 := R!x^2+FF.1^2*x+FF.1;
+V2 := R!FF.1^2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+2*x+2;
+V1 := R!4*x;
+U2 := R!x^2+2*x+2;
+V2 := R!2*x+2;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -165,6 +565,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^2+x;
+V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^2+FF.1^2*x+FF.1;
+V2 := R!FF.1*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^2+2*x+2;
+V2 := R!4*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -176,6 +636,66 @@ U1 := R!x^2;
 V1 := R!x;
 U2 := R!x^2+x;
 V2 := R!x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^2+x;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^2+FF.1^2*x+FF.1;
+V2 := R!x+FF.1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^2+2*x+2;
+V2 := R!1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -205,6 +725,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^2+1;
+V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^2+FF.1*x+1;
+V2 := R!FF.1*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^2+3*x+1;
+V2 := R!4*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -225,6 +805,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+U2 := R!x^3;
+V2 := R!x^2+2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+U2 := R!x^3+x^2+x+1;
+V2 := R!FF.1*x^2+FF.1^2*x+FF.1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+2;
+V1 := R!0;
+U2 := R!x^3+4*x+1;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -236,6 +876,66 @@ U1 := R!x;
 V1 := R!0;
 U2 := R!x^3;
 V2 := R!x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+U2 := R!x^3;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+U2 := R!x^3+x^2+x+1;
+V2 := R!x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+3;
+V1 := R!1;
+U2 := R!x^3+4*x^2+1;
+V2 := R!4*x^2+2*x+1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -265,6 +965,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+U2 := R!x^3+x^2+1;
+V2 := R!2*x^2+x+2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+U2 := R!x^3+x^2+1;
+V2 := R!x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+2;
+V1 := R!0;
+U2 := R!x^3+x^2+1;
+V2 := R!2*x^2+4*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -276,6 +1036,66 @@ U1 := R!x^2;
 V1 := R!x;
 U2 := R!x^3;
 V2 := R!x^2+x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^3;
+V2 := R!x^2+2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^3+x^2+x+1;
+V2 := R!x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^3+3*x^2+x+3;
+V2 := R!4*x^2+2*x+3;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -305,6 +1125,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+x;
+V1 := R!0;
+U2 := R!x^3+x^2;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+FF.1^2*x+FF.1;
+V1 := R!FF.1*x;
+U2 := R!x^3+FF.1*x^2+x+FF.1;
+V2 := R!FF.1^2*x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^3+3*x^2+x+3;
+V2 := R!x^2+4*x+4;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -316,6 +1196,66 @@ U1 := R!x^2;
 V1 := R!x;
 U2 := R!x^3;
 V2 := R!x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^3+2*x^2;
+V2 := R!2*x^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+FF.1*x+1;
+V1 := R!FF.1*x;
+U2 := R!x^3+FF.1^2*x^2+FF.1^2*x+1;
+V2 := R!FF.1^2*x^2+FF.1^2*x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+4*x+1;
+V1 := R!4;
+U2 := R!x^3+3*x^2+2*x+4;
+V2 := R!2*x^2+3*x+1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -345,6 +1285,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^3;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^3+x^2+x+1;
+V2 := R!FF.1*x^2+FF.1^2*x+FF.1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+3*x+1;
+V1 := R!4*x;
+U2 := R!x^3+2*x+2;
+V2 := R!2*x^2+2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -356,6 +1356,66 @@ U1 := R!x^2;
 V1 := R!x;
 U2 := R!x^3+x^2+x;
 V2 := R!1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^3+x;
+V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^3+FF.1^2*x^2+FF.1^2*x+1;
+V2 := R!FF.1*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^3+4*x^2+1;
+V2 := R!3*x^2+x+4;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -385,6 +1445,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^3+x^2+2*x;
+V2 := R!x^2+2*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+FF.1^2*x+FF.1;
+V1 := R!FF.1*x;
+U2 := R!x^3+x^2+FF.1*x+1;
+V2 := R!FF.1^2*x^2+x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^3+x^2+2*x+4;
+V2 := R!2*x^2+x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -396,6 +1516,66 @@ U1 := R!x^2;
 V1 := R!x;
 U2 := R!x^3+x^2+x;
 V2 := R!x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^3+x;
+V2 := R!x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^3+FF.1^2*x^2+FF.1^2*x+1;
+V2 := R!FF.1*x^2+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^3+4*x^2+1;
+V2 := R!4*x^2+2*x+1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -425,6 +1605,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^3+x+1;
+V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^3+x^2+1;
+V2 := R!x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^3+x^2+1;
+V2 := R!x^2+x+4;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -436,6 +1676,66 @@ U1 := R!x^2;
 V1 := R!x;
 U2 := R!x^3+1;
 V2 := R!x^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+U2 := R!x^3+x^2+1;
+V2 := R!2*x^2+x+2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+U2 := R!x^3+x^2+1;
+V2 := R!FF.1*x^2+FF.1^2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
+U2 := R!x^3+x^2+1;
+V2 := R!2*x^2+4*x+1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -465,6 +1765,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3;
+V2 := R!x^2+2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!x;
+U2 := R!x^3+x^2+1;
+V2 := R!FF.1*x^2+FF.1^2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!2*x^2+4*x+1;
+U2 := R!x^3+x^2+1;
+V2 := R!x^2+x+4;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -485,6 +1845,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x;
+V1 := R!x^2+x;
+U2 := R!x^3+x;
+V2 := R!2*x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+FF.1*x+1;
+V1 := R!FF.1*x^2+x;
+U2 := R!x^3+x^2+FF.1*x+1;
+V2 := R!FF.1^2*x^2+x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+1;
+V1 := R!4*x^2+2*x+1;
+U2 := R!x^3+4*x^2+1;
+V2 := R!3*x^2+4*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -496,6 +1916,66 @@ U1 := R!x^3+x^2+x;
 V1 := R!x^2;
 U2 := R!x^3+x^2+x;
 V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x;
+V1 := R!x^2+x;
+U2 := R!x^3+x;
+V2 := R!2*x^2+x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+FF.1*x+1;
+V1 := R!FF.1*x^2+x;
+U2 := R!x^3+x^2+FF.1*x+1;
+V2 := R!x^2+FF.1^2*x+FF.1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+1;
+V1 := R!4*x^2+2*x+1;
+U2 := R!x^3+4*x^2+1;
+V2 := R!3*x^2+x+4;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -527,15 +2007,115 @@ assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x
 
 FF := GF(3);
 R<x>:=PolynomialRing(FF);
-f:= R! x^7 + 2*x^6 + x^5 + 2*x^4 + 2*x^3 + 1;
-h:= R! x;
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
 C:= HyperellipticCurve(f,h);
 J:= Jacobian(C);
 
-U1 := R!x^3+2*x^2;
-V1 := R!x+1;
-U2 := R!x^3+x^2+x;
-V2 := R!2*x+1;
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+x^2;
+V2 := R!x^2+2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+x+1;
+V1 := R!FF.1*x^2+FF.1^2*x+FF.1;
+U2 := R!x^3+FF.1*x^2+x+FF.1;
+V2 := R!FF.1^2*x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+1;
+V1 := R!4*x^2+2*x+1;
+U2 := R!x^3+x+3;
+V2 := R!x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2;
+V1 := R!0;
+U2 := R!x^3+2*x;
+V2 := R!x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+FF.1*x^2+x+FF.1;
+V1 := R!FF.1^2*x^2+x;
+U2 := R!x^3+x^2+FF.1^2*x+FF.1^2;
+V2 := R!x^2+FF.1*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+3*x+1;
+V1 := R!x^2+4*x+1;
+U2 := R!x^3+x^2+3;
+V2 := R!4*x;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -565,6 +2145,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^4 + 2*x^2 + x;
+h:= R! x^2 + 2*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x;
+V1 := R!x^2+x;
+U2 := R!x^3+x^2+x+1;
+V2 := R!x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^5 + x^4 + x^2 + FF.1^2*x + FF.1^2;
+h:= R! x^2 + x + FF.1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2;
+V1 := R!FF.1*x^2+x+1;
+U2 := R!x^3+x;
+V2 := R!FF.1^2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x+1;
+V1 := R!0;
+U2 := R!x^3+x^2+2*x+4;
+V2 := R!2*x^2+x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -585,6 +2225,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+x^2;
+V2 := R!0;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+x+1;
+V1 := R!FF.1*x^2+FF.1^2*x+FF.1;
+U2 := R!x^3+FF.1*x^2+x+FF.1;
+V2 := R!x^2+FF.1^2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+1;
+V1 := R!4*x^2+2*x+1;
+U2 := R!x^3+3*x^2+4*x+4;
+V2 := R!2*x^2+2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -596,6 +2296,66 @@ U1 := R!x^3+x^2+x;
 V1 := R!x^2;
 U2 := R!x^3+1;
 V2 := R!x^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+2*x^2;
+V2 := R!2*x^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+x+1;
+V1 := R!FF.1*x^2+FF.1^2*x+FF.1;
+U2 := R!x^3+FF.1*x^2+x+FF.1;
+V2 := R!FF.1^2*x^2+FF.1^2*x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+1;
+V1 := R!4*x^2+2*x+1;
+U2 := R!x^3+x+3;
+V2 := R!2*x^2+2;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -627,15 +2387,135 @@ assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x
 
 FF := GF(3);
 R<x>:=PolynomialRing(FF);
-f:= R! x^7 + 2*x^6 + x^5 + 2*x^4 + 2*x^3 + 1;
-h:= R! x;
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
 C:= HyperellipticCurve(f,h);
 J:= Jacobian(C);
 
 U1 := R!x^3;
-V1 := R!2*x^2+x+1;
-U2 := R!x^3+2*x^2+2*x;
-V2 := R!2*x+1;
+V1 := R!0;
+U2 := R!x^3+x;
+V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+x+1;
+V1 := R!FF.1*x^2+FF.1^2*x+FF.1;
+U2 := R!x^3+FF.1^2*x^2+FF.1^2*x+1;
+V2 := R!FF.1*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+1;
+V1 := R!4*x^2+2*x+1;
+U2 := R!x^3+3*x^2+2*x+1;
+V2 := R!2*x^2+2*x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(2);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + x + 1;
+h:= R! x^3;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x;
+V1 := R!x^2+1;
+U2 := R!x^3+1;
+V2 := R!x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+x^2+2*x;
+V2 := R!x^2+2*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+FF.1^2*x^2+x+1;
+V1 := R!FF.1^2*x^2+x;
+U2 := R!x^3+FF.1*x+FF.1;
+V2 := R!FF.1*x^2+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+3*x^2+2*x+1;
+V1 := R!2*x^2+2*x+1;
+U2 := R!x^3+2*x^2+4*x+1;
+V2 := R!x+1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -655,6 +2535,66 @@ J:= Jacobian(C);
 U1 := R!x^3+x^2;
 V1 := R!x;
 U2 := R!x^3+x^2+x;
+V2 := R!x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+x;
+V2 := R!x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+x+1;
+V1 := R!FF.1*x^2+FF.1^2*x+FF.1;
+U2 := R!x^3+FF.1^2*x^2+FF.1;
+V2 := R!FF.1^2*x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+1;
+V1 := R!4*x^2+2*x+1;
+U2 := R!x^3+2*x^2+3*x+3;
 V2 := R!x^2+x;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
@@ -685,6 +2625,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+2*x;
+V2 := R!x^2+x;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+x+1;
+V1 := R!FF.1*x^2+FF.1^2*x+FF.1;
+U2 := R!x^3+FF.1^2*x^2+FF.1^2*x+1;
+V2 := R!FF.1*x^2+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+1;
+V1 := R!4*x^2+2*x+1;
+U2 := R!x^3+3*x^2+2*x+1;
+V2 := R!2*x+2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -696,6 +2696,66 @@ U1 := R!x^3+x^2+x;
 V1 := R!x^2;
 U2 := R!x^3+x^2+1;
 V2 := R!x^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+x+1;
+V2 := R!x+1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!x;
+U2 := R!x^3+x^2+FF.1^2*x+FF.1^2;
+V2 := R!FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!2*x^2+4*x+1;
+U2 := R!x^3+4*x^2+1;
+V2 := R!3*x^2+4*x+1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -725,6 +2785,66 @@ Cantor:= D1 + D2;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+x^2+1;
+V2 := R!2*x^2+x+2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!x;
+U2 := R!x^3+FF.1*x^2+1;
+V2 := R!FF.1^2*x^2+x+FF.1;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + 4*x^4 + 2*x^3 + 2*x^2 + 2*x + 3;
+h:= R! x^3 + 3*x^2 + 2*x + 3;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!x^2+4*x+3;
+U2 := R!x^3+1;
+V2 := R!x^2+x+4;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -736,6 +2856,66 @@ U1 := R!x^3;
 V1 := R!x;
 U2 := R!x^3+1;
 V2 := R!x^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+U2 := R!x^3+2*x^2+1;
+V2 := R!2*x^2+x+2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!x;
+U2 := R!x^3+FF.1*x^2+1;
+V2 := R!x^2+FF.1^2*x+FF.1^2;
+D1 := J![U1,V1];
+D2 := J![U2,V2];
+un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= D1 + D2;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!2*x^2+4*x+1;
+U2 := R!x^3+4*x^2+1;
+V2 := R!4*x^2+2*x+1;
 D1 := J![U1,V1];
 D2 := J![U2,V2];
 un3,un2,un1,un0,vn2,vn1,vn0 := ADD(U1,V1,U2,V2,f,h);
@@ -762,6 +2942,57 @@ Cantor:= 2*D1;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!0;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + FF.1*x^5 + x^4 + x^3 + FF.1^2*x^2 + FF.1^2;
+h:= R! x^3 + x;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!FF.1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+2;
+V1 := R!0;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -771,6 +3002,57 @@ J:= Jacobian(C);
 
 U1 := R!x;
 V1 := R!0;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x;
+V1 := R!0;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+1;
+V1 := R!FF.1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x+3;
+V1 := R!1;
 D1 := J![U1,V1];
 un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
 nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
@@ -796,6 +3078,57 @@ Cantor:= 2*D1;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+2;
+V1 := R!x+1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+x+FF.1^2;
+V1 := R!FF.1*x+FF.1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + 3*x^4 + x^3 + 4*x^2 + 2*x + 1;
+h:= R! x^3 + 2*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+4*x;
+V1 := R!x+2;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -805,6 +3138,57 @@ J:= Jacobian(C);
 
 U1 := R!x^2+x;
 V1 := R!x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+x;
+V1 := R!0;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + FF.1*x^5 + x^4 + x^3 + FF.1^2*x^2 + FF.1^2;
+h:= R! x^3 + x;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+FF.1*x;
+V1 := R!x+FF.1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!4*x+3;
 D1 := J![U1,V1];
 un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
 nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
@@ -830,6 +3214,57 @@ Cantor:= 2*D1;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2;
+V1 := R!0;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+1;
+V1 := R!FF.1^2*x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^2+3*x+1;
+V1 := R!4*x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^5 + x^4 + x^2 + 1;
@@ -839,6 +3274,57 @@ J:= Jacobian(C);
 
 U1 := R!x^3+x^2+x;
 V1 := R!x^2+x+1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!2*x^2+x+2;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + x^4 + x^3 + FF.1*x + FF.1^2;
+h:= R! x^3 + FF.1*x^2 + FF.1^2*x + FF.1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+FF.1*x^2+FF.1^2*x+FF.1;
+V1 := R!x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + 4*x^4 + 2*x^3 + 2*x^2 + 2*x + 3;
+h:= R! x^3 + 3*x^2 + 2*x + 3;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+2*x+4;
+V1 := R!x^2+3;
 D1 := J![U1,V1];
 un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
 nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
@@ -864,6 +3350,57 @@ Cantor:= 2*D1;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+2*x;
+V1 := R!x^2+x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+FF.1^2*x^2+x+1;
+V1 := R!FF.1^2*x^2+x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + 3*x^4 + x^3 + 4*x^2 + 2*x + 1;
+h:= R! x^3 + 2*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+2*x^2+2*x;
+V1 := R!3*x^2+3*x+2;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -873,6 +3410,57 @@ J:= Jacobian(C);
 
 U1 := R!x^3+x^2;
 V1 := R!x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2;
+V1 := R!0;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + FF.1*x^5 + x^4 + x^3 + FF.1^2*x^2 + FF.1^2;
+h:= R! x^3 + x;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+FF.1*x;
+V1 := R!x^2+FF.1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x+1;
+V1 := R!0;
 D1 := J![U1,V1];
 un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
 nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
@@ -898,6 +3486,57 @@ Cantor:= 2*D1;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^4 + 2*x^2 + x;
+h:= R! x^2 + 2*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x;
+V1 := R!x^2+x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^5 + x^4 + x^2 + FF.1^2*x + FF.1^2;
+h:= R! x^2 + x + FF.1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+FF.1^2*x^2+FF.1*x;
+V1 := R!x^2+1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+4*x^2+3;
+V1 := R!3*x^2+4*x+3;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 FF := GF(2);
 R<x>:=PolynomialRing(FF);
 f:= R! x^7 + x^6 + x^3 + x^2 + x;
@@ -907,6 +3546,57 @@ J:= Jacobian(C);
 
 U1 := R!x^3+x^2+x;
 V1 := R!x^2+x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x;
+V1 := R!2*x^2+x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+x+1;
+V1 := R!FF.1*x^2+FF.1^2*x+FF.1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+3*x^2+2*x+1;
+V1 := R!2*x^2+2*x+1;
 D1 := J![U1,V1];
 un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
 nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
@@ -932,6 +3622,57 @@ Cantor:= 2*D1;
 assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
 
 
+FF := GF(3);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 2*x^5 + x^3;
+h:= R! 2*x^2 + x + 2;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3;
+V1 := R!0;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(4);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + FF.1*x^6 + x^5 + FF.1^2*x^2 + FF.1*x + FF.1;
+h:= R! FF.1*x^2 + FF.1*x + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!x;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
+FF := GF(5);
+R<x>:=PolynomialRing(FF);
+f:= R! x^7 + x^6 + 3*x^5 + x^4 + x^3 + 3*x^2 + 2*x + 4;
+h:= R! x^3 + 3*x^2 + 1;
+C:= HyperellipticCurve(f,h);
+J:= Jacobian(C);
+
+U1 := R!x^3+x^2+1;
+V1 := R!2*x^2+4*x+1;
+D1 := J![U1,V1];
+un3,un2,un1,un0,vn2,vn1,vn0 := DBL(U1,V1,f,h);
+nU:= R! un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0;
+nV:= R! vn2*x^2 + vn1*x^1 + vn0*x^0;
+Cantor:= 2*D1;
+assert (un3*x^3 + un2*x^2 + un1*x^1 + un0*x^0) eq Cantor[1] and (vn2*x^2 + vn1*x^1 + vn0*x^0) eq Cantor[2];
+
+
 "
-Total Cases: 48";
+Total Cases: 190";
 quit;
