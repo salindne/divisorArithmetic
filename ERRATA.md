@@ -797,8 +797,8 @@ different field** — four for `arb`, which admits both. One per (label, field) 
 constraint and not a preference: two cases at GF(3) leave 11.8% invisible, *worse
 than one case at GF(5)* at 9.7%, because same-field failures are correlated.
 
-**Twelve of the fifteen families** now hold two per branch per class — all six
-ramified, and all six genus-2 split across both bases. `arb` additionally carries its
+**Thirteen of the fifteen families** now hold two per branch per class — all six
+ramified, all six genus-2 split across both bases, and `nch2` genus-3 split. `arb` additionally carries its
 specialisations' cases, since it is valid on every curve they are and the testers
 recompute the expected result rather than storing it; they are additive rather than
 replacing, because nch2 only presents `h = 0` and ch2 only `h` monic of degree `g`,
@@ -819,13 +819,14 @@ defect of.
 | `arb` g2 split, pos | 77 → 606 | 65.0% → **69.4%** |
 | `nch2` g2 split, pos | 77 → 153 | 75.1% → **76.1%** |
 | `ch2` g2 split, pos | 77 → 149 | 67.2% → **70.3%** |
+| `nch2` g3 split | 405 → 1,203 | 84.7% → **88.2%** |
 
 Every one of the twelve improves. The before-figures are comparable under either
 keying, because a one-case-per-branch corpus has nothing to intersect and the
 grouping flaw could not bite it.
 
-Corpus 1,886 → 3,866. Coverage **rose** to 1,927 of 1,929: two baseline exemptions
-died of progress, `Precompute` leaves that fire on 0.88% of curves and that a corpus
+Corpus 1,886 → 4,664. Coverage **rose** to 1,928 of 1,929, leaving a single exempt
+branch in the whole repository: three baseline exemptions died of progress, `Precompute` leaves that fire on 0.88% of curves and that a corpus
 drawing hundreds across four fields now reaches.
 
 `arb` gains most because it gains a *characteristic*: it was 45 cases in
@@ -836,7 +837,8 @@ work in both. It is now 94 against 96.
 **Verified by this entry's own mutation.** Dropping `t8` from `ADD33`'s `C0` — the
 edit that started all this — is **MISSED** by the committed 48-case corpus, 48/48
 matched, and **CAUGHT** by the new 96-case corpus, 94 of 96. Branch coverage is
-unchanged at 1,925 of 1,929, so nothing was traded for it.
+did not fall — and rose to 1,928 of 1,929 as the work continued — so nothing was
+traded for it.
 
 **Still open, and narrowly: the three genus-3 split families.** 405 branches each
 with `Precompute` in the loop, so they are the expensive ones and are being

@@ -2808,21 +2808,24 @@ characteristic. It is now 94 against 96.
 | `arb` g2 split, pos | 77 → 606 | 65.0% → **69.4%** |
 | `nch2` g2 split, pos | 77 → 153 | 75.1% → **76.1%** |
 | `ch2` g2 split, pos | 77 → 149 | 67.2% → **70.3%** |
+| `nch2` g3 split | 405 → 1,203 | 84.7% → **88.2%** |
 
 Every one of the twelve improves. The before-figures are comparable under either
 keying, because a one-case-per-branch corpus has nothing to intersect and the
 grouping flaw could not bite it.
 
-Twelve of the fifteen families; the three genus-3 split ones are 405 branches each
-with `Precompute` in the loop and are regenerated separately.
+Thirteen of the fifteen families. The remaining two, `arb` and `ch2` genus-3 split,
+are 405 branches each with `Precompute` in the loop and are extended the same way --
+by merging, since a fresh search reaches 403 of 405 and the three it misses are each
+covered by exactly one deployed case.
 
 **Repository-wide the figure is 82.5%, and that number is dominated by the three
 families not yet done.** Genus-3 split accounts for 54,431 of the 67,931 scored
 assignments -- 80% of the total -- so the headline barely moves until those are
 regenerated, while every family that has been moved ten to fourteen points. Quoting
 the repository total as the result of this work would understate it by a wide margin,
-which is why the per-family table above is the honest presentation. Corpus 1,886 → 3,866,
-and coverage ROSE, 1,925 → 1,927 of 1,929: two baseline exemptions died of progress,
+which is why the per-family table above is the honest presentation. Corpus 1,886 → 4,664,
+and coverage ROSE, 1,925 → 1,928 of 1,929: three baseline exemptions died of progress,
 `Precompute` leaves firing on 0.88% of curves that a corpus drawing hundreds across
 four fields now reaches.
 
@@ -2839,7 +2842,7 @@ points and `arb` g2 nothing — and real in curve shape: `arb` g3's own corpus h
 
 **The acceptance test is E20's own mutation.** Dropping `t8` from `ADD33`'s `C0` is
 **missed** by the committed 48-case corpus (48/48 matched) and **caught** by the new
-96-case corpus (94 of 96). Branch coverage is unchanged at 1,925 of 1,929, and
+96-case corpus (94 of 96). Branch coverage did not fall, and later rose to 1,928, and
 `coverage_baseline.json` needed no edit, coverage being label-keyed. No formula file
 is touched, and `opcount` is byte-identical across all fifteen families.
 
