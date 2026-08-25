@@ -57,7 +57,7 @@ python3 dominance.py                # names read with no assignment ABOVE them
 python3 dominance.py g3/ramifiedModel/g3Formulas/arb_ramifiedG3_ADD.mag
 ```
 
-**`whitebox.py` is the gate.** It replays 3,866 frozen cases, two per computation path
+**`whitebox.py` is the gate.** It replays 4,664 frozen cases, two per computation path
 per characteristic class for the ramified families and one elsewhere,
 and is deterministic: same inputs, same branches, every run. `driver.py` generates
 random inputs instead, which is a different and complementary job -- see below.

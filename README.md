@@ -250,15 +250,15 @@ runs 30 testers across genus 2 and genus 3, in about four minutes.
 | gate | result | command |
 |---|---|---|
 | Magma suite | **30 testers, 0 failures, 0 skips** | `./test_all.sh` |
-| frozen case corpus | **3,866 cases replayed, 3,866 matched** | `python3 verification/whitebox.py` |
-| branch coverage | **1,927 of 1,929 labelled branches, 99.9%** | as above |
+| frozen case corpus | **4,664 cases replayed, 4,664 matched** | `python3 verification/whitebox.py` |
+| branch coverage | **1,928 of 1,929 labelled branches, 99.9%** | as above |
 | corpus detectability | **82.5%** of formula-body assignments observable | `python3 verification/detect.py` |
 | differential tester | **13,746 operations compared, 0 wrong** | `python3 verification/driver.py --strict` |
 | framework selftest | **19 sections** | `python3 verification/selftest.py` |
 
-The 2 uncovered branches are individually exempted with written reasons in
-`verification/coverage_baseline.json`; one of them, `ch2_splitG3_ADD`'s `ADD227`, carries a proof that
-it is unreachable in characteristic 2. Every family is at 100% except those two.
+The 1 uncovered branch is exempted with a written reason in
+`verification/coverage_baseline.json`: `ch2_splitG3_ADD`'s `ADD227` carries a proof that it is
+unreachable in characteristic 2. Every other branch in the repository is covered.
 
 **Whitebox testers** compute search-found divisor operations per computation path and assert the result
 against the reference implementation. The cases are harvested by coverage-guided search, not

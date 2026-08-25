@@ -8,13 +8,6 @@
     "ADD227"
    ],
    "why": "PROVED UNREACHABLE IN CHARACTERISTIC 2 -- not a search budget. Its guard chain forces deg W0 = 1 (where W0 := f + Vn*(Vn+h)) together with D2 contained in D1 and class sum T3 = [inf+ - inf-], i.e. 2A + P3 ~ 5*inf+ with D1 = A + P3. At deg W0 = 1, div(y+Vn) = P* + 3*inf- - 4*inf+, so every candidate function is g = c + (x+b)(y+Vn) with c != 0, and requiring its zero divisor to have a square part gives Phi = W0*(x+b)^2 + c*h*(x+b) + c^2 = S^2*L. Matching even and odd parts in char 2 yields b*w1 = w0 + c*h1 and then c^2 = 0, contradicting c != 0. The cancellation consumes 2*c*h1, so it is specific to characteristic 2; at deg W0 = 2 or 3 the extra terms break it, which is why the siblings ADD231 and ADD235 ARE covered. Confirmed empirically: all 768 valid GF(4) curves with f3 = 0 and f2 = f8*(h1^2 + h2^3), 4,860 candidate pairs of the right shape and class sum, zero admissible; and 3,772 (b,c) pairs over 35 deg W0 = 1 curves at q = 4, 8, 16, none admissible, while deg W0 = 3 curves admit solutions immediately. The branch's shared prefix is exercised by ADD231/ADD235, so the code path is not untested -- only this leaf is unenterable."
-  },
-  "g3/splitModel/negReduced/g3Formulas/nch2_splitG3_UTL.mag": {
-   "of": 8,
-   "unreached": [
-    "UTL4"
-   ],
-   "why": "Precompute's own exits. These are a function of (f,h,q) ALONE -- no divisor influences them -- so an ordinary ADD or DBL case reaches one whenever its curve takes that path, and the missing ingredient is a curve, not a different kind of case. Measured over all 12,288 nonsingular genus-3 char-2 split curves over GF(4), the eight leaves fire at 144/624/2304/9216/108/468/1752/6888, so the rarest is 0.88% of curves and a corpus of ~130 sampled curves misses it about a third of the time. Fixed by putting a witness curve in the corpus, which is what the ch2 genus-3 generator's witness phase does; the families still listed here have no such phase because their testers are not regenerated."
   }
  },
  "note": "Formula files whose coverage is expected below their label count. `unreached` is the exact set of branches EXEMPT from coverage; everything else in the file must be covered, so a newly added branch fails by default and branches cannot be traded one-for-one. Files absent from here must be at 100%. Written by `whitebox.py --record-baseline`, which refuses to grow an entry's exempt set without --allow-lower."
