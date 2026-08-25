@@ -1,20 +1,13 @@
 {
  "arity_anomalies": [],
- "arity_note": "Cases returning the wrong number of values. Errata E2 was fixed in PR5, so nothing is pinned; ANY anomaly fails the run.",
+ "arity_note": "Cases returning the wrong number of values, pinned by identity so a NEW anomaly still fails. Empty since PR5 fixed errata E2.",
  "files": {
-  "g2/splitModel/negReduced/g2Formulas/ch2_splitG2_UTL.mag": {
-   "of": 3,
-   "unreached": [
-    "UTL0"
-   ],
-   "why": "Precompute's own exits. These are a function of (f,h,q) ALONE -- no divisor influences them -- so an ordinary ADD or DBL case reaches one whenever its curve takes that path, and the missing ingredient is a curve, not a different kind of case. Measured over all 12,288 nonsingular genus-3 char-2 split curves over GF(4), the eight leaves fire at 144/624/2304/9216/108/468/1752/6888, so the rarest is 0.88% of curves and a corpus of ~130 sampled curves misses it about a third of the time. Fixed by putting a witness curve in the corpus, which is what the ch2 genus-3 generator's witness phase does; the families still listed here have no such phase because their testers are not regenerated."
-  },
   "g2/splitModel/posReduced/g2Formulas/nch2_splitG2_UTL.mag": {
    "of": 3,
    "unreached": [
     "UTL0"
    ],
-   "why": "Precompute's own exits. These are a function of (f,h,q) ALONE -- no divisor influences them -- so an ordinary ADD or DBL case reaches one whenever its curve takes that path, and the missing ingredient is a curve, not a different kind of case. Measured over all 12,288 nonsingular genus-3 char-2 split curves over GF(4), the eight leaves fire at 144/624/2304/9216/108/468/1752/6888, so the rarest is 0.88% of curves and a corpus of ~130 sampled curves misses it about a third of the time. Fixed by putting a witness curve in the corpus, which is what the ch2 genus-3 generator's witness phase does; the families still listed here have no such phase because their testers are not regenerated."
+   "why": "Precompute's own exits; the whitebox testers were built to cover ADD/DBL branches, not these"
   },
   "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_ADD.mag": {
    "of": 350,
