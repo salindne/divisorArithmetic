@@ -387,11 +387,40 @@ class CaseGen(object):
         cases.setdefault(tag, []).append((current[1], curve, divs, result))
 
 
+def caseBlocksOf(path):
+    """The case blocks of an existing tester, as text, with their count.
+
+    A tester written by this emitter is a header (debug flags and loads), then one
+    self-contained block per case -- each sets its own field, curve, divisors, calls
+    the formulas and asserts against the reference -- then a Total Cases line and
+    `quit;`. So the blocks can be lifted out verbatim and re-emitted, and doing so
+    IS regeneration rather than a copy: the text is exactly what this emitter would
+    write for those cases.
+
+    Wanted because a corpus can be extended without being able to reproduce it. The
+    three genus-3 split testers cover all 405 branches, but their provenance logs are
+    partial -- rebuilding from `nch2_splitG3_log.txt` reaches 86 of 405 -- so their
+    cases cannot be re-selected, and a fresh search reaches 403 of 405: the three it
+    misses are each covered by exactly ONE case in the deployed corpus, so even the
+    original long run found them once. Regenerating from scratch would therefore LOSE
+    branches. Merging keeps them and adds the second case per branch where a search
+    can find one.
+    """
+    src = open(path).read()
+    i = src.index("FF := GF(")
+    j = src.index('"\nTotal Cases:') if '"\nTotal Cases:' in src else src.index("Total Cases")
+    # back up to the start of the line holding the footer
+    j = src.rindex("\n", 0, j) + 1
+    body = src[i:j].rstrip() + "\n\n"
+    return body, body.count("FF := GF(")
+
+
 class Magma(object):
-    def __init__(self, fileInfo, cases):
+    def __init__(self, fileInfo, cases, extra=None):
         self.file = fileInfo
         self.magma = []
         self.cases = cases
+        self.extra = extra or []
         self.generateCode()
         self.makeFile()
         
@@ -620,6 +649,10 @@ class Magma(object):
                 totalCases = totalCases + 1
                 self.generateCase((tag, one))
 
+        for text, n in self.extra:
+            self.magma.append(text)
+            totalCases += n
+
         self.magma.append('"\nTotal Cases: ' + str(totalCases) +'";\n')
         self.magma.append("quit;")
         
@@ -676,6 +709,13 @@ def main(argv=None):
                          "monic of degree g, so neither exercises the non-monic or "
                          "low-degree h that arb exists to handle (ERRATA E11 is a "
                          "defect of exactly that class)")
+    ap.add_argument("--merge-tester", dest="mergeTester", action="append",
+                    default=None, metavar="PATH",
+                    help="append an existing tester's case blocks verbatim. Use "
+                         "when a corpus must be EXTENDED rather than replaced: the "
+                         "genus-3 split testers cover branches a fresh search "
+                         "cannot reach twice, and regenerating without them would "
+                         "lose coverage")
     ap.add_argument("--basis", choices=["neg", "pos"], default="neg",
                     help="split model reduced basis (default neg). Genus 3 ships "
                          "negReduced only; at genus 2 both exist and their cases "
@@ -735,7 +775,12 @@ def main(argv=None):
     if not cases:
         raise SystemExit("no cases parsed from %s" % logPath)
 
-    Magma(fileInfo, cases)
+    merged = []
+    for mp in (args.mergeTester or []):
+        text, n = caseBlocksOf(mp)
+        merged.append((text, n))
+        print("merging %d case block(s) from %s" % (n, mp))
+    Magma(fileInfo, cases, extra=merged)
     # Cases, not labels: a label now holds two. Reporting len(cases) here said
     # "48 cases" for a tester holding 94, which is the same class of misleading
     # count this PR exists to remove.
