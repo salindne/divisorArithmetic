@@ -2794,18 +2794,79 @@ characteristic. It is now 94 against 96.
 
 ### Evidence
 
-| family | cases | fields | detectable |
-|---|---|---|---|
-| `arb` g3 | 48 → 190 | GF(2,3,4,5) | 81.8% → **95.8%** |
-| `nch2` g3 | 48 → 96 | GF(3,5) | 80.0% → **93.3%** |
-| `ch2` g3 | 48 → 96 | GF(4,8) | 81.4% → **88.3%** |
-| `ch2` g2 | 22 → 44 | GF(4,8) | 87.9% → **94.4%** |
+| family | cases | detectable |
+|---|---|---|
+| `arb` g3 ramified | 48 → 382 | 81.8% → **96.2%** |
+| `nch2` g3 ramified | 48 → 96 | 80.0% → **93.3%** |
+| `ch2` g3 ramified | 48 → 96 | 81.4% → **88.3%** |
+| `arb` g2 ramified | 22 → 175 | 86.1% → **96.5%** |
+| `nch2` g2 ramified | 22 → 44 | 93.2% → **94.1%** |
+| `ch2` g2 ramified | 22 → 43 | 87.9% → **95.7%** |
+| `arb` g2 split, neg | 77 → 606 | 77.2% → **82.2%** |
+| `nch2` g2 split | 77 → 153 | 84.6% → per basis |
+| `ch2` g2 split | 77 → 149 | 82.0% → per basis |
+
+Twelve of the fifteen families; the three genus-3 split ones are 405 branches each
+with `Precompute` in the loop and are regenerated separately. Corpus 1,886 → 3,866,
+and coverage ROSE, 1,925 → 1,927 of 1,929: two baseline exemptions died of progress,
+`Precompute` leaves firing on 0.88% of curves that a corpus drawing hundreds across
+four fields now reaches.
+
+**`arb` carries its specialisations' cases as well as its own**, which is sound
+because it is valid on every curve they are and the testers RECOMPUTE the expected
+result rather than storing it — the ramified ones against Magma's Jacobian, the split
+ones against the reference library — so an inherited case re-derives its own answer.
+They are additive rather than replacing, and the reason is measured: nch2 only ever
+presents `h = 0` and ch2 only `h` monic of degree `g`, so the union of the two
+exercises neither non-monic `h` nor `deg h < g`, and **E11** is a defect of exactly
+that class. What it buys is honestly small in detectability — `arb` g3 gains 0.4
+points and `arb` g2 nothing — and real in curve shape: `arb` g3's own corpus held NO
+`h = 0` case at all and now holds 96, on a family that must accept them.
 
 **The acceptance test is E20's own mutation.** Dropping `t8` from `ADD33`'s `C0` is
 **missed** by the committed 48-case corpus (48/48 matched) and **caught** by the new
 96-case corpus (94 of 96). Branch coverage is unchanged at 1,925 of 1,929, and
 `coverage_baseline.json` needed no edit, coverage being label-keyed. No formula file
 is touched, and `opcount` is byte-identical across all fifteen families.
+
+### Four defects the extension turned up, three of them in the tooling
+
+Worth recording because each was invisible until something asked the tool to do a
+thing it had never been asked before, and because two of them were caught by the
+oracle the other one passed.
+
+**The emitter could not produce a genus-2 split tester at all, and had not been able
+to since PR12** (`ERRATA.md` **E21**). The weight was read from a fixed index, and
+the two genuses use different reference libraries with different divisor shapes —
+`<u, v, w, n>` at genus 2 against `<u, v, n>` at genus 3 — so that index is the
+weight at one and the *cofactor* at the other. PR12 fixed this defect's mirror image
+for genus 3 and created this one; nobody noticed because no genus-2 split tester was
+ever regenerated afterwards. **A tool can lose a capability silently for as long as
+nothing exercises it, and "the deployed artefacts are correct" says nothing about
+whether the thing that produces them still works.**
+
+**The tool could not target the posReduced basis** (**E22**), so three of fifteen
+testers were unmaintainable by the tool maintaining the other twelve. A `--basis`
+flag looks sufficient and is not: it routes the output side and leaves the generator
+negReduced in four places. Built that way, every Python gate passed all three
+posReduced testers and **Magma failed all three on assertions** — the sharpest
+demonstration in this series that the two oracles are not redundant. And the
+single-file fix is impossible rather than inelegant: Magma cannot `load` inside a
+conditional, so a run-time basis switch cannot bring in the right formulas.
+
+**My own instrument was understating the split families by five points.**
+`detect.py` keyed each assignment by its position in the execution trace, and
+`Precompute` has eight exits taking different numbers of assignments — so two cases
+reaching one branch by different curve routes had every later index shifted, and
+their blind sets were never intersected. The tell was in the output and nearly went
+past me: the denominator ROSE with the case count, where per-branch scoring should
+hold it fixed. Keyed by `(function, variable, occurrence)` instead, arb genus-2 split
+is 82.2% where it had measured 78.5%.
+
+**And a log collision that would have crossed the two bases.** `FileInfo.LOG` was not
+basis-aware, so a posReduced run overwrote the negReduced log — and `--inherit-from`
+reads those logs, so a negReduced `arb` could have been handed posReduced cases and
+compared a different divisor. Caught by noticing a POS log where a NEG one belonged.
 
 **Honest limits, and the first is a correction to my own record.** PR7+8's outcome
 summary said the `ADD29`/`ADD33` saving was reverted and left it there, so the plan
@@ -2815,10 +2876,12 @@ recovers no operations**, and its case rests on detectability alone. Two things
 follow: a summary that records a refusal must record its resolution, and the errata
 entry — which did say so — was the reliable record where the summary was not.
 
-The rest: `arb` and `nch2` at genus 2 keep one case per branch, their generators
-being the older generation (`while true`, `Random(FIELDS)` over a set, no
-`WB_TRIALS`) and not re-drivable without modernising them. The four split families
-need real generation runs, their committed logs being partial — 86 of 405 branches.
+The rest: the three genus-3 split families are still one case per branch, at 405
+branches each with `Precompute` in the loop, and are regenerated separately. Their
+committed logs are partial — rebuilding `nch2_splitG3` from its log reaches 86 of 405
+— so they need real runs rather than re-selection. Everything that blocked the other
+twelve is discharged: the six genus-2 generators have a budget, the emitter can emit
+genus 2, and posReduced can be targeted.
 And detectability will not reach 100%: `f7` is assigned and never read and is not
 deletable, a branch guarded on `d = 0` must have `d = 0` to be reached, and the
 adjugate entries are dead on the degenerate paths that never consume them. Measured,

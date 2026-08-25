@@ -797,12 +797,29 @@ different field** — four for `arb`, which admits both. One per (label, field) 
 constraint and not a preference: two cases at GF(3) leave 11.8% invisible, *worse
 than one case at GF(5)* at 9.7%, because same-field failures are correlated.
 
-| family | cases | fields | detectable |
-|---|---|---|---|
-| `arb` g3 | 48 → 190 | GF(2,3,4,5) | 81.8% → **95.8%** |
-| `nch2` g3 | 48 → 96 | GF(3,5) | 80.0% → **93.3%** |
-| `ch2` g3 | 48 → 96 | GF(4,8) | 81.4% → **88.3%** |
-| `ch2` g2 | 22 → 44 | GF(4,8) | 87.9% → **94.4%** |
+**Twelve of the fifteen families** now hold two per branch per class — all six
+ramified, and all six genus-2 split across both bases. `arb` additionally carries its
+specialisations' cases, since it is valid on every curve they are and the testers
+recompute the expected result rather than storing it; they are additive rather than
+replacing, because nch2 only presents `h = 0` and ch2 only `h` monic of degree `g`,
+so between them they never exercise the non-monic or low-degree `h` that **E11** is a
+defect of.
+
+| family | cases | detectable |
+|---|---|---|
+| `arb` g3 ram | 48 → 382 | 81.8% → **96.2%** |
+| `nch2` g3 ram | 48 → 96 | 80.0% → **93.3%** |
+| `ch2` g3 ram | 48 → 96 | 81.4% → **88.3%** |
+| `arb` g2 ram | 22 → 175 | 86.1% → **96.5%** |
+| `nch2` g2 ram | 22 → 44 | 93.2% → **94.1%** |
+| `ch2` g2 ram | 22 → 43 | 87.9% → **95.7%** |
+| `arb` g2 split | 77 → 606 | 77.2% → **82.2%** (neg) |
+| `nch2` g2 split | 77 → 153 | 84.6% → measured per basis |
+| `ch2` g2 split | 77 → 149 | 82.0% → measured per basis |
+
+Corpus 1,886 → 3,866. Coverage **rose** to 1,927 of 1,929: two baseline exemptions
+died of progress, `Precompute` leaves that fire on 0.88% of curves and that a corpus
+drawing hundreds across four fields now reaches.
 
 `arb` gains most because it gains a *characteristic*: it was 45 cases in
 characteristic 2 against 3 in odd characteristic, so 45 of its 48 branches had
@@ -814,12 +831,13 @@ edit that started all this — is **MISSED** by the committed 48-case corpus, 48
 matched, and **CAUGHT** by the new 96-case corpus, 94 of 96. Branch coverage is
 unchanged at 1,925 of 1,929, so nothing was traded for it.
 
-**Still open, and narrowly.** `arb` and `nch2` at genus 2 keep one case per branch:
-their generators are the older generation — `while true`, `Random(FIELDS)` over a
-set rather than an ascending loop, and no `WB_TRIALS`/`WB_FIELDS` — so they cannot
-be re-driven without modernising them first. The four split families need real
-generation runs, their committed logs being partial (rebuilding `nch2_splitG3` from
-its log reaches 86 of 405 branches).
+**Still open, and narrowly: the three genus-3 split families.** 405 branches each
+with `Precompute` in the loop, so they are the expensive ones and are being
+regenerated separately. Everything that blocked the rest is discharged — the six
+genus-2 generators were the older generation (`while true`, `Random(FIELDS)`, no
+budget) and now read `WB_FIELDS`/`WB_TRIALS`/`WB_SEED`/`WB_LOG`; the emitter could
+not produce a genus-2 split tester at all (**E21**); and the tool could not target
+posReduced (**E22**).
 
 **And detectability will not reach 100%, which is not a defect count.** `f7` is
 assigned and never read and is deliberately not deletable; a branch guarded on
@@ -931,3 +949,102 @@ Two things that look wrong and are not, recorded so they are not "fixed" by mist
   that is the directory the generator is driven from. They resolve correctly when run as intended. The
   genus-3 generators pointed at `g3/splitModel/g3Formulas/`, which does not exist; that was genuinely
   broken and is repaired.
+
+---
+
+## E21: the case emitter could not produce a genus-2 split tester (FIXED)
+
+**Found 2026-08-25** while extending the whitebox corpus past the ramified
+families, by generating one and watching every case fail to parse.
+
+**Severity:** latent, and it had been latent since PR12. The three deployed
+genus-2 split testers predate the break, so nothing shipped wrong; what was lost
+was the ability to REGENERATE them, which is the thing PR12 existed to restore.
+
+**Where:** `whitebox/whitebox_auto_NEG.py`, the split branch of
+`Magma.generateCase`.
+
+**What it did.** The weight was read from index 2 of the emitted divisor. The two
+genuses talk to different reference libraries and those libraries disagree about a
+divisor's shape:
+
+| genus | library the tester loads | divisor |
+|---|---|---|
+| 2 | `reduced_basis_arithmetic.mag` | `<u, v, w, n>`, carrying the cofactor |
+| 3 | `poly_balanced_arithmetic.mag` | `<u, v, n>` |
+
+`AdaptedBasis` in the genus-3 library returns `<D[1], vhat, D[3]>` — three slots.
+So index 2 is the weight at genus 3 and the **cofactor** at genus 2, and a
+generated genus-2 case read
+
+    N2 := x + FF.1^2;
+
+a polynomial where an integer weight belongs. Measured: 295 extract errors, 0 cases
+replayed, on a tester whose 77 branches were all covered.
+
+**Why it went unnoticed for so long, which is the transferable part.** This is the
+exact inverse of the defect PR12 fixed. That change moved the emitter from the
+4-tuple form to the 3-tuple one because the genus-3 generators print
+`NegativeReducedBasis`, and in doing so broke genus 2 — where no tester has been
+regenerated since, so nothing ever asked the emitter for one. A tool can lose a
+capability silently for as long as nobody exercises it, and "the deployed artefacts
+are correct" is not evidence that the thing which produces them still works.
+
+**Two further genus-3 assumptions were in the same code and are also fixed:** the
+divisor tuple itself, where genus 2 now reconstructs `w` inline exactly as its
+deployed testers do (`w` is redundant rather than extra, being derivable from
+`u, v, f, h`); and the reference operation, where genus 2 must assert against
+`Add_SPLIT_NEG` or `Add_SPLIT_POS` by basis while genus 3 has one library function.
+`polyV` likewise took `v`'s top coefficients from `Vn` unconditionally, so a
+posReduced tester would have rebuilt `v` against the negative basis.
+
+**Fixed:** the weight is `d[-1]`, correct under both conventions. Verified by
+regenerating an arb genus-2 split tester — 295 of 295 replayed and matched, and its
+emitted case is line-for-line the shape of the deployed one — and by the Magma suite
+accepting all six regenerated genus-2 split testers.
+
+---
+
+## E22: the tool could not target the posReduced basis at all (FIXED)
+
+**Found 2026-08-25**, same work as E21.
+
+**Severity:** latent. Three of the fifteen whitebox testers were unmaintainable by
+the tool that maintains the other twelve.
+
+**Where:** `whitebox/whitebox_auto_NEG.py`, `FileInfo.__init__`, and the three
+`*_splitG2_WB_gen.mag` generators.
+
+**What it did.** `FileInfo` hardcoded `negReduced/`. The bases are not
+interchangeable: a case records the result the formulas produced, and the two
+normalise `v` against different polynomials at infinity, so a negReduced case
+replayed against posReduced formulas compares a different divisor. `whitebox.py`
+already keys on the basis for exactly that reason.
+
+**And a `--basis` flag alone is not enough, which is worth recording because it
+looks sufficient.** Routing the paths, the label counting and the emitter still
+leaves the GENERATOR negReduced in four places: the formulas it loads, its three
+`_SPLIT_NEG` library calls, the basis polynomial passed to them, and the basis `v`
+is rebuilt from. Built that way, the Python gates passed all three posReduced
+testers — `whitebox` replayed 295 of 295 matched — and **the Magma suite failed all
+three on assertions.** The two oracles are not redundant.
+
+**The single-file fix is impossible, not merely inelegant.** Magma cannot `load`
+inside a conditional:
+
+    if B eq "pos" then
+        load "../g2/splitModel/posReduced/g2Formulas/arb_splitG2_UTL.mag";
+    >> User error: bad syntax
+
+Branching on `GetEnv` works and function-valued variables work, so the operations
+and the basis could be chosen at run time — but the loads cannot, and the loads are
+what bring in the formulas under test.
+
+**Fixed** with three generated files, `{arb,nch2,ch2}_splitG2_POS_WB_gen.mag`,
+derived from their negReduced twins by four substitutions and produced by script so
+the two versions cannot drift. Magma now passes all three.
+
+**One collateral defect, caught before it did harm.** `FileInfo.LOG` was not
+basis-aware either, so a posReduced run wrote over the negReduced run's log. Worse
+than untidy: `--inherit-from` reads those logs, so a negReduced arb could have been
+handed posReduced cases. Found by noticing a POS log where a NEG one belonged.
