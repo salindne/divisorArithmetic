@@ -257,15 +257,34 @@ class CaseGen(object):
         return cases, missing
 
     def applyQuota(self, cases):
-        """Keep the `perChar` LARGEST fields per label per characteristic class.
+        """Keep `perChar` cases per label per characteristic class, in LADDER order.
 
         `_takeCase` banks one block per (label, field); this decides which survive.
-        Largest-first because a bigger field has fewer coincidences, measured: on
-        the genus-3 nch2 family one case at GF(5) leaves 9.7% of assignments
-        invisible against 20.0% at GF(3). Two per class rather than one because
-        even a good single case leaves 9.7%, and a second at a DIFFERENT field
-        takes it to about 7% -- while a second at the SAME field gives 11.8%,
-        worse than one bigger case, since same-field failures are correlated.
+        Two per class rather than one because even a good single case leaves about
+        10% of a family's assignments invisible, and a second at a DIFFERENT field
+        takes it to about 7% -- while a second at the SAME field gives 11.8%, worse
+        than one case at a bigger field, since same-field failures are correlated.
+        That is why the fields must differ, and it is the robust part of this rule.
+
+        LADDER ORDER, not largest-first, and this reverses an earlier version of
+        this method. "A bigger field has fewer coincidences" is true on average and
+        useless as a selection rule, because the variance between individual cases
+        swamps it. Measured on nch2 genus 2, same generator, same 400 curves per
+        field, only the ladder differing:
+
+            ladder            kept    invisible of 236
+            {3,5,7}           3,5,7          13
+            {3,7,11}          3,7,11         13
+            {3,5}             3,5            14
+            {3,5,7,9,11}      9,11           24   <-- largest-first picked these
+            one case, shipped 3,5,7           16
+
+        Largest-first turned a corpus that should have improved on the shipped one
+        into a REGRESSION, 16 invisible becoming 24. Taking the ladder in order
+        makes the ladder the knob -- visible in the generator, chosen per family by
+        measurement -- rather than burying the choice in a heuristic that cannot be
+        seen from the outside. A family whose best pair is its two largest fields
+        simply lists those two.
 
         Nothing is discarded silently: `parseLog` prints the fields kept and names
         every branch left below quota, which is what the ladder is extended to fix.
@@ -274,7 +293,6 @@ class CaseGen(object):
             keep = []
             for even in (False, True):
                 same = [c for c in held if _evenChar(c[0]) == even]
-                same.sort(key=lambda c: int(c[0].strip()), reverse=True)
                 keep.extend(same[:self.perChar])
             cases[tag] = keep
 
