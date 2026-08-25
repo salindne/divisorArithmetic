@@ -63,11 +63,23 @@ class FileInfo(object):
             self.PATH = "../g" + genus + "/" + curveType + "Model/" + sub
         else:
             self.PATH = "../g" + genus + "/" + curveType + "Model/"
-        self.GEN = "genFiles/" + fieldType + "_" + curveType + "G" + genus + "_WB_gen.mag"
+        # posReduced has its own generator rather than a flag inside the shared
+        # one, because Magma cannot `load` inside a conditional -- so a run-time
+        # basis switch cannot bring in the right formulas. Only genus-2 split has
+        # two bases; everything else takes the plain name.
+        posGen = (curveType == "split" and basis == "pos")
+        self.GEN = ("genFiles/" + fieldType + "_" + curveType + "G" + genus
+                    + ("_POS" if posGen else "") + "_WB_gen.mag")
         self.ADD = "g" + genus + "Formulas/" + fieldType + "_" + curveType + "G" + genus + "_ADD.mag"
         self.DBL = "g" + genus + "Formulas/" + fieldType + "_" + curveType + "G" + genus + "_DBL.mag"
         self.UTL = "g" + genus + "Formulas/" + fieldType + "_" + curveType + "G" + genus + "_UTL.mag"
-        self.LOG = "logs/" + fieldType + "_" + curveType + "G" + genus + "_log.txt"
+        # Basis-suffixed, because the tool derives the log path from this and a
+        # posReduced run would otherwise write over the negReduced run's log --
+        # which is worse than untidy: `--inherit-from` reads these logs, so a
+        # negReduced arb could be handed posReduced cases and would compare a
+        # different divisor. Observed before this was fixed.
+        self.LOG = ("logs/" + fieldType + "_" + curveType + "G" + genus
+                    + ("_POS" if posGen else "") + "_log.txt")
         self.OUT = "testerFiles/" + fieldType + "_" + curveType + "G" + str(genus) + "_whiteBox_tester.mag"
         self.GENUS = genus
         self.FIELD = fieldType;
@@ -652,6 +664,18 @@ def main(argv=None):
                     help="parse an existing log instead of running Magma")
     ap.add_argument("--magma", default="../tools/magma-docker/magma.sh",
                     help="Magma command (default the container wrapper)")
+    ap.add_argument("--inherit-from", dest="inheritFrom", action="append",
+                    default=None, metavar="FIELD:LOG",
+                    help="also carry another family's cases, e.g. "
+                         "nch2:logs/nch2_ramifiedG3_log.txt. Only meaningful for "
+                         "arb: it is valid on every curve its specialisations are, "
+                         "so their cases are legitimate arb inputs, and the tester "
+                         "recomputes the expected result rather than storing it. "
+                         "They ADD to arb's own cases rather than replacing them, "
+                         "because nch2 only ever presents h = 0 and ch2 only h "
+                         "monic of degree g, so neither exercises the non-monic or "
+                         "low-degree h that arb exists to handle (ERRATA E11 is a "
+                         "defect of exactly that class)")
     ap.add_argument("--basis", choices=["neg", "pos"], default="neg",
                     help="split model reduced basis (default neg). Genus 3 ships "
                          "negReduced only; at genus 2 both exist and their cases "
@@ -686,6 +710,25 @@ def main(argv=None):
         gen.runGenerator(logPath)
 
     cases, missing = gen.parseLog(logPath)
+
+    # Inherited cases are merged AFTER the quota report, so that report describes
+    # this family's own coverage rather than being flattered by donations.
+    for spec in (args.inheritFrom or []):
+        if ":" not in spec:
+            raise SystemExit("--inherit-from wants FIELD:LOG, got %r" % spec)
+        donorField, donorLog = spec.split(":", 1)
+        donorInfo = FileInfo(donorField, args.curve, args.genus, basis=args.basis)
+        donorGen = CaseGen(donorInfo, perChar=args.perChar)
+        print("inheriting from %s:" % donorField)
+        donorCases, _donorMissing = donorGen.parseLog(donorLog)
+        added = 0
+        for tag, held in donorCases.items():
+            # Suffixed so a donor branch cannot collide with one of ours, while
+            # keeping the ADD/DBL prefix the emitter dispatches on.
+            cases[tag + "@" + donorField] = held
+            added += len(held)
+        print("  carried %d case(s) across %d of %s's branches"
+              % (added, len(donorCases), donorField))
     if missing and not args.allow_incomplete:
         raise SystemExit("refusing to write an incomplete tester; raise --trials, "
                          "or pass --allow-incomplete to accept the gap")

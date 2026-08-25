@@ -139,7 +139,7 @@ jobs:
 
       - name: constructed whitebox cases, every developed formula
         working-directory: verification
-        # 2,607 frozen cases found by coverage-guided search and then committed --
+        # 3,866 frozen cases found by coverage-guided search and then committed --
         # not hand-built. Two per computation path per characteristic class for the
         # ramified families, one elsewhere; see ERRATA E20 for why one was not
         # enough. Replayed
@@ -151,7 +151,7 @@ jobs:
         # It could never gate on coverage without either failing honest runs or gating
         # on nothing.
         #
-        # ALL 2,607 cases are read at run time out of the repository's own whitebox
+        # ALL 3,866 cases are read at run time out of the repository's own whitebox
         # testers -- 15 of them, one per family -- so they cannot drift out of step
         # with the testers they come from, and every one of those files is held to
         # 100% coverage. harvested_cases.json is EMPTY: it existed for the two

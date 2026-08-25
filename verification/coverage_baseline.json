@@ -2,13 +2,6 @@
  "arity_anomalies": [],
  "arity_note": "Cases returning the wrong number of values, pinned by identity so a NEW anomaly still fails. Empty since PR5 fixed errata E2.",
  "files": {
-  "g2/splitModel/posReduced/g2Formulas/nch2_splitG2_UTL.mag": {
-   "of": 3,
-   "unreached": [
-    "UTL0"
-   ],
-   "why": "Precompute's own exits; the whitebox testers were built to cover ADD/DBL branches, not these"
-  },
   "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_ADD.mag": {
    "of": 350,
    "unreached": [
