@@ -200,15 +200,28 @@ def measure_tester(tester, per_case=False):
     unusable = 0
     # Scored by BRANCH, not by case. A branch may be covered by more than one case
     # -- that is the point of the two-per-branch corpus -- and an assignment is
-    # invisible only if EVERY case covering it misses it. Summing per case instead
+    # invisible only if EVERY case reaching it misses it. Summing per case instead
     # would mean adding a redundant case could LOWER the score, which is wrong for
     # a metric whose whole purpose is that more cases cannot hurt.
     #
-    # Cases covering the same branch run the same assignments in the same order, so
-    # position k denotes the same source assignment in each and the union is a plain
-    # intersection of their blind sets. Verified: the two-case corpus reports
-    # exactly twice the assignments of the one-case corpus for every branch.
-    by_branch = {}                # labels -> {"names": [...], "blind": set|None}
+    # AN ASSIGNMENT IS IDENTIFIED BY (function, variable, nth occurrence), NOT by
+    # its position in the trace. Position looks simpler and is wrong as soon as two
+    # cases reach the same branch by different routes: `Precompute` has eight exits
+    # and takes a different number of assignments on each, so a case whose curve
+    # takes a different leaf shifts every later index and nothing lines up. The
+    # symptom was measurable -- the genus-2 split families reported 2,462
+    # assignments where one case per branch reported 1,559, when per-branch scoring
+    # should hold that figure FIXED. Every extra group was one branch counted twice
+    # because its cases disagreed about a label or a prefix length, so their blind
+    # sets were never intersected and the whole benefit of the second case went
+    # unmeasured. Those families looked like they had gained a point where the
+    # ramified ones gained ten.
+    #
+    # The branch key likewise ignores UTL labels: they name Precompute's exits,
+    # which are a property of the curve rather than of the operation under test, so
+    # two cases exercising the same formula branch belong together even when their
+    # curves route through Precompute differently.
+    by_branch = {}      # key -> {"seen": {triple: layer}, "blind": {triple}}
 
     M.run, M.MagmaFn.__call__ = _run, _call
     try:
@@ -216,40 +229,50 @@ def measure_tester(tester, per_case=False):
             case = args[0][0]
             base = one_pass(args, -1, record=True)
             names = list(_NAMES)
-            key = tuple(_LABELS)
+            key = tuple(x for x in _LABELS if not x.startswith("UTL"))
             if base is None or base == "RAISED":
                 unusable += 1
                 continue
+
+            # Stable identity per assignment, independent of anything before it.
+            seen_count = collections.Counter()
+            triples = []
+            for fn, var in names:
+                seen_count[(fn, var)] += 1
+                triples.append((fn, var, seen_count[(fn, var)]))
+
             blind_here = set()
-            for k, (fn, _var) in enumerate(names):
+            for k, t in enumerate(triples):
                 if one_pass(args, k) == base:
-                    blind_here.add(k)
-            slot = by_branch.get(key)
-            if slot is None or len(slot["names"]) != len(names):
-                # First case for this branch, or a shape mismatch that makes the
-                # positions incomparable -- keep them separate rather than
-                # intersecting sets that do not describe the same code.
-                by_branch[key if slot is None else (key, case.index)] = {
-                    "names": names, "blind": blind_here}
-            else:
-                slot["blind"] &= blind_here
+                    blind_here.add(t)
+
+            slot = by_branch.setdefault(key, {"seen": {}, "blind": {}})
+            for t in triples:
+                slot["seen"][t] = layer_of(t[0])
+            for t in triples:
+                # Invisible only if blind in EVERY case that reaches it, so a
+                # triple one case cannot see and another can becomes visible.
+                if t in blind_here:
+                    slot["blind"].setdefault(t, True)
+                else:
+                    slot["blind"][t] = False
+
             if per_case:
-                fpos = [k for k, (fn, _v) in enumerate(names)
-                        if layer_of(fn) == "formulas"]
+                fform = [t for t in triples if layer_of(t[0]) == "formulas"]
                 cases.append({"index": case.index, "op": case.op, "q": case.q,
-                              "assigns": len(fpos),
-                              "invisible": len(blind_here & set(fpos))})
+                              "assigns": len(fform),
+                              "invisible": len([t for t in fform
+                                                if t in blind_here])})
     finally:
         M.run, M.MagmaFn.__call__ = _real_run, _real_call
 
     for slot in by_branch.values():
-        for k, (fn, var) in enumerate(slot["names"]):
-            lay = layer_of(fn)
+        for t, lay in slot["seen"].items():
             layers[lay][0] += 1
-            if k in slot["blind"]:
+            if slot["blind"].get(t):
                 layers[lay][1] += 1
                 if lay == "formulas":
-                    blind_names[var] += 1
+                    blind_names[t[1]] += 1
 
     f_tot, f_blind = layers["formulas"]
     return {
