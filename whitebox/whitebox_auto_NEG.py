@@ -102,16 +102,32 @@ class FileInfo(object):
 
 
 
-class CaseGen(object):
-    """Runs a generator once, then parses its log into one case per branch."""
+def _evenChar(field):
+    """Is this field size a power of two, i.e. characteristic 2?
 
-    def __init__(self, fileInfo, magmaCmd=None, trials=400, seed=1, pairs=4000, extra=None):
+    Field sizes here are prime powers -- 2,3,4,5,7,8,9,11,13,16,25,27,32 -- so a
+    power of two is exactly characteristic 2 and nothing else is. Used to keep the
+    two-case quota per characteristic class rather than per family, which is what
+    lets `arb` hold two odd-characteristic cases and two even ones.
+    """
+    q = int(str(field).strip())
+    return q > 0 and (q & (q - 1)) == 0
+
+
+class CaseGen(object):
+    """Runs a generator once, then parses its log into cases per branch."""
+
+    def __init__(self, fileInfo, magmaCmd=None, trials=400, seed=1, pairs=4000,
+                 extra=None, perChar=2):
         self.file = fileInfo
         self.magmaCmd = magmaCmd or ["../tools/magma-docker/magma.sh"]
         self.trials = trials
         self.seed = seed
         self.pairs = pairs
         self.extra = extra or {}
+        # Cases to keep per branch per characteristic class, each from a different
+        # field. See `_takeCase` for why this is two and why they must differ.
+        self.perChar = perChar
 
     def expectedTags(self):
         """The branch labels a complete tester must hold.
@@ -190,25 +206,116 @@ class CaseGen(object):
                              "refusing to build a tester from it"
                              % (failures, logPath))
 
+        self.applyQuota(cases)
         missing = sorted(t for t in (set(dblCases) | set(addCases)) if t not in cases)
-        print("%d blocks parsed, %d of %d branches covered"
-              % (blocks, len(cases), len(dblCases) + len(addCases)))
+        nCases = sum(len(v) for v in cases.values())
+        print("%d blocks parsed, %d of %d branches covered, %d case(s) kept"
+              % (blocks, len(cases), len(dblCases) + len(addCases), nCases))
         if missing:
             print("%d branch(es) not reached by this search:" % len(missing))
             print("  " + " ".join(missing))
+
+        # A branch that reached its quota is as detectable as this ladder can make
+        # it; one that did not is a branch where a change may still be invisible,
+        # which is the whole of ERRATA E20. So the shortfall is REPORTED. A silent
+        # one-case branch is exactly what let a correct saving be reverted.
+        fields = sorted({c[0].strip() for v in cases.values() for c in v},
+                        key=lambda x: int(x))
+        classes = sorted({_evenChar(f) for f in fields})
+        want = self.perChar * len(classes)
+        short = {t: len(v) for t, v in cases.items() if len(v) < want}
+        print("  fields present: %s; quota %d per branch (%d per characteristic "
+              "class x %d class(es) available)"
+              % (", ".join("GF(%s)" % f for f in fields), want, self.perChar,
+                 len(classes)))
+        if short:
+            byCount = {}
+            for t, n in sorted(short.items()):
+                byCount.setdefault(n, []).append(t)
+            print("  %d branch(es) below quota -- extend the ladder to fix:"
+                  % len(short))
+            for n in sorted(byCount):
+                print("    %d case(s): %s" % (n, " ".join(byCount[n])))
+        else:
+            print("  every branch reached the quota")
         return cases, missing
 
+    def applyQuota(self, cases):
+        """Keep the `perChar` LARGEST fields per label per characteristic class.
+
+        `_takeCase` banks one block per (label, field); this decides which survive.
+        Largest-first because a bigger field has fewer coincidences, measured: on
+        the genus-3 nch2 family one case at GF(5) leaves 9.7% of assignments
+        invisible against 20.0% at GF(3). Two per class rather than one because
+        even a good single case leaves 9.7%, and a second at a DIFFERENT field
+        takes it to about 7% -- while a second at the SAME field gives 11.8%,
+        worse than one bigger case, since same-field failures are correlated.
+
+        Nothing is discarded silently: `parseLog` prints the fields kept and names
+        every branch left below quota, which is what the ladder is extended to fix.
+        """
+        for tag, held in cases.items():
+            keep = []
+            for even in (False, True):
+                same = [c for c in held if _evenChar(c[0]) == even]
+                same.sort(key=lambda c: int(c[0].strip()), reverse=True)
+                keep.extend(same[:self.perChar])
+            cases[tag] = keep
+
     def _takeCase(self, cases, current, wanted):
-        """Store one block, keyed by the label the formula printed.
+        """Store a block under the label the formula printed.
 
         The label is the first line of the block because ADD_DEBUG/DBL_DEBUG print
         it from inside the formula. It is compared stripped: ADD082 carries a
         trailing space in all three genus-3 split ADD files.
+
+        TWO CASES PER LABEL PER CHARACTERISTIC, FROM DIFFERENT FIELDS.
+
+        This used to keep the FIRST block per label and refuse the rest. Since the
+        generators loop `for F in FIELDS` with FIELDS ascending, that made every
+        branch's one case come from the SMALLEST field reaching it -- the most
+        degenerate arithmetic available -- which is the second cause of ERRATA E20:
+        `ADD33`'s case had `t8 = 0`, so the corpus could not distinguish a change to
+        that term, and a correct saving was reverted because breaking the line
+        deliberately also measured green.
+
+        Measured, on the genus-3 nch2 family, mutating every executed assignment
+        and asking whether the returned divisor moves:
+
+            one case at GF(3), as shipped      20.0% of assignments invisible
+            one case at GF(5)                   9.7%
+            TWO cases both at GF(3)            11.8%   <-- worse than one at GF(5)
+            two cases, GF(3) and GF(5)          7.1%
+
+        So one case per (label, field) is a CONSTRAINT and not a preference: two
+        draws at the same field share that field's coincidence probabilities, and
+        the second is blind to most of what the first is. Spreading across fields
+        is what buys the detectability.
+
+        The quota is per characteristic class, which is what gives `arb` four cases
+        without a per-family table: `nch2` admits only odd fields and `ch2` only
+        even ones, so each takes two, while `arb` admits both and takes two of
+        each. That matters for `arb` specifically -- as shipped its genus-3 corpus
+        is 45 cases in characteristic 2 against 3 in odd characteristic, so 45 of
+        its 48 branches have never been whiteboxed in odd characteristic at all, in
+        the one family that must work in every characteristic.
         """
-        if not current:
+        if not current or len(current) < 2:
             return
         tag = current[0].strip()
-        if tag not in wanted or tag in cases:
+        if tag not in wanted:
+            return
+        field = current[1].strip()
+        held = cases.get(tag, ())
+        # One per (label, field). The quota itself is NOT applied here: blocks
+        # arrive in whatever order the generator emitted them, and for the
+        # genus-3 families that order is ascending by field, so applying the
+        # quota greedily would keep the two SMALLEST fields -- a milder version
+        # of the bias this whole change exists to remove. Measured on ch2 genus
+        # 3, whose log holds GF(2), GF(4) and GF(8): keeping the first two gives
+        # 88.2% detectability where keeping the largest two gives more. So every
+        # field is banked here and `applyQuota` prunes afterwards.
+        if any(c[0].strip() == field for c in held):
             return
 
         def divisor(s):
@@ -231,7 +338,7 @@ class CaseGen(object):
 
         if tag.startswith("DBL"):
             divs = divs[:1]
-        cases[tag] = (current[1], curve, divs, result)
+        cases.setdefault(tag, []).append((current[1], curve, divs, result))
 
 
 class Magma(object):
@@ -401,10 +508,15 @@ class Magma(object):
         # Sorted by branch label rather than by the order the search happened to
         # find them, so two runs that cover the same branches produce the same file
         # and a regenerated tester can be diffed against its predecessor.
+        # A label now holds a LIST of cases -- two per characteristic class, each
+        # from a different field. Emitted in field order within the label so the
+        # file is a function of (seed, budget) and two runs covering the same
+        # branches still diff cleanly.
         totalCases = 0
-        for case in sorted(self.cases.items()):
-            totalCases = totalCases + 1
-            self.generateCase(case)
+        for tag, held in sorted(self.cases.items()):
+            for one in sorted(held, key=lambda c: int(c[0].strip())):
+                totalCases = totalCases + 1
+                self.generateCase((tag, one))
 
         self.magma.append('"\nTotal Cases: ' + str(totalCases) +'";\n')
         self.magma.append("quit;")
@@ -450,6 +562,10 @@ def main(argv=None):
                     help="parse an existing log instead of running Magma")
     ap.add_argument("--magma", default="../tools/magma-docker/magma.sh",
                     help="Magma command (default the container wrapper)")
+    ap.add_argument("--per-char", dest="perChar", type=int, default=2,
+                    help="cases to keep per branch per characteristic class, each "
+                         "from a different field (default 2, so nch2 and ch2 hold "
+                         "two and arb four)")
     ap.add_argument("--allow-incomplete", action="store_true",
                     help="write the tester even if some branch was never reached")
     args = ap.parse_args(argv)
@@ -459,7 +575,7 @@ def main(argv=None):
         fileInfo.OUT = args.out
 
     gen = CaseGen(fileInfo, magmaCmd=[args.magma], trials=args.trials,
-                  seed=args.seed, pairs=args.pairs,
+                  seed=args.seed, pairs=args.pairs, perChar=args.perChar,
                   extra={k: v for k, v in
                          (('WB_SWEEP', args.sweep), ('WB_TDEG', args.tdeg),
                           ('WB_CELL', args.cell), ('WB_FIELDS', args.fields),
@@ -482,7 +598,11 @@ def main(argv=None):
         raise SystemExit("no cases parsed from %s" % logPath)
 
     Magma(fileInfo, cases)
-    print("wrote %s: %d cases" % (fileInfo.OUT, len(cases)))
+    # Cases, not labels: a label now holds two. Reporting len(cases) here said
+    # "48 cases" for a tester holding 94, which is the same class of misleading
+    # count this PR exists to remove.
+    print("wrote %s: %d case(s) across %d branch(es)"
+          % (fileInfo.OUT, sum(len(v) for v in cases.values()), len(cases)))
     return 0
 
 
