@@ -252,7 +252,7 @@ runs 30 testers across genus 2 and genus 3, in about four minutes.
 | Magma suite | **30 testers, 0 failures, 0 skips** | `./test_all.sh` |
 | frozen case corpus | **7,043 cases replayed, 7,043 matched** | `python3 verification/whitebox.py` |
 | branch coverage | **1,928 of 1,929 labelled branches, 99.9%** | as above |
-| corpus detectability | **82.5%** of formula-body assignments observable | `python3 verification/detect.py` |
+| corpus detectability | **85.4%** of formula-body assignments observable | `python3 verification/detect.py` |
 | differential tester | **13,746 operations compared, 0 wrong** | `python3 verification/driver.py --strict` |
 | framework selftest | **19 sections** | `python3 verification/selftest.py` |
 
@@ -271,8 +271,8 @@ compared, so an assignment whose perturbation changes nothing is invisible to th
 covered its branch is. `ERRATA.md` **E20** is that distinction costing a correct optimisation, which is
 why each branch now carries two cases drawn from *different* fields rather than one. 100% is not
 reachable and is not the target: some assignments are structurally invisible, such as a guard variable
-a branch requires to be zero. Note the 82.5% figure is dominated by the three genus-3 split families,
-which still hold one case per branch; the twelve regenerated ones sit between 69% and 96.5%.
+a branch requires to be zero. Every family now holds at least two cases per branch per characteristic class, drawn from different
+fields; they range from 69% to 96.5%, and the repository figure rose from 81.3%.
 
 **The Python framework** in [verification/](verification/) is what runs in CI, since Magma is licensed
 and cannot. It interprets the real `.mag` source, so there is no transcription to drift:

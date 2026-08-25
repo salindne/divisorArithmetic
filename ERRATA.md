@@ -797,8 +797,10 @@ different field** — four for `arb`, which admits both. One per (label, field) 
 constraint and not a preference: two cases at GF(3) leave 11.8% invisible, *worse
 than one case at GF(5)* at 9.7%, because same-field failures are correlated.
 
-**Thirteen of the fifteen families** now hold two per branch per class — all six
-ramified, all six genus-2 split across both bases, and `nch2` genus-3 split. `arb` additionally carries its
+**All fifteen families** now hold two per branch per class. The three genus-3 split
+ones were extended by merging rather than regenerating, since a fresh search reaches
+403 of 405 branches and the three it misses are each covered by exactly one deployed
+case. `arb` additionally carries its
 specialisations' cases, since it is valid on every curve they are and the testers
 recompute the expected result rather than storing it; they are additive rather than
 replacing, because nch2 only presents `h = 0` and ch2 only `h` monic of degree `g`,
@@ -820,6 +822,9 @@ defect of.
 | `nch2` g2 split, pos | 77 → 153 | 75.1% → **76.1%** |
 | `ch2` g2 split, pos | 77 → 149 | 67.2% → **70.3%** |
 | `nch2` g3 split | 405 → 1,203 | 84.7% → **88.2%** |
+| `arb` g3 split | 405 → 1,979 | 80.6% → **84.3%** |
+| `ch2` g3 split | 404 → 1,209 | 81.9% → **85.8%** |
+| **repository** | **1,886 → 7,043** | **81.3% → 85.4%** |
 
 Every one of the twelve improves. The before-figures are comparable under either
 keying, because a one-case-per-branch corpus has nothing to intersect and the

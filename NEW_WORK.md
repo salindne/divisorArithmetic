@@ -2809,22 +2809,30 @@ characteristic. It is now 94 against 96.
 | `nch2` g2 split, pos | 77 → 153 | 75.1% → **76.1%** |
 | `ch2` g2 split, pos | 77 → 149 | 67.2% → **70.3%** |
 | `nch2` g3 split | 405 → 1,203 | 84.7% → **88.2%** |
+| `arb` g3 split | 405 → 1,979 | 80.6% → **84.3%** |
+| `ch2` g3 split | 404 → 1,209 | 81.9% → **85.8%** |
+| **repository** | **1,886 → 7,043** | **81.3% → 85.4%** |
 
 Every one of the twelve improves. The before-figures are comparable under either
 keying, because a one-case-per-branch corpus has nothing to intersect and the
 grouping flaw could not bite it.
 
-Thirteen of the fifteen families. The remaining two, `arb` and `ch2` genus-3 split,
-are 405 branches each with `Precompute` in the loop and are extended the same way --
-by merging, since a fresh search reaches 403 of 405 and the three it misses are each
-covered by exactly one deployed case.
+**All fifteen families.** The three genus-3 split ones were extended by MERGING
+rather than regenerating: a fresh search reaches 403 of 405 branches and the three it
+misses are each covered by exactly one deployed case, so replacing their corpora
+would have dropped branches. Merging keeps the deployed cases and adds the second
+per branch that a search can find.
 
-**Repository-wide the figure is 82.5%, and that number is dominated by the three
-families not yet done.** Genus-3 split accounts for 54,431 of the 67,931 scored
-assignments -- 80% of the total -- so the headline barely moves until those are
-regenerated, while every family that has been moved ten to fourteen points. Quoting
-the repository total as the result of this work would understate it by a wide margin,
-which is why the per-family table above is the honest presentation. Corpus 1,886 → 4,664,
+**Repository-wide, 81.3% to 85.4%** -- 12,728 invisible assignments of 67,931 down
+to 9,884. The denominator is identical before and after, which is the check that the
+comparison is like-for-like: it is per-branch, and the branches did not change.
+
+The total moves less than the per-family figures because genus-3 split is 54,431 of
+those 67,931 assignments, 80% of the whole, and those three families gain three to
+four points where the smaller ones gain ten to fourteen. That is not a disappointment
+to explain away -- they were already the best-covered families, at 80-85% where the
+ramified ones sat at 80-87% on a twentieth of the code -- but it does mean the
+per-family table is the honest presentation and the headline alone is not. Corpus 1,886 → 4,664,
 and coverage ROSE, 1,925 → 1,928 of 1,929: three baseline exemptions died of progress,
 `Precompute` leaves firing on 0.88% of curves that a corpus drawing hundreds across
 four fields now reaches.
