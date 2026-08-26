@@ -1032,13 +1032,17 @@ def shipped_9(t1, t4, t7, up0, up1, up2):
                 m9=m9, d=d)
 
 
-def split_q(t1, t4, t7, up0, up1, up2):
-    """arb_splitG3_ADD.mag, `t1 := u0 - up0;` .. `d := t1*m1 + t2*m4 + t3*m7;`.
+def split_q_col1(t1, t4, t7, up0, up1, up2):
+    """The split route as shipped BEFORE C4: `d := t1*m1 + t2*m4 + t3*m7;`.
 
     The whole first column, and d.
 
-    The split model wants only column 1 of the adjugate (it is the coefficient
-    vector of q = d/w mod up), and pays for all nine T entries to get it.
+    It wants only column 1 of the adjugate (the coefficient vector of
+    q = d/w mod up) and pays for all nine T entries to get it. Kept as a
+    candidate rather than deleted: it is a valid route and the comparison should
+    keep scoring it, and it is the thing C4 measured itself against. Note it
+    costs the SAME 15M 0S 9A as the shift route below -- the block conversion
+    alone wins nothing, which is why C4's unit of work is the generic path.
     """
     t2 = -(up0 * t7)
     t5 = t1 - up1 * t7
@@ -1051,6 +1055,32 @@ def split_q(t1, t4, t7, up0, up1, up2):
     m7 = t4 * t8 - t5 * t7
     d = t1 * m1 + t2 * m4 + t3 * m7
     return dict(m1=m1, m4=m4, m7=m7, d=d)
+
+
+def split_q(t1, t4, t7, up0, up1, up2):
+    """arb_splitG3_ADD.mag, `t2 := -up0*t7;` .. `d := t1*m1 + t4*m2 + t2*m8;`.
+
+    The split route as shipped SINCE C4, and textually the ramified block with
+    `up` for `u`: bottom row of the adjugate from columns 1 and 2 of T, then six
+    shifts at one multiplication each, then the column expansion that reads m8
+    rather than m3 because t7*m3 = t2*m8.
+
+    Column 3 of T is x*(column 2) reduced mod up, which is what makes the six
+    remaining entries shifts rather than 2x2 minors. m3, m4 and m6 are the three
+    the determinant does not read, so the file defers them to the generic path
+    and no degenerate leaf pays for them.
+    """
+    t2 = -(up0 * t7)
+    t5 = t1 - up1 * t7
+    t8 = t4 - up2 * t7
+    m9 = t1 * t5 - t2 * t4
+    m8 = t2 * t7 - t1 * t8
+    m7 = t4 * t8 - t5 * t7
+    m5 = m9 + up2 * m8
+    m2 = -(up0 * m7)
+    m1 = m5 + up1 * m7
+    d = t1 * m1 + t4 * m2 + t2 * m8
+    return dict(m1=m1, m2=m2, m5=m5, m7=m7, m8=m8, m9=m9, d=d)
 
 
 def _rank5_row3(t1, t4, t7, up0, up1, up2):
@@ -1175,6 +1205,7 @@ CANDIDATES = [
               ("arb_ramifiedG3_DBL.mag", "block")),
     Candidate("shipped_9", shipped_9, 6, (18, 0, 11)),
     Candidate("split_q", split_q, 6, (15, 0, 9)),
+    Candidate("split_q_col1", split_q_col1, 6, (15, 0, 9)),
     Candidate("rank5_7_d", rank5_7_d, 6, (15, 0, 14)),
     Candidate("rank5_7", rank5_7, 6, (12, 0, 12)),
     Candidate("rank5_9_d", rank5_9_d, 6, (17, 0, 16)),
@@ -1932,7 +1963,7 @@ MAG_BLOCKS = (
      "t2 := -u0*t7;", "d := t1*m1 + t4*m2 + t2*m8;",
      {"u0": "up0", "u1": "up1", "u2": "up2"}),
     ("split_q", "g3/splitModel/negReduced/g3Formulas/arb_splitG3_ADD.mag",
-     "t2 := -up0*t7;", "d := t1*m1 + t2*m4 + t3*m7;", {}),
+     "t2 := -up0*t7;", "d := t1*m1 + t4*m2 + t2*m8;", {}),
 )
 
 # The three `t1 = u0 - up0` differences are deliberately outside every anchor
