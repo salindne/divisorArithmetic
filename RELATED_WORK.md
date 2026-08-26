@@ -175,11 +175,11 @@ prior-work A counts are derived here rather than published by their authors —
 | Case | Previous best | Ours | Standing |
 |---|---|---|---|
 | **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | **56 M+S, 0C, 59A** | **ahead on both axes, and now on the same curve form**: 11 better than Nyukai and 14 better than GKP on M+S, 46 fewer additions. The `f₆` depression landed, so C is 0 and the comparison is apples-to-apples |
-| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | *none* — borrows the arb DBL at 61 M+S, 3C, 92A | **Future work, PR6.** The borrowed doubling pays h-terms this lane's curves do not have |
-| **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | *none* | **Future work, PR7** |
-| **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | *none* | **Future work, PR8** |
+| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | **58 M+S, 0C, 61A** | **ahead on both axes**: 10 better than Nyukai and 12 better than GKP on M+S, 32 fewer additions. Derived in PR6 at `h = 0` AND `f₆ = 0`, so it is on this lane's curve form rather than borrowing the arb doubling and paying h-terms these curves do not have |
+| **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | **54 M+S, 0C, 62A** | **ahead on both axes**: 13 better on M+S and 38 fewer additions against their `h₂ = 0` variant, 14 and 43 against their `f₆ = 0` one. Note the normal forms differ — ours is any degree-3 `h` with `f₆ = 0`; see the reconciliation note below |
+| **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | **55 M+S, 2C, 55A** | **ahead on both axes**: 14 better on M+S and 52 fewer additions. The doubling gains most from characteristic 2, because half of every integer multiplier in the derivative vanishes |
 | **arb ADD** | **none** | **56 M+S, 1C, 71A** | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD (68 M+S, 12C, 87A): **12 better on M+S, 11 better on C, 16 better on A**, and a tie on S alone (3 vs 3) |
-| **arb DBL** | **none** | **61 M+S, 3C, 92A** | As above. Against split Degree-3 DBL (76 M+S, 19C, 101A): **better on M+S, C and A; one squaring worse on S alone** |
+| **arb DBL** | **none** | **58 M+S, 4C, 80A** | As above. Against split Degree-3 DBL (76 M+S, 19C, 101A): **18 better on M+S, 15 on C, 21 on A** |
 
 **A temporary inversion worth knowing about, updated 2026-08-12.** The arb addition
 (56 M+S, 1C, 71A) is currently *cheaper than the nch2 addition* (62 M+S, 3C, 77A),
@@ -202,15 +202,15 @@ include C; theirs have none to include. See [the C column](#the-c-column-and-why
 
 Reading it:
 
-- **Only one of the six cells is a like-for-like race today, and we win it** —
-  62 M+S against Nyukai's 67 and GKP's 70, with 28 fewer additions. The recorded
-  efficiency ledger is upside on top of that, not catch-up. An earlier revision
-  of this document had this cell 10 M+S behind; that came from a broken counter,
-  see [the measurement note](#which-counter-is-authoritative).
-- **Three cells are unbuilt** (`nch2 DBL`, `ch2 ADD`, `ch2 DBL`) and now have
-  real targets rather than guesses — in particular `ch2` at `deg h = 3`, this
-  repository's own derived normal form, turns out to be published by GKP, which
-  the project had assumed did not exist.
+- **All four cells with published competition are now built, and we are ahead on
+  both axes in every one.** Between 10 and 14 combined M+S better, and between 32
+  and 52 fewer additions. An earlier revision of this document had the odd-
+  characteristic addition 10 M+S *behind*; that came from a broken counter, see
+  [the measurement note](#which-counter-is-authoritative).
+- **Three of those four did not exist when this work started** — `nch2 DBL`,
+  `ch2 ADD` and `ch2 DBL` were derived in PR6 and PR7/PR8. `ch2` at `deg h = 3` is
+  this repository's own derived normal form, and turned out to be published by GKP,
+  which the project had assumed did not exist.
 - **Two cells have no competition at all.** The arb family is unique to this
   repository, so it can only be judged internally and against the split-model
   rows — where it is now measurably *cheaper on multiplications*, as ramified
@@ -323,18 +323,21 @@ measured from the Magma source.
 
 The recorded efficiency ledger has since been implemented in full, and it was
 upside rather than catch-up throughout. Its largest single item was the `f₆`
-depression, which was exactly the 3 C this row used to carry. The doubling
-comparison still cannot be made until `nch2_ramifiedG3_DBL.mag` exists
-(merge-plan PR6); the borrowed arb DBL pays h-terms this lane's curves do not
-have.
+depression, which was exactly the 3 C this row used to carry. The doubling comparison can now be made:
+`nch2_ramifiedG3_DBL.mag` was derived in merge-plan PR6 at `h = 0` and `f₆ = 0`,
+so it no longer borrows the arb doubling and no longer pays h-terms these curves do
+not have. At **58 M+S, 0C, 61A** it is 10 below Nyukai and 12 below GKP on M+S, with
+32 fewer additions.
 
 ---
 
 ## Lane 2 — F2n, characteristic 2
 
-For merge-plan PR7/PR8, which will create this repository's ch2 formulas. **We
-have no entry in this lane yet**: `even_ramifiedG3_ADD.m` was the arb file
-renamed, and was dropped on import.
+**This repository now has an entry in this lane.** `ch2_ramifiedG3_{ADD,DBL}.mag`
+were derived in merge-plan PR7/PR8 at `h` monic of degree exactly 3 with
+`f₆ = f₅ = f₄ = f₃ = 0`, and measure **54 M+S, 0C, 62A** and **55 M+S, 2C, 55A**.
+What was dropped on import was `even_ramifiedG3_ADD.m`, which was the arb file
+renamed rather than a characteristic-2 specialisation.
 
 ### `deg h = 3` — this repository's target shape, and it *is* published
 
@@ -403,8 +406,13 @@ Compare this repository's derived form: `h = x³ + h₂x² + h₁x + h₀` monic
 any factorisation, `f = x⁷ + f₂x² + f₁x + f₀`. The two spend the same
 isomorphism budget differently — Birkner requires h *irreducible* (a strict
 sub-case of ours) and relaxes `f₇` from monic to keep `f₆ ∈ F₂`; ours covers
-every degree-3 h and drives `f₆` to 0. Neither dominates, and PR7/PR8 should
-reconcile them deliberately rather than by accident.
+every degree-3 h and drives `f₆` to 0. Neither dominates.
+
+**The reconciliation is deliberately not done here** (decided 2026-08-24). It is a
+publication task rather than a repository one: the formulas are derived, gated and
+measured, and nothing in the code or the tests depends on how the three forms line
+up. Both normal forms and GKP's counts are recorded above, which is what that work
+would start from.
 
 ### What to beat
 

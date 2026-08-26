@@ -55,13 +55,106 @@ the split model. One disagreement showed up and was informative — see
 [NEW_WORK.md](NEW_WORK.md) N31. Note the genus-2 split figures are `posReduced`, the basis of record;
 `negReduced` is a different algorithm and differs by an operation or two on several rows.
 
-**The genus-3 ramified rows have no published counterpart at all** — the thesis defers those formulas
-(`chapter6.tex:15`, "ramified models are developed by another student") — and all three beat its own
-split Degree-3 rows on `M+S`, `C` and `A`. Each specialisation is also cheaper than the `arb` it
-specialises on every shared shape, which `verification/selftest.py` asserts rather than assumes.
+Each specialisation is cheaper than the `arb` it specialises on every shared shape, which
+`verification/selftest.py` asserts rather than assumes. See
+[Operation-count tables](#operation-count-tables) for the counter of record and the one known
+misclassification in it, and [Related work](#related-work) for how these compare against prior art.
 
-See [Operation-count tables](#operation-count-tables) for the counter of record and the one known
-misclassification in it, and [RELATED_WORK.md](RELATED_WORK.md) for the comparison against prior work.
+---
+
+## Related work
+
+### Genus 3, ramified — the one with no published comparison
+
+The genus-3 ramified formulas are the part of this repository with external competition — the thesis
+defers them (`chapter6.tex:15`, *"ramified models are developed by another student"*), so the published
+state of the art is other people's. Frequent case, combined `M+S` because that is what prior work
+prices, and every operation costs exactly `1I` on both sides.
+
+| cell | previous best | ours | margin |
+|---|---|---|---|
+| **odd char, addition** | 67 M+S, 105A† — Nyukai 2006 | **56 M+S, 0C, 59A** | **−11 M+S, −46 A** |
+| **odd char, doubling** | 68 M+S, 93A† — Nyukai 2006 | **58 M+S, 0C, 61A** | **−10 M+S, −32 A** |
+| **char 2, addition** | 67 M+S, 100A† — GKP 2004 | **54 M+S, 0C, 62A** | **−13 M+S, −38 A** |
+| **char 2, doubling** | 69 M+S, 107A† — GKP 2004 | **55 M+S, 2C, 55A** | **−14 M+S, −52 A** |
+| **arbitrary, addition** | *none published* | **56 M+S, 1C, 71A** | — |
+| **arbitrary, doubling** | *none published* | **58 M+S, 4C, 80A** | — |
+
+**Ahead on both axes in every cell that has competition**, and the harder target is quoted in each
+row: GKP 2004 is 70 M+S for both odd-characteristic operations against Nyukai's 67 and 68, and their
+alternative characteristic-2 variants are 68 M+S for the addition and 72 for the doubling against the
+67 and 69 quoted. The margin is wider against every figure not shown.
+
+Four things a reader should know before using these numbers:
+
+- **`†` marks A counts we derived, not figures the authors published.** No prior work in this area
+  reports additions at all. Where the paper prints its formulas step by step the count is recoverable,
+  and it is marked; where the paper is closed it is not quoted. The derivation rules are in
+  [RELATED_WORK.md](RELATED_WORK.md).
+- **`C` is zero in every previous-best cell**, because those normal forms leave no curve coefficient to
+  multiply by. It is non-zero only for us and only in the `arb` family, which by definition cannot
+  normalise — so that row's 1C and 4C are the price of generality, not an oversight.
+- **Three of these four cells did not exist when this work started.** Only the odd-characteristic
+  addition was inherited; the odd-characteristic doubling and both characteristic-2 formulas were
+  derived here.
+- **The characteristic-2 rows are quoted at `deg h = 3`**, this repository's target shape. Cheaper
+  char-2 numbers exist at other `h`-shapes and are not comparable — Birkner's `h = 1` doubling is
+  21 M+S and 20A, but a constant `h` collapses most of the work.
+
+**The `arb` family has no external competition at all**, no published arbitrary-characteristic genus-3
+ramified formulas existing. It can only be judged internally, and against the thesis's own *split*
+Degree-3 rows it is 12 better on `M+S`, 11 on `C` and 16 on `A` for the addition, and 18 / 15 / 21 for
+the doubling — which is what "ramified has strictly less to do than split" predicts, and which was not
+true when this work started.
+
+### The other three families
+
+Those already have published comparisons — in the thesis itself, since the split model and genus-2
+ramified are its own contribution. They are reproduced here so the repository tells the whole story in
+one place, and because **every "This work" row was re-derived from
+`verification/opcount.py` and matches the published table exactly.** That is not a redundant check: the
+comparison tables are a separate transcription from the cost tables, and a transcription is where a
+copy error hides.
+
+**Genus 2, ramified** — against Lange 2005, the standard reference, in the 4-coordinate affine setting:
+
+| | 2DBL | 12ADD | 2ADD |
+|---|---|---|---|
+| Lange 2005 | 22 / 6 / 56 / 3 | 10 / 1 / 25 / 0 | 22 / 3 / 40 / 0 |
+| **this work** | **22 / 4 / 42 / 2** | **9 / 1 / 22 / 0** | **21 / 2 / 31 / 0** |
+
+**Genus 2, split** — against Erickson, Jacobson and Stein 2011:
+
+| | 2DBL | 2ADD | 12ADD | 1ADD |
+|---|---|---|---|---|
+| EJS 2011 | 30 / 2 / 50 / 10 | 27 / 1 / 37 / 3 | 17 / 2 / 30 / 6 | 3 / 0 / 5 / 0 |
+| **this work** | **30 / 2 / 44 / 8** | 27 / 1 / 37 / 3 | **14 / 2 / 26 / 3** | 3 / 0 / 5 / 0 |
+
+Two cells tie exactly and the rest are ahead on additions and constant products. The larger gains are
+in the adjustment operations, which the thesis table carries in full and this summary omits — EJS need
+two inversions for several of them where this work needs one.
+
+**Genus 3, split** — against Rezai Rad et al. 2019 and Sutherland 2019:
+
+| | 3DBL odd | 3ADD odd | 3DBL char 2 | 3ADD char 2 |
+|---|---|---|---|---|
+| Rezai Rad et al. 2019 | 85 / 2 / 163 / 0 | 75 / 2 / 138 / 0 | 89 / 1 / 116 / 0 | 81 / 0 / 118 / 0 |
+| Sutherland 2019 | 74 / 8 / 127 / 0 | 73 / 6 / 127 / 0 | — | — |
+| **this work** | **72 / 4 / 97 / 0** | **65 / 3 / 85 / 0** | **71 / 4 / 86 / 1** | **65 / 3 / 80 / 0** |
+
+**One limitation worth stating.** These three comparisons are as the thesis published them in 2020, and
+no systematic search for work appearing since has been done. The genus-3 ramified survey above was
+compiled in 2026 and is current; these are not independently re-surveyed, only re-verified against our
+own measurements.
+
+### Reconciliation
+
+**One comparison is deliberately not made.** Three characteristic-2 normal forms differ — ours (any
+degree-3 `h`, `f₆ = 0`), Birkner's Type Ia (`h` irreducible, `f₆ ∈ F₂`, `f₇` non-monic) and GKP's two
+variants — and reconciling them is a publication task rather than a repository one. Nothing in the
+code or the tests depends on the outcome. Both forms and the counts are recorded in
+[RELATED_WORK.md](RELATED_WORK.md), which carries the full survey, the per-lane detail and the access
+table for each source.
 
 ---
 
