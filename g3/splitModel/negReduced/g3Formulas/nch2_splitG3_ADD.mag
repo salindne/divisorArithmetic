@@ -8099,13 +8099,26 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
     t5 := t1 - up1*t7;
     t8 := t4 - up2*t7;
     //t3 := -up0*t8;
-    t6 := t2 - up1*t8;
-    t9 := t5 - up2*t8;
+    //t6 := t2 - up1*t8;
+    //t9 := t5 - up2*t8;
 
-    m1 := t5*t9 - t6*t8;
-    m4 := t6*t7 - t4*t9;
+    // Bottom row of the adjugate needs only columns 1 and 2 of T.
+    m9 := t1*t5 - t2*t4;
+    m8 := t2*t7 - t1*t8;
     m7 := t4*t8 - t5*t7;
-    d := t1*m1 + t2*m4 - up0*t8*m7; //Determinant of T = t1*m1 + t2*m4 + t3*m7
+
+    // Column 3 of T is x*(column 2) reduced mod up, so the remaining six
+    // adjugate entries are shifts of the bottom row with one multiplication
+    // each rather than a 2x2 minor. m3, m4 and m6 are the three the
+    // determinant does not read, so they wait until the generic path below.
+    m5 := m9 + up2*m8;
+    m2 := -up0*m7;
+    m1 := m5 + up1*m7;
+
+    // t7*m3 = t7*(-up0*m8) = (-up0*t7)*m8 = t2*m8, the signs cancelling because
+    // t2 and m3 carry the same -up0 factor. So the determinant needs m8, not m3,
+    // and the inlined -up0*t8*m7 it used to spend two multiplications on is gone.
+    d := t1*m1 + t4*m2 + t2*m8; //Determinant of T
 
     if IsZero(d) then
         //dw1 := u mod up; // = (a1^-1)*S for S,a1,b1 = XGCD(u,up);
@@ -9769,16 +9782,17 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
     vt1:= vp1 - v1; 
     vt0:= vp0 - v0;
 
-    //Compute s = vt*q mod u2 using Karatsuba twice
-    t0 := vt0*m1;
-    t1 := vt1*m4;
-    t2 := vt2*m7;
-    t3 := (m4 + m7)*(vt1 + vt2) - t2 - t1 - up2*t2;
-    t4 := up1*t2;
-    t5 := t4 - t1;
-    sp0 := t0 - up0*t3;
-    sp1 := (m1 + m4)*(vt0 + vt1) - sp0 - (up0 + up1)*(t2 + t3) + t5;
-    sp2 := (m1 + m7)*(vt0 + vt2) - t0 - t2 - t5 - up2*t3;
+    // the three adjugate entries the determinant did not need
+    m4 := m8 + up2*m7;
+    m6 := m2 - up1*m8;
+    m3 := -up0*m8;
+
+    //Compute s = vt*q mod up as the matrix-vector product sp = M*vt. M is
+    //multiplication by q = d/u mod up, so this is the same map as vt*q mod up,
+    //and applying the matrix needs no reduction step.
+    sp0 := vt0*m1 + vt1*m2 + vt2*m3;
+    sp1 := vt0*m4 + vt1*m5 + vt2*m6;
+    sp2 := vt0*m7 + vt1*m8 + vt2*m9;
 
     if IsZero(sp2) then
         if IsZero(sp1) then
