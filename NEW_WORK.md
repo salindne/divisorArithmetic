@@ -2958,3 +2958,117 @@ Two standing rules, both learned the hard way here:
   alternative is that the next person re-runs the experiment.
 - **State honest limits in the entry, not in a footnote.** E-T5 is not measured
   and says so; the doubling composite is approximate and says so.
+
+## N33 — The adjugate is nearly free, and a discarded quotient is a Bezout cofactor
+
+**Status** — established, C4. **Where** — `g3/splitModel/negReduced/g3Formulas/`,
+all six `Deg3ADD` and `Deg3DBL` files; the published tables are
+`Thesis/chapter6.tex` `tab:g3splitfcosts{ADD,DBL}`, corrected as `E-T10`.
+
+**What was there.** Composing two degree-3 divisors needs `s = vt*q mod up`,
+where `q = d/w mod up` is a quadratic whose coefficient vector is the first
+column of the adjugate of the `3x3` matrix `T`. The split formulas built exactly
+that column -- three `2x2` minors `m1`, `m4`, `m7` -- took the determinant by
+expanding along `T`'s first row, and then reduced the product `vt*q` modulo `up`
+using Karatsuba twice.
+
+**The finding, and it is not the one the plan predicted.** Carrying the *whole*
+adjugate and applying it as a matrix-vector product is `+1M -12A` on the generic
+path of all six operations. The plan expected the extra multiplication to be paid
+at the `T` block, on the reasoning that nine entries must cost more than three.
+Measured, the block costs **`15M 0S 9A` either way**.
+
+The reason is structural rather than a happy accident, and it is the part worth
+publishing. Column 3 of `T` is `x` times column 2, reduced modulo `up`. `adj(T)`
+is itself a multiplication matrix -- by `q`, up to `det(T)` -- so it inherits that
+shift structure. Concretely, the bottom row `(m7, m8, m9)` is the cross product
+of columns 1 and 2 of `T` and needs no third column at all, and the remaining six
+entries are then **shifts of that row costing one multiplication each** instead
+of a `2x2` minor costing two:
+
+    m5 = m9 + w2*m8      m2 = -w0*m7      m1 = m5 + w1*m7
+    m4 = m8 + w2*m7      m6 = m2 - w1*m8  m3 = -w0*m8
+
+with `(w0, w1, w2)` the modulus coefficients. Three minors at `2M` and six shifts
+at `1M` is `12M`, exactly what three minors at `2M` plus the three now-unneeded
+`T` entries `t3`, `t6`, `t9` at `1M` used to cost. The nine-entry adjugate is
+free relative to the three-entry column.
+
+A further multiplication falls out of `t7*m3 = (-w0*t7)*m8 = t2*m8`, the signs
+cancelling because `t2` and `m3` carry the same `-w0` factor. So the determinant
+can be expanded along `T`'s first *column* reading `m8` in place of `m3`, and
+`m3` is left wanted only by the generic path, which computes it there -- no
+degenerate leaf pays for an entry it never reads.
+
+**Where the cost actually moves.** Downstream. Applying the matrix is
+`9M 6A` plus the three deferred entries at `3M 2A`, so `12M 8A`, against
+Karatsuba's `11M 20A`. One multiplication on, twelve additions off, and no
+reduction step because applying the multiplication matrix *is* the reduction.
+
+**Measured, six sites, `+1M -12A` at every one:**
+
+| | addition | doubling |
+|---|---|---|
+| arb | 65/3/87/12 -> **66/3/75/12** | 73/3/101/19 -> **74/3/89/19** |
+| nch2 | 65/3/85/0 -> **66/3/73/0** | 72/4/97/0 -> **73/4/85/0** |
+| ch2 | 65/3/80/0 -> **66/3/68/0** | 71/4/86/1 -> **72/4/74/1** |
+
+`+6M -72A` in total, accepted comfortably by the thesis's own `1M : 3A` rule. No
+other shape moved in any of the twelve families, which is the acceptance test:
+the trade is confined to the generic path it targets.
+
+**Scope, and why it is exactly six.** The `3x3` multiplication matrix exists only
+when reducing modulo a degree-3 modulus, so the lower-degree additions and
+doublings carry a smaller system with nothing to trade, and genus-2 split has no
+such matrix at all -- `m7` occurs zero times in all six of its formula files.
+
+**For the paper.** State the shift structure as the result, not the `+1M -12A`.
+The operation count is an artefact of one model at one genus; the statement that
+*the adjugate of a multiplication matrix inherits the shift structure of the
+matrix, so all nine entries cost barely more than one column* is what transfers,
+and it is what makes the matrix-vector form cheaper than forming the polynomial
+and reducing.
+
+### The refutation this replaced
+
+The plan carried a hand count saying the conversion **loses `2M 1A`** at the
+block and that the `+1M` is paid there. That count is wrong, and it was wrong in
+a way no amount of re-reading would have caught: it priced the ramified route's
+seven entries against split's three without noticing both arrangements spend the
+same fifteen multiplications. `verification/adjugate.py` settles it by executing
+both from their real `.mag` text -- `split_q_col1` at `15M 0S 9A` for four
+entries, `split_q` at `15M 0S 9A` for seven -- and the pre-C4 route is kept as a
+candidate rather than deleted so the comparison keeps scoring it.
+
+**The methodological point, which this project keeps relearning:** state what a
+change *removes*, and measure the total. A hand count of two arrangements is a
+prediction, not a result, and here the prediction had the right bottom line for
+the wrong reason. My own independent hand count also said `0M` before the
+measurement said `+1M`.
+
+### A related result, proved and deliberately not applied
+
+The same leaf structure exposed that split spends `11M 6A` reconstructing a
+Bezout cofactor it has already computed. The mathematics is settled -- `400 of
+400` constructed trials against ground truth in the quotient ring -- and the
+implementation is blocked on the file's normalisation of `b2`, so it is recorded
+in `ERRATA.md` **E24** rather than applied. The general statement belongs here
+because it outlives the leaf:
+
+**Wherever an explicit formula computes a remainder `r = a mod b` and later needs
+the Bezout cofactor of `b` modulo `a`, equivalently an inverse of `b` in
+`F_q[x]/(a)`, the quotient discarded by that division already is that cofactor,
+up to the scalar `lc(r)`.** One Euclidean step gives `t_1 = -q` in the extended
+algorithm's recurrence `t_{i+1} = t_{i-1} - q_i*t_i`, and reducing
+`s_1*a + t_1*b = r` modulo `a` gives `b^{-1} = t_1*r^{-1} (mod a)`. The cost of
+the modular inverse collapses to the cost of inverting a leading coefficient.
+
+The ramified model exploits this; the split model does not. The reason is
+**inversion scheduling**, and that is the publishable observation: ramified
+inverts early, so the monic-making scalar is exact and everything downstream is
+unweighted, while split must invert late because its `f` is non-monic of degree
+`2g+2` and `upp` needs normalising only after `upp` is known -- batching that
+normalisation with weight removal is precisely how the split formulas hold to a
+single inversion. Late inversion means every upstream quantity is carried
+projectively, and a weighted cofactor is not a drop-in for an exact one. The
+omission is a consequence of a deliberate design choice, not an oversight.

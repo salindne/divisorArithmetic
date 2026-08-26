@@ -1062,3 +1062,113 @@ the two versions cannot drift. Magma now passes all three.
 basis-aware either, so a posReduced run wrote over the negReduced run's log. Worse
 than untidy: `--inherit-from` reads those logs, so a negReduced arb could have been
 handed posReduced cases. Found by noticing a POS log where a NEG one belonged.
+
+## E23: the gates mutate formula files, so they cannot be run concurrently
+
+**Found 2026-08-26 during C4, by making the mistake.** `verification/selftest.py`
+provokes its own guards by editing formula files in place and restoring them:
+`blocks` drops a live `ExactQuotient` from `arb_splitG3_ADD.mag`, `dominance`
+deletes a live `k3` assignment, `adjugate` removes a ledger comment. Each run
+restores what it touched, and each is correct on its own.
+
+**Two runs at once are not.** A second `selftest` restored a file while the first
+still held it mutated, and the restore was lost. The tree was left with
+`g3/ramifiedModel/g3Formulas/arb_ramifiedG3_ADD.mag` missing the six-line
+`// top: 15m 0s 9a` ledger comment that `adjugate.py` anchors on -- a file
+neither run was testing and no one had edited.
+
+**It surfaced as a gate failure naming an untouched file:** `adjugate` reporting
+`arb_ramifiedG3_ADD.mag no longer carries its 'top' op-count comment, so
+shipped_7 is measured against nothing`, while a standalone `adjugate` run passed.
+That is a confusing signal, and the natural first hypothesis -- that the edit
+under test broke something -- is wrong.
+
+**The same hazard applies to Magma.** `./test_all.sh` loads formula files as each
+tester starts, so a `selftest` running alongside it can feed a deliberately
+broken file to a tester, and the suite's verdict then describes neither the
+committed code nor the code under test.
+
+**Not fixed, and the fix is not obvious.** Restoring via a temporary copy rather
+than in place would remove the hazard, but the provocations must edit the real
+path because the gates locate their targets by content in the real file. A lock
+file would serialise them at the cost of silent waiting. Recorded so the next
+person recognises the symptom rather than debugging a phantom formula defect.
+
+**Meanwhile: run the gates serially, and never alongside Magma.** If a gate fails
+naming a file the current work did not touch, check `git status` before believing
+it.
+
+## E24: a proved saving in the split genus-3 addition that cannot yet be applied
+
+**Registered 2026-08-26, when C5 was dropped from the C4 pull request.** Not a
+defect in the formulas -- a saving that is mathematically established and whose
+implementation is blocked on a question about the code, recorded per the standing
+rule that a result proved before its oracle exists is written down rather than
+applied.
+
+**The setting.** In `F_q[x]`, one Euclidean division step on `(up, dw2)` gives
+`up = q*dw2 + dw3` with `deg dw3 < deg dw2`. That is the first step of the
+extended Euclidean algorithm on the pair, and the extended algorithm maintains
+Bezout cofactors alongside the remainders: with `s_i*up + t_i*dw2 = r_i` and the
+recurrences `s_{i+1} = s_{i-1} - q_i*s_i`, `t_{i+1} = t_{i-1} - q_i*t_i`, after
+one step `t_1 = -q`. So the cofactor of `dw2` is, up to sign, exactly the
+quotient the division already computed. Reducing modulo `up` gives
+`t_1*dw2 = dw3 (mod up)`, hence `dw2^{-1} = t_1*dw3^{-1} (mod up)` whenever
+`dw3` is a unit there.
+
+**The saving.** In the leaf of `Deg3ADD` where the guards force `d = 0`,
+`t7 = 0` and `t4 = 0`, the formulas need `b2 = S*(dw2^{-1} mod up)` with `S` the
+monic `dw3`, and spend **11M 6A** on a `2x2` Cramer solve, its own comment naming
+the method: `//b2 := S*R!((Q!a)^-1) mod up;  //2x2 system`. By the above the
+polynomial part is free, and the intermediate it needs is already in hand:
+`t0 := w2*up2 - w1` is computed twelve lines earlier as part of
+`//dw3 := up mod dw2;`.
+
+**What is proved.** Constructing inputs that satisfy the leaf's precondition --
+`S1 = x + a`, `dw2 = S1*(bx + c)`, `q = (1/b)x + g`, `up = q*dw2 + lam*S1`, so
+`S1 | up` and `up mod dw2 = lam*S1` -- and computing the true
+`S*dw2^{-1} mod unp` independently in the quotient ring: the closed form
+`(-w2, -t0)` is proportional to it in **400 of 400** trials over GF(1000003).
+Constructed rather than sampled because rejection sampling reaches this leaf
+about once in ten thousand random inputs.
+
+**What blocks it.** The file's `(b1, b0)` is **not** that quantity up to any
+scalar, 0 of 400. So the substitution is not `b1 := -w2; b0 := -t0` at some
+weight, and the file's normalisation of `b2` is unknown. Two leads:
+`b1 := m1 + w4*m2` and `b0 := m3 + w4*m4` form `M*(1,w4)^T` for
+`M = [[m1,m2],[m3,m4]]`, which is not a Cramer solve for an inverse; and the
+comment `//a := dw2 mod up;` does not say whether the modulus is the original
+degree-3 `up` or the degree-2 quotient built two lines above, with the file's
+`up` still holding the degree-3 one at that point.
+
+**Do not settle this by re-implementing the block in Python.** That was tried.
+The transcription is precisely what is in doubt, so the experiment cannot
+distinguish its own error from a real difference. Observe the real execution
+instead: a recursive copy of `maginterp`'s statement loop in the manner of
+`detect.py`, snapshotting the environment where `b0` lands, over the whitebox
+cases reaching `ADD281`, `ADD282` and `ADD283`. Note `opcount.py` cannot verify
+such an edit -- the leaf is not a priced row -- so `whitebox.py` and Magma would
+carry it alone. The corpus **can** see the leaf: breaking `b1` deliberately gives
+9 whitebox mismatches, checked 2026-08-26.
+
+**Worth little in expectation, which is why it was dropped rather than finished.**
+Three zero-tests deep and reached about once in ten thousand inputs, so the
+11M 6A is a raw count on a path almost never taken, and no published cell moves.
+
+**Nine sibling sites are unexamined**, each a `b2` computation of the same family:
+`arb_splitG3_ADD.mag:8113/8249/9312`, `nch2_splitG3_ADD.mag:7834/7970/9031`,
+`ch2_splitG3_ADD.mag:7696/7832/8871` (numbering predates C4; locate by content).
+Each needs a division producing the remainder just above it and needs `u = up`.
+Genus-2 split has no `b2` site at all, and no doubling has one.
+
+**The transferable rule, which outlives this leaf.** Wherever an explicit formula
+computes a remainder `r = a mod b` and later requires the Bezout cofactor of `b`
+modulo `a` -- equivalently an inverse of `b` in `F_q[x]/(a)` -- the quotient
+discarded by that division already is that cofactor, up to the scalar `lc(r)`.
+The ramified model exploits this and the split model does not, and the reason is
+inversion scheduling rather than oversight: ramified inverts early, so `S1`
+becomes an exact scalar and everything downstream is unweighted, while split
+inverts late because its `f` is non-monic of degree `2g+2` and `upp` must be
+normalised after `upp` is known, which is how it holds to a single inversion.
+Late inversion means every upstream quantity is carried with a weight, and a
+weighted cofactor is not a drop-in for an exact one.
