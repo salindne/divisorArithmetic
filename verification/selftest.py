@@ -1882,7 +1882,12 @@ def section_split_counts(rep, quick):
             # divergence; nothing here says the thesis was wrong.
             "33ADD n=0,0": ((66, 3, 75, 12, 1), 2),   # Degree 3, post-C4
             "13ADD n=1,0": ((22, 2, 43, 7, 1), 2),    # Degree 1 and 3, Up Adjust
-            "3DBL n=0": ((73, 3, 101, 19, 1), 2),     # Degree 3
+            # SUPERSEDED BY C4, same trade as 33ADD above and for the same
+            # reason. Published cell (73, 3, 101, 19, 1). Hand-counted and
+            # measured independently, both giving +1M -12A: the generic path's
+            # s computation goes 11M 20A -> 12M 8A while the T-block holds at
+            # 15M 9A. `Thesis/ERRATA.md` records the divergence.
+            "3DBL n=0": ((74, 3, 89, 19, 1), 2),      # Degree 3, post-C4
             "1DBL n=1": ((7, 1, 19, 6, 1), 2),        # Degree 1
             "1DBL n=2": ((14, 3, 25, 8, 1), 2),       # Degree 1 with Down Adjust
         }),
