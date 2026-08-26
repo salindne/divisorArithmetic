@@ -142,7 +142,7 @@ What is missing, in progress, or knowingly deferred.  Verification figures are u
 - **Two known savings in the split model are unapplied**, both with their identities already proved: the adjugate trade (`+1M −12A`, six sites) and a redundant 2×2 system (`11M 6A` deletable).  Their prerequisite is discharged, since `verification/opcount.py` measures the split families now and a per-branch delta can be demonstrated, but they edit published formulas, so each moved cell owes a hand count and a `Thesis/ERRATA.md` entry.
 - **Genus-3 split still binds the larger divisor first**, where every other family passes the smaller-degree divisor first.  So `Deg23ADD` is positional elsewhere and merely sorted there.  Aligning it is parameter reordering rather than renaming, queued together with collapsing `Deg22ADD` to `Deg2ADD`, the one same-degree name still spelled with two digits.  See [Naming convention](#naming-convention).
 - **Detectability is 85.4%, not 100%.**  The whitebox corpus holds two cases per computation path per characteristic class from different fields, and 14.6% of the assignments in the formula bodies can still be perturbed without changing the returned divisor.  Some of that is structural, a branch guarded on `d = 0` needing `d = 0` to be reached at all, so 100% is not the target.  `verification/detect.py` reports it per family.
-- **One branch is exempt from coverage**, `ADD227` of `ch2_splitG3_ADD.mag`, and it carries a proof of unreachability in characteristic 2 rather than a search budget excuse.  Everything else is covered, 1,928 of 1,929.
+- **One branch is exempt from coverage**, `ADD227` of `ch2_splitG3_ADD`, and it carries a proof of unreachability in characteristic 2 rather than a search budget excuse.  Everything else is covered, 1,928 of 1,929.
 - **`latexTables/latexConverter.py` is not runnable**; its input paths are stale.  It has been demoted to a LaTeX renderer, counting having moved to `verification/opcount.py`, so the committed `.tex` tables cannot be regenerated, and nothing else depends on it.
 - **Errata are recorded before they are fixed, deliberately.**  A defect goes into [ERRATA.md](ERRATA.md) with a reproducer and waits for a gate that can see the fix.  Entries whose reproducer already runs get fixed; the rest name the tooling they wait on.
 
@@ -357,7 +357,7 @@ grep -oE '^(ADD|DBL)[0-9]+$' logs/<family>_log.txt | sort -u | wc -l
 Limitations:
 
 - An unreached branch is reported, and writing a tester with a gap needs `--allow-incomplete`.
-- [whitebox/testerFiles/](whitebox/testerFiles/) is a staging directory, not the testers of record, and `verification/whitebox.py` deliberately excludes it.  Its `arb_splitG3_whiteBox_tester.mag` is a two-case fragment from an aborted run; the deployed genus-3 split testers hold 1,979, 1,209 and 1,203 cases and live in [g3/splitModel/negReduced/](g3/splitModel/negReduced/).
+- [whitebox/testerFiles/](whitebox/testerFiles/) is a staging directory, not the testers of record, and `verification/whitebox.py` deliberately excludes it.  Its [arb_splitG3_whiteBox_tester.mag](whitebox/testerFiles/arb_splitG3_whiteBox_tester.mag) is a two-case fragment from an aborted run; the deployed genus-3 split testers hold 1,979, 1,209 and 1,203 cases and live in [g3/splitModel/negReduced/](g3/splitModel/negReduced/).
 - [whitebox/logs/](whitebox/logs/) holds the residue of a pre-2025 orchestrator run alongside output from aborted ones.  Two of the three original files begin mid-polynomial: that generation reset the log with `truncate(0)` while Magma still held it open at its own write offset.  The runner now writes to a separate `.new` file and never truncates.  Regeneration logs are gitignored, running to gigabytes where the committed ones are kilobytes.
 
 ---
@@ -553,4 +553,3 @@ Operation costs for every non-degenerate function, measured as in [Typical Case 
 <tr><td><b>3DBL n=0</b></td><td>73</td><td>3</td><td>101</td><td>19</td><td>72</td><td>4</td><td>97</td><td>0</td><td>71</td><td>4</td><td>86</td><td>1</td></tr>
 </tbody>
 </table>
-
