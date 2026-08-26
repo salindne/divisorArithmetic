@@ -140,7 +140,6 @@ What is missing, in progress, or knowingly deferred.  Verification figures are u
 
 - **The characteristic 2 genus-3 formulas have no published comparison, and one is not planned here.**  Three normal forms differ: ours (any degree-3 `h`, `f₆ = 0`), Birkner's Type Ia (`h` irreducible, `f₆ ∈ F₂`, `f₇` non-monic) and GKP's two variants. [RELATED_WORK.md](RELATED_WORK.md) carries the forms and the counts with citations.
 - **Two known savings in the split model are unapplied**, both with their identities already proved: the adjugate trade (`+1M −12A`, six sites) and a redundant 2×2 system (`11M 6A` deletable).  Their prerequisite is discharged, since `verification/opcount.py` measures the split families now and a per-branch delta can be demonstrated, but they edit published formulas, so each moved cell owes a hand count and a `Thesis/ERRATA.md` entry.
-- **Genus-3 split still binds the larger divisor first**, where every other family passes the smaller-degree divisor first.  So `Deg23ADD` is positional elsewhere and merely sorted there.  Aligning it is parameter reordering rather than renaming, queued together with collapsing `Deg22ADD` to `Deg2ADD`, the one same-degree name still spelled with two digits.  See [Naming convention](#naming-convention).
 - **Detectability is 85.4%, not 100%.**  The whitebox corpus holds two cases per computation path per characteristic class from different fields, and 14.6% of the assignments in the formula bodies can still be perturbed without changing the returned divisor.  Some of that is structural, a branch guarded on `d = 0` needing `d = 0` to be reached at all, so 100% is not the target.  `verification/detect.py` reports it per family.
 - **One branch is exempt from coverage**, `ADD227` of `ch2_splitG3_ADD`, and it carries a proof of unreachability in characteristic 2 rather than a search budget excuse.  Everything else is covered, 1,928 of 1,929.
 - **`latexTables/latexConverter.py` is not runnable**; its input paths are stale.  It has been demoted to a LaTeX renderer, counting having moved to `verification/opcount.py`, so the committed `.tex` tables cannot be regenerated, and nothing else depends on it.
@@ -234,15 +233,18 @@ Tester filenames are inconsistently cased, historically: genus 2 uses `*_whiteBo
 
 **`Deg<i><j>ADD` names the degrees of the two input divisors, and one family disagrees about the order, so check before comparing.**
 
-| | example | order the parameters arrive in |
-|---|---|---|
-| genus 2 ramified | `Deg12ADD(u0, v0, up1, up0, vp1, vp0, …)` | **smaller** degree first, so the digits are positional |
-| genus 3 ramified | `Deg23ADD(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, …)` | **smaller** degree first |
-| genus 3 split | `Deg23ADD(u2, u1, u0, v2, v1, v0, up1, up0, vp1, vp0, ccs)` | **larger** degree first, so the digits are merely sorted |
+**The digits are positional: the smaller-degree divisor arrives first, in every family.**  Coefficients within an operand descend.
 
-Genus-3 split is the sole outlier.  Aligning it is parameter reordering rather than renaming, the names already being correct, and it is deferred because it is a behavioural edit to published formulas, not for want of an oracle: the whitebox corpus reaches every mixed-degree branch, and a deliberately swapped operand pair is caught.
+| | example |
+|---|---|
+| genus 2 ramified | `Deg12ADD(u0, v0, up1, up0, vp1, vp0, …)` |
+| genus 2 split, both bases | `Deg12ADD(u0, v0, up1, up0, vp1, vp0, ccs)` |
+| genus 3 ramified | `Deg23ADD(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, …)` |
+| genus 3 split | `Deg23ADD(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, ccs)` |
 
-Same-degree cases are spelled with a single digit everywhere except one: `Deg1ADD` for 1+1 and `Deg3ADD` for 3+3, but `Deg22ADD` for 2+2 in both genus-3 models.  It is the lone holdout and purely cosmetic, a same-degree case having no operand order to confuse.  Collapsing it to `Deg2ADD` is queued with the reordering above.  Doubling is already uniform: `Deg1DBL`, `Deg2DBL`, `Deg3DBL`.
+So reading a name tells you what the inputs are, and the two `Deg12ADD` forms above differ only in their curve-constant tail.  Genus-3 split was the last family to bind the larger divisor first, and genus-2 split the last to write coefficients ascending; both were aligned together, the second having contradicted its own `Deg2DBL` in the same file.
+
+Same-degree cases are spelled with a single digit throughout: `Deg1ADD` for 1+1, `Deg2ADD` for 2+2, `Deg3ADD` for 3+3.  The genus-3 models spelled the middle one `Deg22ADD` until it was collapsed with the reorder above.  Doubling matches: `Deg1DBL`, `Deg2DBL`, `Deg3DBL`.
 
 **The reference implementation is duplicated.**  `reduced_basis_arithmetic.mag` exists in 8 copies across the tree in 5 byte-distinct versions, and genus 3 additionally has a separate 730-line `poly_balanced_arithmetic.mag`.  The copy under [g2/splitModel/negReduced/](g2/splitModel/negReduced/reduced_basis_arithmetic.mag) is what the genus-2 testers assert against.  Which copy is authoritative for a given consumer is currently implicit, so check before trusting any cross-comparison.
 

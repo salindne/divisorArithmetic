@@ -3072,3 +3072,105 @@ normalisation with weight removal is precisely how the split formulas hold to a
 single inversion. Late inversion means every upstream quantity is carried
 projectively, and a weighted cofactor is not a drop-in for an exact one. The
 omission is a consequence of a deliberate design choice, not an oversight.
+
+## N34 — One calling convention, and why a rename is safer than a reorder
+
+**Status** — established, PR10. **Where** — the three genus-3 split additions, the six genus-2 split
+additions, and the `Deg22ADD` name in both genus-3 models.
+
+**What was there.** `Deg<i><j>ADD` names the degrees of its two input divisors, and the repository
+disagreed with itself about what that meant. In genus-2 ramified, genus-2 split and (since PR36)
+genus-3 ramified the digits were **positional**: the smaller-degree divisor arrived first. In genus-3
+split they were merely **sorted**, and the larger arrived first. Separately, genus-2 split wrote each
+operand's coefficients **ascending** where the other three families wrote them descending.
+
+**Why the first of those is a correctness problem and not a style one.** A caller who reads the name
+and passes operands in the genus-2 order gets a **silently wrong answer**, not an error, because the
+arities happen to match. That is the same defect class that got the inherited
+`*_use_for_odd_even.m` files dropped at import for carrying a reversed operand convention. The second
+is genuinely cosmetic, but genus-2 split contradicted *itself*: `Deg2DBL(u1,u0,v1,v0,ccs)` and
+`Deg2ADD(u0,u1,v0,v1,...)` sat in the same file.
+
+**The convention now holds in all twelve families**: digits positional, smaller divisor first,
+coefficients descending. Every `Deg12ADD` in the repository reads
+`(u0, v0, up1, up0, vp1, vp0, ...)`, differing only in the curve-constant tail.
+
+### Three kinds of edit, and they must not be conflated
+
+This is the transferable part, because the three have different risk and different verification:
+
+1. **A pure rename**, `Deg22ADD` -> `Deg2ADD`. No operand order to confuse, verifiable by
+   copy-and-diff. It landed first and alone, so the risky diff stayed small.
+2. **A prefix swap inside a function body**, `u <-> up` and `v <-> vp` with subscripts untouched --
+   the prefix is the divisor identity, the subscript the coefficient index within it.
+3. **An argument reorder at the call site**, with *no* renaming, because the caller's variables keep
+   their meaning.
+
+Conflating 2 and 3 corrupts the dispatcher; doing 2 without 3 produces a wrong answer with no compile
+error. They are the same conceptual change and opposite textual ones.
+
+### The swap is one pass with a lookup, not three passes through a sentinel
+
+```python
+TOK  = re.compile(r'(?<![A-Za-z0-9_])(up|vp|u|v)([0-9])(?![A-Za-z0-9_])')
+SWAP = {"u": "up", "up": "u", "v": "vp", "vp": "v"}
+new  = TOK.sub(lambda m: SWAP[m.group(1)] + m.group(2), body)
+```
+
+A sentinel (`up -> TMP`, `u -> up`, `TMP -> u`) is correct but its correctness rests on the sentinel
+never colliding and on nobody reordering the passes later. `re.sub` with a callback replaces each
+match independently and never rescans its own output, so `u0 -> up0` and `up0 -> u0` in the same pass
+cannot interfere. **The hazard becomes structurally impossible rather than avoided by discipline.**
+
+Two things about it that would each have produced a half-applied swap, which is the wrong-answer case:
+
+- **`up|vp` must precede `u|v` in the alternation.** Python matches leftmost-first, not longest, so the
+  other order matches the `u` of `up0`, fails the digit test, and skips the token entirely -- leaving
+  every `up` untouched while every `u` swaps.
+- **The substitution must be scoped to the target function bodies, not the file.** `up3` is not a
+  divisor coefficient: it is a live scratch temporary in `Deg3ADD` holding `up2^2`. A file-wide pass
+  would have renamed it to `u3`.
+
+Both were established by measurement before the first edit, not discovered afterwards: the pattern was
+run against all three files and shown to rewrite exactly thirteen token forms while leaving the other
+fifty-two identifiers beginning `u` or `v` alone, `upp0`-`upp3`, `unp0`, `vpp0`-`vpp2`, `vh0`-`vh2`,
+`vt0`-`vt2` and the bare `u`, `up`, `v`, `vp` among them.
+
+### The acceptance test for a reorder is that nothing moves
+
+**`opcount.py` identical per branch, per family, before and after** -- a reorder that changes a count
+has changed behaviour. Measured identical across all 42 shapes in each genus-3 split family and every
+shape in all six genus-2 split families. That gate did not exist when this work was first scheduled;
+PR41 supplied it.
+
+Two mechanical self-checks ran before any gate, and both are cheap enough to be worth habit: within
+the swapped bodies the token counts must **exchange exactly** (`u` 543 <-> 597 and `v` 602 <-> 495 in
+arb), and `git diff --stat` must show **equal insertions and deletions**, 1,106/1,106 for arb and
+2,200/2,200 for the two specialisations. A partial swap fails both.
+
+### The trap that cost two earlier PRs was absent, and that was checked rather than assumed
+
+PR21 drifted 56 frozen cases and PR36 another 20, both because a rename touched debug label strings
+that the corpus stores verbatim. Here `Deg22ADD` **never appears inside a label string**: genus-3 split
+labels are numeric (`ADD000`..`ADD349`) and the genus-3 ramified labels were numbered in PR6, carrying
+the prose name only in a trailing comment. `harvested_cases.json` holds 0 cases and
+`coverage_baseline.json` no `Deg`-bearing labels. So no frozen-corpus substitution and no re-harvest.
+
+### An honest limit
+
+The plan named an `_OLD` same-session differential as the per-file acceptance test, the technique PR36
+used. It was attempted in Python and abandoned after ten minutes without completing: interpreting nine
+functions of a 10,000-line file at that volume is too slow, and the Magma form is its own piece of
+tooling. What stands in for it, and I think adequately:
+
+- **The frozen corpus is itself an old-versus-new comparison.** Those cases were extracted from runs of
+  the *old* code and record both the returned divisor and the branch label reached; the new code
+  reproduces every one exactly.
+- **`driver --strict` agrees with `reference.py`** over 55,236 operations across every degree
+  combination, so old and new agree with each other through an independent oracle.
+- **The specific failure this edit risks -- a missed call site feeding old-order arguments to a
+  reordered function -- is exactly what the corpus catches**, because its cases drive the dispatcher
+  rather than the leaf functions.
+
+Recorded rather than glossed, because "the plan said do X, we did Y" is the kind of substitution that
+is invisible six months later.
