@@ -70,7 +70,7 @@ are rather than naming them. `selftest.py`'s `blocks` section drives every one o
 them in both families, so all twelve are gated, not only the one the provocation
 is injected into. At that section's settings, `--curves=4 --pairs=6 --seed 11`,
 all twelve agree over 9,061 comparisons: `arb` 752/744/973/618/906/1158 and `nch2`
-529/528/764/486/738/865 for Deg1ADD, Deg12ADD, Deg22ADD, Deg13ADD, Deg23ADD,
+529/528/764/486/738/865 for Deg1ADD, Deg12ADD, Deg2ADD, Deg13ADD, Deg23ADD,
 Deg3ADD. The seed is named because it has to be: at the CLI default `--seed 1` the
 same twelve agree over 8,904 instead. A comparison count is a property of the run,
 not of the formulas -- it moves with the seed, with the field set the tester

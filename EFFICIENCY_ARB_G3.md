@@ -389,7 +389,7 @@ re-deriving even where the observation was sound.
 |---|---|---|
 | ODDADD-19 (arb) | **confirmed** | −5M −1S −19A −4C — see [A1](#a1-deg3add-computes-two-quotient-coefficients-that-no-branch-ever-reads) |
 | ODDADD-19 (nch2) | **confirmed**, recorded delta slightly off | −4M −1S −11A −2C |
-| ODDADD-13 | **REFUTED for arb** | `dm_0` at `:529` is *live* in the arb file; dead only in nch2, and only in `Deg22ADD` case #2.1, worth −1M there |
+| ODDADD-13 | **REFUTED for arb** | `dm_0` at `:529` is *live* in the arb file; dead only in nch2, and only in `Deg2ADD` case #2.1, worth −1M there |
 | D33-07 | **confirmed exactly** | 0 on the frequent case; −2M −2A on every `det = 0` return site (7 in arb, 8 in nch2) |
 | ARBDBL-06 | **confirmed, smaller than recorded** | −2M −1S −2A, and **not on the frequent path** — the whole `dw` block sits inside `if (det eq 0)`. Recorded as "~4M"; the flag to "re-count before adopting" was right |
 | ARBDBL-09 | **confirmed, different delta** | Horner alone is **−1S**, not −1M −1S. With `f′`/`h′` constants hoisted: −1S −5A |

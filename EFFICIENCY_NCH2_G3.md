@@ -272,11 +272,11 @@ precedent, not for the count.
 | `M64` sink, same pattern | every `det = 0` sub-case | −2M −2A |
 | leftover h-term `ta := d0*d2` (**ODDADD-20a**) | all five `#3.x` branches | −1M |
 | duplicate `ta` (**ODDADD-20b**, restated) | — | −1A |
-| dead `dm0 := d0*a1` (**ODDADD-13**) | `Deg22ADD` #2.1 | −1M |
+| dead `dm0 := d0*a1` (**ODDADD-13**) | `Deg2ADD` #2.1 | −1M |
 | Karatsuba in the losing direction | 8 sites | −3A each, 24A static |
 | disguised squarings, `M → S` | 11 sites | −1M +1S each |
 | `Deg3ADD` case #4.2 | — | −1M +1S −1A |
-| `Deg22ADD` `st` alias | #3.1 | −1M −1A +1S |
+| `Deg2ADD` `st` alias | #3.1 | −1M −1A +1S |
 
 **`ODDADD-13` is confirmed here where its arb twin was REFUTED.** The audit claimed
 a dead `dm0` in both files; the arb line is live and deleting it there would be a

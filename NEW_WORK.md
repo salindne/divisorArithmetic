@@ -432,7 +432,7 @@ the same kind.
 **Scale, measured.** `driver.py --curves 3 --pairs 3 --seed 11 --strict`:
 **1,300 wrong results in 12,587 operations**, spread across all fourteen
 families — genus-2 ramified `ADD00`/`ADD06`; genus-3 ramified `DEG33ADD`,
-`Deg1ADD` case 2, `Deg22ADD` 3.1/3.2; genus-2 split `ADD15/19/38/58` in both
+`Deg1ADD` case 2, `Deg2ADD` 3.1/3.2; genus-2 split `ADD15/19/38/58` in both
 bases; roughly twenty genus-3 split branches. **Zero wrong on the documented
 domain** — the formulas were never wrong at what they claimed, only at what
 callers would reasonably do.
@@ -1215,8 +1215,8 @@ implementation, which is the class of defect a human reading both is worst at.
 been generic: one `XGCD(u,up)` call, a second `XGCD` on the gcd, and a three-way tail on
 `Degree(u) + Degree(up)`. That is a correct algorithm but it is not the algorithm below it,
 so no statement of it could serve as the comment above any particular explicit group. All
-four are now unfolded in the resultant form the house exemplars use — `arb_splitG3_ADD`'s
-`Deg22ADD` and genus-2 ramified's `Deg2ADD` — with every gcd case explicit and its own
+four are now unfolded in the resultant form the house exemplars use — `Deg2ADD`, in both
+`arb_splitG3_ADD` and genus-2 ramified — with every gcd case explicit and its own
 return. `Deg3ADD` goes from 51 lines to 178 and from 3 returns to 12.
 
 **How many leaves is settled by the parent, not by taste.** Each block's header names
@@ -1259,7 +1259,7 @@ six degree pairs — zero mismatches — with every operation count identical pe
 
 ## N21 — Two weights larger than the mathematics requires, and a cofactor that is a constant
 
-**Status:** implemented and measured, 2026-08-14. Genus-3 ramified `Deg22ADD`, both
+**Status:** implemented and measured, 2026-08-14. Genus-3 ramified `Deg2ADD`, both
 the arbitrary and the odd-characteristic file.
 
 The degree-2-plus-degree-2 addition's degenerate branches carried three separate
@@ -1348,7 +1348,7 @@ path of the function at once.
 
 **Every other `vpp` site in all three genus-3 ramified files already writes the
 folded form** — `arb_ramifiedG3_DBL.mag:332-333`, `:612-613`, `:673`, and
-`arb_ramifiedG3_ADD.mag` at `Deg22ADD:418`, `Deg23ADD:862`, `Deg3ADD:897-899`,
+`arb_ramifiedG3_ADD.mag` at `Deg2ADD:418`, `Deg23ADD:862`, `Deg3ADD:897-899`,
 `:1059-1061`, `:1138-1140`. The only unfolded lines anywhere were the four in the
 arb `Deg13ADD` and the four in the nch2 one.
 
@@ -1436,7 +1436,7 @@ being stated**.
 
 **Measured across every shape in both models**, by classifying each function's solve: the split
 builds an inverse object **zero** times in the addition and **zero** times in the doubling. The
-ramified builds one 5 times in `Deg23ADD` and 11 times in `Deg3ADD`. Both doublings, `Deg22ADD`,
+ramified builds one 5 times in `Deg23ADD` and 11 times in `Deg3ADD`. Both doublings, `Deg2ADD`,
 and all three typical paths already agree — they use the adjugate.
 
 **The rule that decides it, which neither file states.** The adjugate always costs
@@ -1567,11 +1567,11 @@ therefore differ only in the *degree of the output*, which the block's generic
 `upp := ExactQuotient(...); upp := upp/LeadingCoefficient(upp)` produces by itself. Splitting the
 block would have duplicated a formula to express nothing.
 
-**Second result: at `Deg23ADD` both coefficients of `dw2` must be tested, and at `Deg22ADD` only
+**Second result: at `Deg23ADD` both coefficients of `dw2` must be tested, and at `Deg2ADD` only
 one must.** The guard reads `if (dw21 eq 0 and dw20 eq 0)`, and the natural question is whether the
 second conjunct is redundant, as it provably is one degree down. It is not.
 
-- At `Deg22ADD` the branch is `u = up`, so `u | (vp - v)(h + v + vp)` with `deg(vp - v) < deg u`
+- At `Deg2ADD` the branch is `u = up`, so `u | (vp - v)(h + v + vp)` with `deg(vp - v) < deg u`
   forces `vp = v` — that is `D1 = D2`, which the dispatcher has already routed to the doubling.
   Hence `dw21 = 0` implies `dw20 = 0`.
 - At `Deg23ADD` the branch is `u | up` with `deg u = 2 < 3 = deg up`. The same argument yields only
@@ -1599,7 +1599,7 @@ other — and only the first is excluded by the equal-divisor dispatch.
 **Status:** implemented and measured, 2026-08-18. Genus-3 ramified `Deg23ADD`, both files. Degenerate
 branches only — the frequent case does not move, so no published row changes.
 
-`Deg22ADD` already carried the observation that `a2` collapses to a constant (N21). The same collapse
+`Deg2ADD` already carried the observation that `a2` collapses to a constant (N21). The same collapse
 was available in `Deg23ADD`'s `gcd(u,up) = dw1` family and had not been taken, and the reference block
 was already describing the cheaper route while the explicit code did something else:
 
@@ -1638,7 +1638,7 @@ serves two of the three:
 | `#2.3`, `#3.x`, typical, both files | — | unchanged |
 
 **These are the most expensive branches in the function** — arb `#2.1` was 59M against the frequent
-case's 36M — which is why the collapse is worth more here than the `Deg22ADD` instance was.
+case's 36M — which is why the collapse is worth more here than the `Deg2ADD` instance was.
 
 ### What was checked and found already at its floor
 
@@ -1698,7 +1698,7 @@ never has to exist. The saving is not in the division but in everything downstre
 **Status:** implemented and measured, 2026-08-21. Genus-3 ramified `Deg3ADD`, both files. Degenerate
 branches only — the frequent case does not move, so no published row changes.
 
-N21 found the constant cofactor at `Deg22ADD`, N25 took it at `Deg23ADD`. `Deg3ADD` is the last and
+N21 found the constant cofactor at `Deg2ADD`, N25 took it at `Deg23ADD`. `Deg3ADD` is the last and
 largest instance, and it turned into a different kind of result: **the interesting question is not
 where the collapse applies but where it has already bottomed out**, and that is measurable rather
 than derivable.
