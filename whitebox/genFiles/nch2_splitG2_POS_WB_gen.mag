@@ -1,3 +1,13 @@
+// GENERATED FROM nch2_splitG2_WB_gen.mag -- do not edit by hand.
+// Regenerate with scratch script make_pos.py, whose docstring records why this is a
+// separate file: Magma cannot `load` inside a conditional, so a run-time basis
+// switch cannot bring in the right formulas.
+//
+// The ONLY differences from the negReduced twin are the four substitutions below:
+// the formulas loaded, the three _SPLIT_NEG library calls, the basis polynomial
+// passed to them, and the basis v's top coefficients are read from. Everything else
+// -- the budget, the curve loop, the pair construction, the emitted block format --
+// is shared, so a case differs only in the arithmetic it was verified against.
 clear;
 ///////////////////////////////////////////////////////////////////////////////
 /////// TESTING SPLIT MODEL DIVISOR ARITHMETIC OVER ARBITRARY FIELDS //////////
@@ -24,9 +34,10 @@ ADD_DEBUG := true;
 ///////////////////////////////////////////////////////////////////////////////
 //LOAD FILES
 ///////////////////////////////////////////////////////////////////////////////
-load "genFiles/ramifiedUtilities.mag";
-load "../g2/ramifiedModel/g2Formulas/ch2_ramifiedG2_DBL.mag";
-load "../g2/ramifiedModel/g2Formulas/ch2_ramifiedG2_ADD.mag";
+load "genFiles/reduced_basis_arithmetic.mag";
+load "../g2/splitModel/posReduced/g2Formulas/nch2_splitG2_UTL.mag";
+load "../g2/splitModel/posReduced/g2Formulas/nch2_splitG2_DBL.mag";
+load "../g2/splitModel/posReduced/g2Formulas/nch2_splitG2_ADD.mag";
 "     ";
 
 
@@ -44,14 +55,14 @@ load "../g2/ramifiedModel/g2Formulas/ch2_ramifiedG2_ADD.mag";
 //            rather than of the moment the loop happened to be interrupted.
 // WB_LOG     where to write the blocks. Was hardcoded, so the tool could not tell
 //            the generator where to put them.
-FIELDS := [4,8];
+FIELDS := [5,7,9];
 if GetEnv("WB_FIELDS") ne "" then
     FIELDS := [ StringToInteger(s) : s in Split(GetEnv("WB_FIELDS"), ",") ];
 end if;
 TRIALS := StringToInteger(GetEnv("WB_TRIALS") eq "" select "40" else GetEnv("WB_TRIALS"));
 SetSeed(StringToInteger(GetEnv("WB_SEED") eq "" select "1" else GetEnv("WB_SEED")));
 WB_LOG := GetEnv("WB_LOG");
-if WB_LOG eq "" then WB_LOG := "logs/ch2_ramifiedG2_log.txt"; end if;
+if WB_LOG eq "" then WB_LOG := "logs/nch2_splitG2_POS_log.txt"; end if;
 
 SetOutputFile(WB_LOG : Overwrite := true);
 SetAutoColumns(false);
@@ -63,7 +74,7 @@ SetColumns(0);
 //Field sizes below 10 for auto gen cases
 //Split curves do not exist for FF(2)
 DIVISORS:= 1;
-
+H_ZERO := false;
 
 /////////////////////////////////////////////////////////
 ///////////////////// TEST LOOPS ////////////////////////
@@ -74,9 +85,11 @@ for F in FIELDS do
   // `while true` with F drawn at random.
   FF:=GF(F);
   R<x>:=PolynomialRing(FF);
-  f,h:= RandomG2Char2Curve(F);
-  C:= HyperellipticCurve(f,h);
-  Jac:= Jacobian(C); 
+  f:= RandomNotCh23SpG2Curve(F);
+  h := R!0;
+  Vp:= ComputeVpl(f,h,2);
+  Vn := -Vp - h;
+  curveConst:= Precompute(f,h,F); 
   
   divisor:= 0;
   while divisor le DIVISORS do
@@ -85,33 +98,35 @@ for F in FIELDS do
     /////////////////////////////////////////////////////
     ///RANDOM DIVISORS
     /////////////////////////////////////////////////////
-    D1:= Random(Jac);
+    D1:= RandomDivisor_SPLIT_POS(f,h,Vp,2);
     U1:= D1[1];
     V1:= D1[2];
-  
-    D2 := Random(Jac);
+    N1:= D1[4];
+
+    D2 := RandomDivisor_SPLIT_POS(f,h,Vp,2);
     U2:= D2[1];
     V2:= D2[2];
+    N2:= D2[4];
 
     "@B";
-    nU2,nU1,nU0,nV1,nV0 := DBL(U1,V1,f,h);
+    nU2,nU1,nU0,nV1,nV0,nN := DBL(U1,V1,N1,curveConst);
     nU:= R ! nU2*x^2 + nU1*x + nU0;
-    nV:= R ! nV1*x + nV0;
-    cantor:= D1 + D1;
-    if nU eq cantor[1] and nV eq cantor[2] then
-      F; f, h, <D1[1], D1[2]>, <D2[1],D2[2]>, <nU,nV>;
+    nV:= R ! Coeff(Vp,3)*x^3 + Coeff(Vp,2)*x^2 + nV1*x + nV0;
+    cantor:= Double_SPLIT_POS(D1,f,h,Vp,2);
+    if <nU, nV, ExactQuotient(f - nV*(nV + h),nU), nN> eq cantor then
+      F; f, h, Vp, Vn, D1, D2, <nU,nV,nN>;
       "@E";
     else
       "failed";
     end if;
     if D1 ne D2 then
       "@B";
-      nU2,nU1,nU0,nV1,nV0 := ADD(U1,V1,U2,V2,f,h);
+      nU2,nU1,nU0,nV1,nV0,nN := ADD(U1,V1,N1,U2,V2,N2,curveConst);
       nU:= R ! nU2*x^2 + nU1*x + nU0;
-      nV:= R ! nV1*x + nV0;
-      cantor:= D1 + D2;
-      if nU eq cantor[1] and nV eq cantor[2] then
-        F; f, h, <D1[1], D1[2]>, <D2[1],D2[2]>, <nU,nV>;
+      nV:= R ! Coeff(Vp,3)*x^3 + Coeff(Vp,2)*x^2 + nV1*x + nV0;
+      cantor:= Add_SPLIT_POS(D1,D2,f,h,Vp,2);
+      if <nU, nV, ExactQuotient(f - nV*(nV + h),nU), nN> eq cantor then
+        F; f, h, Vp, Vn, D1, D2, <nU,nV,nN>;
         "@E";
       else
         "failed";

@@ -139,8 +139,10 @@ jobs:
 
       - name: constructed whitebox cases, every developed formula
         working-directory: verification
-        # 1,838 frozen cases, one per computation path, found by coverage-guided
-        # search and then committed -- not hand-built. Replayed
+        # 7,043 frozen cases found by coverage-guided search and then committed --
+        # not hand-built. Two per computation path per characteristic class for the
+        # ramified families, one elsewhere; see ERRATA E20 for why one was not
+        # enough. Replayed
         # through the interpreter and compared against reference.py. Deterministic and
         # about two seconds.
         #
@@ -149,8 +151,8 @@ jobs:
         # It could never gate on coverage without either failing honest runs or gating
         # on nothing.
         #
-        # ALL 1,838 cases are read at run time out of the repository's own whitebox
-        # testers -- 14 of them, one per family -- so they cannot drift out of step
+        # ALL 7,043 cases are read at run time out of the repository's own whitebox
+        # testers -- 15 of them, one per family -- so they cannot drift out of step
         # with the testers they come from, and every one of those files is held to
         # 100% coverage. harvested_cases.json is EMPTY: it existed for the two
         # genus-3 ramified families, which had no Magma tester, and PR6 wrote them

@@ -250,19 +250,29 @@ runs 30 testers across genus 2 and genus 3, in about four minutes.
 | gate | result | command |
 |---|---|---|
 | Magma suite | **30 testers, 0 failures, 0 skips** | `./test_all.sh` |
-| frozen case corpus | **1,886 cases replayed, 1,886 matched** | `python3 verification/whitebox.py` |
-| branch coverage | **1,925 of 1,929 labelled branches, 99.8%** | as above |
+| frozen case corpus | **7,043 cases replayed, 7,043 matched** | `python3 verification/whitebox.py` |
+| branch coverage | **1,928 of 1,929 labelled branches, 99.9%** | as above |
+| corpus detectability | **85.4%** of formula-body assignments observable | `python3 verification/detect.py` |
 | differential tester | **13,746 operations compared, 0 wrong** | `python3 verification/driver.py --strict` |
-| framework selftest | **17 sections** | `python3 verification/selftest.py` |
+| framework selftest | **19 sections** | `python3 verification/selftest.py` |
 
-The 4 uncovered branches are individually exempted with written reasons in
-`verification/coverage_baseline.json`; one of them, `ch2_splitG3_ADD`'s `ADD227`, carries a proof that
-it is unreachable in characteristic 2. Every family is at 100% except those four.
+The 1 uncovered branch is exempted with a written reason in
+`verification/coverage_baseline.json`: `ch2_splitG3_ADD`'s `ADD227` carries a proof that it is
+unreachable in characteristic 2. Every other branch in the repository is covered.
 
-**Whitebox testers** compute one search-found divisor operation per computation path and assert the
-result against the reference implementation. The cases are harvested by
-coverage-guided search, not hand-designed; what earns them a place in CI is that they are complete and
-deterministic.
+**Whitebox testers** compute search-found divisor operations per computation path and assert the result
+against the reference implementation. The cases are harvested by coverage-guided search, not
+hand-designed; what earns them a place in CI is that they are complete and deterministic.
+
+**Coverage and detectability answer different questions, and the second is the newer one.** Coverage
+asks whether every branch is reached; it has said yes for a long time. Detectability asks whether a
+change to the arithmetic would be *noticed* — every executed assignment is perturbed and the result
+compared, so an assignment whose perturbation changes nothing is invisible to the corpus however well
+covered its branch is. `ERRATA.md` **E20** is that distinction costing a correct optimisation, which is
+why each branch now carries two cases drawn from *different* fields rather than one. 100% is not
+reachable and is not the target: some assignments are structurally invisible, such as a guard variable
+a branch requires to be zero. Every family now holds at least two cases per branch per characteristic class, drawn from different
+fields; they range from 69% to 96.5%, and the repository figure rose from 81.3%.
 
 **The Python framework** in [verification/](verification/) is what runs in CI, since Magma is licensed
 and cannot. It interprets the real `.mag` source, so there is no transcription to drift:

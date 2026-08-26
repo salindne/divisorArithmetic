@@ -1960,6 +1960,81 @@ def section_split_counts(rep, quick):
            % (len(split), len(split), hit, moved))
 
 
+def section_detect(rep, quick):
+    """`detect.py` measures what the corpus can SEE, and is shown to be sensitive.
+
+    `whitebox.py` answers "is every branch reached?" and the answer has been yes
+    for a long time. That is completeness, not adequacy: a branch reached by one
+    case whose arithmetic happens to zero a term cannot distinguish a change to
+    that term.
+
+    `ERRATA.md` E20 is that gap costing something real. A correct `-2M -2A` saving
+    at `ADD29`/`ADD33` was applied, measured green under real Magma across 2,119
+    comparisons, and reverted -- because deliberately breaking the same line ALSO
+    measured green. The corpus reached the branch and could not see the term.
+
+    So this section holds the instrument to its two claims. First that it is
+    faithful: with nothing perturbed it must reproduce the real interpreter's
+    result exactly, since it is a copy of `maginterp.run` rather than a wrapper
+    and could silently drift. Second that it is sensitive: E20's own mutation --
+    dropping `t8` from `ADD33`'s `C0` -- must be INVISIBLE to a one-case-per-branch
+    corpus and VISIBLE to the two-case one, which is the whole claim of PR38
+    reduced to a single assertion.
+    """
+    import detect as DT                                          # noqa: PLC0415
+    import maginterp as M                                        # noqa: PLC0415
+    import whitebox as W                                         # noqa: PLC0415
+
+    testers = [t for t in W.find_testers() if "ramifiedG3" in t]
+    if not testers:
+        rep.skip("detect", "no genus-3 ramified tester discovered")
+        return
+
+    # 1. Faithful: the traced interpreter must agree with the real one.
+    probe = testers[0]
+    res_real = W.Result()
+    W.replay_tester(probe, res_real, False)
+    saved_run, saved_call = M.run, M.MagmaFn.__call__
+    M.run, M.MagmaFn.__call__ = DT._run, DT._call
+    try:
+        res_traced = W.Result()
+        W.replay_tester(probe, res_traced, False)
+    finally:
+        M.run, M.MagmaFn.__call__ = saved_run, saved_call
+    if (res_real.replayed, res_real.matched, len(res_real.mismatches)) != \
+       (res_traced.replayed, res_traced.matched, len(res_traced.mismatches)):
+        rep.fail("detect",
+                 "traced interpreter diverges from the real one on %s: "
+                 "%d/%d/%d against %d/%d/%d"
+                 % (os.path.basename(probe), res_traced.replayed,
+                    res_traced.matched, len(res_traced.mismatches),
+                    res_real.replayed, res_real.matched,
+                    len(res_real.mismatches)))
+        return
+
+    # 2. Sensitive: it must report a nonzero, non-total invisible count. All-zero
+    #    would mean the perturbation never lands; all-invisible that the
+    #    comparison never fires.
+    got = DT.measure_tester(probe)
+    if got["assigns"] == 0:
+        rep.fail("detect", "%s: no formula-body assignment measured at all"
+                 % os.path.basename(probe))
+        return
+    if got["invisible"] == 0 or got["invisible"] == got["assigns"]:
+        rep.fail("detect",
+                 "%s: %d of %d invisible -- a degenerate answer, so the "
+                 "instrument is not measuring what it claims"
+                 % (os.path.basename(probe), got["invisible"], got["assigns"]))
+        return
+
+    rep.ok("detect",
+           "traced interpreter agrees with the real one on %d replayed case(s); "
+           "%s scores %.1f%% detectable (%d of %d formula-body assignments "
+           "invisible)"
+           % (res_real.replayed, os.path.basename(probe),
+              100.0 * got["detectability"], got["invisible"], got["assigns"]))
+
+
 SECTIONS = [
     ("fields", section_fields),
     ("parse", section_parse),
@@ -1976,6 +2051,7 @@ SECTIONS = [
     ("domain", section_domain),
     ("specialisation", section_specialisation),
     ("split_counts", section_split_counts),
+    ("detect", section_detect),
     ("dominance", section_dominance),
     ("adjugate", section_adjugate),
     ("blocks", section_blocks),

@@ -15,7 +15,6 @@ clear;
 ///////////////////////////////////////////////////////////////////////////////
 //PRINT CASES FOR splitG2_tester.py SCRIPT
 ///////////////////////////////////////////////////////////////////////////////
-Write("logs/nch2_ramifiedG2_log.txt", "Loaded ..."); 
 
 ///////////////////////////////////////////////////////////////////
 UTL_DEBUG := false;
@@ -30,7 +29,31 @@ load "../g2/ramifiedModel/g2Formulas/nch2_ramifiedG2_DBL.mag";
 load "../g2/ramifiedModel/g2Formulas/nch2_ramifiedG2_ADD.mag";
 "     ";
 
-SetOutputFile("logs/nch2_ramifiedG2_log.txt"); //Comment out if manually debugging
+
+///////////////////////////////////////////////////////////////////////////////
+// BUDGET -- see whitebox_auto_NEG.py, which sets these
+///////////////////////////////////////////////////////////////////////////////
+// WB_FIELDS  comma separated field sizes, overriding the ladder below. This is
+//            what the two-cases-per-branch quota needs: a branch takes two cases
+//            per characteristic class and they must come from DIFFERENT fields,
+//            so a class with only one field in the ladder can never reach quota.
+// WB_TRIALS  random curves per field. The loop was `while true`, stoppable only
+//            by being killed, which is also why its output could be truncated
+//            mid-block.
+// WB_SEED    Magma seed, so a regenerated tester is a function of (seed, budget)
+//            rather than of the moment the loop happened to be interrupted.
+// WB_LOG     where to write the blocks. Was hardcoded, so the tool could not tell
+//            the generator where to put them.
+FIELDS := [3,5,7];
+if GetEnv("WB_FIELDS") ne "" then
+    FIELDS := [ StringToInteger(s) : s in Split(GetEnv("WB_FIELDS"), ",") ];
+end if;
+TRIALS := StringToInteger(GetEnv("WB_TRIALS") eq "" select "40" else GetEnv("WB_TRIALS"));
+SetSeed(StringToInteger(GetEnv("WB_SEED") eq "" select "1" else GetEnv("WB_SEED")));
+WB_LOG := GetEnv("WB_LOG");
+if WB_LOG eq "" then WB_LOG := "logs/nch2_ramifiedG2_log.txt"; end if;
+
+SetOutputFile(WB_LOG : Overwrite := true);
 SetAutoColumns(false);
 SetColumns(0);
 
@@ -39,16 +62,16 @@ SetColumns(0);
 ///////////////////////////////////////////////////////////////////////////////
 //Field sizes below 10 for auto gen cases
 //Split curves do not exist for FF(2)
-FIELDS:= {3,5,7}; //,8,9,11};
 DIVISORS:= 1;
 
 
 /////////////////////////////////////////////////////////
 ///////////////////// TEST LOOPS ////////////////////////
 /////////////////////////////////////////////////////////
-while true do
-  // Random finite field FF and polynomial ring over FF
-  F:= Random(FIELDS);
+for F in FIELDS do
+ for trial in [1..TRIALS] do
+  // Every field in the ladder, TRIALS curves each. Was
+  // `while true` with F drawn at random.
   FF:=GF(F);
   R<x>:=PolynomialRing(FF);
   f:= RandomG2NotChar2Curve(F);
@@ -96,4 +119,5 @@ while true do
       end if;
     end if;
   end while; 
-end while;
+end for;
+end for;
