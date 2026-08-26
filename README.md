@@ -1,257 +1,193 @@
 # divisorArithmetic
 
-Magma explicit formulas for divisor class arithmetic on hyperelliptic curves, with the testing, timing
-and table-generation machinery behind them.
+Magma explicit formulas for divisor class arithmetic on hyperelliptic curves of genus 2 and 3.
 
-Sebastian Lindner. Companion code to *Explicit Formulas for Hyperelliptic Curve Arithmetic* (University
-of Calgary, 2020), built as `ucalgary_2020_lindner_sebastian.pdf` in this directory.
+Sebastian Lindner. Companion code to *Explicit Formulas for Hyperelliptic Curve Arithmetic* (University of Calgary, 2020), built as `ucalgary_2020_lindner_sebastian.pdf` in this directory.
 
-Both models, both genera, all three characteristic classes: `{arb, nch2, ch2}` for ramified
-(imaginary, `deg f = 2g+1`) and balanced split (real, `deg f = 2g+2`). "Balanced split" without
-qualification means the basis each genus actually uses — positive reduced at genus 2, negative reduced
-at genus 3. See [Reduced basis](#reduced-basis).
+Twelve families: addition and doubling for each characteristic class `{arb, nch2, ch2}`, in the ramified (imaginary, `deg f = 2g+1`) and balanced split (real, `deg f = 2g+2`) models, at genus 2 and genus 3.  Every case is explicit with no Cantor fallback and costs exactly one inversion.  The split model requires a choice of reduced basis: positive reduced at genus 2, negative reduced at genus 3.  Genus 2 ships both.  See [Reduced basis](#reduced-basis).
 
-Also here: generic-genus Cantor and NUCOMP reference implementations, a Python verification framework
-that runs in CI, timing experiments against prior art, a whitebox test-case generator, a LaTeX
-operation-count table generator, and a Rust port in a submodule.
+Also included: generic-genus Cantor and NUCOMP reference implementations, a Python verification framework that runs in CI, Magma whitebox and random testers for every family, timing experiments, a LaTeX table generator, and a Rust port.  See [Repository layout](#repository-layout).
 
-**Last updated:** 2026-08-24.
+**Last updated:** 2026-08-26.
 
 ---
 
-## Operation counts
+## Typical Case Operation Counts
 
-The frequent case of the highest-degree operation in each family, as `M / S / A / C`. "Frequent" is
-the non-degenerate path — trivial gcd, full-degree result — which is the case published tables price.
-Every operation costs exactly one inversion, so `I` is omitted.
+The frequent case of the highest-degree operation in each family.  "Frequent" means the non-degenerate path, trivial gcd and full-degree result.  There is exactly one inversion per operation.
 
-| family | addition | doubling | source |
-|---|---|---|---|
-| **g2 ramified** arb | 21 / 2 / 31 / 0 | 22 / 4 / 42 / 2 | measured |
-| **g2 ramified** nch2 | 21 / 2 / 23 / 0 | 21 / 5 / 25 / 0 | measured |
-| **g2 ramified** ch2 | 20 / 3 / 26 / 0 | 21 / 4 / 24 / 0 | measured |
-| **g3 ramified** arb | **53 / 3 / 71 / 1** | **54 / 4 / 80 / 4** | measured |
-| **g3 ramified** nch2 | **53 / 3 / 59 / 0** | **53 / 5 / 61 / 0** | measured |
-| **g3 ramified** ch2 | **51 / 3 / 62 / 0** | **51 / 4 / 55 / 2** | measured |
-| **g2 split** arb | 27 / 1 / 37 / 3 | 30 / 2 / 44 / 8 | measured |
-| **g2 split** nch2 | 26 / 2 / 36 / 0 | 29 / 3 / 39 / 0 | measured |
-| **g2 split** ch2 | 27 / 1 / 34 / 0 | 29 / 2 / 31 / 0 | measured |
-| **g3 split** arb | 65 / 3 / 87 / 12 | 73 / 3 / 101 / 19 | measured |
-| **g3 split** nch2 | 65 / 3 / 85 / 0 | 72 / 4 / 97 / 0 | measured |
-| **g3 split** ch2 | 65 / 3 / 80 / 0 | 71 / 4 / 86 / 1 | measured |
+<table>
+<thead>
+<tr><th rowspan="2">family</th><th colspan="4">addition</th><th colspan="4">doubling</th></tr>
+<tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
+</thead>
+<tbody>
+<tr><td><b>g2 ramified</b> arb</td><td>21</td><td>2</td><td>31</td><td>0</td><td>22</td><td>4</td><td>42</td><td>2</td></tr>
+<tr><td><b>g2 ramified</b> nch2</td><td>21</td><td>2</td><td>23</td><td>0</td><td>21</td><td>5</td><td>25</td><td>0</td></tr>
+<tr><td><b>g2 ramified</b> ch2</td><td>20</td><td>3</td><td>26</td><td>0</td><td>21</td><td>4</td><td>24</td><td>0</td></tr>
+<tr><td><b>g2 split</b> arb</td><td>27</td><td>1</td><td>37</td><td>3</td><td>30</td><td>2</td><td>44</td><td>8</td></tr>
+<tr><td><b>g2 split</b> nch2</td><td>26</td><td>2</td><td>36</td><td>0</td><td>29</td><td>3</td><td>39</td><td>0</td></tr>
+<tr><td><b>g2 split</b> ch2</td><td>27</td><td>1</td><td>34</td><td>0</td><td>29</td><td>2</td><td>31</td><td>0</td></tr>
+<tr><td><b>g3 ramified</b> arb</td><td>53</td><td>3</td><td>71</td><td>1</td><td>54</td><td>4</td><td>80</td><td>4</td></tr>
+<tr><td><b>g3 ramified</b> nch2</td><td>53</td><td>3</td><td>59</td><td>0</td><td>53</td><td>5</td><td>61</td><td>0</td></tr>
+<tr><td><b>g3 ramified</b> ch2</td><td>51</td><td>3</td><td>62</td><td>0</td><td>51</td><td>4</td><td>55</td><td>2</td></tr>
+<tr><td><b>g3 split</b> arb</td><td>65</td><td>3</td><td>87</td><td>12</td><td>73</td><td>3</td><td>101</td><td>19</td></tr>
+<tr><td><b>g3 split</b> nch2</td><td>65</td><td>3</td><td>85</td><td>0</td><td>72</td><td>4</td><td>97</td><td>0</td></tr>
+<tr><td><b>g3 split</b> ch2</td><td>65</td><td>3</td><td>80</td><td>0</td><td>71</td><td>4</td><td>86</td><td>1</td></tr>
+</tbody>
+</table>
 
-**Every row is now measured**, which it was not until recently: half this table used to read
-*published*, because `verification/opcount.py` could measure only the six ramified families and
-refused the nine split ones rather than guess. It measures all fifteen, so each figure comes from
-`python3 verification/opcount.py --family <name>` executing the formulas over a real field and
-identifying the frequent case by observing which branch is taken.
+Every figure is measured.  `python3 verification/opcount.py --family <name>` executes the formulas over a real field, identifies the frequent case by observing which branch is taken, and cross-checks each contributing call against the Cantor reference implementation.  All fifteen families measure, the twelve above plus genus-2 split negative reduced.
 
-**Where a published cell exists, the two agree exactly.** The genus-2 ramified rows match
-`tab:ramfcosts` cell for cell across all three characteristic columns — execution against static
-counting, two methods sharing no code. The split rows are the same story against `tab:splitfcosts` and
-`tab:g3splitfcosts{ADD,DBL}`: **168 measured shapes, every one reproducing its published cell**, and
-every one at exactly one inversion, which is the thesis's prose claim and had never been checked for
-the split model. One disagreement showed up and was informative — see
-[NEW_WORK.md](NEW_WORK.md) N31. Note the genus-2 split figures are `posReduced`, the basis of record;
-`negReduced` is a different algorithm and differs by an operation or two on several rows.
+Where the thesis publishes a cell, measurement reproduces it exactly: the genus-2 ramified rows against `tab:ramfcosts`, and 168 split shapes against `tab:splitfcosts` and `tab:g3splitfcosts{ADD,DBL}`, every one at exactly one inversion.  One systematic divergence turned up during that check and was the tool's rather than the thesis's, a flat `+2A` on every split row, because a divisor's balancing weight is a small integer and `n := n1 + n2 - 2` is bookkeeping rather than field arithmetic.  See [NEW_WORK.md](NEW_WORK.md) N31.
 
-Each specialisation is cheaper than the `arb` it specialises on every shared shape, which
-`verification/selftest.py` asserts rather than assumes. See
-[Operation-count tables](#operation-count-tables) for the counter of record and the one known
-misclassification in it, and [Related work](#related-work) for how these compare against prior art.
+The genus-2 split figures are positive reduced, the basis of record.  Negative reduced is a different algorithm and differs by an operation or two on several rows.
+
+Each specialisation is cheaper than the `arb` it specialises on every shared shape, which `verification/selftest.py` asserts rather than assumes.  See [Operation-count tables](#operation-count-tables) for the counter of record and the one known misclassification in it, and [Related work](#related-work) for how these compare against prior art.
 
 ---
 
-## Related work
+## Related Work
 
-### Genus 3, ramified — the one with no published comparison
+Two kinds of comparison.  For genus-2 ramified and both split families the previous best is the thesis itself, since genus-2 ramified and the split model are its own contribution, and the rows are reproduced here so the repository tells the whole story in one place.  Genus-3 ramified is the exception: the thesis defers it (`chapter6.tex:15`, *"ramified models are developed by another student"*), so the published state of the art there is other people's.  That family now lives here and is complete.  Randall Apperley wrote an initial version of the arbitrary characteristic addition and doubling and Amir Abbas Asgari wrote an initial specialisation of the odd characteristic addition; this work reworked those three and derived the other three to the current state of the art.
 
-The genus-3 ramified formulas are the part of this repository with external competition — the thesis
-defers them (`chapter6.tex:15`, *"ramified models are developed by another student"*), so the published
-state of the art is other people's. Frequent case, combined `M+S` because that is what prior work
-prices, and every operation costs exactly `1I` on both sides.
+Every "this work" figure below is re-derived from `verification/opcount.py` and matches the published table exactly.  [RELATED_WORK.md](RELATED_WORK.md) carries the full survey, the per-lane detail and an access table for each source.
 
-| cell | previous best | ours | margin |
-|---|---|---|---|
-| **odd char, addition** | 67 M+S, 105A† — Nyukai 2006 | **56 M+S, 0C, 59A** | **−11 M+S, −46 A** |
-| **odd char, doubling** | 68 M+S, 93A† — Nyukai 2006 | **58 M+S, 0C, 61A** | **−10 M+S, −32 A** |
-| **char 2, addition** | 67 M+S, 100A† — GKP 2004 | **54 M+S, 0C, 62A** | **−13 M+S, −38 A** |
-| **char 2, doubling** | 69 M+S, 107A† — GKP 2004 | **55 M+S, 2C, 55A** | **−14 M+S, −52 A** |
-| **arbitrary, addition** | *none published* | **56 M+S, 1C, 71A** | — |
-| **arbitrary, doubling** | *none published* | **58 M+S, 4C, 80A** | — |
+### Genus 2, ramified
 
-**Ahead on both axes in every cell that has competition**, and the harder target is quoted in each
-row: GKP 2004 is 70 M+S for both odd-characteristic operations against Nyukai's 67 and 68, and their
-alternative characteristic-2 variants are 68 M+S for the addition and 72 for the doubling against the
-67 and 69 quoted. The margin is wider against every figure not shown.
+Against Lange 2005, the standard reference, in the 4 coordinate affine setting.
 
-Four things a reader should know before using these numbers:
+<table>
+<thead>
+<tr><th rowspan="2">operation</th><th colspan="4">Lange 2005</th><th colspan="4">this work</th></tr>
+<tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
+</thead>
+<tbody>
+<tr><td><b>2DBL</b></td><td>22</td><td>6</td><td>56</td><td>3</td><td>22</td><td>4</td><td>42</td><td>2</td></tr>
+<tr><td><b>12ADD</b></td><td>10</td><td>1</td><td>25</td><td>0</td><td>9</td><td>1</td><td>22</td><td>0</td></tr>
+<tr><td><b>2ADD</b></td><td>22</td><td>3</td><td>40</td><td>0</td><td>21</td><td>2</td><td>31</td><td>0</td></tr>
+</tbody>
+</table>
 
-- **`†` marks A counts we derived, not figures the authors published.** No prior work in this area
-  reports additions at all. Where the paper prints its formulas step by step the count is recoverable,
-  and it is marked; where the paper is closed it is not quoted. The derivation rules are in
-  [RELATED_WORK.md](RELATED_WORK.md).
-- **`C` is zero in every previous-best cell**, because those normal forms leave no curve coefficient to
-  multiply by. It is non-zero only for us and only in the `arb` family, which by definition cannot
-  normalise — so that row's 1C and 4C are the price of generality, not an oversight.
-- **Three of these four cells did not exist when this work started.** Only the odd-characteristic
-  addition was inherited; the odd-characteristic doubling and both characteristic-2 formulas were
-  derived here.
-- **The characteristic-2 rows are quoted at `deg h = 3`**, this repository's target shape. Cheaper
-  char-2 numbers exist at other `h`-shapes and are not comparable — Birkner's `h = 1` doubling is
-  21 M+S and 20A, but a constant `h` collapses most of the work.
+### Genus 2, split
 
-**The `arb` family has no external competition at all**, no published arbitrary-characteristic genus-3
-ramified formulas existing. It can only be judged internally, and against the thesis's own *split*
-Degree-3 rows it is 12 better on `M+S`, 11 on `C` and 16 on `A` for the addition, and 18 / 15 / 21 for
-the doubling — which is what "ramified has strictly less to do than split" predicts, and which was not
-true when this work started.
+Against Erickson, Jacobson and Stein 2011.
 
-### The other three families
+<table>
+<thead>
+<tr><th rowspan="2">operation</th><th colspan="4">EJS 2011</th><th colspan="4">this work</th></tr>
+<tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
+</thead>
+<tbody>
+<tr><td><b>2DBL</b></td><td>30</td><td>2</td><td>50</td><td>10</td><td>30</td><td>2</td><td>44</td><td>8</td></tr>
+<tr><td><b>2ADD</b></td><td>27</td><td>1</td><td>37</td><td>3</td><td>27</td><td>1</td><td>37</td><td>3</td></tr>
+<tr><td><b>12ADD</b></td><td>17</td><td>2</td><td>30</td><td>6</td><td>14</td><td>2</td><td>26</td><td>3</td></tr>
+<tr><td><b>1ADD</b></td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td></tr>
+</tbody>
+</table>
 
-Those already have published comparisons — in the thesis itself, since the split model and genus-2
-ramified are its own contribution. They are reproduced here so the repository tells the whole story in
-one place, and because **every "This work" row was re-derived from
-`verification/opcount.py` and matches the published table exactly.** That is not a redundant check: the
-comparison tables are a separate transcription from the cost tables, and a transcription is where a
-copy error hides.
+Two cells tie exactly and the rest are ahead on additions and constant products.  The larger gains are in the adjustment operations, which this summary omits and the thesis table carries in full: EJS need two inversions for several of them where this work needs one.
 
-**Genus 2, ramified** — against Lange 2005, the standard reference, in the 4-coordinate affine setting:
+### Genus 3, ramified
 
-| | 2DBL | 12ADD | 2ADD |
-|---|---|---|---|
-| Lange 2005 | 22 / 6 / 56 / 3 | 10 / 1 / 25 / 0 | 22 / 3 / 40 / 0 |
-| **this work** | **22 / 4 / 42 / 2** | **9 / 1 / 22 / 0** | **21 / 2 / 31 / 0** |
+Prior work reports combined M+S and no additions, so the columns differ from the families above, and both sides cost exactly 1I.  † marks A counts we derived rather than figures the authors published: where a paper prints its formulas step by step the count is recoverable and is marked, and where the paper is closed it is not quoted.  The derivation rules are in [RELATED_WORK.md](RELATED_WORK.md).
 
-**Genus 2, split** — against Erickson, Jacobson and Stein 2011:
+<table>
+<thead>
+<tr><th rowspan="2">cell</th><th colspan="3">Nyukai 2006</th><th colspan="3">GKP 2004</th><th colspan="3">this work</th></tr>
+<tr><th>M+S</th><th>C</th><th>A</th><th>M+S</th><th>C</th><th>A</th><th>M+S</th><th>C</th><th>A</th></tr>
+</thead>
+<tbody>
+<tr><td><b>odd char, addition</b></td><td>67</td><td>0</td><td>105†</td><td>70</td><td>0</td><td>105†</td><td>56</td><td>0</td><td>59</td></tr>
+<tr><td><b>odd char, doubling</b></td><td>68</td><td>0</td><td>93†</td><td>70</td><td>0</td><td>90†</td><td>58</td><td>0</td><td>61</td></tr>
+<tr><td><b>char 2, addition</b></td><td colspan="3">n/a</td><td>67</td><td>0</td><td>100†</td><td>54</td><td>0</td><td>62</td></tr>
+<tr><td><b>char 2, doubling</b></td><td colspan="3">n/a</td><td>69</td><td>0</td><td>107†</td><td>55</td><td>2</td><td>55</td></tr>
+<tr><td><b>arbitrary, addition</b></td><td colspan="3">n/a</td><td colspan="3">n/a</td><td>56</td><td>1</td><td>71</td></tr>
+<tr><td><b>arbitrary, doubling</b></td><td colspan="3">n/a</td><td colspan="3">n/a</td><td>58</td><td>4</td><td>80</td></tr>
+</tbody>
+</table>
 
-| | 2DBL | 2ADD | 12ADD | 1ADD |
-|---|---|---|---|---|
-| EJS 2011 | 30 / 2 / 50 / 10 | 27 / 1 / 37 / 3 | 17 / 2 / 30 / 6 | 3 / 0 / 5 / 0 |
-| **this work** | **30 / 2 / 44 / 8** | 27 / 1 / 37 / 3 | **14 / 2 / 26 / 3** | 3 / 0 / 5 / 0 |
+The characteristic 2 rows quote whichever GKP variant is cheaper for that operation, their `h₂ = 0` form for the addition and their `f₆ = 0` form for the doubling.  Against the variant not shown the margin is wider: 68 M+S and 105A for the addition, 72 M+S and 113 to 114A for the doubling.
 
-Two cells tie exactly and the rest are ahead on additions and constant products. The larger gains are
-in the adjustment operations, which the thesis table carries in full and this summary omits — EJS need
-two inversions for several of them where this work needs one.
+### Genus 3, split
 
-**Genus 3, split** — against Rezai Rad et al. 2019 and Sutherland 2019:
+Against Rezai Rad et al. 2019 and Sutherland 2019.
 
-| | 3DBL odd | 3ADD odd | 3DBL char 2 | 3ADD char 2 |
-|---|---|---|---|---|
-| Rezai Rad et al. 2019 | 85 / 2 / 163 / 0 | 75 / 2 / 138 / 0 | 89 / 1 / 116 / 0 | 81 / 0 / 118 / 0 |
-| Sutherland 2019 | 74 / 8 / 127 / 0 | 73 / 6 / 127 / 0 | — | — |
-| **this work** | **72 / 4 / 97 / 0** | **65 / 3 / 85 / 0** | **71 / 4 / 86 / 1** | **65 / 3 / 80 / 0** |
+<table>
+<thead>
+<tr><th rowspan="2">operation</th><th colspan="4">Rezai Rad et al. 2019</th><th colspan="4">Sutherland 2019</th><th colspan="4">this work</th></tr>
+<tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
+</thead>
+<tbody>
+<tr><td><b>3DBL odd</b></td><td>85</td><td>2</td><td>163</td><td>0</td><td>74</td><td>8</td><td>127</td><td>0</td><td>72</td><td>4</td><td>97</td><td>0</td></tr>
+<tr><td><b>3ADD odd</b></td><td>75</td><td>2</td><td>138</td><td>0</td><td>73</td><td>6</td><td>127</td><td>0</td><td>65</td><td>3</td><td>85</td><td>0</td></tr>
+<tr><td><b>3DBL char 2</b></td><td>89</td><td>1</td><td>116</td><td>0</td><td colspan="4">n/a</td><td>71</td><td>4</td><td>86</td><td>1</td></tr>
+<tr><td><b>3ADD char 2</b></td><td>81</td><td>0</td><td>118</td><td>0</td><td colspan="4">n/a</td><td>65</td><td>3</td><td>80</td><td>0</td></tr>
+</tbody>
+</table>
 
-**One limitation worth stating.** These three comparisons are as the thesis published them in 2020, and
-no systematic search for work appearing since has been done. The genus-3 ramified survey above was
-compiled in 2026 and is current; these are not independently re-surveyed, only re-verified against our
-own measurements.
+### Reading these tables
 
-### Reconciliation
-
-**One comparison is deliberately not made.** Three characteristic-2 normal forms differ — ours (any
-degree-3 `h`, `f₆ = 0`), Birkner's Type Ia (`h` irreducible, `f₆ ∈ F₂`, `f₇` non-monic) and GKP's two
-variants — and reconciling them is a publication task rather than a repository one. Nothing in the
-code or the tests depends on the outcome. Both forms and the counts are recorded in
-[RELATED_WORK.md](RELATED_WORK.md), which carries the full survey, the per-lane detail and the access
-table for each source.
+- `C` is zero in every previous best cell because those normal forms leave no curve coefficient to multiply by.  It is non-zero only here and only in the `arb` families, which by definition cannot normalise, so those cells are the cost of generality rather than an oversight.
+- The genus-3 ramified characteristic 2 rows are quoted at `deg h = 3`, this repository's target shape.  Cheaper char 2 numbers exist at other `h` shapes and are not comparable, Birkner's `h = 1` doubling being 21 M+S and 20A because a constant `h` collapses most of the work.
+- The genus-2 ramified and both split comparisons are as the thesis published them in 2020. The genus-3 ramified survey was compiled in 2026 and is current.
 
 ---
 
 ## Current and planned work
 
-What is missing, in progress, or knowingly deferred. Verification figures live under
-[Testing](#testing); this section is about what is *not* done.
+What is missing, in progress, or knowingly deferred.  Verification figures are under [Testing](#testing); this section is about what is not done.
 
-- **The characteristic-2 genus-3 formulas have no published comparison, and one is not planned here.**
-  Three normal forms differ — ours (any degree-3 `h`, `f₆ = 0`), Birkner's Type Ia (`h` irreducible,
-  `f₆ ∈ F₂`, `f₇` non-monic) and GKP's two variants — and reconciling them against GKP's
-  `1I + 62M + 5S / 100A` is work for a paper, not for this repository: no formula, count or test here
-  depends on the outcome. [RELATED_WORK.md](RELATED_WORK.md) carries the forms and the counts with
-  citations, which is what that work would start from.
-- **Two known savings in the split model are unapplied**, both with their identities already proved:
-  the adjugate trade (`+1M −12A`, six sites) and a redundant 2×2 system (`11M 6A` deletable). Their
-  prerequisite is discharged — `verification/opcount.py` measures the split families now, so a
-  per-branch delta can be demonstrated — but they edit published formulas, so each moved cell owes a
-  hand count and a `Thesis/ERRATA.md` entry.
-- **The whitebox corpus is complete without being adequate.** It holds one case per branch — every
-  branch is reached, but a case whose coefficients happen to zero a term cannot see a change to that
-  term. Recorded as `ERRATA.md` **E20**, found when a deliberate break went undetected.
-- **No positive-reduced basis at genus 3.**
-- **`latexTables/latexConverter.py` is not runnable**; its input paths are stale. It has been demoted
-  to a LaTeX renderer — counting moved to `verification/opcount.py` — so the committed `.tex` tables
-  cannot be regenerated, and nothing else depends on it.
-- **Errata are recorded before they are fixed, deliberately.** A defect goes into
-  [ERRATA.md](ERRATA.md) with a reproducer and waits for a gate that can see the fix. Entries whose
-  reproducer already runs get fixed; the rest name the tooling they wait on.
+- **The characteristic 2 genus-3 formulas have no published comparison, and one is not planned here.**  Three normal forms differ: ours (any degree-3 `h`, `f₆ = 0`), Birkner's Type Ia (`h` irreducible, `f₆ ∈ F₂`, `f₇` non-monic) and GKP's two variants. [RELATED_WORK.md](RELATED_WORK.md) carries the forms and the counts with citations.
+- **Two known savings in the split model are unapplied**, both with their identities already proved: the adjugate trade (`+1M −12A`, six sites) and a redundant 2×2 system (`11M 6A` deletable).  Their prerequisite is discharged, since `verification/opcount.py` measures the split families now and a per-branch delta can be demonstrated, but they edit published formulas, so each moved cell owes a hand count and a `Thesis/ERRATA.md` entry.
+- **Genus-3 split still binds the larger divisor first**, where every other family passes the smaller-degree divisor first.  So `Deg23ADD` is positional elsewhere and merely sorted there.  Aligning it is parameter reordering rather than renaming, queued together with collapsing `Deg22ADD` to `Deg2ADD`, the one same-degree name still spelled with two digits.  See [Naming convention](#naming-convention).
+- **Detectability is 85.4%, not 100%.**  The whitebox corpus holds two cases per computation path per characteristic class from different fields, and 14.6% of the assignments in the formula bodies can still be perturbed without changing the returned divisor.  Some of that is structural, a branch guarded on `d = 0` needing `d = 0` to be reached at all, so 100% is not the target.  `verification/detect.py` reports it per family.
+- **One branch is exempt from coverage**, `ADD227` of `ch2_splitG3_ADD.mag`, and it carries a proof of unreachability in characteristic 2 rather than a search budget excuse.  Everything else is covered, 1,928 of 1,929.
+- **`latexTables/latexConverter.py` is not runnable**; its input paths are stale.  It has been demoted to a LaTeX renderer, counting having moved to `verification/opcount.py`, so the committed `.tex` tables cannot be regenerated, and nothing else depends on it.
+- **Errata are recorded before they are fixed, deliberately.**  A defect goes into [ERRATA.md](ERRATA.md) with a reproducer and waits for a gate that can see the fix.  Entries whose reproducer already runs get fixed; the rest name the tooling they wait on.
 
 ---
 
-
 ## Reduced basis
 
-The split model represents a divisor class with `v` normalized against one of the two polynomials at
-infinity: positive reduced uses `Vp`, negative reduced uses `Vn`. Both represent the same class. The
-choice dictates the direction of any adjustment step, so it changes the formulas rather than the
-mathematics.
-
-**Which basis is used where, and why it differs by genus:**
+The split model represents a divisor class with `v` normalised against one of the two polynomials at infinity: positive reduced uses `Vp`, negative reduced uses `Vn`.  Both represent the same class.  The choice dictates the direction of any adjustment step, so it changes the formulas rather than the mathematics.
 
 | | basis | reason |
 |---|---|---|
-| genus 2 | **positive** reduced | Addition and doubling have equal net cost in either basis, so there is no efficiency argument. Positive reduced matches the basis used by Erickson, Jacobson and Stein (2011), which makes the operation-count comparisons directly readable. |
-| genus 3 | **negative** reduced | Negative reduced is genuinely cheaper here. It absorbs one adjustment into the continued-fraction steps of Balanced NUCOMP, removing the need for any further adjustment in the frequent cases, and it lowers the degree of the `k = f - v(v+h)` polynomial through cancellations. |
+| genus 2 | **positive** reduced | Addition and doubling have equal net cost in either basis, so there is no efficiency argument.  Positive reduced matches the basis used by Erickson, Jacobson and Stein (2011), which makes the operation cost comparisons directly readable. |
+| genus 3 | **negative** reduced | Negative reduced is genuinely cheaper here.  It absorbs one adjustment into the continued-fraction steps of Balanced NUCOMP, removing the need for any further adjustment in the frequent cases, and it lowers the degree of the `k = f - v(v+h)` polynomial through cancellations. |
 
-So the published operation-count tables are positive reduced at genus 2 and negative reduced at genus 3.
-This is stated in the thesis at chapter 5 for genus 2 and chapter 6 for genus 3, which contrast the two
-explicitly.
+The published operation cost tables follow that choice, and the thesis contrasts the two bases explicitly in chapter 5 for genus 2 and chapter 6 for genus 3.
 
-**What ships here:** genus 2 has both bases, under
-[g2/splitModel/posReduced/](g2/splitModel/posReduced/) and
-[g2/splitModel/negReduced/](g2/splitModel/negReduced/). Genus 3 has negative reduced only. There is no
-positive-reduced basis at genus 3.
+Genus 2 ships both, under [g2/splitModel/posReduced/](g2/splitModel/posReduced/) and [g2/splitModel/negReduced/](g2/splitModel/negReduced/).  Genus 3 ships negative reduced only; there is no positive reduced basis at genus 3.
 
 ---
 
 ## Running Magma
 
-**Magma is required and is not in this repository.** It is commercial, licensed software. Place your
-tarball as `magma.tar.xz` at the repository root. It is gitignored, must never be committed, and an
-image built from it must never be pushed to any registry.
+**Magma is required and is not in this repository.**  It is commercial, licensed software.  Place your tarball as `magma.tar.xz` at the repository root.  It is gitignored, must never be committed, and an image built from it must never be pushed to any registry.
 
 ```sh
 docker build -f tools/magma-docker/Dockerfile -t magma-qemufix .
 MAGMA=tools/magma-docker/magma.sh ./test_all.sh
 ```
 
-That runs 30 testers in about four minutes and exits 0, essentially all of it Magma:
-3.3 min across 62,654 divisor comparisons. The script used to spend a further ~100 seconds in
-decorative inter-family `sleep` calls; those are gone. Every family now has a whitebox tester, so there is nothing
-left to skip; see [Testing](#testing).
+That runs 30 testers and exits 0, in a little over five minutes, essentially all of it Magma: 297 s of reported Magma time, across 62,944 divisor comparisons summed over the fifteen random testers.  Every family has a whitebox tester, so nothing is skipped.  See [Testing](#testing).
 
-Use [tools/magma-docker/](tools/magma-docker/) rather than a plain `docker build`. On Apple Silicon a
-plain image cannot run most of this repository.
+Use [tools/magma-docker/](tools/magma-docker/) rather than a plain `docker build`.  On Apple Silicon a plain image cannot run most of this repository.
 
 ### Why the container needs a patched emulator
 
-`magma.exe` is a statically linked 32-bit i386 binary from 2015. Apple Silicon cannot run it natively
-and Rosetta translates x86-64 only, so Docker routes it through `qemu-i386`, QEMU's user-mode emulator.
-QEMU relocates a mapping whenever the guest passes `MREMAP_MAYMOVE`, including when the guest is
-*shrinking* it, where Linux would have kept the address. Magma checks that its blocks stay put, so it
-aborts:
+`magma.exe` is a statically linked 32-bit i386 binary from 2015.  Apple Silicon cannot run it natively and Rosetta translates x86-64 only, so Docker routes it through `qemu-i386`, QEMU's user-mode emulator.  QEMU relocates a mapping whenever the guest passes `MREMAP_MAYMOVE`, including when the guest is shrinking it, where Linux would have kept the address.  Magma checks that its blocks stay put, so it aborts:
 
 ```
 memi_reduce_block_mmap: block moved
 Magma: Internal error
 ```
 
-With a stock emulator only the six genus-2 ramified testers load; every other tester aborts here. It
-presents as a size limit, because whether Magma needs a shrink correlates with function length. That is
-why it was long mistaken for the formulas being too large for an old Magma.
+With a stock emulator only the six genus-2 ramified testers load, and every other tester aborts here.  It presents as a size limit, because whether Magma needs a shrink correlates with function length, which is why it was long mistaken for the formulas being too large for an old Magma.
 
-[tools/magma-docker/](tools/magma-docker/) builds a `qemu-i386` with a one-line fix, after which the
-whole suite passes. Full diagnosis, and the list of approaches that do not work, are in
-[tools/magma-docker/README.md](tools/magma-docker/README.md).
+[tools/magma-docker/](tools/magma-docker/) builds a `qemu-i386` with a one-line fix, after which the whole suite passes.  The full diagnosis and the list of approaches that do not work are in [tools/magma-docker/README.md](tools/magma-docker/README.md).
 
 ---
 
@@ -264,11 +200,11 @@ whole suite passes. Full diagnosis, and the list of approaches that do not work,
 | [g2/splitModel/posReduced/](g2/splitModel/posReduced/) | genus 2 balanced split, positive reduced |
 | [g2/splitModel/negReduced/](g2/splitModel/negReduced/) | genus 2 balanced split, negative reduced |
 | [g3/splitModel/negReduced/](g3/splitModel/negReduced/) | genus 3 balanced split, negative reduced |
-| [g2/timings/](g2/timings/) | genus 2 timing experiments, prior-art formulas, results (47 files) |
+| [g2/timings/](g2/timings/) | genus 2 timing experiments, prior work formulas, results (47 files) |
 | [g3/timings/](g3/timings/) | genus 3 timing experiments and results (18 files) |
 | [generic/](generic/) | generic-genus Cantor and NUCOMP reference implementations, and timings |
 | [whitebox/](whitebox/) | whitebox test-case generator and its outputs |
-| [latexTables/](latexTables/) | operation-count table generator and generated `.tex` |
+| [latexTables/](latexTables/) | operation cost table generator and generated `.tex` |
 | [Thesis/](Thesis/) | thesis LaTeX sources, corrections applied, see [Thesis](#thesis) |
 | [ThesisPublished/](ThesisPublished/) | the same sources frozen as published, never edited, see [FROZEN.md](ThesisPublished/FROZEN.md) |
 | [test_all.sh](test_all.sh) | test entrypoint |
@@ -276,9 +212,7 @@ whole suite passes. Full diagnosis, and the list of approaches that do not work,
 | [rust/](rust/) | Rust port, a git submodule, see [Rust implementation](#rust-implementation) |
 | `ucalgary_2020_lindner_sebastian.pdf` | the built thesis |
 
-Formula files live in a `g2Formulas/` or `g3Formulas/` subdirectory of each model directory, for example
-[g2/ramifiedModel/g2Formulas/](g2/ramifiedModel/g2Formulas/) and
-[g3/splitModel/negReduced/g3Formulas/](g3/splitModel/negReduced/g3Formulas/). Testers sit one level up.
+Formula files live in a `g2Formulas/` or `g3Formulas/` subdirectory of each model directory, for example [g2/ramifiedModel/g2Formulas/](g2/ramifiedModel/g2Formulas/) and [g3/splitModel/negReduced/g3Formulas/](g3/splitModel/negReduced/g3Formulas/).  Testers sit one level up.
 
 ---
 
@@ -296,37 +230,21 @@ Formula files live in a `g2Formulas/` or `g3Formulas/` subdirectory of each mode
 | `ADD` / `DBL` | divisor addition / doubling |
 | `UTL` | utilities, split model only, for the two places at infinity |
 
-Tester filenames are inconsistently cased, historically: genus 2 uses `*_whiteBox_tester.mag` with a
-capital B, genus 3 uses `*_whitebox_tester.mag`.
+Tester filenames are inconsistently cased, historically: genus 2 uses `*_whiteBox_tester.mag` with a capital B, genus 3 uses `*_whitebox_tester.mag`.
 
-**`Deg<i><j>ADD` means different things in different families, so check before comparing.** Function
-names give the degrees of the two input divisors, but the two families disagree on whether the digits
-describe the parameter order:
+**`Deg<i><j>ADD` names the degrees of the two input divisors, and one family disagrees about the order, so check before comparing.**
 
 | | example | order the parameters arrive in |
 |---|---|---|
-| genus 2 ramified | `Deg12ADD(up0,vp0, u1,u0,v1,v0, …)` | **smaller** degree first, so the digits are positional |
-| genus 3, both models | `Deg23ADD(u12,u11,u10,…, u21,u20,…)` | **larger** degree first, so the digits are merely sorted |
+| genus 2 ramified | `Deg12ADD(u0, v0, up1, up0, vp1, vp0, …)` | **smaller** degree first, so the digits are positional |
+| genus 3 ramified | `Deg23ADD(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, …)` | **smaller** degree first |
+| genus 3 split | `Deg23ADD(u2, u1, u0, v2, v1, v0, up1, up0, vp1, vp0, ccs)` | **larger** degree first, so the digits are merely sorted |
 
-Genus 3 ramified follows genus 3 split, which is why it was safe to rename its imported
-`Deg32ADD` to `Deg23ADD` without touching parameters.
+Genus-3 split is the sole outlier.  Aligning it is parameter reordering rather than renaming, the names already being correct, and it is deferred because it is a behavioural edit to published formulas, not for want of an oracle: the whitebox corpus reaches every mixed-degree branch, and a deliberately swapped operand pair is caught.
 
-The intended resolution is to align genus 3 to genus 2, so that the smaller-degree divisor arrives
-first everywhere and every name is positional. That is parameter reordering in both genus-3 models
-rather than any renaming, since the names are already correct, and it is deferred until there is an
-oracle that samples mixed-degree inputs thoroughly enough to catch a swapped pair.
+Same-degree cases are spelled with a single digit everywhere except one: `Deg1ADD` for 1+1 and `Deg3ADD` for 3+3, but `Deg22ADD` for 2+2 in both genus-3 models.  It is the lone holdout and purely cosmetic, a same-degree case having no operand order to confuse.  Collapsing it to `Deg2ADD` is queued with the reordering above.  Doubling is already uniform: `Deg1DBL`, `Deg2DBL`, `Deg3DBL`.
 
-Same-degree cases are spelled with a single digit everywhere except one: `Deg1ADD` for 1+1 and
-`Deg3ADD` for 3+3, but `Deg22ADD` for 2+2 in both genus-3 models. It is the lone holdout, and purely
-cosmetic, since a same-degree case has no operand order to confuse. Collapsing it to `Deg2ADD` is queued
-with the reordering above. Doubling is already uniform: `Deg1DBL`, `Deg2DBL`, `Deg3DBL`.
-
-**The reference implementation is duplicated.** `reduced_basis_arithmetic.mag` exists in 8 copies across
-the tree in 5 byte-distinct versions, and genus 3 additionally has a separate 730-line
-`poly_balanced_arithmetic.mag`. The copy under
-[g2/splitModel/negReduced/](g2/splitModel/negReduced/reduced_basis_arithmetic.mag) is what the genus-2
-testers assert against. Which copy is authoritative for a given consumer is currently implicit, so check
-before trusting any cross-comparison.
+**The reference implementation is duplicated.**  `reduced_basis_arithmetic.mag` exists in 8 copies across the tree in 5 byte-distinct versions, and genus 3 additionally has a separate 730-line `poly_balanced_arithmetic.mag`.  The copy under [g2/splitModel/negReduced/](g2/splitModel/negReduced/reduced_basis_arithmetic.mag) is what the genus-2 testers assert against.  Which copy is authoritative for a given consumer is currently implicit, so check before trusting any cross-comparison.
 
 ---
 
@@ -336,7 +254,7 @@ before trusting any cross-comparison.
 ./test_all.sh
 ```
 
-runs 30 testers across genus 2 and genus 3, in about four minutes.
+runs 30 testers across genus 2 and genus 3, fifteen whitebox and fifteen random, in a little over five minutes.
 
 **Where the project stands**, each figure reproduced by the command beside it:
 
@@ -346,88 +264,55 @@ runs 30 testers across genus 2 and genus 3, in about four minutes.
 | frozen case corpus | **7,043 cases replayed, 7,043 matched** | `python3 verification/whitebox.py` |
 | branch coverage | **1,928 of 1,929 labelled branches, 99.9%** | as above |
 | corpus detectability | **85.4%** of formula-body assignments observable | `python3 verification/detect.py` |
-| differential tester | **13,746 operations compared, 0 wrong** | `python3 verification/driver.py --strict` |
-| framework selftest | **19 sections** | `python3 verification/selftest.py` |
+| differential tester | **55,236 operations compared, 0 wrong** | `python3 verification/driver.py --strict` |
+| framework selftest | **19 sections, 0 failures, 0 skips** | `python3 verification/selftest.py` |
 
-The 1 uncovered branch is exempted with a written reason in
-`verification/coverage_baseline.json`: `ch2_splitG3_ADD`'s `ADD227` carries a proof that it is
-unreachable in characteristic 2. Every other branch in the repository is covered.
+The one uncovered branch is exempted with a written reason in `verification/coverage_baseline.json`: `ch2_splitG3_ADD`'s `ADD227` carries a proof that it is unreachable in characteristic 2.
 
-**Whitebox testers** compute search-found divisor operations per computation path and assert the result
-against the reference implementation. The cases are harvested by coverage-guided search, not
-hand-designed; what earns them a place in CI is that they are complete and deterministic.
+**Whitebox testers** replay divisor operations found by coverage-guided search, two per computation path per characteristic class and drawn from different fields, asserting each result against the reference implementation.  The cases are not hand-designed; what earns them a place in CI is that they are complete and deterministic.
 
-**Coverage and detectability answer different questions, and the second is the newer one.** Coverage
-asks whether every branch is reached; it has said yes for a long time. Detectability asks whether a
-change to the arithmetic would be *noticed* — every executed assignment is perturbed and the result
-compared, so an assignment whose perturbation changes nothing is invisible to the corpus however well
-covered its branch is. `ERRATA.md` **E20** is that distinction costing a correct optimisation, which is
-why each branch now carries two cases drawn from *different* fields rather than one. 100% is not
-reachable and is not the target: some assignments are structurally invisible, such as a guard variable
-a branch requires to be zero. Every family now holds at least two cases per branch per characteristic class, drawn from different
-fields; they range from 69% to 96.5%, and the repository figure rose from 81.3%.
+**Coverage and detectability answer different questions.**  Coverage asks whether every branch is reached.  Detectability asks whether a change to the arithmetic would be noticed: every executed assignment is perturbed and the result compared, so an assignment whose perturbation changes nothing is invisible to the corpus however well covered its branch is.  `ERRATA.md` **E20** is that distinction costing a correct optimisation, and it is why each path carries two cases from different fields rather than one.  100% is neither reachable nor the target, some assignments being structurally invisible, such as a guard variable a branch requires to be zero.  Per family the figures run from 69% to 96.5%.
 
-**The Python framework** in [verification/](verification/) is what runs in CI, since Magma is licensed
-and cannot. It interprets the real `.mag` source, so there is no transcription to drift:
+**The Python framework** in [verification/](verification/) is what runs in CI, since Magma is licensed and cannot.  It interprets the real `.mag` source, so there is no transcription to drift:
 
 ```sh
 python3 verification/whitebox.py                                  # frozen corpus, the CI gate
-python3 verification/driver.py --curves 3 --pairs 3 --strict      # differential vs an independent reference
-python3 verification/opcount.py --family ramified/g3/arb          # operation counts by execution
+python3 verification/driver.py --curves 3 --pairs 3 --strict      # differential vs an independent reference, smoke volume
+python3 verification/opcount.py --family ramified/g3/arb          # operation costs by execution
 python3 verification/selftest.py                                  # the framework's own tests
 ```
 
-It is pure standard library — no install step, no lockfile.
+It is pure standard library, so there is no install step and no lockfile.
 
-**Random testers** compute random divisor additions and doublings over a fixed, enumerated list of small
-fields. The field list is not random; the curves and divisors drawn on each are. **Exactly one curve is
-drawn per field, in every tester**, so the field list is the characteristic coverage — which is why the
-volumes below were reduced and the field lists were not. The two genus-3 ramified testers used to be the
-exception, nesting a ten- and five-curve loop inside the field loop; they now match the other twelve,
-where `trial` is a print counter and `TRIALS = #FIELDS`.
+**Random testers** compute random divisor additions and doublings over a fixed, enumerated list of small fields.  The field list is not random; the curves and divisors drawn on each are.  Exactly one curve is drawn per field in every tester, so the field list is the characteristic coverage, which is why the divisor volumes are small where the field lists are not.
 
-| tester | divisors per curve | was |
-|---|---|---|
-| genus 2 ramified, all three | 500 | 2500 |
-| genus 2 split, all six | 250 | 2500 or 5000 |
-| genus 3 ramified, both | 50 | 100, 500 |
-| genus 3 split, all three | 25 | 100, 500, 1000 |
+| tester | divisors per curve |
+|---|---|
+| genus 2 ramified, all three | 500 |
+| genus 2 split, all six | 250 |
+| genus 3 ramified, all three | 50 |
+| genus 3 split, all three | 25 |
 
-**Why these are enough, and what they are not for.** The rare branches are proved by the *whitebox*
-testers, deterministically: one constructed case per branch label, every one asserted against Magma's own
-Jacobian arithmetic, at about a second per tester. Leaving a degenerate case to a one-in-q² dice roll here
-was never how it was actually covered. What the random testers uniquely add is *within-branch* input
-variation against fresh inputs — and for that, volume was already far past the point of diminishing
-return: the one defect of that class this project ever found (E1) took **3,240,293 enumerated pairs**, so
-2500 per curve was three orders of magnitude short of catching it and 500 is no further away. The
-reduction cost wall-clock, not defect-finding power.
+**Why these are enough, and what they are not for.**  The rare branches are proved by the whitebox testers deterministically, every case asserted against Magma's own Jacobian arithmetic at about a second per tester, so leaving a degenerate case to a one-in-q² dice roll here was never how it was covered.  What the random testers uniquely add is within-branch input variation against fresh inputs, and for that volume was already far past the point of diminishing return: the one defect of that class this project ever found (E1) took **3,240,293 enumerated pairs**, so 2500 per curve was three orders of magnitude short of catching it and 500 is no further away.
 
-**Replaying a failure.** Magma does not seed deterministically — two runs of the same tester draw
-different curves — so each of these testers now prints its seed and the command to reuse it:
+**Replaying a failure.**  Magma does not seed deterministically, two runs of the same tester drawing different curves, so each of these testers prints its seed and the command to reuse it:
 
 ```
 // - Random seed 1804224007, step 0. Replay this run with RND_SEED=1804224007
 ```
 
-`RND_SEED` is forwarded into the container unconditionally by
-[tools/magma-docker/magma.sh](tools/magma-docker/magma.sh), so that line works as printed.
+`RND_SEED` is forwarded into the container unconditionally by [tools/magma-docker/magma.sh](tools/magma-docker/magma.sh), so that line works as printed.
 
-**Not run by `test_all.sh`:**
-[generic/reduced_basis_tester.mag](generic/reduced_basis_tester.mag);
-[generic/arbitrary/reduced_basis_tester.mag](generic/arbitrary/reduced_basis_tester.mag); and everything
-under [g2/timings/](g2/timings/) and [g3/timings/](g3/timings/).
+**Not run by `test_all.sh`:** [generic/reduced_basis_tester.mag](generic/reduced_basis_tester.mag); [generic/arbitrary/reduced_basis_tester.mag](generic/arbitrary/reduced_basis_tester.mag); and everything under [g2/timings/](g2/timings/) and [g3/timings/](g3/timings/).
 
 ---
 
 ## Generic-genus algorithms
 
-Reference implementations for arbitrary genus, used to validate the explicit formulas and to measure
-what the explicit formulas buy.
+Reference implementations for arbitrary genus, used to validate the explicit formulas and to measure what the explicit formulas buy.
 
-- [generic/](generic/) is Cantor composition and reduction plus NUCOMP and NUDUPL for `h = 0`,
-  characteristic not 2. 25 top-level routines.
-- [generic/arbitrary/](generic/arbitrary/) is the same for arbitrary characteristic, with 33 top-level
-  routines, 8 more than the `h = 0` version.
+- [generic/](generic/) is Cantor composition and reduction plus NUCOMP and NUDUPL for `h = 0`, characteristic not 2.  25 top-level routines.
+- [generic/arbitrary/](generic/arbitrary/) is the same for arbitrary characteristic, with 33 top-level routines, 8 more than the `h = 0` version.
 
 Each has ten timing drivers, `timings_2bit.mag` through `timings_1024bit.mag`:
 
@@ -435,16 +320,13 @@ Each has ten timing drivers, `timings_2bit.mag` through `timings_1024bit.mag`:
 magma timings_32bit.mag
 ```
 
-[generic/README.md](generic/README.md) has the routine index, and identifies which of the several
-results directories corresponds to which run.
+[generic/README.md](generic/README.md) has the routine index, and identifies which of the several results directories corresponds to which run.
 
 ---
 
 ## Whitebox case generation
 
-[whitebox/whitebox_auto_NEG.py](whitebox/whitebox_auto_NEG.py) drives the case generators in
-[whitebox/genFiles/](whitebox/genFiles/) to emit a tester. Run it from the `whitebox/` directory: the
-generators' `load` paths are relative to that, not to `genFiles/`.
+[whitebox/whitebox_auto_NEG.py](whitebox/whitebox_auto_NEG.py) drives the case generators in [whitebox/genFiles/](whitebox/genFiles/) to emit a tester.  Run it from the `whitebox/` directory: the generators' `load` paths are relative to that, not to `genFiles/`.
 
 ```
 cd whitebox
@@ -452,113 +334,72 @@ cd whitebox
 ./whitebox_auto_NEG.py ch2 split 3 --from-log logs/ch2_splitG3_log.txt   # reparse, no Magma
 ```
 
-**`--from-log` is the reliable second step, not a fallback.** The generator's search loop is
-`while true`: it keeps emitting long after every branch is covered, so the run does not end on its own
-and the log grows without bound — a genus-2 ramified regeneration reached 42 MB, against 44K–616K for
-the committed logs. Killing the container is not a substitute for finishing, because the runner sees the
-non-zero exit (`magma exited 137`) and refuses to write a tester. Let it run until the log contains
-every label, stop it, then re-parse the log with `--from-log`, which writes the tester without Magma.
-Check coverage first, since the log is the only thing that carries it:
+**How a case is chosen.**  A generator loops over random curves and divisor pairs and prints a block for each operation whose result agrees with Magma's own Cantor arithmetic, letting the formula's own `ADD_DEBUG`/`DBL_DEBUG` label name the branch.  The runner banks one block per label per field, then keeps `--per-char` of them per characteristic class, climbing the field ladder from the bottom, so a branch ends up with two cases from two different fields.  Both halves of that are measured rather than preferred: two cases at one field leave more of the arithmetic invisible than one case at a larger field, because same-field failures are correlated, and the ladder is climbed from the bottom because the benefit saturates immediately while the cost does not.  A whitebox tester is therefore the frozen output of a coverage-guided random search, complete and replayable, but not a set of hand-designed probes.  Every case in the committed corpus is extracted from such a tester; `verification/whitebox.py --harvest` can search for cases directly, but nothing in the corpus comes from it today.
+
+**Three of the fifteen generators are unbounded**, the genus-3 split ones.  Their search loop is `while true`, so the run does not end on its own and the log grows without limit; the other twelve iterate a fixed field list and terminate.  For those three, killing the container is not a substitute for finishing, because the runner sees the non-zero exit (`magma exited 137`) and refuses to write a tester.  Let it run until the log holds every label, stop it, then re-parse with `--from-log`, which writes the tester without Magma.  Check coverage first, since the log is the only thing that carries it:
 
 ```
 grep -oE '^(ADD|DBL)[0-9]+$' logs/<family>_log.txt | sort -u | wc -l
 ```
 
-Regeneration logs for the genus-2 ramified families are gitignored for size.
+**Regeneration cannot always reproduce what is deployed, which is what `--merge-tester` is for.**  A fresh genus-3 split search reaches 403 of that family's 405 labels, and each label it misses is covered by exactly one deployed case, so discarding the existing tester would lose coverage.  `--merge-tester` appends an existing tester's case blocks verbatim, which is regeneration rather than copying, since a tester is a header plus one self-contained block per case.  The useful consequence is that a partial run pays: any second case found is additive and coverage cannot fall.
 
-**How a case is chosen.** A generator loops over random curves and divisor pairs and prints a block for
-each operation whose result agrees with Magma's own Cantor arithmetic, letting the formula's own
-`ADD_DEBUG`/`DBL_DEBUG` label name the branch. The runner keeps the first block per label. So a whitebox
-tester is the frozen output of a **coverage-guided random search** — complete and replayable, but not a
-set of hand-designed probes.
-
-Because coverage is a search, a tester can fall short of its own branch count: the genus-3 split `ch2`
-family reaches 347 of 413 labels at 12,000 trials, with the remainder guarded by nested `IsZero`
-coincidences that are rare rather than impossible. `verification/whitebox.py --harvest` fills the
-difference.
+| flag | effect |
+|---|---|
+| `--trials` | bounds the search |
+| `--per-char` | cases kept per label per characteristic class, default 2 |
+| `--basis` | `neg` or `pos`, selecting the genus-2 split basis and the generator that matches it |
+| `--inherit-from FIELD:LOG` | take an existing log's blocks as candidates, which is how `arb` carries its specialisations' cases |
+| `--merge-tester PATH` | append an existing tester's case blocks verbatim |
+| `--from-log` | re-parse a log without running Magma |
+| `--allow-incomplete` | write a tester that misses a label, refused by default |
 
 Limitations:
 
-- `--trials` bounds the search. An unreached branch is reported, and writing a tester with a gap needs
-  `--allow-incomplete`.
-- [whitebox/testerFiles/arb_splitG3_whiteBox_tester.mag](whitebox/testerFiles/arb_splitG3_whiteBox_tester.mag)
-  is a 2-of-405-case fragment from an aborted run, not a usable tester. The real 405-case genus-3
-  testers are in [g3/splitModel/negReduced/](g3/splitModel/negReduced/).
-- `whitebox/logs/` holds the residue of a pre-2025 orchestrator run. Two of the three files begin
-  mid-polynomial: that generation reset the log with `truncate(0)` while Magma still held it open at its
-  own write offset. The runner now writes to a separate file and never truncates.
-- [whitebox/logs/](whitebox/logs/) holds output from aborted runs.
+- An unreached branch is reported, and writing a tester with a gap needs `--allow-incomplete`.
+- [whitebox/testerFiles/](whitebox/testerFiles/) is a staging directory, not the testers of record, and `verification/whitebox.py` deliberately excludes it.  Its `arb_splitG3_whiteBox_tester.mag` is a two-case fragment from an aborted run; the deployed genus-3 split testers hold 1,979, 1,209 and 1,203 cases and live in [g3/splitModel/negReduced/](g3/splitModel/negReduced/).
+- [whitebox/logs/](whitebox/logs/) holds the residue of a pre-2025 orchestrator run alongside output from aborted ones.  Two of the three original files begin mid-polynomial: that generation reset the log with `truncate(0)` while Magma still held it open at its own write offset.  The runner now writes to a separate `.new` file and never truncates.  Regeneration logs are gitignored, running to gigabytes where the committed ones are kilobytes.
 
 ---
 
 ## Operation-count tables
 
-**[verification/opcount.py](verification/opcount.py) is the counter of record.** It measures by running
-the formulas over a real finite field, per branch, and identifies the frequent case by *observing* which
-branch is taken rather than inferring it from the source. It reports inversions, which the older static
-counter does not count at all. Every contributing execution is cross-checked against an independent
-Cantor implementation, so an input outside the formulas' domain shows up as a mismatch rather than as a
-plausible wrong count.
+**[verification/opcount.py](verification/opcount.py) is the counter of record.**  It measures by running the formulas over a real finite field, per branch, and identifies the frequent case by observing which branch is taken rather than inferring it from the source.  It reports inversions, which the older static counter does not count at all.  Every contributing execution is cross-checked against an independent Cantor implementation, so an input outside the formulas' domain shows up as a mismatch rather than as a plausible wrong count.  Per-function figures for every family are in the [appendix](#appendix-operation-costs-by-function).
 
-Conventions come from each formula file's own directives, never from a table here: `//Constant:` names
-the curve coefficients, so products with them count C rather than M; `//Ignore:` names coefficients whose
-products are free; `//startIGNORE` / `//endIGNORE` bracket the polynomial-level reference code kept
-beside each formula. Division by 2 counts as an addition, per the thesis.
+Conventions come from each formula file's own directives, never from a table here: `//Constant:` names the curve coefficients, so products with them count C rather than M; `//Ignore:` names coefficients whose products are free; `//startIGNORE` / `//endIGNORE` bracket the polynomial-level reference code kept beside each formula.  Division by 2 counts as an addition, per the thesis.
 
-**One known misclassification, `ERRATA.md` E13.** A product whose factor is a *composite* over curve
-coefficients — `2*f6*u1_0` — is charged M although `2*f6` is fixed per curve. Six live sites, all in the genus-3
-ramified arbitrary doubling, one of them on a frequent path. Totals are right; the M/C split is not.
+**One known misclassification, `ERRATA.md` E13.**  A product whose factor is a composite over curve coefficients, `2*f6*u1_0`, is charged M although `2*f6` is fixed per curve.  Six live sites, all in the genus-3 ramified arbitrary doubling, one of them on a frequent path.  Totals are right; the M and C split is not.
 
-[latexTables/latexConverter.py](latexTables/latexConverter.py) is the older static counter, which scanned
-the source as text and emitted the thesis's LaTeX tables. The two agreed on all 208 published own-work
-quadruples — two methods sharing no code — but it is now **demoted to a renderer**: it does not run today
-(stale input paths), several counting faults are recorded in [ERRATA.md](ERRATA.md), and nothing depends
-on it except regenerating `.tex`.
+[latexTables/latexConverter.py](latexTables/latexConverter.py) is the older static counter, which scanned the source as text and emitted the thesis's LaTeX tables.  The two agreed on all 208 published own-work quadruples, two methods sharing no code, but it is now demoted to a renderer: it does not run today, its input paths being stale, several counting faults are recorded in [ERRATA.md](ERRATA.md), and nothing depends on it except regenerating `.tex`.
 
-How the genus-3 ramified counts compare to the published literature — with every prior source's curve
-assumptions and the normalisation arithmetic stated — is in [RELATED_WORK.md](RELATED_WORK.md).
+How the genus-3 ramified figures compare to the published literature, with every prior source's curve assumptions and the normalisation arithmetic stated, is in [RELATED_WORK.md](RELATED_WORK.md).
 
-Efficiency findings for the arbitrary-characteristic genus-3 ramified formulas, each located,
-measured and adversarially verified, are in [EFFICIENCY_ARB_G3.md](EFFICIENCY_ARB_G3.md). That
-document changes no formula; it is the input to the implementation work.
+Efficiency findings for the arbitrary-characteristic genus-3 ramified formulas, each located, measured and adversarially verified, are in [EFFICIENCY_ARB_G3.md](EFFICIENCY_ARB_G3.md).  That document changes no formula; it was the input to the implementation work, which is complete.
 
-What this project contributes beyond the published thesis — every correction, completion and result,
-with the argument for why it is right and the measurement that establishes it — is in
-[NEW_WORK.md](NEW_WORK.md). It is written to be lifted into the next publication, and it is kept
-current as the work proceeds rather than reconstructed afterwards. Its Part I gives one account of the
-curve normal forms, uniform in the genus, producing all six ramified forms — and all six now have a
-formula banner declaring exactly that form, the genus-3 characteristic-2 file having been the last to
-exist.
-[verification/normal_form.py](verification/normal_form.py) reproduces every claim in it.
+What this project contributes beyond the published thesis, every correction, completion and result with the argument for why it is right and the measurement that establishes it, is in [NEW_WORK.md](NEW_WORK.md).  It is written to be lifted into the next publication and kept current as the work proceeds rather than reconstructed afterwards.  Its Part I gives one account of the curve normal forms, uniform in the genus, producing all six ramified forms, and all six now have a formula banner declaring exactly that form.  [verification/normal_form.py](verification/normal_form.py) reproduces every claim in it.
 
 ---
 
 ## Timing experiments
 
-[g2/timings/](g2/timings/) and [g3/timings/](g3/timings/) hold the drivers, the prior-art formulas
-compared against, the raw results and the plots.
+[g2/timings/](g2/timings/) and [g3/timings/](g3/timings/) hold the drivers, the prior work formulas compared against, the raw results and the plots.
 
-| prior art | genus |
+| prior work | genus |
 |---|---|
 | [lange_2005.mag](g2/timings/formulas/previousBest/lange_2005.mag), [inf_2010.mag](g2/timings/formulas/previousBest/inf_2010.mag), [geo_2011.mag](g2/timings/formulas/previousBest/geo_2011.mag), [geo_noTrade_2011.mag](g2/timings/formulas/previousBest/geo_noTrade_2011.mag) | 2 |
 | [rad_2019.mag](g3/timings/formulas/previousBest/rad_2019.mag), [sutherland_2019.mag](g3/timings/formulas/previousBest/sutherland_2019.mag) | 3 |
 
-The formula copies under `timings/*/ramFormulas/` and `timings/*/splitFormulas/` are deliberate variants
-rather than duplicates: function names carry a `_RAM` or split suffix so both models can coexist in one
-Magma session, returns are tuples, and debug output is commented out to keep I/O out of the timed loop.
-They are hand-maintained and can drift from the canonical formulas.
+The formula copies under `timings/*/ramFormulas/` and `timings/*/splitFormulas/` are deliberate variants rather than duplicates: function names carry a `_RAM` or split suffix so both models can coexist in one Magma session, returns are tuples, and debug output is commented out to keep I/O out of the timed loop.  They are hand-maintained and can drift from the canonical formulas.
 
 `g2/timings/arbitrary_implementation/` is a superseded fork that no longer runs.
 
-A defect affecting the published negative-reduced generic timings is recorded in [ERRATA.md](ERRATA.md).
+A defect affecting the published negative reduced generic timings is recorded in [ERRATA.md](ERRATA.md).
 
 ---
 
 ## Rust implementation
 
-[rust/](rust/) is a git submodule pointing at
-[github.com/salindne/divisor-arithmetic](https://github.com/salindne/divisor-arithmetic), a Rust port
-with its own tests and CI. Nothing in this repository builds or tests it.
+[rust/](rust/) is a git submodule pointing at [github.com/salindne/divisor-arithmetic](https://github.com/salindne/divisor-arithmetic), a Rust port with its own tests and CI.  Nothing in this repository builds or tests it.
 
 ```sh
 git submodule update --init --recursive
@@ -570,33 +411,146 @@ The recorded pointer may lag the submodule's `main`.
 
 ## Thesis
 
-`ucalgary_2020_lindner_sebastian.pdf` at the repository root is the built document, as published and
-never modified.
+`ucalgary_2020_lindner_sebastian.pdf` at the repository root is the built document, as published and never modified.
 
 The source exists in two copies, deliberately:
 
 | | |
 |---|---|
-| [ThesisPublished/](ThesisPublished/) | **frozen.** Byte-exact as submitted; never edited |
-| [Thesis/](Thesis/) | **evolving.** Corrections land here, each logged in [Thesis/ERRATA.md](Thesis/ERRATA.md) |
+| [ThesisPublished/](ThesisPublished/) | **frozen.**  Byte-exact as submitted; never edited |
+| [Thesis/](Thesis/) | **evolving.**  Corrections land here, each logged in [Thesis/ERRATA.md](Thesis/ERRATA.md) |
 
-Both hold `frontmatter.tex`, `chapter1.tex` through `chapter7.tex` and `appendix.tex`, but not the
-master document that includes them. No `.tex` file has a `\documentclass`, so the thesis cannot be
-rebuilt from either directory as it stands.
+Both hold `frontmatter.tex`, `chapter1.tex` through `chapter7.tex` and `appendix.tex`, but not the master document that includes them.  No `.tex` file has a `\documentclass`, so the thesis cannot be rebuilt from either directory as it stands.
 
-Corrections are made only where they are justified, and
-[Thesis/ERRATA.md](Thesis/ERRATA.md) says for each one whether it was verified by measurement or
-rests on a structural argument. `diff -r ThesisPublished Thesis` shows the current divergence.
+Corrections are made only where they are justified, and [Thesis/ERRATA.md](Thesis/ERRATA.md) says for each one whether it was verified by measurement or rests on a structural argument.  `diff -r ThesisPublished Thesis` shows the current divergence.
 
 ---
 
 ## Licence and citation
 
-Code here is MIT licensed, see [LICENSE](LICENSE). The licence covers the code only.
-`ucalgary_2020_lindner_sebastian.pdf` and the university thesis class and templates under
-[Thesis/](Thesis/) are not covered and retain their own terms.
+Code here is MIT licensed, see [LICENSE](LICENSE).  The licence covers the code only.  `ucalgary_2020_lindner_sebastian.pdf` and the university thesis class and templates under [Thesis/](Thesis/) are not covered and retain their own terms.
 
 To cite:
 
-> S. Lindner. *Explicit Formulas for Hyperelliptic Curve Arithmetic.* PhD thesis, University of
-> Calgary, 2020.
+> S. Lindner. *Explicit Formulas for Hyperelliptic Curve Arithmetic.* PhD thesis, University of Calgary, 2020.
+
+---
+
+## Appendix: operation costs by function
+
+Operation costs for every non-degenerate function, measured as in [Typical Case Operation Counts](#typical-case-operation-counts) and reported per characteristic class.  Each figure is the frequent branch of that operation.  Ramified rows are function names; split rows carry the input balancing weights, because at split the weight is what selects which published row an operation belongs to.  Shapes the dispatcher answers without arithmetic are omitted, five at genus 2 split and thirteen at genus 3 split.  Genus-2 split negative reduced is omitted, positive reduced being the basis of record.  Measured over GF(31) for `arb` and `nch2`, GF(32) for `ch2`.
+
+### Genus 2, ramified
+
+<table>
+<thead>
+<tr><th rowspan="2">operation</th><th colspan="4">arb</th><th colspan="4">nch2</th><th colspan="4">ch2</th></tr>
+<tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
+</thead>
+<tbody>
+<tr><td><b>11ADD</b></td><td>3</td><td>0</td><td>4</td><td>0</td><td>3</td><td>0</td><td>4</td><td>0</td><td>3</td><td>0</td><td>4</td><td>0</td></tr>
+<tr><td><b>12ADD</b></td><td>9</td><td>1</td><td>22</td><td>0</td><td>8</td><td>2</td><td>15</td><td>0</td><td>8</td><td>1</td><td>19</td><td>0</td></tr>
+<tr><td><b>22ADD</b></td><td>21</td><td>2</td><td>31</td><td>0</td><td>21</td><td>2</td><td>23</td><td>0</td><td>20</td><td>3</td><td>26</td><td>0</td></tr>
+<tr><td><b>1DBL</b></td><td>4</td><td>1</td><td>15</td><td>3</td><td>3</td><td>1</td><td>9</td><td>1</td><td>2</td><td>2</td><td>5</td><td>2</td></tr>
+<tr><td><b>2DBL</b></td><td>22</td><td>4</td><td>42</td><td>2</td><td>21</td><td>5</td><td>25</td><td>0</td><td>21</td><td>4</td><td>24</td><td>0</td></tr>
+</tbody>
+</table>
+
+### Genus 3, ramified
+
+<table>
+<thead>
+<tr><th rowspan="2">operation</th><th colspan="4">arb</th><th colspan="4">nch2</th><th colspan="4">ch2</th></tr>
+<tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
+</thead>
+<tbody>
+<tr><td><b>11ADD</b></td><td>3</td><td>0</td><td>4</td><td>0</td><td>3</td><td>0</td><td>4</td><td>0</td><td>3</td><td>0</td><td>3</td><td>0</td></tr>
+<tr><td><b>12ADD</b></td><td>6</td><td>1</td><td>8</td><td>0</td><td>6</td><td>1</td><td>8</td><td>0</td><td>6</td><td>1</td><td>7</td><td>0</td></tr>
+<tr><td><b>13ADD</b></td><td>18</td><td>1</td><td>39</td><td>0</td><td>16</td><td>3</td><td>28</td><td>0</td><td>15</td><td>2</td><td>33</td><td>0</td></tr>
+<tr><td><b>22ADD</b></td><td>25</td><td>1</td><td>41</td><td>0</td><td>24</td><td>2</td><td>33</td><td>0</td><td>23</td><td>2</td><td>35</td><td>0</td></tr>
+<tr><td><b>23ADD</b></td><td>36</td><td>3</td><td>55</td><td>0</td><td>35</td><td>4</td><td>45</td><td>0</td><td>34</td><td>4</td><td>46</td><td>1</td></tr>
+<tr><td><b>33ADD</b></td><td>53</td><td>3</td><td>71</td><td>1</td><td>53</td><td>3</td><td>59</td><td>0</td><td>51</td><td>3</td><td>62</td><td>0</td></tr>
+<tr><td><b>1DBL</b></td><td>7</td><td>1</td><td>24</td><td>4</td><td>5</td><td>1</td><td>15</td><td>1</td><td>4</td><td>2</td><td>7</td><td>2</td></tr>
+<tr><td><b>2DBL</b></td><td>28</td><td>4</td><td>70</td><td>9</td><td>25</td><td>4</td><td>44</td><td>0</td><td>21</td><td>4</td><td>38</td><td>5</td></tr>
+<tr><td><b>3DBL</b></td><td>54</td><td>4</td><td>80</td><td>4</td><td>53</td><td>5</td><td>61</td><td>0</td><td>51</td><td>4</td><td>55</td><td>2</td></tr>
+</tbody>
+</table>
+
+### Genus 2, split, positive reduced
+
+<table>
+<thead>
+<tr><th rowspan="2">operation</th><th colspan="4">arb</th><th colspan="4">nch2</th><th colspan="4">ch2</th></tr>
+<tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
+</thead>
+<tbody>
+<tr><td><b>01ADD n=0,0</b></td><td>4</td><td>0</td><td>9</td><td>3</td><td>3</td><td>1</td><td>7</td><td>2</td><td>3</td><td>1</td><td>7</td><td>2</td></tr>
+<tr><td><b>01ADD n=2,1</b></td><td>4</td><td>0</td><td>13</td><td>3</td><td>3</td><td>1</td><td>9</td><td>2</td><td>3</td><td>1</td><td>8</td><td>2</td></tr>
+<tr><td><b>02ADD n=0,0</b></td><td>6</td><td>0</td><td>17</td><td>3</td><td>4</td><td>2</td><td>12</td><td>0</td><td>5</td><td>1</td><td>11</td><td>0</td></tr>
+<tr><td><b>02ADD n=2,0</b></td><td>6</td><td>0</td><td>17</td><td>3</td><td>4</td><td>2</td><td>12</td><td>0</td><td>5</td><td>1</td><td>11</td><td>0</td></tr>
+<tr><td><b>11ADD n=0,0</b></td><td>11</td><td>2</td><td>19</td><td>4</td><td>9</td><td>4</td><td>17</td><td>1</td><td>9</td><td>4</td><td>15</td><td>1</td></tr>
+<tr><td><b>11ADD n=0,1</b></td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>4</td><td>0</td></tr>
+<tr><td><b>11ADD n=1,0</b></td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>4</td><td>0</td></tr>
+<tr><td><b>11ADD n=1,1</b></td><td>9</td><td>2</td><td>20</td><td>3</td><td>9</td><td>2</td><td>16</td><td>1</td><td>8</td><td>3</td><td>14</td><td>1</td></tr>
+<tr><td><b>12ADD n=0,0</b></td><td>15</td><td>2</td><td>30</td><td>5</td><td>15</td><td>2</td><td>26</td><td>0</td><td>14</td><td>3</td><td>22</td><td>0</td></tr>
+<tr><td><b>12ADD n=1,0</b></td><td>14</td><td>2</td><td>26</td><td>3</td><td>14</td><td>2</td><td>22</td><td>0</td><td>14</td><td>2</td><td>19</td><td>0</td></tr>
+<tr><td><b>22ADD n=0,0</b></td><td>27</td><td>1</td><td>37</td><td>3</td><td>26</td><td>2</td><td>36</td><td>0</td><td>27</td><td>1</td><td>34</td><td>0</td></tr>
+<tr><td><b>1DBL n=0</b></td><td>12</td><td>2</td><td>20</td><td>3</td><td>10</td><td>3</td><td>19</td><td>1</td><td>11</td><td>3</td><td>14</td><td>1</td></tr>
+<tr><td><b>1DBL n=1</b></td><td>14</td><td>2</td><td>26</td><td>4</td><td>12</td><td>3</td><td>23</td><td>1</td><td>11</td><td>4</td><td>16</td><td>1</td></tr>
+<tr><td><b>2DBL n=0</b></td><td>30</td><td>2</td><td>44</td><td>8</td><td>29</td><td>3</td><td>39</td><td>0</td><td>29</td><td>2</td><td>31</td><td>0</td></tr>
+</tbody>
+</table>
+
+### Genus 3, split, negative reduced
+
+<table>
+<thead>
+<tr><th rowspan="2">operation</th><th colspan="4">arb</th><th colspan="4">nch2</th><th colspan="4">ch2</th></tr>
+<tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
+</thead>
+<tbody>
+<tr><td><b>01ADD n=0,0</b></td><td>33</td><td>2</td><td>48</td><td>21</td><td>30</td><td>4</td><td>37</td><td>7</td><td>31</td><td>3</td><td>37</td><td>11</td></tr>
+<tr><td><b>01ADD n=0,1</b></td><td>8</td><td>0</td><td>17</td><td>5</td><td>6</td><td>1</td><td>14</td><td>3</td><td>6</td><td>1</td><td>12</td><td>3</td></tr>
+<tr><td><b>01ADD n=1,0</b></td><td>8</td><td>0</td><td>17</td><td>5</td><td>6</td><td>1</td><td>14</td><td>3</td><td>6</td><td>1</td><td>12</td><td>3</td></tr>
+<tr><td><b>01ADD n=3,2</b></td><td>8</td><td>0</td><td>12</td><td>4</td><td>6</td><td>1</td><td>10</td><td>3</td><td>6</td><td>1</td><td>10</td><td>3</td></tr>
+<tr><td><b>02ADD n=0,0</b></td><td>37</td><td>2</td><td>54</td><td>21</td><td>33</td><td>5</td><td>42</td><td>6</td><td>34</td><td>4</td><td>39</td><td>10</td></tr>
+<tr><td><b>02ADD n=0,1</b></td><td>10</td><td>0</td><td>23</td><td>6</td><td>8</td><td>2</td><td>19</td><td>2</td><td>9</td><td>1</td><td>17</td><td>2</td></tr>
+<tr><td><b>02ADD n=1,0</b></td><td>10</td><td>0</td><td>23</td><td>6</td><td>8</td><td>2</td><td>19</td><td>2</td><td>9</td><td>1</td><td>17</td><td>2</td></tr>
+<tr><td><b>02ADD n=3,1</b></td><td>10</td><td>0</td><td>23</td><td>6</td><td>9</td><td>1</td><td>21</td><td>2</td><td>9</td><td>1</td><td>20</td><td>2</td></tr>
+<tr><td><b>03ADD n=0,0</b></td><td>40</td><td>2</td><td>60</td><td>22</td><td>36</td><td>5</td><td>44</td><td>3</td><td>37</td><td>3</td><td>46</td><td>9</td></tr>
+<tr><td><b>03ADD n=1,0</b></td><td>11</td><td>0</td><td>29</td><td>7</td><td>9</td><td>1</td><td>21</td><td>0</td><td>9</td><td>1</td><td>21</td><td>2</td></tr>
+<tr><td><b>03ADD n=3,0</b></td><td>11</td><td>0</td><td>29</td><td>7</td><td>9</td><td>1</td><td>21</td><td>0</td><td>9</td><td>1</td><td>21</td><td>2</td></tr>
+<tr><td><b>11ADD n=0,0</b></td><td>41</td><td>4</td><td>57</td><td>23</td><td>38</td><td>6</td><td>46</td><td>8</td><td>38</td><td>6</td><td>45</td><td>10</td></tr>
+<tr><td><b>11ADD n=0,1</b></td><td>14</td><td>2</td><td>26</td><td>5</td><td>13</td><td>3</td><td>23</td><td>1</td><td>13</td><td>3</td><td>20</td><td>1</td></tr>
+<tr><td><b>11ADD n=0,2</b></td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td></tr>
+<tr><td><b>11ADD n=1,0</b></td><td>14</td><td>2</td><td>26</td><td>5</td><td>13</td><td>3</td><td>23</td><td>1</td><td>13</td><td>3</td><td>20</td><td>1</td></tr>
+<tr><td><b>11ADD n=1,1</b></td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td></tr>
+<tr><td><b>11ADD n=1,2</b></td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td></tr>
+<tr><td><b>11ADD n=2,0</b></td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td></tr>
+<tr><td><b>11ADD n=2,1</b></td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td><td>3</td><td>0</td><td>5</td><td>0</td></tr>
+<tr><td><b>11ADD n=2,2</b></td><td>17</td><td>2</td><td>25</td><td>5</td><td>15</td><td>4</td><td>23</td><td>1</td><td>15</td><td>4</td><td>21</td><td>1</td></tr>
+<tr><td><b>12ADD n=0,0</b></td><td>47</td><td>5</td><td>67</td><td>22</td><td>44</td><td>7</td><td>54</td><td>6</td><td>44</td><td>7</td><td>50</td><td>9</td></tr>
+<tr><td><b>12ADD n=0,1</b></td><td>18</td><td>3</td><td>36</td><td>6</td><td>17</td><td>4</td><td>30</td><td>1</td><td>17</td><td>4</td><td>28</td><td>1</td></tr>
+<tr><td><b>12ADD n=1,0</b></td><td>18</td><td>3</td><td>36</td><td>6</td><td>17</td><td>4</td><td>30</td><td>1</td><td>17</td><td>4</td><td>28</td><td>1</td></tr>
+<tr><td><b>12ADD n=1,1</b></td><td>6</td><td>1</td><td>10</td><td>0</td><td>6</td><td>1</td><td>10</td><td>0</td><td>6</td><td>1</td><td>10</td><td>0</td></tr>
+<tr><td><b>12ADD n=2,0</b></td><td>6</td><td>1</td><td>10</td><td>0</td><td>6</td><td>1</td><td>10</td><td>0</td><td>6</td><td>1</td><td>10</td><td>0</td></tr>
+<tr><td><b>12ADD n=2,1</b></td><td>20</td><td>3</td><td>39</td><td>7</td><td>19</td><td>4</td><td>36</td><td>1</td><td>18</td><td>5</td><td>33</td><td>1</td></tr>
+<tr><td><b>13ADD n=0,0</b></td><td>53</td><td>4</td><td>74</td><td>22</td><td>49</td><td>7</td><td>62</td><td>3</td><td>51</td><td>5</td><td>56</td><td>7</td></tr>
+<tr><td><b>13ADD n=1,0</b></td><td>22</td><td>2</td><td>43</td><td>7</td><td>21</td><td>3</td><td>36</td><td>0</td><td>22</td><td>2</td><td>33</td><td>0</td></tr>
+<tr><td><b>13ADD n=2,0</b></td><td>25</td><td>2</td><td>49</td><td>8</td><td>23</td><td>4</td><td>42</td><td>0</td><td>23</td><td>4</td><td>40</td><td>0</td></tr>
+<tr><td><b>22ADD n=0,0</b></td><td>61</td><td>3</td><td>78</td><td>25</td><td>56</td><td>6</td><td>72</td><td>5</td><td>57</td><td>5</td><td>66</td><td>8</td></tr>
+<tr><td><b>22ADD n=0,1</b></td><td>30</td><td>1</td><td>47</td><td>8</td><td>29</td><td>2</td><td>47</td><td>0</td><td>29</td><td>2</td><td>41</td><td>0</td></tr>
+<tr><td><b>22ADD n=1,0</b></td><td>30</td><td>1</td><td>47</td><td>8</td><td>29</td><td>2</td><td>47</td><td>0</td><td>29</td><td>2</td><td>41</td><td>0</td></tr>
+<tr><td><b>22ADD n=1,1</b></td><td>37</td><td>1</td><td>56</td><td>7</td><td>36</td><td>2</td><td>57</td><td>0</td><td>33</td><td>4</td><td>52</td><td>0</td></tr>
+<tr><td><b>23ADD n=0,0</b></td><td>75</td><td>3</td><td>89</td><td>18</td><td>72</td><td>5</td><td>78</td><td>3</td><td>72</td><td>4</td><td>76</td><td>7</td></tr>
+<tr><td><b>23ADD n=1,0</b></td><td>41</td><td>1</td><td>59</td><td>3</td><td>41</td><td>1</td><td>57</td><td>0</td><td>41</td><td>1</td><td>55</td><td>0</td></tr>
+<tr><td><b>33ADD n=0,0</b></td><td>65</td><td>3</td><td>87</td><td>12</td><td>65</td><td>3</td><td>85</td><td>0</td><td>65</td><td>3</td><td>80</td><td>0</td></tr>
+<tr><td><b>1DBL n=0</b></td><td>42</td><td>5</td><td>66</td><td>27</td><td>40</td><td>6</td><td>57</td><td>7</td><td>38</td><td>7</td><td>44</td><td>10</td></tr>
+<tr><td><b>1DBL n=1</b></td><td>7</td><td>1</td><td>19</td><td>6</td><td>7</td><td>1</td><td>15</td><td>3</td><td>7</td><td>1</td><td>14</td><td>3</td></tr>
+<tr><td><b>1DBL n=2</b></td><td>14</td><td>3</td><td>25</td><td>8</td><td>14</td><td>3</td><td>24</td><td>3</td><td>12</td><td>3</td><td>19</td><td>4</td></tr>
+<tr><td><b>2DBL n=0</b></td><td>62</td><td>5</td><td>95</td><td>31</td><td>60</td><td>7</td><td>89</td><td>4</td><td>60</td><td>7</td><td>80</td><td>7</td></tr>
+<tr><td><b>2DBL n=1</b></td><td>37</td><td>0</td><td>56</td><td>13</td><td>35</td><td>2</td><td>54</td><td>3</td><td>36</td><td>1</td><td>48</td><td>3</td></tr>
+<tr><td><b>3DBL n=0</b></td><td>73</td><td>3</td><td>101</td><td>19</td><td>72</td><td>4</td><td>97</td><td>0</td><td>71</td><td>4</td><td>86</td><td>1</td></tr>
+</tbody>
+</table>
+
