@@ -343,3 +343,41 @@ from the `f4`-free code, which is why the contradiction is with the sentence and
 the numbers.
 
 ---
+
+## E-T10 — the genus-3 split Degree-3 rows trade one multiplication for twelve additions
+
+**`chapter6.tex:2389` in `tab:g3splitfcostsDBL` and `:2491` in `tab:g3splitfcostsADD`.**
+**Measured, and hand-counted independently.**
+
+**This is not an error in the thesis.** The published counts were correct for the
+formulas as published; the formulas have since changed under them. The entry
+exists because `Thesis/` must not quote a cost the code no longer has.
+
+    :2389  &73&3&101&19 &72&4&97&0 &71&4&86&1   becomes
+           &74&3& 89&19 &73&4&85&0 &72&4&74&1
+
+    :2491  &65&3& 87&12 &65&3&85&0 &65&3&80&0   becomes
+           &66&3& 75&12 &66&3&73&0 &66&3&68&0
+
+Six cells, `+1M -12A` in each, across the `arb`, `nch2` and `ch2` columns of both
+tables. S and C are unchanged everywhere, and no other row in either table moves.
+
+**What changed.** The addition and doubling now carry the full adjugate of the
+`3x3` matrix `T` and apply it as a matrix-vector product, where they previously
+built only its first column and reduced `vt*q mod up` by Karatsuba twice. The
+trade is `+1M` for `-12A`, which the thesis's own `1M : 3A` rule accepts
+comfortably.
+
+**Where the cost actually moves, which the derivation should state.** Not at the
+`T` block: that costs `15M 0S 9A` either way, yielding three adjugate entries in
+the old arrangement and seven in the new, because column 3 of `T` is `x` times
+column 2 reduced modulo the modulus, so six of the nine entries are one
+multiplication each rather than a `2x2` minor. The whole `+1M` and the whole
+`-12A` are downstream, where applying the matrix costs `12M 8A` against
+Karatsuba's `11M 20A`.
+
+**Adjudicated per the standing rule.** `verification/opcount.py` measures the new
+figures by execution and a hand count of the changed region reproduces the same
+`+1M -12A`, two methods sharing no code. `verification/selftest.py`'s published
+pins for `33ADD n=0,0` and `3DBL n=0` are updated with the reason recorded
+inline, and every other pinned cell still matches its published value.

@@ -31,15 +31,15 @@ The frequent case of the highest-degree operation in each family.  "Frequent" me
 <tr><td><b>g3 ramified</b> arb</td><td>53</td><td>3</td><td>71</td><td>1</td><td>54</td><td>4</td><td>80</td><td>4</td></tr>
 <tr><td><b>g3 ramified</b> nch2</td><td>53</td><td>3</td><td>59</td><td>0</td><td>53</td><td>5</td><td>61</td><td>0</td></tr>
 <tr><td><b>g3 ramified</b> ch2</td><td>51</td><td>3</td><td>62</td><td>0</td><td>51</td><td>4</td><td>55</td><td>2</td></tr>
-<tr><td><b>g3 split</b> arb</td><td>65</td><td>3</td><td>87</td><td>12</td><td>73</td><td>3</td><td>101</td><td>19</td></tr>
-<tr><td><b>g3 split</b> nch2</td><td>65</td><td>3</td><td>85</td><td>0</td><td>72</td><td>4</td><td>97</td><td>0</td></tr>
-<tr><td><b>g3 split</b> ch2</td><td>65</td><td>3</td><td>80</td><td>0</td><td>71</td><td>4</td><td>86</td><td>1</td></tr>
+<tr><td><b>g3 split</b> arb</td><td>66</td><td>3</td><td>75</td><td>12</td><td>74</td><td>3</td><td>89</td><td>19</td></tr>
+<tr><td><b>g3 split</b> nch2</td><td>66</td><td>3</td><td>73</td><td>0</td><td>73</td><td>4</td><td>85</td><td>0</td></tr>
+<tr><td><b>g3 split</b> ch2</td><td>66</td><td>3</td><td>68</td><td>0</td><td>72</td><td>4</td><td>74</td><td>1</td></tr>
 </tbody>
 </table>
 
 Every figure is measured.  `python3 verification/opcount.py --family <name>` executes the formulas over a real field, identifies the frequent case by observing which branch is taken, and cross-checks each contributing call against the Cantor reference implementation.  All fifteen families measure, the twelve above plus genus-2 split negative reduced.
 
-Where the thesis publishes a cell, measurement reproduces it exactly: the genus-2 ramified rows against `tab:ramfcosts`, and 168 split shapes against `tab:splitfcosts` and `tab:g3splitfcosts{ADD,DBL}`, every one at exactly one inversion.  One systematic divergence turned up during that check and was the tool's rather than the thesis's, a flat `+2A` on every split row, because a divisor's balancing weight is a small integer and `n := n1 + n2 - 2` is bookkeeping rather than field arithmetic.  See [NEW_WORK.md](NEW_WORK.md) N31.
+Where the thesis publishes a cell, measurement reproduces it exactly: the genus-2 ramified rows against `tab:ramfcosts`, and 168 split shapes against `tab:splitfcosts` and `tab:g3splitfcosts{ADD,DBL}`, every one at exactly one inversion.  Two of those cells have since moved by design: the genus-3 split `33ADD n=0,0` and `3DBL n=0` each trade one multiplication for twelve additions, so measurement and the published table differ there deliberately, recorded in [Thesis/ERRATA.md](Thesis/ERRATA.md).  One systematic divergence turned up during the original check and was the tool's rather than the thesis's, a flat `+2A` on every split row, because a divisor's balancing weight is a small integer and `n := n1 + n2 - 2` is bookkeeping rather than field arithmetic.  See [NEW_WORK.md](NEW_WORK.md) N31.
 
 The genus-2 split figures are positive reduced, the basis of record.  Negative reduced is a different algorithm and differs by an operation or two on several rows.
 
@@ -119,10 +119,10 @@ Against Rezai Rad et al. 2019 and Sutherland 2019.
 <tr><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th><th>M</th><th>S</th><th>A</th><th>C</th></tr>
 </thead>
 <tbody>
-<tr><td><b>3DBL odd</b></td><td>85</td><td>2</td><td>163</td><td>0</td><td>74</td><td>8</td><td>127</td><td>0</td><td>72</td><td>4</td><td>97</td><td>0</td></tr>
-<tr><td><b>3ADD odd</b></td><td>75</td><td>2</td><td>138</td><td>0</td><td>73</td><td>6</td><td>127</td><td>0</td><td>65</td><td>3</td><td>85</td><td>0</td></tr>
-<tr><td><b>3DBL char 2</b></td><td>89</td><td>1</td><td>116</td><td>0</td><td colspan="4">n/a</td><td>71</td><td>4</td><td>86</td><td>1</td></tr>
-<tr><td><b>3ADD char 2</b></td><td>81</td><td>0</td><td>118</td><td>0</td><td colspan="4">n/a</td><td>65</td><td>3</td><td>80</td><td>0</td></tr>
+<tr><td><b>3DBL odd</b></td><td>85</td><td>2</td><td>163</td><td>0</td><td>74</td><td>8</td><td>127</td><td>0</td><td>73</td><td>4</td><td>85</td><td>0</td></tr>
+<tr><td><b>3ADD odd</b></td><td>75</td><td>2</td><td>138</td><td>0</td><td>73</td><td>6</td><td>127</td><td>0</td><td>66</td><td>3</td><td>73</td><td>0</td></tr>
+<tr><td><b>3DBL char 2</b></td><td>89</td><td>1</td><td>116</td><td>0</td><td colspan="4">n/a</td><td>72</td><td>4</td><td>74</td><td>1</td></tr>
+<tr><td><b>3ADD char 2</b></td><td>81</td><td>0</td><td>118</td><td>0</td><td colspan="4">n/a</td><td>66</td><td>3</td><td>68</td><td>0</td></tr>
 </tbody>
 </table>
 
@@ -544,12 +544,12 @@ Operation costs for every non-degenerate function, measured as in [Typical Case 
 <tr><td><b>22ADD n=1,1</b></td><td>37</td><td>1</td><td>56</td><td>7</td><td>36</td><td>2</td><td>57</td><td>0</td><td>33</td><td>4</td><td>52</td><td>0</td></tr>
 <tr><td><b>23ADD n=0,0</b></td><td>75</td><td>3</td><td>89</td><td>18</td><td>72</td><td>5</td><td>78</td><td>3</td><td>72</td><td>4</td><td>76</td><td>7</td></tr>
 <tr><td><b>23ADD n=1,0</b></td><td>41</td><td>1</td><td>59</td><td>3</td><td>41</td><td>1</td><td>57</td><td>0</td><td>41</td><td>1</td><td>55</td><td>0</td></tr>
-<tr><td><b>33ADD n=0,0</b></td><td>65</td><td>3</td><td>87</td><td>12</td><td>65</td><td>3</td><td>85</td><td>0</td><td>65</td><td>3</td><td>80</td><td>0</td></tr>
+<tr><td><b>33ADD n=0,0</b></td><td>66</td><td>3</td><td>75</td><td>12</td><td>66</td><td>3</td><td>73</td><td>0</td><td>66</td><td>3</td><td>68</td><td>0</td></tr>
 <tr><td><b>1DBL n=0</b></td><td>42</td><td>5</td><td>66</td><td>27</td><td>40</td><td>6</td><td>57</td><td>7</td><td>38</td><td>7</td><td>44</td><td>10</td></tr>
 <tr><td><b>1DBL n=1</b></td><td>7</td><td>1</td><td>19</td><td>6</td><td>7</td><td>1</td><td>15</td><td>3</td><td>7</td><td>1</td><td>14</td><td>3</td></tr>
 <tr><td><b>1DBL n=2</b></td><td>14</td><td>3</td><td>25</td><td>8</td><td>14</td><td>3</td><td>24</td><td>3</td><td>12</td><td>3</td><td>19</td><td>4</td></tr>
 <tr><td><b>2DBL n=0</b></td><td>62</td><td>5</td><td>95</td><td>31</td><td>60</td><td>7</td><td>89</td><td>4</td><td>60</td><td>7</td><td>80</td><td>7</td></tr>
 <tr><td><b>2DBL n=1</b></td><td>37</td><td>0</td><td>56</td><td>13</td><td>35</td><td>2</td><td>54</td><td>3</td><td>36</td><td>1</td><td>48</td><td>3</td></tr>
-<tr><td><b>3DBL n=0</b></td><td>73</td><td>3</td><td>101</td><td>19</td><td>72</td><td>4</td><td>97</td><td>0</td><td>71</td><td>4</td><td>86</td><td>1</td></tr>
+<tr><td><b>3DBL n=0</b></td><td>74</td><td>3</td><td>89</td><td>19</td><td>73</td><td>4</td><td>85</td><td>0</td><td>72</td><td>4</td><td>74</td><td>1</td></tr>
 </tbody>
 </table>
