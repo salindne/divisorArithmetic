@@ -257,10 +257,14 @@ produced by these sources.  Discounting it leaves 266, and every landmark agrees
 | Chapter 7 begins on | 260 | 260 |
 | Bibliography begins on | 263 | 263 |
 | Chapter 1 to Chapter 7 span | 246 | 246 |
-| extracted words | 106,841 | 106,463 |
+| algorithm and subroutine numbering | 1 to 87 | **1 to 87** |
+| extracted words | 106,780 | 106,586 |
 
-Prose probes agree to within one occurrence: `NUCOMP` 268 against 268, `balancing` 112 against 112,
-`Mumford` 105 against 106.
+Word counts are `pdftotext` followed by `wc -w`, on the whole file including the published PDF's
+cover page.  State the method with the figure: a different tokenizer moves the total by tens of
+words, and this table has carried two different numbers for the same frozen document because of
+that.  Prose probes under the same extraction agree to within one occurrence: `NUCOMP` 268
+against 268, `balancing` 112 against 112, `Mumford` 105 against 106.
 
 **Two preamble settings are load-bearing, and each was recovered by measuring against the published
 PDF rather than by reading anything.**
@@ -271,12 +275,27 @@ PDF rather than by reading anything.**
 2. `\settocdepth{subsubsection}`.  The class prints chapters and sections only by default, giving a
    two page table of contents against the published four.  The published thesis lists subsections
    and subsubsections, visible in its own table of contents at entries such as `2.4.2` and `4.3.7`.
+3. **The `subroutine` float shares the `algorithm` counter and the List of Algorithms.**  Defined
+   with its own per-chapter counter instead, the eleven subroutines numbered `5.1` to `6.5`, were
+   absent from the List of Algorithms, and every algorithm above 34 was numbered too low: the
+   document ended at Algorithm 76 against the published 87.  The published thesis numbers its
+   subroutines **35, 38, 40, 44, 48, 51, 60, 61, 62, 70 and 71**, which are exactly the integers
+   missing from its own `Algorithm` captions, so they share one counter.  With
+   `\let\c@subroutine\c@algorithm` the rebuild reproduces all eleven and tops out at 87.
 
-**One residual difference, cosmetic and self-cancelling.** The rebuilt table of contents runs to
-five pages where the published one runs to four, and the rebuilt list of algorithms to three where
-the published one runs to four.  The two cancel exactly, which is why the front matter is thirteen
-roman-numbered pages in both and no page number moves.  The cause is entry indentation and wrapping
-in those two lists.
+   **This one matters beyond typography.** Any step reference checked against the rebuild alone
+   could have been checked against the wrong algorithm: `alg:g3explSPLIT3ADD` rendered as
+   Algorithm 60 here against 69 in print.
+
+**One residual difference remains, and it is genuinely cosmetic.** The rebuilt table of contents
+runs to five pages where the published one runs to four, and the rebuilt list of algorithms to
+three where the published one runs to four.  The two happen to cancel, which is why the front
+matter is thirteen roman-numbered pages in both and no page number moves.
+
+**Do not read that cancellation as evidence of anything.** It was previously attributed to
+indentation and wrapping, while the list of algorithms was in fact a page short because it was
+**missing eleven entries**, which is the defect in item 3 above.  With those restored the entries
+are all present and the remaining difference is density in those two lists alone.
 
 **Three things are guesses, and they are where to look first if something renders oddly.**
 
@@ -291,9 +310,10 @@ in those two lists.
 
 **`thesis.aux` and `thesis.toc` are committed evidence, not output.** They come from the original
 2020 build and are what the include order was read off.  Build out of tree so they survive.  The
-committed `.toc` records the list of tables on page viii where the published PDF prints it on ix, so
-that file is from a pass before the original build converged; the include order it is used for is
-unaffected.
+committed `.toc` records the list of tables on page viii where the published PDF prints it on ix.
+That is **not** a sign the original build had not converged: the published PDF's own table of
+contents prints viii too, so the `.toc` agrees with the converged build to the page.  It is the
+defect recorded as `E-T14`.
 
 **`thesis.pdf` is a committed build artifact and will go stale.** It reflects `Thesis/` at the time
 of its last build, so rebuild it in the same commit as any `.tex` correction.  Nothing enforces that.

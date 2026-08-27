@@ -279,11 +279,33 @@ content; the published-tree numbers this table originally carried were off by up
 | where | defect | status |
 |---|---|---|
 | `chapter6.tex:1091` | `u_2 = x^3 + u_{12}x^2 + u_{21}x + u_{20}` — the leading coefficient should be `u_{22}`; `u_{12}` belongs to `u_1`, declared in the same sentence | **corrected.** Confined to that one declaration: `u_{12}` at `:1160`, `:1162`, `:1170` and `:1239` genuinely means divisor 1 and is untouched |
-| `chapter5.tex:403-407`, carrying into `:416-417` | bare `u_1`/`u_0` where the result's `u_{n_1}`/`u_{n_0}` are meant, colliding with `u_1` = input divisor 1 | **corrected**, 11 coefficient names, 6 of them `h_2u_i`. The section is Genus 2 Ramified Degree 2 **Doubling**, implemented by `Deg2DBL`. Proved rather than argued: each block states a formula and then its factored form, and the factorisation holds only for the corrected names |
+| `chapter5.tex:403-407`, carrying into `:416-417`, **and the twin block at `chapter4.tex:1227-1233`** | bare `u_1`/`u_0` where the result's `u_{n_1}`/`u_{n_0}` are meant, colliding with `u_1` = input divisor 1 | **corrected**, 11 coefficient names per block.  The section is Genus 2 Ramified Degree 2 **Doubling**, implemented by `Deg2DBL`.  **Two arguments, covering different names** -- see below |
+| `chapter4.tex:1224-1225` | "$u_{n_1} = s_0'' - t_2$ and therefore $t_2 = s_0'' - u_{n_1}$", both signs inverted | **corrected.** `arb_ramifiedG2_DBL.mag:205` computes `upp1 := spp0 + t2`, and the same page contradicts itself ten lines later with "Notice that $t_2 = u_{n_1} - s_0''$".  `chapter5.tex:394` and `:644` both already had the correct sign |
 | `chapter6.tex:1260-1261` | two malformed `r`-subscripts | **corrected**, see `E-T12` |
 | `chapter5.tex:1838` | unbalanced parenthesis: `-w_4(` is never closed | **corrected.** Not gate-visible: an unbalanced `(` is legal in math mode, so the build is silent on it |
 | `chapter5.tex:647` | dangling text: "where only the degree 2 coefficient `k_2 = ` of `k` is used" | **corrected** |
 | `chapter4.tex:548-550` | `alg:g3nucomp` binds `S` and then tests and divides by an undefined `S'` | **corrected, in the opposite direction to the one first attempted.** See below |
+
+### The `u_{n_1}`/`u_{n_0}` block: two arguments, and they cover different names
+
+The block appears **twice**, at `chapter5.tex:403-407` and verbatim at `chapter4.tex:1227-1233`
+in the section `chapter5.tex:417` points the reader to.  Both are corrected.  The evidence
+splits, and flattening it into one claim would over-cover the majority of the names:
+
+- **Five names by algebra.** Each `align*` states a formula and then its factored form, so the
+  two lines must be equal.  Expanding `(u_{n_1} - s_0'')(u_{11} - u_{n_1})` forces
+  `u_{n_1}s_0''`, `u_{n_1}u_{11}`, `u_{n_0}s_0''` and `u_{n_0}u_{n_1}` (two names).  Verified
+  symbolically: the corrected lines are equal and the published ones are not.
+- **Six `h_2u_i` names by the code.** Those sit outside the factorised group and appear
+  identically on both lines, so comparing the lines constrains them not at all.  They rest on
+  `arb_ramifiedG2_DBL.mag:209-210`, `vpp1 := ... + h2*upp1` and `vpp0 := ... + h2*upp0`, which
+  multiply `h_2` by the **result**.  Corroborated by `nch2_ramifiedG2_DBL.mag:209-210` dropping
+  the terms entirely at `h = 0`, and by the fact that no `h2*upp` occurs anywhere under
+  `g2/splitModel/`, so the correction is correctly scoped to the ramified model.
+
+**Chapter 4 was disagreeing with itself.** Four lines below its stale block, `:1238-1239`
+already wrote `h_2u_{n_1}` and `h_2u_{n_0}`, so the derivation and the explicit formula it
+derives used different names for the same quantity.
 
 ### `alg:g3nucomp`'s `S'`, and why the obvious repair is the wrong half
 
@@ -436,13 +458,14 @@ inline, and every other pinned cell still matches its published value.
 "ends up being 3 lines off", and separately that a formula attributed to Steps 14--16
 looked like Step 18.
 
-**Cause.** `algorithmic[1]` numbers `\EndIf` lines. The prose never counted them as steps.
+**Cause.** `algpseudocode`, whose engine is `algorithmicx`, numbers `\EndIf` lines. The prose never counted them as steps.
 Each `\EndIf` therefore shifts every later reference by one, and the drift grows down each
 algorithm. `alg:g3explSPLIT3ADD` has three, which is exactly the reported figure.
 
 **Fix:** `\algtext*{EndIf}` in the preamble, which removes those lines from the output
-entirely. The prose numbering was correct as written; nothing in either chapter needed
-renumbering for this cause.
+entirely.  The prose numbering was almost entirely correct as written: nothing in
+`chapter6.tex` needed renumbering for this cause, and in `chapter5.tex` exactly one citation
+did, for the reason given below.
 
 **Precisely what the preamble line does, because the mechanism is the whole argument.**
 `\algtext*` binds the entity's text to `\ALG@x@notext`, and `algorithmicx.sty:193-197` then
@@ -475,9 +498,15 @@ line, and it has to be re-derived rather than carried across.
 **Eighteen citations re-checked against the rendered PDF rather than against the source.**
 Counting `\State` lines by hand cannot see `\setcounter{ALG@line}{-1}`, and that is precisely
 the trap that produced the wrong `+1` shift: a source-level count made `Step~1` look correct
-for a line the document prints as `0`.  The renderings checked are Algorithms 28 (19, 20),
-36 (1, 4, 14, 15, 16), 42 (0), 45 (0, 1, 3, 4, 13, 14, 15) and 60 (14, 16, 17), and all
-eighteen land.  **The arbiter for a step reference is the PDF, never the `.tex`.**
+for a line the document prints as `0`.  The renderings checked are Algorithms **28** (19, 20),
+**37** (1, 4, 14, 15, 16), **46** (0), **50** (0, 1, 3, 4, 13, 14, 15) and **69** (14, 15, 16,
+17), and all eighteen land.  **The arbiter for a step reference is the PDF, never the `.tex`.**
+
+Those numbers are as printed, and they now agree with the published thesis, which numbers its
+subroutines in the algorithm counter.  Before that was corrected the same five algorithms
+rendered as 28, 36, 42, 45 and 60 here against 28, 37, 46, 50 and 69 in print, so a citation
+checked against the rebuild alone could have been checked against the wrong algorithm.  See
+`Thesis/README.md`.
 
 **Verified by hand on two algorithms chosen because they discriminate:**
 
@@ -617,7 +646,7 @@ reconstruction defects were still in place.  Both are now fixed and the build to
 against a published 267 whose first page is a repository cover sheet, so it agrees exactly.
 See `Thesis/README.md`.
 
-## E-T12 — a spurious `r_{` swallowed two terms of the genus-3 split Degree 3 Addition u_n
+## E-T12 — two malformed `r`-subscripts absorbed the surrounding sum, genus-3 split Degree 3 Addition u_n
 
 **`chapter6.tex:1260-1261`, the explicit formula for Step~17 of
 `alg:g3explSPLIT3ADD`.** **Corrected against the code.**

@@ -427,8 +427,16 @@ Both hold `frontmatter.tex`, `chapter1.tex` through `chapter7.tex` and `appendix
 **The two PDFs are different documents and the distinction matters.**  `ucalgary_2020_lindner_sebastian.pdf` is as submitted in 2020.  [Thesis/thesis.pdf](Thesis/thesis.pdf) is the corrected thesis, so it is the only place the errata are visible rendered rather than as source.  Rebuild it with:
 
 ```sh
-cd Thesis && pdflatex thesis && bibtex thesis && pdflatex thesis && pdflatex thesis
+cd Thesis
+mkdir -p build && cp mylib.bib build/
+pdflatex -output-directory=build thesis && (cd build && bibtex thesis)
+pdflatex -output-directory=build thesis && pdflatex -output-directory=build thesis
+cp build/thesis.pdf thesis.pdf
 ```
+
+**Build out of tree, as above.**  A bare `pdflatex thesis` in that directory overwrites
+`Thesis/thesis.aux` and `Thesis/thesis.toc`, which are committed artifacts of the original
+2020 build and are what the reconstructed master's include order was recovered from.
 
 Corrections are made only where they are justified, and [Thesis/ERRATA.md](Thesis/ERRATA.md) says for each one whether it was verified by measurement or rests on a structural argument.  `diff -r ThesisPublished Thesis` shows the current divergence.
 
