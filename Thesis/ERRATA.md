@@ -462,10 +462,51 @@ steps where there are 19), missing plural `Steps~N--M` forms (51 references wher
 reference-checker is its own piece of work and is not attempted here. What is verified is
 the two algorithms above, by hand, and the cause they share.
 
-**Page count moved the wrong way and that is unexplained.** Suppressing `\EndIf` takes the
-build from 271 pages to 264 against a published 267. Numbering alignment is the stronger
-evidence -- it is exact across two algorithms with different `\EndIf` counts -- and the
-page total still carries the unresolved font option and the reconstructed title page.
+**Seven anchors across the two genus-3 split algorithms settle it, and they reproduce the
+author's own report.** Each algorithm carries `\EndIf` lines before its arithmetic begins,
+and the chapter 6 prose names steps of each by number.  Numbering both ways:
+
+| algorithm | step named in prose | prose says | `\EndIf` numbered | `\EndIf` suppressed |
+|---|---|---|---|---|
+| `3DBL` | monic quotient `q'`, remainder `r'` | 10--11 | 12--13 | **10--11** |
+| `3DBL` | compute the six ratios | 14 | 17 | **14** |
+| `3DBL` | `M_2' = (r(2v_1 + h) + qk)/u_1` | 15 | 18 | **15** |
+| `3DBL` | `z`, then `v_n` | 17--18 | 20--21 | **17--18** |
+| `3ADD` | compute the six ratios | 14 | 17 | **14** |
+| `3ADD` | `M_2' = (r(v_2 + v_1 + h) + qk)/u_2` | 16 | 19 | **16** |
+| `3ADD` | `u_n = r(q(v_2 - v_1) + u_1r)/(u_2c_4r_1q_1) - qM_2'/q_1` | 17 | 20 | **17** |
+
+Every one lands exactly with suppression.  Without it each is off by precisely the number of
+`\EndIf` lines above it, which is 2 for the first row and 3 for the rest.  The author
+reported the Degree 3 Addition description as "3 lines off" before any diagnosis was
+attempted, and three is that algorithm's `\EndIf` count.  Seven anchors do not land on their
+stated numbers by coincidence, and the first row is the useful one for a different reason:
+it is off by **two**, not three, so it rules out a constant offset from any other cause.
+
+**One typo found by the same numbering, and corrected.** `chapter6.tex:1257` introduced the
+`3ADD` `u_n` block as "The explicit formula for Step~15 is", where step 15 of that algorithm
+is `k`.  The sentence immediately above says "In Step~17, the output polynomial
+$u_n = rM_1 - qM_2$ ... is directly computed monic", and the parallel block above that reads
+"In Step~16 ... The explicit formula for Step~16 is", so the label is Step~17.  Present at
+`ThesisPublished/chapter6.tex:1257` as well, so it is not an artifact of this branch.
+
+**The identical string 736 lines earlier is CORRECT and was deliberately not touched.**
+`chapter6.tex:521` also reads "The explicit formula for Step~15 is", but that passage belongs
+to `3DBL`, whose step 15 really is `M_2'`.  Two occurrences of one string, one right and one
+wrong, is exactly the case a blind substitution ruins, so the edit was anchored on the
+surrounding sentence rather than on the string.
+
+**One further step reference in the same passage is left alone.** After the `u_n` block,
+"the computation of $z = (ru_1 - u_n)/q$ in Step~17 must be adjusted" names Step~17, but `z`
+is step 18 of `alg:g3explSPLIT3ADD` and step 34 of `alg:g3balnucomp`, and the sentence cites
+neither algorithm explicitly.  It is not clear which numbering is intended, so it is recorded
+rather than guessed.  Wants the author.
+
+**The page count is no longer evidence against this.** Suppressing `\EndIf` shortens the
+build by seven pages, which read as moving away from the published 267 while two other
+reconstruction defects were still in place.  Both are now fixed and the build totals 266
+against a published 267 whose first page is a repository cover sheet, so it agrees exactly.
+See `Thesis/README.md`.
 
 ## E-T12 — a spurious `r_{` swallowed two terms of the genus-3 split Degree 3 Addition u_n
 
