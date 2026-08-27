@@ -422,7 +422,13 @@ The source exists in two copies, deliberately:
 | [ThesisPublished/](ThesisPublished/) | **frozen.**  Byte-exact as submitted; never edited |
 | [Thesis/](Thesis/) | **evolving.**  Corrections land here, each logged in [Thesis/ERRATA.md](Thesis/ERRATA.md) |
 
-Both hold `frontmatter.tex`, `chapter1.tex` through `chapter7.tex` and `appendix.tex`, but not the master document that includes them.  No `.tex` file has a `\documentclass`, so the thesis cannot be rebuilt from either directory as it stands.
+Both hold `frontmatter.tex`, `chapter1.tex` through `chapter7.tex` and `appendix.tex`.  Neither held the master document that includes them, so for a long time the thesis could not be rebuilt from either directory; [Thesis/thesis.tex](Thesis/thesis.tex) is that master, reconstructed, and [Thesis/thesis.pdf](Thesis/thesis.pdf) is what it builds.
+
+**The two PDFs are different documents and the distinction matters.**  `ucalgary_2020_lindner_sebastian.pdf` is as submitted in 2020.  [Thesis/thesis.pdf](Thesis/thesis.pdf) is the corrected thesis, so it is the only place the errata are visible rendered rather than as source.  Rebuild it with:
+
+```sh
+cd Thesis && pdflatex thesis && bibtex thesis && pdflatex thesis && pdflatex thesis
+```
 
 Corrections are made only where they are justified, and [Thesis/ERRATA.md](Thesis/ERRATA.md) says for each one whether it was verified by measurement or rests on a structural argument.  `diff -r ThesisPublished Thesis` shows the current divergence.
 
