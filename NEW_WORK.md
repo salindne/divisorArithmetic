@@ -3174,3 +3174,82 @@ tooling. What stands in for it, and I think adequately:
 
 Recorded rather than glossed, because "the plan said do X, we did Y" is the kind of substitution that
 is invisible six months later.
+
+## N35 — Five wrong repairs to published text, and what each one shows about evidence
+
+**Status** — established-and-fixed, PR22. **Where** — `Thesis/chapter4.tex`, `chapter5.tex`,
+`chapter6.tex`, `thesis.tex`, and `latexTables/split_ADD.tex`.
+
+**What was there.** A set of defects found by reading the thesis: a coefficient named for the wrong
+divisor, an unbalanced parenthesis, a dangling `=`, two malformed nested subscripts, an unbound
+symbol in an algorithm, and the step-numbering drift the author reported.  Nothing in the repository
+had ever checked a `.tex` file, which is how they survived.
+
+**What changed.** The defects are corrected and the reconstructed build now agrees with the published
+thesis page for page.  But the durable content of this entry is that **five of the repairs attempted
+were wrong**, and each failed in a different and instructive way.  A sixth item, the notation pass the
+PR was scoped for, was cancelled on measurement before any edit.
+
+### The five, and what each one is evidence about
+
+**1. A code idiom is evidence only from the function under discussion.** `\vh_1 = h_1 + v_1` was
+disambiguated to `v_{21}`, the second divisor, citing `vh1 := h1 + vp1`.  That line is in
+`Deg12ADD`, where the primed group is the degree-2 divisor.  The passage describes `Deg2ADD`, whose
+unprimed group is first and which reads `t4 := h1 + v1`, so the answer is `v_{11}`.  The generalisation
+across functions was never checked, and the reading it overrode was the one a reader would guess.
+
+**2. A notation convention can track arity rather than the file.** Eight generated OUT rows were
+double-primed because single primes "name the second input".  Those four blocks have no second input:
+their `IN` rows read `D' = []` and the implementing functions take no primed parameter, so `up*` names
+the *result* and the source returns it.  The edit made four self-consistent tables inconsistent, since
+their bodies define only `u^{\prime}_*`.  Reverted.  The actual fault is a hardcoded
+`$D + D' = D'' = $` label applied regardless of arity.
+
+**3. Naming an unbound symbol can be the wrong half of a fix.** `alg:g3nucomp` bound `S` and then
+tested and divided by an undefined `S'`.  Renaming the binding to `S'` makes the algorithm
+well-formed and **wrong**: `kS` downstream must be the second gcd, because `k` is formed from the
+undivided `u_1`.  The implementations settle it with the overwrite convention the published text
+already had, and scale `k` by exactly that quantity at nine live sites.  The repair is `S' \to S` at
+the test and the division, which is also the only version well defined on every path.
+
+**4. A source-level count cannot see a counter reset.** Four prose citations reading `Step~0` were
+shifted to `Step~1` because `algorithmic[1]` numbers from 1.  Three algorithms carry
+`\setcounter{ALG@line}{-1}` and genuinely print `0`, in the frozen published source as well as here.
+The published text was right.  Counting `\State` lines by hand reproduces the wrong answer perfectly,
+which is why **the arbiter for a step reference is the rendered PDF, never the `.tex`**.
+
+**5. A hypothesis can fit one case for the wrong reason.** The step drift was first blamed on
+`\State Go to ...` escape lines, and 20 lines were edited.  It fitted `alg:g3explSPLIT3ADD` only
+because that algorithm has three `\EndIf` **and** three escape lines.  The real cause is that
+`algorithmic` numbers `\EndIf`.
+
+**Why it is right.** The surviving corrections are decided by something stronger than reading in
+every case where that was possible.  The `u_{n_1}`/`u_{n_0}` block is **proved**: each `align*` block
+states a formula and then its factored form, and the factorisation holds only for the corrected
+coefficient names, checked symbolically.  The two malformed subscripts are matched term for term
+against `arb_splitG3_ADD.mag:10308-10310`.  The `\EndIf` cause is confirmed on **seven** step
+references across two algorithms, every one landing when `\EndIf` is unnumbered and every one off by
+exactly the count of `\EndIf` lines above it; one of the seven is off by two rather than three, which
+is what rules out a constant offset from another cause.
+
+**Evidence.** The build is the new instrument, and it did not exist before this series.  266 pages
+against a published 267 whose first page is a repository cover sheet, so 266 against 266, with front
+matter i to xiii, Chapter 1 on 14, Chapter 7 on 260, the bibliography on 263 and an identical 246-page
+span from Chapter 1 to Chapter 7.  Extracted words 106,463 against 106,841, a 0.35% spread, and
+`NUCOMP` 268 against 268.  Eighteen step citations were re-checked against the rendering across five
+algorithms and all eighteen land.
+
+**Honest limits.** No `.mag` file is touched, so no formula gate applies and none of this is backed by
+execution; where a correction is "matched against code" that is a reading of the source.  Nothing in
+the Magma constrains LaTeX numbering, so the `\EndIf` item has no code cross-check at all.  There is
+**no** global claim that every step reference resolves: eighteen were checked and nothing outside them,
+and three earlier attempts to automate that check were each wrong, in four distinct ways.  An
+unbalanced `(` is legal in math mode, so the build is silent on that defect and it is not
+gate-verifiable beyond "still compiles".
+
+**For the paper.** Restoring the ability to build the thesis turned it into a checkable artifact for
+the first time, and the immediate yield was not the defects it found but the **five wrong repairs it
+caught before they were published** — each traceable to a specific, nameable failure of evidence:
+generalising an idiom across functions, mistaking arity for convention, fixing the near half of a
+two-ended defect, trusting a source count over a rendering, and accepting a hypothesis that fitted one
+case by coincidence.

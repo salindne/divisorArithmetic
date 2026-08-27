@@ -1088,7 +1088,7 @@ Algorithm~\ref{alg:g3balnucomp}. There are 3 main cases:\begin{itemize}
 \subsubsection{Degree 3 Addition}
 Let $[u_1,v_1,0]$ and $[u_2,v_2,0]$ be the input reduced divisor class
 representatives with a $u_1 = x^3 + u_{12}x^2 + u_{11}x + u_{10}$, $v_1 =
-\Vn_4x^4 + \Vn_3x^3 + v_{12}x^2 + v_{11}x + v_{10}$ and $u_2 = x^3 + u_{12}x^2 +
+\Vn_4x^4 + \Vn_3x^3 + v_{12}x^2 + v_{11}x + v_{10}$ and $u_2 = x^3 + u_{22}x^2 +
 u_{21}x + u_{20}$, $v_2 = \Vn_4x^4 + \Vn_3x^3 + v_{22}x^2 + v_{21}x + v_{20}$.
 Similar to genus 2 split model addition Algorithm~\ref{alg:g2balnucomp},
 Steps~1-2 of Addition Algorithm~\ref{alg:g3balnucomp} are always skipped.
@@ -1232,7 +1232,7 @@ Algorithm~\ref{alg:g3explSPLIT3DBL}.
 
 In Step~15, only the degree 2 and 3 terms of $k = (f - v_1(v_1 + h)/u_1)$ are
 computed and are similar to the computation of $k$ in degree 3 doubling
-Algorithm~\ref{alg:g3explSPLIT3DBL}. The explicit formula for Step~14 is
+Algorithm~\ref{alg:g3explSPLIT3DBL}. The explicit formula for Step~15 is
 \begin{align*}
     t_0 &= v_{12} - \Vn_2,\\
     k_3 &= c_4t_0,\\
@@ -1254,11 +1254,11 @@ In Step~17, the output polynomial $u_n = rM_1 - qM_2$ from
 Algorithm~\ref{alg:g3balnucomp} is directly computed monic using the
 computations from Step~14 as  $$r(q(v_2 - v_1) + u_1r)/(u_2c_4r_1q_1) -
 qM_2'/q_1,$$ using the same approach as in Step~16. The explicit formula for
-Step~15 is: 
+Step~17 is:
 \begin{align*} 
     & u_{n_2} = c_6r_{q_{11}} + M'_{21} + q_{q_{01}}          \\
-    & u_{n_1} = c_6(r_{\vt_2 + r_{q_{11}}t_7 + r_{q_01}} + r_{q_{01}}) + M'_{20} + q_{q_{01}}M'_{21}    \\
-    & u_{n_0} = c_6(r_{\vt_2r_{r_{01}} + r_{q_01}}(t_7 + r_{r_{01}})) q_{q_{01}}M'_{20}.
+    & u_{n_1} = c_6(\vt_2 + r_{q_{11}}t_7 + r_{q_{01}} + r_{q_{01}}) + M'_{20} + q_{q_{01}}M'_{21}    \\
+    & u_{n_0} = c_6(r_{r_{01}}\vt_2 + r_{q_{01}}(t_7 + r_{r_{01}})) + q_{q_{01}}M'_{20}.
 \end{align*}
 Since $u_n$ is required to be monic, the computation of $z = (ru_1 - u_n)/q$ in
 Step~17 must be adjusted to $z = (ru_1 - u_n(c_4r_1q_1))/q$. The exact

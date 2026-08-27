@@ -222,10 +222,19 @@ authoritative typography.
 
 ```sh
 cd Thesis
-pdflatex thesis && bibtex thesis && pdflatex thesis && pdflatex thesis
+mkdir -p build && cp mylib.bib build/
+pdflatex -output-directory=build thesis
+(cd build && bibtex thesis)
+pdflatex -output-directory=build thesis
+pdflatex -output-directory=build thesis
+cp build/thesis.pdf thesis.pdf
 ```
 
-Builds clean: 0 errors, 0 undefined references, 0 undefined citations, 271 pages.
+Builds clean: 0 errors, 0 undefined references, 0 undefined citations, 0 rerun requests, 266 pages.
+
+**Build out of tree, as above.** A bare `pdflatex thesis` in this directory overwrites `thesis.aux`
+and `thesis.toc`, which are committed artifacts of the original 2020 build rather than output.  See
+the note at the end.
 
 **What it needs.** A TeX installation with `memoir`, `xpatch`, `algorithms`, `algorithmicx`,
 `multirow`, `grfext`, `hyperref`, `float`, `url`, `carlisle`, `ly1`, `mathdesign` and the Utopia
@@ -233,20 +242,78 @@ fonts. TinyTeX plus `tlmgr install` for those names is enough; no full TeX Live 
 
 **What was reconstructed, and how far it can be trusted.** The include order is exact, recovered
 from the committed `thesis.aux` of the original build: titlepage, frontmatter, chapters 1 to 7, no
-appendix. The preamble was lost with the original file and is inferred, about forty macro
-definitions read off their usage. Evidence that the inference is close:
+appendix.  The preamble was lost with the original file and is inferred, about forty macro
+definitions read off their usage.
 
-- 271 pages against the published 267, and 104,013 extracted words against 106,780, a 2.6% spread
-- prose probes agree within 1-2%: `NUCOMP` 265 vs 268, `Mumford` 103 vs 105, `balancing` 116 vs 116
+**The rebuild now matches the published thesis page for page.** The published PDF is 267 pages, of
+which page 1 is a PRISM repository cover sheet added by the institutional repository and never
+produced by these sources.  Discounting it leaves 266, and every landmark agrees:
+
+| | published, cover discounted | rebuilt |
+|---|---|---|
+| total pages | 266 | 266 |
+| front matter | i to xiii | i to xiii |
+| Chapter 1 begins on | 14 | 14 |
+| Chapter 7 begins on | 260 | 260 |
+| Bibliography begins on | 263 | 263 |
+| Chapter 1 to Chapter 7 span | 246 | 246 |
+| algorithm and subroutine numbering | 1 to 87 | **1 to 87** |
+| extracted words | 106,780 | 106,586 |
+
+Word counts are `pdftotext` followed by `wc -w`, on the whole file including the published PDF's
+cover page.  State the method with the figure: a different tokenizer moves the total by tens of
+words, and this table has carried two different numbers for the same frozen document because of
+that.  Prose probes under the same extraction agree to within one occurrence: `NUCOMP` 268
+against 268, `balancing` 112 against 112, `Mumford` 105 against 106.
+
+**Two preamble settings are load-bearing, and each was recovered by measuring against the published
+PDF rather than by reading anything.**
+
+1. `\frontmatter` and `\mainmatter` around the `\include{frontmatter}` line.  Without them
+   `frontmatter.tex`'s `\chapter{Abstract}`, `\chapter{Preface}` and `\chapter{Acknowledgments}` are
+   numbered as Chapters 1 to 3, which shifts every chapter number in the document.
+2. `\settocdepth{subsubsection}`.  The class prints chapters and sections only by default, giving a
+   two page table of contents against the published four.  The published thesis lists subsections
+   and subsubsections, visible in its own table of contents at entries such as `2.4.2` and `4.3.7`.
+3. **The `subroutine` float shares the `algorithm` counter and the List of Algorithms.**  Defined
+   with its own per-chapter counter instead, the eleven subroutines numbered `5.1` to `6.5`, were
+   absent from the List of Algorithms, and every algorithm above 34 was numbered too low: the
+   document ended at Algorithm 76 against the published 87.  The published thesis numbers its
+   subroutines **35, 38, 40, 44, 48, 51, 60, 61, 62, 70 and 71**, which are exactly the integers
+   missing from its own `Algorithm` captions, so they share one counter.  With
+   `\let\c@subroutine\c@algorithm` the rebuild reproduces all eleven and tops out at 87.
+
+   **This one matters beyond typography.** Any step reference checked against the rebuild alone
+   could have been checked against the wrong algorithm: `alg:g3explSPLIT3ADD` rendered as
+   Algorithm 60 here against 69 in print.
+
+**One residual difference remains, and it is genuinely cosmetic.** The rebuilt table of contents
+runs to five pages where the published one runs to four, and the rebuilt list of algorithms to
+three where the published one runs to four.  The two happen to cancel, which is why the front
+matter is thirteen roman-numbered pages in both and no page number moves.
+
+**Do not read that cancellation as evidence of anything.** It was previously attributed to
+indentation and wrapping, while the list of algorithms was in fact a page short because it was
+**missing eleven entries**, which is the defect in item 3 above.  With those restored the entries
+are all present and the remaining difference is density in those two lists alone.
 
 **Three things are guesses, and they are where to look first if something renders oddly.**
 
-1. `\s` is defined as `\quad`, inferred from context, and it appears about 1,200 times. Nothing else
-   in the reconstruction has that reach.
-2. The title page fields the class demands -- degree, graduating year, month, department -- were in
-   the lost preamble. The values here are plausible, not sourced.
-3. The `utopia` font option is the only one of the class's five that builds, and it brings the page
-   count from 276 to 271, so it is probably right. It is not confirmed.
+1. `\s` is defined as `\quad`, inferred from context, and it appears about 1,200 times.  Nothing
+   else in the reconstruction has that reach.
+2. The title page fields the class demands, degree and graduating year and month and department,
+   were in the lost preamble.  The values here are plausible, not sourced.
+3. The `utopia` font option is the only one of the class's five that builds.  The exact page total
+   and the identical 246 page body span are strong evidence for it, since a wrong typeface would
+   accumulate error across 246 pages rather than land on the same number, but it is still not
+   confirmed against a source.
+
+**`thesis.aux` and `thesis.toc` are committed evidence, not output.** They come from the original
+2020 build and are what the include order was read off.  Build out of tree so they survive.  The
+committed `.toc` records the list of tables on page viii where the published PDF prints it on ix.
+That is **not** a sign the original build had not converged: the published PDF's own table of
+contents prints viii too, so the `.toc` agrees with the converged build to the page.  It is the
+defect recorded as `E-T14`.
 
 **`thesis.pdf` is a committed build artifact and will go stale.** It reflects `Thesis/` at the time
-of its last build, so rebuild it in the same commit as any `.tex` correction. Nothing enforces that.
+of its last build, so rebuild it in the same commit as any `.tex` correction.  Nothing enforces that.

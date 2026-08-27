@@ -546,8 +546,8 @@ are presented in Algorithms~\ref{alg:g3balnucomp} and~\ref{alg:g3balnudupl}.
     \State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,u_2). \s\s\s  (S, a_1$ only)
     \If{$S \not = 1$}
         \State $(S,a_2,b_2) = \mathrm{XGCD}(S,v_2 + v_1 + h)$.
-        \If{$S' \not = 1$}
-            \State $u_1 = u_1/S', \s\s u_2 = u_2/S'. \s\s\s$ (exact division)
+        \If{$S \not = 1$}
+            \State $u_1 = u_1/S, \s\s u_2 = u_2/S. \s\s\s$ (exact division)
         \EndIf
         \State $s = (a_2a_1(v_2 - v_1) + b_2k) \pmod{u_2}$.
     \Else
@@ -1221,15 +1221,15 @@ removing the need for computing $l'_1$ and $l'_2$. The only computation left
 that relies on $l'' = s''u_1$ is $$ v_n = -l' - h = (-s_1s''u_1 - v_1 - h)
 \pmod{u_n}. $$ The value $t_2$ is computed beforehand in the computation of the
 output polynomial $u_n = x^2 + u_{n_1}x + u_{n_0}$ in the frequent cases of
-degree 2 doubling and addition where $u_{n_1} = s_0'' - t_2$ and therefore
-$t_2 = s_0'' - u_{n_1}$. Then,
+degree 2 doubling and addition where $u_{n_1} = s_0'' + t_2$ and therefore
+$t_2 = u_{n_1} - s_0''$. Then,
 
 \begin{align*}
-    v_{n_1} &= s_1(u_1s_0''+ u_1u_{11} - u_{n_1}^2 - s_0''u_{11}
-    + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_1\\
-            &= s_1((u_{n_1} - s_0'')(u_{11} - u_{n_1}) + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_1\\
-    v_{n_0} &= s_1(u_0s_0'' + u_{11}u_{n_0} - u_0u_1 -s_0''u_{10}) - v_{10} - h_0 + h_2u_0\\
-            &= s_1(s_0''(u_{n_0} - u_{10}) + u_{n_0}(u_{11} - u_{n_1})) - v_{10} - h_0 + h_2u_0.
+    v_{n_1} &= s_1(u_{n_1}s_0''+ u_{n_1}u_{11} - u_{n_1}^2 - s_0''u_{11}
+    + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_{n_1}\\
+            &= s_1((u_{n_1} - s_0'')(u_{11} - u_{n_1}) + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_{n_1}\\
+    v_{n_0} &= s_1(u_{n_0}s_0'' + u_{11}u_{n_0} - u_{n_0}u_{n_1} -s_0''u_{10}) - v_{10} - h_0 + h_2u_{n_0}\\
+            &= s_1(s_0''(u_{n_0} - u_{10}) + u_{n_0}(u_{11} - u_{n_1})) - v_{10} - h_0 + h_2u_{n_0}.
 \end{align*} 
 Notice that $t_2 = u_{n_1} - s_0''$, then the explicit formulation for $v_n$ is 
 \begin{align*}  

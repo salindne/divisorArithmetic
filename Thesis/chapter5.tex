@@ -401,11 +401,11 @@ In Step~14, the polynomial $v_n = (-s_1s''u_1 - v_1 - h) = (-su_1 - v_1 - h)
 Karatsuba to take advantage of reusing sub-expressions. Applying a school book
 modular reduction results in
 \begin{align*}
-    v_{n_1} &= s_1(u_1s_0''+ u_1u_{11} - u_{n_1}^2 - s_0''u_{11}
-    + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_1\\
-            &= s_1((u_{n_1} - s_0'')(u_{11} - u_{n_1}) + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_1\\
-    v_{n_0} &= s_1(u_0s_0'' + u_{11}u_{n_0} - u_0u_1 -s_0''u_{10}) - v_{10} - h_0 + h_2u_0\\
-            &= s_1(s_0''(u_{n_0} - u_{10}) + u_{n_0}(u_{11} - u_{n_1})) - v_{10} - h_0 + h_2u_0.
+    v_{n_1} &= s_1(u_{n_1}s_0''+ u_{n_1}u_{11} - u_{n_1}^2 - s_0''u_{11}
+    + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_{n_1}\\
+            &= s_1((u_{n_1} - s_0'')(u_{11} - u_{n_1}) + u_{n_0} - u_{10}) - v_{11} - h_1 + h_2u_{n_1}\\
+    v_{n_0} &= s_1(u_{n_0}s_0'' + u_{11}u_{n_0} - u_{n_0}u_{n_1} -s_0''u_{10}) - v_{10} - h_0 + h_2u_{n_0}\\
+            &= s_1(s_0''(u_{n_0} - u_{10}) + u_{n_0}(u_{11} - u_{n_1})) - v_{10} - h_0 + h_2u_{n_0}.
 \end{align*} 
 Recall that in Step~13, $u_{n_1} = s_0'' + t_2$ and so $t_2 = u_{n_1} - s_0''$.
 This combined with the formula for Step~14 above results in the following
@@ -413,8 +413,8 @@ explicit formula for Step~14:
 \begin{align*}  
     t_0 &= u_{n_0} - u_{10},\\
     t_1 &= u_{11} - u_{n_1},\\
-    v_{n_1} &= s_1(t_2t_1 + t_0) - v_{11} - h_1 + h_2u_1\\
-    v_{n_0} &= s_1(s_0''t_0 + u_{n_0}t_1) - v_{10} - h_0 + h_2u_0,
+    v_{n_1} &= s_1(t_2t_1 + t_0) - v_{11} - h_1 + h_2u_{n_1}\\
+    v_{n_0} &= s_1(s_0''t_0 + u_{n_0}t_1) - v_{10} - h_0 + h_2u_{n_0},
 \end{align*}
 as described in Section~\ref{sec:vsave}. 
 
@@ -640,11 +640,11 @@ The resulting formula for Steps~14--16 is
 \begin{align*}
     t_3 &= s''_0 - m_3,\\
     t_2 &= t_3- w_4 + h_2w_3,\\
-    \vh_1 &= h_1 + v_1,\\
+    \vh_1 &= h_1 + v_{11},\\
     u_{n_1} &= s_0'' + t_2,\\
     u_{n_0} &= s_0''(t_3 - m_3) + m_1 + w_3(h_2(s''_0 - u_{21}) + \vh_1 + v_{11}) + w_4(u_{11} + u_{21} - f_4),
 \end{align*}
-where only the degree $2$ coefficient $k_2 = $ of $k$ is used. In Step~17,
+where only the degree $2$ coefficient $k_2$ of $k$ is used. In Step~17,
 computation of the polynomial $v_n = \vt \equiv (-su_1 - v_1 - h) \pmod{u_n}$ is
 identical to degree 2 doubling (also see Section~\ref{sec:vsave}.)
 
@@ -1586,9 +1586,9 @@ adjustment. The only difference between the two degree 1 doubling formulations
 is that for the up adjustment formulation, $v' = -\Vp - h + ((\Vp + h + v_1)
 \pmod{u_1})$ is computed first. In all output cases, $\deg(u_1s) < 3$, and so
 $n_n$ is updated as $n_n = 1 + 2 - 3 = 0$ for Degree 1 Doubling with Down Adjust
-by Step~17 of Doubling Algorithm~\ref{alg:g2nudupl}, and $n_n = -1 + 3 -
-\deg(u_n) = 2 - \deg(u_n)$ for Degree 1 Doubling with Up Adjust by Step~18 of
-Doubling Algorithm~\ref{alg:g2nudupl} (see Section~\ref{sec:expldbl}.) The basic
+by Step~19 of Balanced Doubling Algorithm~\ref{alg:g2balnudupl}, and $n_n = -1 + 3 -
+\deg(u_n) = 2 - \deg(u_n)$ for Degree 1 Doubling with Up Adjust by Step~20 of
+Balanced Doubling Algorithm~\ref{alg:g2balnudupl} (see Section~\ref{sec:expldbl}.) The basic
 formulation for degree 1 doubling is described in
 Algorithm~\ref{alg:explSPLIT1DBLDWN} for $n_1 = 1$ and in
 Algorithm~\ref{alg:explSPLIT1DBLUP} for $n_1 = 0$ . An explanation of how each
@@ -1835,7 +1835,7 @@ precomputed weights $w_i$. The resulting explicit formula for Steps 30--31 is
     \vh_1   &= v_{11} + h_1,\\
     t_2     &= z_2 + c_2,\\
     u_{n_1} &= -w_4(s_1(t_2 + s_0) + s_0c_3) - u_{21},\\
-    u_{n_0} &= -w_4(s_0t_2 + s_1(z_1 + v_{11} + \vh_1) - c_3(\Vp_1 - v_{11}) - u_{20} - u_{21}u_{n_1}.
+    u_{n_0} &= -w_4(s_0t_2 + s_1(z_1 + v_{11} + \vh_1) - c_3(\Vp_1 - v_{11})) - u_{20} - u_{21}u_{n_1}.
 \end{align*}
 In Step~32, the  required polynomial $v_n = \Vp - [(\Vp - \vt) \pmod{u_n}]$ is
 instead computed as $v_n = \Vp - [(\Vp + su_1 + v_1 + h) \pmod{u_n}]$ applying

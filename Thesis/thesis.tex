@@ -19,6 +19,8 @@
 \newtheorem{example}[definition]{Example}
 \newtheorem{remark}[definition]{Remark}
 
+\algtext*{EndIf}
+
 \newcommand{\bd}{\begin{definition}}
 \newcommand{\ed}{\end{definition}}
 \newcommand{\la}{\langle}
@@ -37,8 +39,14 @@
 \usepackage{hyperref}
 
 \usepackage{float}
-\newfloat{subroutine}{htbp}{losub}[chapter]
+% Subroutines share the algorithm counter and the List of Algorithms, which is how the
+% published thesis numbers them: its subroutines are 35, 38, 40, 44, 48, 51, 60, 61, 62,
+% 70 and 71, exactly the integers missing from its own Algorithm captions.
+\newfloat{subroutine}{htbp}{loa}
 \floatname{subroutine}{Subroutine}
+\makeatletter
+\let\c@subroutine\c@algorithm
+\makeatother
 
 \newcommand{\s}{\quad}
 \newcommand{\be}{\begin{example}}
@@ -72,9 +80,13 @@
 \dept{GRADUATE PROGRAM IN COMPUTER SCIENCE}
 \monthname{September}
 
+\settocdepth{subsubsection}
+
 \begin{document}
+\frontmatter
 \include{titlepage}
 \include{frontmatter}
+\mainmatter
 \include{chapter1}
 \include{chapter2}
 \include{chapter3}
