@@ -214,3 +214,39 @@ Troubleshooting and Known Issues
   additional blank pages in the front matter. The main text, however,
   should have the same pagination as the "official" one-sided version,
   as the size of the typeblock is the same.
+## Rebuilding the thesis
+
+`thesis.tex` is the master document. It was **not** part of the original submission's committed
+sources and has been reconstructed, so read the caveats below before treating its output as
+authoritative typography.
+
+```sh
+cd Thesis
+pdflatex thesis && bibtex thesis && pdflatex thesis && pdflatex thesis
+```
+
+Builds clean: 0 errors, 0 undefined references, 0 undefined citations, 271 pages.
+
+**What it needs.** A TeX installation with `memoir`, `xpatch`, `algorithms`, `algorithmicx`,
+`multirow`, `grfext`, `hyperref`, `float`, `url`, `carlisle`, `ly1`, `mathdesign` and the Utopia
+fonts. TinyTeX plus `tlmgr install` for those names is enough; no full TeX Live needed.
+
+**What was reconstructed, and how far it can be trusted.** The include order is exact, recovered
+from the committed `thesis.aux` of the original build: titlepage, frontmatter, chapters 1 to 7, no
+appendix. The preamble was lost with the original file and is inferred, about forty macro
+definitions read off their usage. Evidence that the inference is close:
+
+- 271 pages against the published 267, and 104,013 extracted words against 106,780, a 2.6% spread
+- prose probes agree within 1-2%: `NUCOMP` 265 vs 268, `Mumford` 103 vs 105, `balancing` 116 vs 116
+
+**Three things are guesses, and they are where to look first if something renders oddly.**
+
+1. `\s` is defined as `\quad`, inferred from context, and it appears about 1,200 times. Nothing else
+   in the reconstruction has that reach.
+2. The title page fields the class demands -- degree, graduating year, month, department -- were in
+   the lost preamble. The values here are plausible, not sourced.
+3. The `utopia` font option is the only one of the class's five that builds, and it brings the page
+   count from 276 to 271, so it is probably right. It is not confirmed.
+
+**`thesis.pdf` is a committed build artifact and will go stale.** It reflects `Thesis/` at the time
+of its last build, so rebuild it in the same commit as any `.tex` correction. Nothing enforces that.
