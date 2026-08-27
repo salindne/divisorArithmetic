@@ -439,6 +439,41 @@ algorithm. `alg:g3explSPLIT3ADD` has three, which is exactly the reported figure
 entirely. The prose numbering was correct as written; nothing in either chapter needed
 renumbering for this cause.
 
+**Precisely what the preamble line does, because the mechanism is the whole argument.**
+`\algtext*` binds the entity's text to `\ALG@x@notext`, and `algorithmicx.sty:193-197` then
+emits `\item[]` instead of `\item`.  The list's default label is `{\ALG@step}`, and
+`\ALG@step` is what advances `ALG@line`, so an explicit empty label bypasses it.  The line
+loses its text, loses its number, and **consumes no number** -- which is exactly why every
+later line moves up by one.  It is not a cosmetic change to how `\EndIf` prints.
+
+**A prose renumbering was attempted on this branch and is REVERTED.** An intermediate commit
+read the prose's `Step~0` references as an off-by-one and shifted four citations by `+1`, on
+the rationale that `algorithmic[1]` numbers from 1.  That rationale is false for the
+algorithms in question.
+
+**Three algorithms carry `\setcounter{ALG@line}{-1}` and genuinely print 0 as their first
+line.** `Thesis/chapter5.tex:1631`, `:1956`, `:2232`, present identically in the frozen
+`ThesisPublished/chapter5.tex:1624`, `:1949`, `:2225`.  The built PDF prints exactly three
+lines numbered `0:`, all of them the negative reduced normalization of `v_1`.  So the
+published `Step~0` was deliberate and correct, and the `+1` shift broke four citations that
+were right.  Reverted to `Step~0`, `Steps~1-3`, `Steps~4--12`, `Steps~13--15`.
+
+**One citation genuinely had to move, and it moved because of the preamble line rather than
+in spite of it.** `chapter5.tex:1589-1591` cites the two `n_n` adjustments of
+`alg:g2balnudupl`.  Retargeting them from `alg:g2nudupl` to `alg:g2balnudupl` was right, and
+Steps 21 and 22 were right **against the `\EndIf`-numbered rendering**.  That algorithm has
+two `\EndIf` above the cited lines, so under suppression they are Steps **19** and **20**,
+which is what the text now says.  This is the one place where the two effects genuinely
+interact: a prose fix determined against the old rendering is invalidated by the preamble
+line, and it has to be re-derived rather than carried across.
+
+**Eighteen citations re-checked against the rendered PDF rather than against the source.**
+Counting `\State` lines by hand cannot see `\setcounter{ALG@line}{-1}`, and that is precisely
+the trap that produced the wrong `+1` shift: a source-level count made `Step~1` look correct
+for a line the document prints as `0`.  The renderings checked are Algorithms 28 (19, 20),
+36 (1, 4, 14, 15, 16), 42 (0), 45 (0, 1, 3, 4, 13, 14, 15) and 60 (14, 16, 17), and all
+eighteen land.  **The arbiter for a step reference is the PDF, never the `.tex`.**
+
 **Verified by hand on two algorithms chosen because they discriminate:**
 
 | algorithm | prose claim | lands on |
