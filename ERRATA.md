@@ -20,10 +20,9 @@ fix -- which is why the framework, not a tester rebuild, was the prerequisite. A
 Each entry records what is wrong, how to reproduce it, and what it affects.
 
 Entries are numbered E1, E2, … and referenced from commit messages and from
-[README.md](README.md). **A number is never reused.** E7 is deliberately absent here: it is a divergent
-generation of the formulas under `g2/timings/` and `g3/timings/`, and deciding what it means for the
-published timing figures needs the operation counter run over both trees, so it is tracked with that work
-rather than asserted early.
+[README.md](README.md). **A number is never reused.** E7 was deliberately absent from this file until
+2026-08-27, pending the operation counter being run over both trees; it is now present and **downgraded**,
+because the measurement contradicted the record that reserved it.
 
 ---
 
@@ -37,6 +36,14 @@ directly with these coefficients; `verification/selftest.py`'s errata section as
 every run (the dispatcher returns the reference double, the direct call still raises). Whether any
 `D1 ≠ D2` input can reach the guard is not proven impossible, only never observed -- 13,008 differential
 operations found none -- so the entry stays, demoted from live to latent.
+
+**The frozen timings copy of this function fails the other way, and worse.**
+`g2/timings/formulas/ramFormulas/nch2_ramifiedG2_ADD.mag:98-103` tests **only** `dw21` and returns the
+identity, where the canonical file at `:280-291` tests `IsZero(dw20) and IsZero(dw21)`. So on
+`dw21 = 0, dw20 ≠ 0` the timings copy substitutes a **silently wrong value** for canonical's loud
+division by zero. Neither is correct. Same reachability status as the rest of E1: never observed, not
+proven impossible. Recorded under E7, and **not fixed** -- that tree is the provenance of published
+figures and is not edited.
 
 **Severity:** was correctness -- aborted with a Magma runtime error on reachable input. Now latent.
 
@@ -238,6 +245,124 @@ malformed, not the counter.
 **Affects:** the genus-2 and genus-3 operation-count tables. Repairing these belongs with repairing the
 script, which also cannot currently run at all, its six live input paths are missing the `negReduced/`
 component and every output call is commented out.
+
+---
+
+## E7: the timings trees are the frozen published generation, and the record about them was wrong
+
+**Status: DOWNGRADED 2026-08-27. Not a defect in the published figures.** This number was reserved
+and deliberately left out of this file pending "the operation counter run over both trees". The
+measurement was made and it contradicted the record: the trees are not a divergent derivation, and
+three of the specific differences the record cited were misattributed.
+
+**Severity:** none for the published figures. Live, but only as a *documentation* defect, now
+corrected -- the false record was a comment in `verification/driver.py` and a bullet in
+`verification/README.md`, both justifying a live exclusion filter.
+
+**Where:** [g2/timings/](g2/timings/) and [g3/timings/](g3/timings/), holding
+`nch2_*` copies of the genus-2 ramified, genus-2 split and genus-3 split formulas, plus
+`previousBest/` implementations of other authors' work and variant configurations of ours.
+
+### What they actually are
+
+The **frozen 2020 generation**, kept because the published timing figures were produced from it,
+repackaged for a chain-driving harness rather than derived differently: packed-tuple dispatchers so
+a Fibonacci loop chains without repacking polynomials, `return <...>` tuple returns where the
+canonical files carry `*_DEBUG` guards, inline `ccs[i][j]` reads where canonical hoists them, and
+`_RAM`-suffixed names so several implementations load in one Magma session.
+
+**The polarity of the old record was backwards.** It called this "a divergent generation under
+`g2/timings/`". The timings trees are the frozen original; the **canonical tree is what moved**, by
+dated post-2020 improvements.
+
+### The recorded claims that failed
+
+| claim | verdict |
+|---|---|
+| "a different `ccs` layout (`ccs[2][3]` against `ccs[1][3][1]`)" | **false.** `ccs[2][3]` is `posReduced`'s and byte-identical to the timings tree; `ccs[1][3][1]` is `negReduced`'s |
+| "opposite signs on some terms" | **false.** `dw := v0+vp0-u0*f4-upp0*upp1` is byte-identical between the timings ADD `:197` and `posReduced` `:394`; the `+` form is `negReduced` `:387`, which is the basis and is *supposed* to differ |
+| "reference a `nch23_splitG2_UTL.mag` that the canonical tree does not have" | **false twice.** A stale doc comment shared with `posReduced`, not a load. The real load is `nch2_splitG2_UTL.mag`, which canonical ships in **both** genus-2 bases and at genus 3 |
+| "same function names as the canonical files" | **partly false.** True at genus-2 split (11/11). Genus-2 ramified has **zero** overlap, every name `_RAM`-suffixed. Genus 3 is 24/27: the timings tree carries `Deg22ADD`/`Deg22ADDUP`/`Deg22ADDUP2` where canonical has `Deg2ADD`/... -- PR10's rename, which this tree never received because it is excluded from every gate |
+| "an earlier generation of the **split** formulas" | **wrong scope.** The filter it justifies excludes ramified files too |
+
+**All three specific claims fail the same way: they compare the genus-2 timings *split* files
+against `negReduced`.** That tree is `posReduced` -- which is this repository's genus-2 basis of
+record and what the thesis presents. The tell that would have caught it is the stale `nch23_`
+comment appearing in both.
+
+### What was measured, and what that does not cover
+
+Verified here: an arithmetic operator census `(*, ^, +, -)` per shared function is **identical in 22
+of 24** shared genus-3 split ADD functions and **8 of 11** genus-2 split ADD functions against
+`posReduced`, the survivors differing by single operations -- genus-3 `Deg3ADD` by one
+multiplication and one addition out of roughly 1,300, which is what a post-publication efficiency
+finding landing in one tree and not the other looks like. `maginterp.discover` parses every timings
+formula file cleanly, with function counts matching their counterparts.
+
+**Three limits, stated rather than left to be assumed.**
+
+1. **No differential was run under the gates.** The trees are *indicated* to compute the same group
+   law, not shown to under this repository's oracles. Doing that needs an opt-in reach and an
+   adapter for the interface conventions, deliberately left to its own work.
+2. **14 of 82 functions are uncovered by the census** -- 10 dispatchers, 3 `Precompute`s and 1 curve
+   generator -- and the dispatchers are exactly where a wrong answer would come from, since that is
+   where operand order and the equal-divisor route live.
+3. **An operator census is structurally blind to a guard predicate.** See the item below, which no
+   count, census or differential would have found.
+
+A negative finding resting on a one-off measurement is tolerable where a positive claim would not
+be. This entry says "the record was wrong" on evidence, and "the trees agree" only as an
+indication.
+
+### The one difference no instrument here can see
+
+```
+g2/timings/formulas/ramFormulas/nch2_ramifiedG2_ADD.mag:98    if IsZero(dw21) then return <0,0,1,0,0>;
+g2/ramifiedModel/g2Formulas/nch2_ramifiedG2_ADD.mag:284       if IsZero(dw20) and IsZero(dw21) then ...
+```
+
+The timings copy's **return condition is wider**: on `dw21 = 0, dw20 ≠ 0` it returns the identity
+where canonical falls through to `dw21^-1` and raises. A silent wrong value against a loud crash,
+and neither is right. This is **E1's** region and is cross-referenced there. A widened `and` adds no
+operator, moves no count and changes no fingerprint, so every instrument used above is blind to it;
+it was found by reading the two guards side by side.
+
+### Three latent `driver.py` defects, recorded not fixed
+
+They fire only if the timings tree becomes discoverable, which nothing currently does. The first is
+a real bug today regardless, and whoever attempts the reach must fix it first.
+
+1. **`driver.py:125-126` is last-writer-wins on a colliding key.** The key is
+   `(model + basis, genus, kind)` with `basis` empty unless the path contains `posReduced` or
+   `negReduced`, so a timings *ramified* file keys to `("ramified", 2, "nch2")` -- identical to its
+   canonical counterpart -- and `seen.setdefault(key, {})[op] = path` silently overwrites, decided by
+   `os.walk` order since `_dirnames` is unsorted. The split files escape it, keying to
+   `("split", ...)` where canonical gives `("splitpos", ...)`/`("splitneg", ...)`.
+2. **`Family.basis` returns `None` for any split model not literally `splitpos`/`splitneg`**, and
+   `curves.py` maps `None` to the negative basis silently rather than refusing.
+3. **`Coeff(` is matched literally** at three sites in `driver.py`, and the timings genus-2 split UTL
+   spells it `Coefficient(`, so `read_support` would return empty sets and the domain would widen
+   silently.
+
+### Two provenance items in the same trees
+
+- **`g3/timings/formulas/splitFormulas/nch2_splitG3_rad.mag` was byte-identical to
+  `nch2_splitG3_onlyFreq.mag`** (both md5 `6cb5151a4272fa1cfbbb5ab549054231`), declared the same
+  `*_onlyFreq` function names, and was referenced by nothing anywhere in the repository -- while
+  being named after another author's work and containing ours. **Deleted 2026-08-27.**
+- **`g2/timings/formulas/previousBest/lange_2005.mag:1-11` carries an
+  `// Author: Sebastian Lindner, 2019` line over an implementation of Lange's published formulas**,
+  where the other five `previousBest/` files carry no author line. Recorded, not changed: the header
+  is accurate about who wrote the *transcription*, and rewording published-adjacent provenance is
+  the author's call.
+
+**Affects:** nothing in the published figures. The thesis states its own methodology at
+`Thesis/chapter5.tex:2540-2544` -- "the absolute timings are not of great interest. The reader
+should rather focus on the relative cost between the various algorithms and models" -- and every
+compared implementation lives in this one tree, so the relative comparisons are internally valid
+whatever the tree's relation to the canonical one. Where our lane differs from the formulas of
+record it is the *older, slower* one, so the published margins are conservative rather than
+overstated.
 
 ---
 
