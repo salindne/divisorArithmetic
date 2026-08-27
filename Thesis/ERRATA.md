@@ -415,9 +415,49 @@ enshrined "Go to Subroutine X" as a step of the computation.
 table above lands on the right line. Across both chapters, all 51 explicitly-labelled
 `Step~N of Algorithm~\ref{...}` references now resolve to a step that exists, up from 49.
 
-**Not covered by this entry:** two passages write `Step~0`, which `algorithmicx` never
-produces. In `alg:explSPLIT1DBLUP` the "Step 0" content -- a negative reduced basis for
-`v_1` via school book modular reduction -- is genuinely step 1. One of those passages is
-consistently 0-based throughout (`Step~0 ... Steps~1-3 ... Steps~4--12 ... Steps~13--15`),
-so correcting only its first citation would leave the paragraph internally inconsistent.
-Left for a decision on whether the thesis adopts 1-based numbering throughout.
+**The two `Step~0` passages are now 1-based too**, the author having decided that the
+thesis numbers from 1 as `algorithmicx` prints. `algorithmicx` never emits a step 0, and
+in both cited algorithms the "Step 0" content -- a negative reduced normalisation of `v_1`
+-- is genuinely step 1.
+
+Each boundary was verified against content rather than shifted blindly, which mattered:
+the offset is not uniform. For `alg:explSPLIT12ADDUP`,
+
+| prose was | now | why |
+|---|---|---|
+| Step 0 | 1 | `v_1 = -\Vp - h - (…)`, the normalisation |
+| Steps 1-3 | 2--4 | `d = u_1 \pmod{u_2}` and its zero test |
+| Steps 4--12 | 5--13 | begins at `z = (f - v_1(v_1 + h)/(c_3u_1)`, the `z = k/c_3` the prose names |
+| Steps 13--15 | **15--17** | `w`, `\vt`, `u_n`. Not 14--16: step 14 is a bare `\EndIf`, no part of the described computation |
+
+A uniform shift would have put the `u_n` computation outside the cited range.
+
+
+## E-T12 — a spurious `r_{` swallowed two terms of the genus-3 split Degree 3 Addition u_n
+
+**`chapter6.tex:1260-1261`, the explicit formula for Step~17 of
+`alg:g3explSPLIT3ADD`.** **Corrected against the code.**
+
+    u_{n_1} = c_6(r_{\vt_2 + r_{q_{11}}t_7 + r_{q_{01}}} + r_{q_{01}}) + …
+    u_{n_0} = c_6(r_{\vt_2r_{r_{01}} + r_{q_{01}}}(t_7 + r_{r_{01}})) + …
+
+An `r_{` was inserted before `\vt_2` and its closing brace landed after
+`r_{q_{01}}`, subscripting `r` by a two- or three-term expression. Both lines now read as
+`arb_splitG3_ADD.mag` computes them:
+
+| corrected | code |
+|---|---|
+| `c_6(\vt_2 + r_{q_{11}}t_7 + r_{q_{01}} + r_{q_{01}}) + M'_{20} + q_{q_{01}}M'_{21}` | `c6*(vt2 + rq11*t7 + rq01 + rq01) + M20p + qq01*M21p` |
+| `c_6(r_{r_{01}}\vt_2 + r_{q_{01}}(t_7 + r_{r_{01}})) + q_{q_{01}}M'_{20}` | `c6*(rr01*vt2 + rq01*(t7 + rr01)) + qq01*M20p` |
+
+**The reading that looked obvious was wrong, and this is the point of the entry.** The
+natural repair is to close the subscript after `\vt_2`, giving `r_{\vt_2} + …`. The code
+shows there is no `r_{\vt_2}` object: the term is plain `\vt_2` and the whole `r_{` was
+spurious. That repair would have compiled cleanly and been wrong, with nothing to catch
+it -- LaTeX cannot tell a well-formed subscript from an intended one.
+
+The tell that confirms the correction is the doubled `r_{q_{01}} + r_{q_{01}}`: the broken
+text kept one copy inside the bogus subscript and one outside, and the code has both.
+
+Two smaller faults in the same block were fixed alongside: `r_{q_01}` for `r_{q_{01}}`
+twice, and a missing `+` before `q_{q_{01}}M'_{20}` that the parallel Step~16 block has.
