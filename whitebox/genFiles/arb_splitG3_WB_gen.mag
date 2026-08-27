@@ -202,7 +202,7 @@ end function;
 
 // MODE 2 -- EQUAL u. Cheap and exhaustive: only v and the weight vary within a u,
 // so this is a few hundred pairs. It is the d = 0, m3 = 0 / t7 = t4 = 0 case that
-// two independent draws never produce -- ADD172 (Deg22ADDUP2) and ADD276
+// two independent draws never produce -- ADD172 (Deg2ADDUP2) and ADD276
 // (Deg3ADD) need u1 = u2 exactly, with one shared point flipped to its opposite.
 PairsEqualU := function(Ds)
     out := [];

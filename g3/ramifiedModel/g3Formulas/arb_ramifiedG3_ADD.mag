@@ -202,7 +202,7 @@ end function;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Deg22ADD():
+// Deg2ADD():
 // Input:     u1,u0, v1,v0: Mumford coordinates for degree 2 divisor D1
 //        up1,up0, vp1,vp0: Mumford coordinates for degree 2 divisor D2
 //          f6..f2, h3..h0: curve coefficients
@@ -212,7 +212,7 @@ end function;
 // Description: Computes the explicit formula for the addition of two degree two
 //              divisors. Assumes D1 != D2 (dispatched in ADD).
 ///////////////////////////////////////////////////////////////////////////////
-Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, h2, h1, h0)
+Deg2ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, h2, h1, h0)
     /* //startIGNORE
     //Poly Dev Testing
     //Nucomp_g3_RAM (ramifiedUtilities.mag) specialised to this degree pair.
@@ -306,7 +306,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
             t4:= h2 - h3*up1;
             dw21:= vp1 - vh1 - h3*up0 - up1*t4;
             if IsZero(dw21) then // if gcd(up,h+vp+v) = up
-                if ADD_DEBUG then "ADD05"; end if;		// Deg22ADD | Case #3.2: gcd(u,up) = up, gcd(up,h+vp+v) = up
+                if ADD_DEBUG then "ADD05"; end if;		// Deg2ADD | Case #3.2: gcd(u,up) = up, gcd(up,h+vp+v) = up
                 return 0, 0, 0, 1, 0, 0, 0;
             end if;//dw21
 
@@ -336,7 +336,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
             vpp1:= s0 + v1;
             vpp0:= u0*s0 + v0;
 
-            if ADD_DEBUG then "ADD06"; end if;		// Deg22ADD | Case #3.1: gcd(u,up) = up, gcd(up,h+vp+v) = dw (deg 1)
+            if ADD_DEBUG then "ADD06"; end if;		// Deg2ADD | Case #3.1: gcd(u,up) = up, gcd(up,h+vp+v) = dw (deg 1)
             return 0, 1, upp1, upp0, 0, vpp1, vpp0;
         end if;//m3
 
@@ -370,7 +370,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
             vpp1:= s0 + v1;
             vpp0:= u0*s0 + v0;
 
-            if ADD_DEBUG then "ADD07"; end if;		// Deg22ADD | Case #2.2: gcd(u,up) = d (deg 1), gcd(d,h+vp+v) = d
+            if ADD_DEBUG then "ADD07"; end if;		// Deg2ADD | Case #2.2: gcd(u,up) = d (deg 1), gcd(d,h+vp+v) = d
             return 0, 1, upp1, upp0, 0, vpp1, vpp0;
         end if;//dw
 
@@ -414,7 +414,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
         vpp1:= upp1*t1 - t6;
         vpp0:= upp0*t1 + vh0 - u0*s0;
 
-        if ADD_DEBUG then "ADD08"; end if;		// Deg22ADD | Case #2.1: gcd(u,up) = d (deg 1), gcd(d,h+vp+v) = 1
+        if ADD_DEBUG then "ADD08"; end if;		// Deg2ADD | Case #2.1: gcd(u,up) = d (deg 1), gcd(d,h+vp+v) = 1
         return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
     end if;//d
 
@@ -448,7 +448,7 @@ Deg22ADD:= function(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, 
     vpp1:= t5*upp1 - t3;
     vpp0:= t5*upp0 + vh0 - t1;
 
-    if ADD_DEBUG then "ADD09"; end if;		// Deg22ADD | Typical
+    if ADD_DEBUG then "ADD09"; end if;		// Deg2ADD | Typical
     return 1, upp2, upp1, upp0, vpp2, vpp1, vpp0;
 end function;
 
@@ -1997,7 +1997,7 @@ ADD:= function(u, v, up, vp, f, h)//startIGNORE
         if (up3 ne 0) then
             return Deg23ADD(u1, u0, v1, v0, up2, up1, up0, vp2, vp1, vp0, f6, f5, f4, f3, f2, f1, h3, h2, h1, h0);
         elif (up2 ne 0) then
-            return Deg22ADD(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, h2, h1, h0);
+            return Deg2ADD(u1, u0, v1, v0, up1, up0, vp1, vp0, f6, f5, f4, f3, f2, h3, h2, h1, h0);
         elif (up1 ne 0) then
             return Deg12ADD(up0, vp0, u1, u0, v1, v0, f6, f5, f4, f3, f2, h3, h2, h1, h0);
         else

@@ -432,7 +432,7 @@ the same kind.
 **Scale, measured.** `driver.py --curves 3 --pairs 3 --seed 11 --strict`:
 **1,300 wrong results in 12,587 operations**, spread across all fourteen
 families — genus-2 ramified `ADD00`/`ADD06`; genus-3 ramified `DEG33ADD`,
-`Deg1ADD` case 2, `Deg22ADD` 3.1/3.2; genus-2 split `ADD15/19/38/58` in both
+`Deg1ADD` case 2, `Deg2ADD` 3.1/3.2; genus-2 split `ADD15/19/38/58` in both
 bases; roughly twenty genus-3 split branches. **Zero wrong on the documented
 domain** — the formulas were never wrong at what they claimed, only at what
 callers would reasonably do.
@@ -1215,8 +1215,8 @@ implementation, which is the class of defect a human reading both is worst at.
 been generic: one `XGCD(u,up)` call, a second `XGCD` on the gcd, and a three-way tail on
 `Degree(u) + Degree(up)`. That is a correct algorithm but it is not the algorithm below it,
 so no statement of it could serve as the comment above any particular explicit group. All
-four are now unfolded in the resultant form the house exemplars use — `arb_splitG3_ADD`'s
-`Deg22ADD` and genus-2 ramified's `Deg2ADD` — with every gcd case explicit and its own
+four are now unfolded in the resultant form the house exemplars use — `Deg2ADD`, in both
+`arb_splitG3_ADD` and genus-2 ramified — with every gcd case explicit and its own
 return. `Deg3ADD` goes from 51 lines to 178 and from 3 returns to 12.
 
 **How many leaves is settled by the parent, not by taste.** Each block's header names
@@ -1259,7 +1259,7 @@ six degree pairs — zero mismatches — with every operation count identical pe
 
 ## N21 — Two weights larger than the mathematics requires, and a cofactor that is a constant
 
-**Status:** implemented and measured, 2026-08-14. Genus-3 ramified `Deg22ADD`, both
+**Status:** implemented and measured, 2026-08-14. Genus-3 ramified `Deg2ADD`, both
 the arbitrary and the odd-characteristic file.
 
 The degree-2-plus-degree-2 addition's degenerate branches carried three separate
@@ -1348,7 +1348,7 @@ path of the function at once.
 
 **Every other `vpp` site in all three genus-3 ramified files already writes the
 folded form** — `arb_ramifiedG3_DBL.mag:332-333`, `:612-613`, `:673`, and
-`arb_ramifiedG3_ADD.mag` at `Deg22ADD:418`, `Deg23ADD:862`, `Deg3ADD:897-899`,
+`arb_ramifiedG3_ADD.mag` at `Deg2ADD:418`, `Deg23ADD:862`, `Deg3ADD:897-899`,
 `:1059-1061`, `:1138-1140`. The only unfolded lines anywhere were the four in the
 arb `Deg13ADD` and the four in the nch2 one.
 
@@ -1436,7 +1436,7 @@ being stated**.
 
 **Measured across every shape in both models**, by classifying each function's solve: the split
 builds an inverse object **zero** times in the addition and **zero** times in the doubling. The
-ramified builds one 5 times in `Deg23ADD` and 11 times in `Deg3ADD`. Both doublings, `Deg22ADD`,
+ramified builds one 5 times in `Deg23ADD` and 11 times in `Deg3ADD`. Both doublings, `Deg2ADD`,
 and all three typical paths already agree — they use the adjugate.
 
 **The rule that decides it, which neither file states.** The adjugate always costs
@@ -1567,11 +1567,11 @@ therefore differ only in the *degree of the output*, which the block's generic
 `upp := ExactQuotient(...); upp := upp/LeadingCoefficient(upp)` produces by itself. Splitting the
 block would have duplicated a formula to express nothing.
 
-**Second result: at `Deg23ADD` both coefficients of `dw2` must be tested, and at `Deg22ADD` only
+**Second result: at `Deg23ADD` both coefficients of `dw2` must be tested, and at `Deg2ADD` only
 one must.** The guard reads `if (dw21 eq 0 and dw20 eq 0)`, and the natural question is whether the
 second conjunct is redundant, as it provably is one degree down. It is not.
 
-- At `Deg22ADD` the branch is `u = up`, so `u | (vp - v)(h + v + vp)` with `deg(vp - v) < deg u`
+- At `Deg2ADD` the branch is `u = up`, so `u | (vp - v)(h + v + vp)` with `deg(vp - v) < deg u`
   forces `vp = v` — that is `D1 = D2`, which the dispatcher has already routed to the doubling.
   Hence `dw21 = 0` implies `dw20 = 0`.
 - At `Deg23ADD` the branch is `u | up` with `deg u = 2 < 3 = deg up`. The same argument yields only
@@ -1599,7 +1599,7 @@ other — and only the first is excluded by the equal-divisor dispatch.
 **Status:** implemented and measured, 2026-08-18. Genus-3 ramified `Deg23ADD`, both files. Degenerate
 branches only — the frequent case does not move, so no published row changes.
 
-`Deg22ADD` already carried the observation that `a2` collapses to a constant (N21). The same collapse
+`Deg2ADD` already carried the observation that `a2` collapses to a constant (N21). The same collapse
 was available in `Deg23ADD`'s `gcd(u,up) = dw1` family and had not been taken, and the reference block
 was already describing the cheaper route while the explicit code did something else:
 
@@ -1638,7 +1638,7 @@ serves two of the three:
 | `#2.3`, `#3.x`, typical, both files | — | unchanged |
 
 **These are the most expensive branches in the function** — arb `#2.1` was 59M against the frequent
-case's 36M — which is why the collapse is worth more here than the `Deg22ADD` instance was.
+case's 36M — which is why the collapse is worth more here than the `Deg2ADD` instance was.
 
 ### What was checked and found already at its floor
 
@@ -1698,7 +1698,7 @@ never has to exist. The saving is not in the division but in everything downstre
 **Status:** implemented and measured, 2026-08-21. Genus-3 ramified `Deg3ADD`, both files. Degenerate
 branches only — the frequent case does not move, so no published row changes.
 
-N21 found the constant cofactor at `Deg22ADD`, N25 took it at `Deg23ADD`. `Deg3ADD` is the last and
+N21 found the constant cofactor at `Deg2ADD`, N25 took it at `Deg23ADD`. `Deg3ADD` is the last and
 largest instance, and it turned into a different kind of result: **the interesting question is not
 where the collapse applies but where it has already bottomed out**, and that is measurable rather
 than derivable.
@@ -3072,3 +3072,105 @@ normalisation with weight removal is precisely how the split formulas hold to a
 single inversion. Late inversion means every upstream quantity is carried
 projectively, and a weighted cofactor is not a drop-in for an exact one. The
 omission is a consequence of a deliberate design choice, not an oversight.
+
+## N34 — One calling convention, and why a rename is safer than a reorder
+
+**Status** — established, PR10. **Where** — the three genus-3 split additions, the six genus-2 split
+additions, and the `Deg22ADD` name in both genus-3 models.
+
+**What was there.** `Deg<i><j>ADD` names the degrees of its two input divisors, and the repository
+disagreed with itself about what that meant. In genus-2 ramified, genus-2 split and (since PR36)
+genus-3 ramified the digits were **positional**: the smaller-degree divisor arrived first. In genus-3
+split they were merely **sorted**, and the larger arrived first. Separately, genus-2 split wrote each
+operand's coefficients **ascending** where the other three families wrote them descending.
+
+**Why the first of those is a correctness problem and not a style one.** A caller who reads the name
+and passes operands in the genus-2 order gets a **silently wrong answer**, not an error, because the
+arities happen to match. That is the same defect class that got the inherited
+`*_use_for_odd_even.m` files dropped at import for carrying a reversed operand convention. The second
+is genuinely cosmetic, but genus-2 split contradicted *itself*: `Deg2DBL(u1,u0,v1,v0,ccs)` and
+`Deg2ADD(u0,u1,v0,v1,...)` sat in the same file.
+
+**The convention now holds in all twelve families**: digits positional, smaller divisor first,
+coefficients descending. Every `Deg12ADD` in the repository reads
+`(u0, v0, up1, up0, vp1, vp0, ...)`, differing only in the curve-constant tail.
+
+### Three kinds of edit, and they must not be conflated
+
+This is the transferable part, because the three have different risk and different verification:
+
+1. **A pure rename**, `Deg22ADD` -> `Deg2ADD`. No operand order to confuse, verifiable by
+   copy-and-diff. It landed first and alone, so the risky diff stayed small.
+2. **A prefix swap inside a function body**, `u <-> up` and `v <-> vp` with subscripts untouched --
+   the prefix is the divisor identity, the subscript the coefficient index within it.
+3. **An argument reorder at the call site**, with *no* renaming, because the caller's variables keep
+   their meaning.
+
+Conflating 2 and 3 corrupts the dispatcher; doing 2 without 3 produces a wrong answer with no compile
+error. They are the same conceptual change and opposite textual ones.
+
+### The swap is one pass with a lookup, not three passes through a sentinel
+
+```python
+TOK  = re.compile(r'(?<![A-Za-z0-9_])(up|vp|u|v)([0-9])(?![A-Za-z0-9_])')
+SWAP = {"u": "up", "up": "u", "v": "vp", "vp": "v"}
+new  = TOK.sub(lambda m: SWAP[m.group(1)] + m.group(2), body)
+```
+
+A sentinel (`up -> TMP`, `u -> up`, `TMP -> u`) is correct but its correctness rests on the sentinel
+never colliding and on nobody reordering the passes later. `re.sub` with a callback replaces each
+match independently and never rescans its own output, so `u0 -> up0` and `up0 -> u0` in the same pass
+cannot interfere. **The hazard becomes structurally impossible rather than avoided by discipline.**
+
+Two things about it that would each have produced a half-applied swap, which is the wrong-answer case:
+
+- **`up|vp` must precede `u|v` in the alternation.** Python matches leftmost-first, not longest, so the
+  other order matches the `u` of `up0`, fails the digit test, and skips the token entirely -- leaving
+  every `up` untouched while every `u` swaps.
+- **The substitution must be scoped to the target function bodies, not the file.** `up3` is not a
+  divisor coefficient: it is a live scratch temporary in `Deg3ADD` holding `up2^2`. A file-wide pass
+  would have renamed it to `u3`.
+
+Both were established by measurement before the first edit, not discovered afterwards: the pattern was
+run against all three files and shown to rewrite exactly thirteen token forms while leaving the other
+fifty-two identifiers beginning `u` or `v` alone, `upp0`-`upp3`, `unp0`, `vpp0`-`vpp2`, `vh0`-`vh2`,
+`vt0`-`vt2` and the bare `u`, `up`, `v`, `vp` among them.
+
+### The acceptance test for a reorder is that nothing moves
+
+**`opcount.py` identical per branch, per family, before and after** -- a reorder that changes a count
+has changed behaviour. Measured identical across all 42 shapes in each genus-3 split family and every
+shape in all six genus-2 split families. That gate did not exist when this work was first scheduled;
+PR41 supplied it.
+
+Two mechanical self-checks ran before any gate, and both are cheap enough to be worth habit: within
+the swapped bodies the token counts must **exchange exactly** (`u` 543 <-> 597 and `v` 602 <-> 495 in
+arb), and `git diff --stat` must show **equal insertions and deletions**, 1,106/1,106 for arb and
+2,200/2,200 for the two specialisations. A partial swap fails both.
+
+### The trap that cost two earlier PRs was absent, and that was checked rather than assumed
+
+PR21 drifted 56 frozen cases and PR36 another 20, both because a rename touched debug label strings
+that the corpus stores verbatim. Here `Deg22ADD` **never appears inside a label string**: genus-3 split
+labels are numeric (`ADD000`..`ADD349`) and the genus-3 ramified labels were numbered in PR6, carrying
+the prose name only in a trailing comment. `harvested_cases.json` holds 0 cases and
+`coverage_baseline.json` no `Deg`-bearing labels. So no frozen-corpus substitution and no re-harvest.
+
+### An honest limit
+
+The plan named an `_OLD` same-session differential as the per-file acceptance test, the technique PR36
+used. It was attempted in Python and abandoned after ten minutes without completing: interpreting nine
+functions of a 10,000-line file at that volume is too slow, and the Magma form is its own piece of
+tooling. What stands in for it, and I think adequately:
+
+- **The frozen corpus is itself an old-versus-new comparison.** Those cases were extracted from runs of
+  the *old* code and record both the returned divisor and the branch label reached; the new code
+  reproduces every one exactly.
+- **`driver --strict` agrees with `reference.py`** over 55,236 operations across every degree
+  combination, so old and new agree with each other through an independent oracle.
+- **The specific failure this edit risks -- a missed call site feeding old-order arguments to a
+  reordered function -- is exactly what the corpus catches**, because its cases drive the dispatcher
+  rather than the leaf functions.
+
+Recorded rather than glossed, because "the plan said do X, we did Y" is the kind of substitution that
+is invisible six months later.

@@ -185,7 +185,7 @@ end function;
 //         for reduceed and balanced Dp ~ D.               
 // Description: Explicit computation for adding <1,0,0> and degree 2 divisor.          
 ///////////////////////////////////////////////////////////////////////////////
-Deg02ADDUP:= function(u0,u1,v0,v1,ccs)
+Deg02ADDUP:= function(u1,u0,v1,v0,ccs)
     /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
@@ -260,7 +260,7 @@ end function;
 //         for reduceed and balanced Dp ~ D.               
 // Description: Explicit computation for adding <1,0,2> and degree 2 divisor.          
 ///////////////////////////////////////////////////////////////////////////////
-Deg02ADDDWN:= function(u0,u1,v0,v1,ccs)
+Deg02ADDDWN:= function(u1,u0,v1,v0,ccs)
     /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
@@ -654,7 +654,7 @@ end function;
 //         for reduceed and balanced Dpp ~ D + Dp.               
 // Description: Explicit computation for adding a degree 1 and degree 2 divisor.                 
 ///////////////////////////////////////////////////////////////////////////////
-Deg12ADDUP:= function(u0,v0,up0,up1,vp0,vp1,ccs)
+Deg12ADDUP:= function(u0,v0,up1,up0,vp1,vp0,ccs)
     /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
@@ -828,7 +828,7 @@ end function;
 //         for reduceed and balanced Dpp ~ D + Dp.               
 // Description: Explicit computation for adding a degree 1 and degree 2 divisor.                 
 ///////////////////////////////////////////////////////////////////////////////
-Deg12ADD:= function(u0,v0,up0,up1,vp0,vp1,ccs)
+Deg12ADD:= function(u0,v0,up1,up0,vp1,vp0,ccs)
     /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
@@ -1006,7 +1006,7 @@ end function;
 //         for reduceed and balanced Dpp ~ D + Dp.               
 // Description: Explicit computation for adding a degree 2 and degree 2 divisor.                 
 ///////////////////////////////////////////////////////////////////////////////
-Deg2ADD:= function(u0,u1,v0,v1,up0,up1,vp0,vp1,ccs)
+Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
     /* //startIGNORE
     //Poly Dev Testing
     FF:=Parent(u0);
@@ -1381,32 +1381,32 @@ ADD:= function(u1,v1,n1,u2,v2,n2,ccs)//startIGNORE
 
     if IsOne(u12) then
         if IsOne(u22) then
-            return Deg2ADD(u10,u11,v10,v11,u20,u21,v20,v21,ccs); //Deg2Add(0)
+            return Deg2ADD(u11,u10,v11,v10,u21,u20,v21,v20,ccs); //Deg2Add(0)
 
         elif IsOne(u21) then
             if IsZero(n2) then
-                return Deg12ADDUP(u20,v20,u10,u11,v10,v11,ccs); //Deg12ADDUP
+                return Deg12ADDUP(u20,v20,u11,u10,v11,v10,ccs); //Deg12ADDUP
             else
-                return Deg12ADD(u20,v20,u10,u11,v10,v11,ccs); //Deg12ADD
+                return Deg12ADD(u20,v20,u11,u10,v11,v10,ccs); //Deg12ADD
             end if;
         else
             if n2 eq 0 then
-                return Deg02ADDUP(u10,u11,v10,v11,ccs); //Deg02ADD with UP Adjust
+                return Deg02ADDUP(u11,u10,v11,v10,ccs); //Deg02ADD with UP Adjust
             elif n2 eq 1 then
             
                 if ADD_DEBUG then "ADD50"; end if;
                 return u12,u11,u10,v11,v10,0; //NEUTRAL
             else
-                return Deg02ADDDWN(u10,u11,v10,v11,ccs); //Deg02ADD with DWN Adjust
+                return Deg02ADDDWN(u11,u10,v11,v10,ccs); //Deg02ADD with DWN Adjust
             end if;
         end if;
 
     elif IsOne(u11) then
         if IsOne(u22) then
             if IsZero(n1) then
-                return Deg12ADDUP(u10,v10,u20,u21,v20,v21,ccs); //Deg12ADDUP
+                return Deg12ADDUP(u10,v10,u21,u20,v21,v20,ccs); //Deg12ADDUP
             else
-                return Deg12ADD(u10,v10,u20,u21,v20,v21,ccs); //Deg12ADD
+                return Deg12ADD(u10,v10,u21,u20,v21,v20,ccs); //Deg12ADD
             end if;
 
         elif IsOne(u21) then
@@ -1444,13 +1444,13 @@ ADD:= function(u1,v1,n1,u2,v2,n2,ccs)//startIGNORE
     else 
         if IsOne(u22) then
             if n1 eq 0 then
-                return Deg02ADDUP(u20,u21,v20,v21,ccs); //Deg02ADD with UP Adjust
+                return Deg02ADDUP(u21,u20,v21,v20,ccs); //Deg02ADD with UP Adjust
             elif n1 eq 1 then
                 
                 if ADD_DEBUG then "ADD54"; end if;
                 return u22,u21,u20,v21,v20,0; //NEUTRAL
             else
-                return Deg02ADDDWN(u20,u21,v20,v21,ccs); //Deg02ADD with DWN Adjust
+                return Deg02ADDDWN(u21,u20,v21,v20,ccs); //Deg02ADD with DWN Adjust
             end if;
 
         elif IsOne(u21) then
