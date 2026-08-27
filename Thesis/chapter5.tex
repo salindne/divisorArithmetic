@@ -2564,7 +2564,9 @@ explicit formulas, Cantor's algorithm and Magma's built-in. For addition, a
 Fibonacci-like sequence of divisors $D_{i+1} = D_{i} + D_{i-1}$ was computed,
 starting from two random divisors. Similar experiments were performed for the
 doubling algorithms over ramified and split models, by computing series of
-thousands of additions of a divisor class with itself. Timings taken over a
+additions of a divisor class with itself. Each chain length was scaled with the
+field size, from $500{,}000$ steps at $2$ bits down to $45{,}000$ at $1024$
+bits, and every reported timing is the mean of $5$ trials. Timings taken over a
 range of prime fields of sizes 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 bits
 were collected. All timings were run over random hyperelliptic curves with $h=0$
 defined over prime fields, using algorithms specialized for this setting.
@@ -2667,8 +2669,9 @@ arithmetic in the last figure. The following conclusions are drawn from these pl
     interface provided.
 
     \item For Magma based implementations, split model arithmetic using balanced
-    divisor classes is about $20\%$ slower than ramified arithmetic for genus 2
-    curves. 
+    divisor classes is between $22\%$ and $38\%$ slower than ramified arithmetic
+    for addition, and between $28\%$ and $53\%$ slower for doubling, for genus 2
+    curves over prime fields from $4$ to $1024$ bits.
 \end{itemize}
 
 \centerline{\includegraphics[width=0.775\textwidth]{genus2/g2_G2_RAM_ADD.pdf}}

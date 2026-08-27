@@ -1297,3 +1297,59 @@ inverts late because its `f` is non-monic of degree `2g+2` and `upp` must be
 normalised after `upp` is known, which is how it holds to a single inversion.
 Late inversion means every upstream quantity is carried with a weight, and a
 weighted cofactor is not a drop-in for an exact one.
+
+---
+
+## E25: the genus-2 timing script cannot reproduce its own published figures
+
+**Found 2026-08-27** while discharging E7, by reading the committed run parameters against the
+committed output.
+
+**Severity:** provenance, not correctness. No published number is wrong because of this; the
+published figures exist and their raw data is committed. What is lost is the ability to
+reproduce them from the script that produced them.
+
+**Where:** [g2/timings/nch2_g2_complete.mag](g2/timings/nch2_g2_complete.mag), lines 29-30.
+
+```
+length := 5000;
+trials := 1;           //Max 3030
+```
+
+against its genus-3 sibling, [g3/timings/nch2_g3_complete.mag](g3/timings/nch2_g3_complete.mag)
+lines 18-19:
+
+```
+length := 500000;
+trials := 5;           //Max 3030
+```
+
+**And against the published output itself.** Every raw file records the trial count in its own
+header, genus 2 included:
+
+| file | header |
+|---|---|
+| `g2/timings/processing/outg2_complete.raw` | `# Average over:  5` |
+| `g2/timings/processing/outg2.raw` | `# Average over:  5` |
+| `g2/timings/processing/g2_timings.raw` | `# Average over:  5` |
+| `g3/timings/processing/outg3_complete.raw` | `# Average over:  5` |
+
+So the committed genus-2 script runs **one** trial where its own published data says five, at
+**5,000** chain steps where the published run used a schedule from 500,000 steps at 2 bits down
+to 45,000 at 1024 -- identical in both genera, and recorded per row in the raw headers.
+
+**The most likely explanation, and it is a guess.** 5000/1 is what a script is left at after a
+quick smoke run, and nothing in the repository would notice: the timings trees are excluded from
+every gate, so no check reads this file. The published parameters were not lost -- they are in
+the raw headers, which is why this is recoverable at all.
+
+**Not fixed.** Editing the script to `500000; 5` would make it *claim* to reproduce a 2020 run on
+a 64-core Xeon 7550 that no current machine will match, and the thesis explicitly disclaims
+absolute timings (`Thesis/chapter5.tex:2540-2544`). Recording the real parameters where a reader
+will find them is the useful half, and that is done: the seeds are `643202358` (genus 2) and
+`1362920179` (genus 3), the trial count is 5, and the chain-length schedule is in the raw
+headers. `Thesis/chapter5.tex` and `chapter6.tex` now state the schedule rather than "series of
+thousands"; see `Thesis/ERRATA.md` E-T16.
+
+**Affects:** reproducibility of the genus-2 timing plots from source. The plots themselves, their
+raw data, and every relative comparison drawn from them are unaffected.
