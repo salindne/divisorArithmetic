@@ -381,3 +381,43 @@ figures by execution and a hand count of the changed region reproduces the same
 `+1M -12A`, two methods sharing no code. `verification/selftest.py`'s published
 pins for `33ADD n=0,0` and `3DBL n=0` are updated with the reason recorded
 inline, and every other pinned cell still matches its published value.
+
+## E-T11 — twenty cross-reference lines were numbered as algorithm steps
+
+**`chapter5.tex` and `chapter6.tex`, 15 algorithm and subroutine blocks.** **Measured.**
+
+**Reported by the author**: the description of *Genus 3 Split Model Degree 3 Addition*
+"ends up being 3 lines off". It does, and the prose was never wrong -- the algorithm
+over-numbers.
+
+`\State Go to ... Subroutine~\ref{...}` and `\State See description below.` are
+cross-references, not computational steps, but `\State` numbers them. Each one shifts
+every later step by one. `alg:g3explSPLIT3ADD` and `alg:g3explSPLIT3DBL` carry three
+each, which is exactly the reported drift.
+
+**The prose numbering is the correct one.** Counting every line except those three
+reproduces the text's claims for `alg:g3explSPLIT3ADD` exactly:
+
+| line | prose says |
+|---|---|
+| `\vt = v_2 - v_1` | Step 6 |
+| `s' = \vt t \pmod{u_2}` | Step 7 |
+| `k = (f - v_1(v_1 + h)/u_1)` | Step 15 |
+| `M_2' = (r(v_2 + v_1 + h) + qk)/u_2` | Step 16 |
+| `u_n = r(q(v_2 - v_1) + u_1r)/(u_2c_4r_1q_1) - qM_2'/q_1` | Step 17 |
+
+**Fixed by making the cross-references unnumbered**, `\State` -> `\Statex` at 20 sites,
+7 in `chapter5.tex` and 13 in `chapter6.tex`. That is the cheap direction: the
+alternative was renumbering prose references across two chapters, which would also have
+enshrined "Go to Subroutine X" as a step of the computation.
+
+**Verified after the fix**: `alg:g3explSPLIT3ADD` numbers 20 steps and every claim in the
+table above lands on the right line. Across both chapters, all 51 explicitly-labelled
+`Step~N of Algorithm~\ref{...}` references now resolve to a step that exists, up from 49.
+
+**Not covered by this entry:** two passages write `Step~0`, which `algorithmicx` never
+produces. In `alg:explSPLIT1DBLUP` the "Step 0" content -- a negative reduced basis for
+`v_1` via school book modular reduction -- is genuinely step 1. One of those passages is
+consistently 0-based throughout (`Step~0 ... Steps~1-3 ... Steps~4--12 ... Steps~13--15`),
+so correcting only its first citation would leave the paragraph internally inconsistent.
+Left for a decision on whether the thesis adopts 1-based numbering throughout.

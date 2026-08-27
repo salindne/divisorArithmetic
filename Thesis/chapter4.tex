@@ -545,7 +545,7 @@ are presented in Algorithms~\ref{alg:g3balnucomp} and~\ref{alg:g3balnudupl}.
     \State $k = (f - v_1(v_1 + h))/u_1. \s\s\s$ (exact division)
     \State $(S,a_1,b_1) = \mathrm{XGCD}(u_1,u_2). \s\s\s  (S, a_1$ only)
     \If{$S \not = 1$}
-        \State $(S,a_2,b_2) = \mathrm{XGCD}(S,v_2 + v_1 + h)$.
+        \State $(S',a_2,b_2) = \mathrm{XGCD}(S,v_2 + v_1 + h)$.
         \If{$S' \not = 1$}
             \State $u_1 = u_1/S', \s\s u_2 = u_2/S'. \s\s\s$ (exact division)
         \EndIf

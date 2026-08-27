@@ -387,17 +387,17 @@ k_2   \end{array} \right).$$
 \State Compute coefficients $m_1 = t_5t_9, \s m_4 = t_6t_7 - t_4t_9, \s m_7 = t_4t_8 - t_5-t_7$ of the inverse of the matrix and let $t = m_7x^2 + m_4x + m_1$.
 \State $d = t_1m_1 + t_2m_4 + t_3m_7$.
 \If{$d = 0$} 
-\State Go to Degree 3 Doubling ($d=0$) Subroutine~\ref{sub:g3explSPLIT3DBLd}.
+\Statex Go to Degree 3 Doubling ($d=0$) Subroutine~\ref{sub:g3explSPLIT3DBLd}.
 \EndIf
 \State $k' = (f - v_1(v_1 + h))/u_1 \pmod{u_1}$.
 \State $s' = ds = s_2'x^2 + s_1'x + s_0' =  k't \pmod{u_1}$.
 \If{$s_2' = 0$} 
-\State Go to Degree 3 Doubling ($s_2=0$) Subroutine~\ref{sub:g3explSPLIT3DBLs2}.
+\Statex Go to Degree 3 Doubling ($s_2=0$) Subroutine~\ref{sub:g3explSPLIT3DBLs2}.
 \EndIf
 \State Compute monic quotient $q'= x + s'_2(q_0/q_1) = x + q'_0$ of $u_1/s'$ with $1/q_1 = s_2$. 
 \State Compute remainder $r' = s'_2dr = r'_1x + r'_0$ of $u_1/s'$.
 \If{$r'_1$ is 0} 
-\State Go to Degree 3 Doubling ($r'_1=0$) Subroutine~\ref{sub:g3explSPLIT3DBLr1}.
+\Statex Go to Degree 3 Doubling ($r'_1=0$) Subroutine~\ref{sub:g3explSPLIT3DBLr1}.
 \EndIf
 \State Compute values $q_1/r_1, r_1/q_1, q_0/q_1, r_0/q_1, q_0/r_1, r_0/r_1$.
 \State $M_2' = (r(2v_1 + h) + qk)/u_1 \s\s\s $(exact division, made monic).
@@ -792,7 +792,7 @@ in the following.
 \\  k_1\end{smallmatrix} \bigr ]$, where $(h + 2v_1) \pmod{u_1} = d_w = -m_3x + m_4.$
 \State $d = m_1m_4 - m_2m_3$.
 \If{$d = 0$}
-    \State Go to Genus 3 Split Model Degree 2 Doubling with 2 Up Adjusts ($d=0$) Subroutine~\ref{sub:g3explSPLIT2DBL2UPd}.
+    \Statex Go to Genus 3 Split Model Degree 2 Doubling with 2 Up Adjusts ($d=0$) Subroutine~\ref{sub:g3explSPLIT2DBL2UPd}.
 \EndIf
 \State $k = k_3x^3 + k_2x^2 + k_1x + k_0 = (f - v_1(v_1 + h))/u_1 \pmod{u_1}.$
 \State Solve for $s_1(d), s_0(d)$ using $m_i$ and Cramer's rule, omitting the inversion of $d$.
@@ -1088,7 +1088,7 @@ Algorithm~\ref{alg:g3balnucomp}. There are 3 main cases:\begin{itemize}
 \subsubsection{Degree 3 Addition}
 Let $[u_1,v_1,0]$ and $[u_2,v_2,0]$ be the input reduced divisor class
 representatives with a $u_1 = x^3 + u_{12}x^2 + u_{11}x + u_{10}$, $v_1 =
-\Vn_4x^4 + \Vn_3x^3 + v_{12}x^2 + v_{11}x + v_{10}$ and $u_2 = x^3 + u_{12}x^2 +
+\Vn_4x^4 + \Vn_3x^3 + v_{12}x^2 + v_{11}x + v_{10}$ and $u_2 = x^3 + u_{22}x^2 +
 u_{21}x + u_{20}$, $v_2 = \Vn_4x^4 + \Vn_3x^3 + v_{22}x^2 + v_{21}x + v_{20}$.
 Similar to genus 2 split model addition Algorithm~\ref{alg:g2balnucomp},
 Steps~1-2 of Addition Algorithm~\ref{alg:g3balnucomp} are always skipped.
@@ -1129,17 +1129,17 @@ to an explicit formula is given in the following.
 \State Compute coefficients $m_1 = t_5t_9, \s m_4 = t_6t_7 - t_4t_9, \s m_7 = t_4t_8 - t_5-t_7$ of the inverse of the matrix and let $t = m_7x^2 + m_4x + m_1$.
 \State $d = t_1m_1 + t_2m_4 + t_3m_7$.
 \If{$d = 0$} 
-\State See description below.
+\Statex See description below.
 \EndIf
 \State $\vt = \vt_2x^2 + \vt_1x + \vt_0 = v_2 - v_1$.
 \State $s' = ds = s_2'x^2 + s_1'x + s_0' =  \vt t \pmod{u_2}$.
 \If{$s_2'$ is 0} 
-\State Go to Degree 3 Addition ($s_2=0$) Subroutine~\ref{sub:g3explSPLIT3ADDs2}.
+\Statex Go to Degree 3 Addition ($s_2=0$) Subroutine~\ref{sub:g3explSPLIT3ADDs2}.
 \EndIf
 \State Compute monic quotient $q'= x + s'_2(q_0/q_1) = x + q'_0$ of $u_1/s'$ with $1/q_1 = s_2$. 
 \State Compute remainder $r' = s'_2dr = r'_1x + r'_0$ of $u_1/s'$.
 \If{$r'_1$ is 0}
-\State Go to Degree 3 Addition ($r'_1=0$) Subroutine~\ref{sub:g3explSPLIT3ADDr1}.
+\Statex Go to Degree 3 Addition ($r'_1=0$) Subroutine~\ref{sub:g3explSPLIT3ADDr1}.
 \EndIf
 \State Compute values $q_1/r_1, r_1/q_1, q_0/q_1, r_0/q_1, q_0/r_1, r_0/r_1$.
 \State $k = (f - v_1(v_1 + h)/u_1) \s\s\s $ (only degree 2 and 3 terms $k_2,k_3$).
@@ -1257,8 +1257,8 @@ qM_2'/q_1,$$ using the same approach as in Step~16. The explicit formula for
 Step~15 is: 
 \begin{align*} 
     & u_{n_2} = c_6r_{q_{11}} + M'_{21} + q_{q_{01}}          \\
-    & u_{n_1} = c_6(r_{\vt_2 + r_{q_{11}}t_7 + r_{q_01}} + r_{q_{01}}) + M'_{20} + q_{q_{01}}M'_{21}    \\
-    & u_{n_0} = c_6(r_{\vt_2r_{r_{01}} + r_{q_01}}(t_7 + r_{r_{01}})) q_{q_{01}}M'_{20}.
+    & u_{n_1} = c_6(r_{\vt_2 + r_{q_{11}}t_7 + r_{q_{01}}} + r_{q_{01}}) + M'_{20} + q_{q_{01}}M'_{21}    \\
+    & u_{n_0} = c_6(r_{\vt_2r_{r_{01}} + r_{q_{01}}}(t_7 + r_{r_{01}})) + q_{q_{01}}M'_{20}.
 \end{align*}
 Since $u_n$ is required to be monic, the computation of $z = (ru_1 - u_n)/q$ in
 Step~17 must be adjusted to $z = (ru_1 - u_n(c_4r_1q_1))/q$. The exact
@@ -1410,7 +1410,7 @@ Algorithm~\ref{alg:g3explSPLIT23ADD}.
 \State Compute $m_i$ in system of equations for $su_1\equiv \vt \pmod{u_2}$ as $ \bigl[ \begin{smallmatrix} m_1 & m_2\\ m_3 & m_4\end{smallmatrix}\bigr] \bigl[ \begin{smallmatrix} s_0\\ s_1 \end{smallmatrix} \bigr ] = \bigl[ \begin{smallmatrix}\vt_0 \\  \vt_1\end{smallmatrix} \bigr ]$, where $\vt = \vt_1x + \vt_0 = v_2 - v_1$.
 \State $d = m_1m_4 - m_2m_3$.
 \If{$d = 0$}
-    \State See description below.
+    \Statex See description below.
 \EndIf
 \State Solve for $s_1' = ds_1, s_0' = ds_0$ using Cramer's rule, omitting the inversion of $d$.
 \State Compute only $k_3, k_2$ of $k = k_3x^3 + k_2x^2 + k_1x + k_0 = (f - v_1(v_1 + h))/u_1 \s\s\s$ (exact division).  
@@ -1463,7 +1463,7 @@ Algorithm~\ref{alg:g3explSPLIT23ADD}.
 \State Compute $m_i$ in system of equations for $su_1\equiv \vt \pmod{u_2}$ as $ \bigl[ \begin{smallmatrix} m_1 & m_2\\ m_3 & m_4\end{smallmatrix}\bigr] \bigl[ \begin{smallmatrix} s_0\\ s_1 \end{smallmatrix} \bigr ] = \bigl[ \begin{smallmatrix}\vt_0 \\  \vt_1\end{smallmatrix} \bigr ]$, where $\vt = \vt_1x + \vt_0 = v_2 - v_1$.
 \State $d = m_1m_4 - m_2m_3$.
 \If{$d = 0$}
-    \State See description above.
+    \Statex See description above.
 \EndIf
 \State Solve for $s_1', = ds_1, s_0' = ds_0$ using Cramer's rule, omitting the inversion of $d$.
 \State Compute only $k_3, k_2$ of $k = k_3x^3 + k_2x^2 + k_1x + k_0 = (f - v_1(v_1 + h))/u_1 \s\s\s$ (exact division).  
@@ -1842,7 +1842,7 @@ Algorithm~\ref{alg:g3explSPLIT13ADDUP}.
     \EndIf
     \State $z = z_3x^3 + z_2x^2 + z_1x + z_0 = (f - v_1(v_1 + h))/(c_4u_1) \s\s\s$ (exact division).  
     \State $s_0' = d_ws_0 = z \pmod{u_2}$.
-    \State Go to Step~12 and let $d = d_w$.
+    \Statex Go to Step~12 and let $d = d_w$.
 \EndIf
 \State $s_0' = ds_0 = (v_2 - v_1) \pmod{u_2}$ with weight $d$.
 \State $z = z_3x^3 + z_2x^2 + z_1x + z_0 = (f - v_1(v_1 + h))/(c_4u_1) \s\s\s$ (exact division).  
@@ -1900,7 +1900,7 @@ Algorithm~\ref{alg:g3explSPLIT13ADDUP2}.
     \EndIf
     \State $z = z_3x^3 + z_2x^2 + z_1x + z_0 = (f - v_1(v_1 + h))/(c_4u_1) \s\s\s$ (exact division).  
     \State $s_0' = d_ws_0 = z \pmod{u_2}$.
-    \State Go to Step~18 and let $d = d_w$.
+    \Statex Go to Step~18 and let $d = d_w$.
 \EndIf
 \State $s_0' = ds_0 = (v_2 - v_1) \pmod{u_2}$ with weight $d$.
 \State $z = z_3x^3 + z_2x^2 + z_1x + z_0 = (f - v_1(v_1 + h))/(c_4u_1) \s\s\s$ (exact division).  
@@ -2145,7 +2145,7 @@ addition with up adjustment is given in Algorithm~\ref{alg:g3explSPLIT1ADDUP}.
     \EndIf
     \State $z = z_3x^3 + z_2x^2 + z_1x + z_0 = (f - v_1(v_1 + h))/(c_4u_1) \s\s\s$ (exact division).  
     \State $s_0(d_w) = z \pmod{u_2}$.
-    \State Go to Step~10 with $d = d_w$.
+    \Statex Go to Step~10 with $d = d_w$.
 \EndIf
 \State $z = z_3x^3 + z_2x^2 + z_1x + z_0 = (f - v_1(v_1 + h))/(c_4u_1) \s\s\s$ (exact division).  
 \State $s_0 = (v_2 - v_1)/d \pmod{u_2}$.
@@ -2194,7 +2194,7 @@ up adjusts is described in Algorithm~\ref{alg:g3explSPLIT1ADDUP2}.
     \EndIf
     \State $z = z_3x^3 + z_2x^2 + z_1x + z_0 = (f - v_1(v_1 + h))/(c_4u_1) \s\s\s$ (exact division).  
     \State $s_0' = d_ws_0 = z \pmod{u_2}$.
-    \State Go to Step~10 with $d = d_w$.
+    \Statex Go to Step~10 with $d = d_w$.
 \EndIf
 \State $s_0' = ds_0 = (v_2 - v_1) \pmod{u_2}$ with weight $d$.
 \State $z = z_3x^3 + z_2x^2 + z_1x + z_0 = (f - v_1(v_1 + h))/(c_4u_1) \s\s\s$ (exact division).  
