@@ -461,3 +461,42 @@ text kept one copy inside the bogus subscript and one outside, and the code has 
 
 Two smaller faults in the same block were fixed alongside: `r_{q_01}` for `r_{q_{01}}`
 twice, and a missing `+` before `q_{q_{01}}M'_{20}` that the parallel Step~16 block has.
+
+## E-T13 — eight generated OUT rows primed the result as an input
+
+**`latexTables/split_ADD.tex`, eight `\bf{OUT:}` rows.** **Fixed.**
+
+Each row declares `$D + D' = D'' = [\ldots]$` and then wrote its coefficients
+single-primed, `u^{\prime}_1`. Single primes belong to `D'`, the second *input*, so those
+rows named the result with the notation of an operand. Now `u^{\prime\prime}`, matching
+every other generated table -- `split_DBL`, `ram_ADD`, `ram_DBL` and `ram_arb_ADD` are all
+double-primed throughout, so `split_ADD.tex` was the sole outlier.
+
+Lines 26, 45, 79, 94, 134, 153, 191 and 206. Scoped to `OUT` rows so no body formula was
+touched.
+
+**Two things in the same file are deliberately left.**
+
+`:191` and `:206` now read `[u^{\prime\prime}_1,u^{\prime\prime}_0,v_1,v_0,0]` and
+`[1,u^{\prime\prime}_0,y_1,v_0,1]` -- the `v` coefficients are *unprimed*, so they name the
+first input. That may be correct: in a degenerate case the output `v` can be the input `v`
+unchanged. Deciding needs the case, not the notation.
+
+`:253` has `[0,1,y_1,y_0,_1nn^{\prime}_1]` in the balancing-weight slot, which is a
+generation artifact. **It compiles** -- `,_1` subscripts the comma, legal and meaningless --
+so no build catches it, and the file has never been compiled anyway, being `\input`
+nowhere. What the weight should be needs the author.
+
+**A retraction belongs here.** Four `IN` rows in this file read `D' = []`, which is exactly
+the signature `ERRATA.md` **E4** describes for `latexConverter.py`'s drained `filter()`. It
+is not that bug: all four are `01ADDDWN`, `01ADDUP`, `02ADDDWN` and `02ADDUP`, degree-zero
+additions whose second divisor genuinely is the identity. E4's claim that the committed
+`.tex` is unaffected stands.
+
+**Also corrected: the recorded description of the coordinate-ordering problem.** The
+project's plan said `split_*.tex` orders coordinates low-to-high while `ram_*.tex` orders
+high-to-low. Measured, both files *mix* orderings internally -- `split_ADD` 28 ascending
+against 18 descending, `ram_ADD` 9 against 5, `ram_arb_ADD` 6 against 8. So it is not a
+disagreement between two files with a consistent convention each; no file is internally
+consistent. That is a larger problem than recorded and is folded into PR31, where these
+tables first get used and a reader would see it.
