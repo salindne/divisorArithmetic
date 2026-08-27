@@ -408,6 +408,32 @@ renumbering for this cause.
 | | `v_n = \vt \pmod{u_n}` at Step 17 | 17 |
 | `alg:g3explSPLIT3ADD` | `\vt` 6, `s'` 7, `k` 15, `M_2'` 16, `u_n` 17 | all five exact |
 
+**Checked again on the author's prompt, and the discriminating comparison is now explicit.**
+`alg:explRAM2ADD` carries two `\EndIf` and **zero** `\State` escape lines, so the escape
+hypothesis predicts no shift at all there:
+
+| prose Step | expects | counting `\EndIf` | suppressing it |
+|---|---|---|---|
+| 13 | monic `s''` / weights | `\EndIf` | `Compute monic $s''$` |
+| 16 | `u_n = (s''(\vt - v_1/s_1) + k/s_1^2)/u_2` | `k = (f - v_1(v_1+h))/u_1` | the `u_n` line |
+| 17 | `v_n = \vt \pmod{u_n}` | `\vt = -su_1 - v_1 - h` | the `v_n` line |
+
+Three of three suppressing, none of three counting.
+
+Broadened as well: pairing each prose `In Step~N, <description>` with the algorithm block it
+immediately follows gives **14 matches across 8 algorithms** in both chapters, among them
+`alg:explRAM1DBL`, `alg:explRAM12ADD`, `alg:explRAM1ADD`, `sub:explRAM2ADDd`,
+`alg:g3explSPLIT3DBL` and `alg:g3explSPLITpre` -- a range of sizes and structures. Pairing
+by "the block above" is what the document actually does, and it avoids the mis-pairing that
+broke three earlier automated attempts.
+
+*One harness bug found while doing this, worth recording as a method note.* A comparison of
+the two hypotheses came back identical for every algorithm, which looked like evidence they
+were indistinguishable. The regex listed `State|If|ElsIf|Else|...` without `EndIf`, and
+`\EndIf` never matches `\If` because of the leading `\\` anchor -- so both branches had
+already dropped `\EndIf` and were equal by construction. Alternation order matters: `EndIf`
+must precede `If`.
+
 **A WRONG DIAGNOSIS WAS COMMITTED FIRST AND IS REVERTED HERE.** The initial reading blamed
 `\State Go to ... Subroutine` and `\State See description below.` lines, and changed 20 of
 them to `\Statex`. That reading fit `alg:g3explSPLIT3ADD` perfectly **by coincidence**: it
