@@ -534,3 +534,34 @@ against 18 descending, `ram_ADD` 9 against 5, `ram_arb_ADD` 6 against 8. So it i
 disagreement between two files with a consistent convention each; no file is internally
 consistent. That is a larger problem than recorded and is folded into PR31, where these
 tables first get used and a reader would see it.
+
+## E-T14 — the three front-matter list references are one page low
+
+**`Thesis/frontmatter.tex`, and the published PDF carries it too.** **Recorded, not fixed.**
+
+The table of contents lists its own three front-matter entries one page below where they
+print, in the published thesis and in the rebuild alike:
+
+| entry | table of contents says | actually prints on |
+|---|---|---|
+| Table of Contents | iv | v |
+| List of Tables | viii | ix |
+| List of Algorithms | ix | x |
+
+**The cause is that each contents line is written before the page break that starts the
+list**, so it records the preceding page.  For the list of algorithms it is visible in the
+source: `frontmatter.tex:65` issues `\addcontentsline{toc}{chapter}{List of Algorithms}` on
+the line above `\listofalgorithms`, and the class comment immediately below says memoir does
+not clear the page for content lists and that `ucalgmthesis` fixes this for its own table of
+contents and lists of tables and figures but not for anything else.  `listofalgorithms` comes
+from the `algorithm` package, so it is not covered.
+
+**Not a convergence artifact, and not an artifact of the reconstruction.** Six `pdflatex`
+passes leave it unchanged with zero rerun requests, and the rebuild reproduces the defect
+exactly one page further along, claiming ix and x where it prints x and xi.  Reproducing the
+original's quirk is evidence the reconstruction is faithful.
+
+**Why it is left alone.** A `\clearpage` before the `\addcontentsline` corrects the list of
+algorithms entry only.  The other two are written by the class rather than by these sources,
+so a one-line fix would leave two of three wrong while changing the front matter.  Wants the
+author's call.
