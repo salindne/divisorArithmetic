@@ -382,56 +382,64 @@ figures by execution and a hand count of the changed region reproduces the same
 pins for `33ADD n=0,0` and `3DBL n=0` are updated with the reason recorded
 inline, and every other pinned cell still matches its published value.
 
-## E-T11 — twenty cross-reference lines were numbered as algorithm steps
+## E-T11 — `\EndIf` lines were numbered, so every prose step reference drifted
 
-**`chapter5.tex` and `chapter6.tex`, 15 algorithm and subroutine blocks.** **Measured.**
+**`Thesis/thesis.tex` preamble; symptom visible throughout `chapter5.tex` and
+`chapter6.tex`.** **Fixed by one preamble line.**
 
 **Reported by the author**: the description of *Genus 3 Split Model Degree 3 Addition*
-"ends up being 3 lines off". It does, and the prose was never wrong -- the algorithm
-over-numbers.
+"ends up being 3 lines off", and separately that a formula attributed to Steps 14--16
+looked like Step 18.
 
-`\State Go to ... Subroutine~\ref{...}` and `\State See description below.` are
-cross-references, not computational steps, but `\State` numbers them. Each one shifts
-every later step by one. `alg:g3explSPLIT3ADD` and `alg:g3explSPLIT3DBL` carry three
-each, which is exactly the reported drift.
+**Cause.** `algorithmic[1]` numbers `\EndIf` lines. The prose never counted them as steps.
+Each `\EndIf` therefore shifts every later reference by one, and the drift grows down each
+algorithm. `alg:g3explSPLIT3ADD` has three, which is exactly the reported figure.
 
-**The prose numbering is the correct one.** Counting every line except those three
-reproduces the text's claims for `alg:g3explSPLIT3ADD` exactly:
+**Fix:** `\algtext*{EndIf}` in the preamble, which removes those lines from the output
+entirely. The prose numbering was correct as written; nothing in either chapter needed
+renumbering for this cause.
 
-| line | prose says |
-|---|---|
-| `\vt = v_2 - v_1` | Step 6 |
-| `s' = \vt t \pmod{u_2}` | Step 7 |
-| `k = (f - v_1(v_1 + h)/u_1)` | Step 15 |
-| `M_2' = (r(v_2 + v_1 + h) + qk)/u_2` | Step 16 |
-| `u_n = r(q(v_2 - v_1) + u_1r)/(u_2c_4r_1q_1) - qM_2'/q_1` | Step 17 |
+**Verified by hand on two algorithms chosen because they discriminate:**
 
-**Fixed by making the cross-references unnumbered**, `\State` -> `\Statex` at 20 sites,
-7 in `chapter5.tex` and 13 in `chapter6.tex`. That is the cheap direction: the
-alternative was renumbering prose references across two chapters, which would also have
-enshrined "Go to Subroutine X" as a step of the computation.
-
-**Verified after the fix**: `alg:g3explSPLIT3ADD` numbers 20 steps and every claim in the
-table above lands on the right line. Across both chapters, all 51 explicitly-labelled
-`Step~N of Algorithm~\ref{...}` references now resolve to a step that exists, up from 49.
-
-**The two `Step~0` passages are now 1-based too**, the author having decided that the
-thesis numbers from 1 as `algorithmicx` prints. `algorithmicx` never emits a step 0, and
-in both cited algorithms the "Step 0" content -- a negative reduced normalisation of `v_1`
--- is genuinely step 1.
-
-Each boundary was verified against content rather than shifted blindly, which mattered:
-the offset is not uniform. For `alg:explSPLIT12ADDUP`,
-
-| prose was | now | why |
+| algorithm | prose claim | lands on |
 |---|---|---|
-| Step 0 | 1 | `v_1 = -\Vp - h - (…)`, the normalisation |
-| Steps 1-3 | 2--4 | `d = u_1 \pmod{u_2}` and its zero test |
-| Steps 4--12 | 5--13 | begins at `z = (f - v_1(v_1 + h)/(c_3u_1)`, the `z = k/c_3` the prose names |
-| Steps 13--15 | **15--17** | `w`, `\vt`, `u_n`. Not 14--16: step 14 is a bare `\EndIf`, no part of the described computation |
+| `alg:explRAM2ADD` | weights at Steps 12--13 | 12--13 |
+| | `u_n = (s''(\vt - v_1/s_1) + k/s_1^2)/u_2` at Steps 14--16 | 14--16 |
+| | `v_n = \vt \pmod{u_n}` at Step 17 | 17 |
+| `alg:g3explSPLIT3ADD` | `\vt` 6, `s'` 7, `k` 15, `M_2'` 16, `u_n` 17 | all five exact |
 
-A uniform shift would have put the `u_n` computation outside the cited range.
+**A WRONG DIAGNOSIS WAS COMMITTED FIRST AND IS REVERTED HERE.** The initial reading blamed
+`\State Go to ... Subroutine` and `\State See description below.` lines, and changed 20 of
+them to `\Statex`. That reading fit `alg:g3explSPLIT3ADD` perfectly **by coincidence**: it
+has three such lines *and* three `\EndIf`s, so both hypotheses shift by exactly three
+there. `alg:explRAM2ADD` discriminates -- two `\EndIf`s, zero `\State` escapes -- and only
+the `\EndIf` explanation survives it. The 20 `\Statex` edits are reverted.
 
+*A hypothesis that fits one instance exactly can still be wrong, and the instance that
+looks most convincing is the one least able to discriminate.*
+
+**A second correction to the earlier commit.** With `\EndIf` counted, the offset in the
+degree 1 and 2 addition passage looked non-uniform, and its last range was rewritten as
+Steps 15--17. Under the correct numbering the offset is a uniform +1 and that range is
+**14--16**. Fixed.
+
+**Also fixed here**, resolved by the author: `chapter5.tex:643` read `\vh_1 = h_1 + v_1`
+inside a block that otherwise writes `v_{11}`, `u_{11}`, `u_{21}`. It is `v_{21}` -- the
+enclosing algorithm is `alg:explRAM2ADD`, an addition, whose XGCD takes `h + v_1 + v_2`, so
+line 645's `\vh_1 + v_{11}` is the degree-1 coefficient of that sum. A reader would guess
+`v_{11}`.
+
+**What is NOT claimed.** No global "every reference resolves" statement. Three successive
+attempts to verify that automatically were each wrong -- counting only `\State` lines (13
+steps where there are 19), missing plural `Steps~N--M` forms (51 references where there are
+87), and mis-pairing a step number with a nearby unrelated `\ref`. A trustworthy
+reference-checker is its own piece of work and is not attempted here. What is verified is
+the two algorithms above, by hand, and the cause they share.
+
+**Page count moved the wrong way and that is unexplained.** Suppressing `\EndIf` takes the
+build from 271 pages to 264 against a published 267. Numbering alignment is the stronger
+evidence -- it is exact across two algorithms with different `\EndIf` counts -- and the
+page total still carries the unresolved font option and the reconstructed title page.
 
 ## E-T12 — a spurious `r_{` swallowed two terms of the genus-3 split Degree 3 Addition u_n
 

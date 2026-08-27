@@ -640,7 +640,7 @@ The resulting formula for Steps~14--16 is
 \begin{align*}
     t_3 &= s''_0 - m_3,\\
     t_2 &= t_3- w_4 + h_2w_3,\\
-    \vh_1 &= h_1 + v_1,\\
+    \vh_1 &= h_1 + v_{21},\\
     u_{n_1} &= s_0'' + t_2,\\
     u_{n_0} &= s_0''(t_3 - m_3) + m_1 + w_3(h_2(s''_0 - u_{21}) + \vh_1 + v_{11}) + w_4(u_{11} + u_{21} - f_4),
 \end{align*}
@@ -682,7 +682,7 @@ in the following.
             \State $k = (f - v_1(v_1 + h))/u_1 \pmod{u_1}$.
             \State $a_{12} = a_1(1 - b_2(v_1 + v_2 + h))/d_{w_1} \pmod{u_2}$ with weight $m_3d_{w_3}$
             \State $s' = s_1'x + s_0' = d_{w_3}s_1x + d_{w_3}s_0 = (a_{12}(v_2 - v_1) + m_3^3k) \pmod{u_2}$, with weight $d_{w_3}$.
-            \Statex Go to Step~5 of Degree 2 Addition Algorithm~\ref{alg:explRAM2ADD}, with $d = d_{w_3}$.
+            \State Go to Step~5 of Degree 2 Addition Algorithm~\ref{alg:explRAM2ADD}, with $d = d_{w_3}$.
         \EndIf
     \EndIf
     \end{algorithmic}
@@ -796,7 +796,7 @@ the following.
     \State $k = ((f - v_1(v_1 + h))/u_1) \pmod{u_1}$.
     \State $b_2 = d_w^{-1}$.
     \State $s_0 = b_2k \pmod{u_2}$.
-    \Statex Go to Step~3 of Degree 1 and 2 Addition Algorithm~\ref{alg:explRAM12ADD}, with $d = d_w$.
+    \State Go to Step~3 of Degree 1 and 2 Addition Algorithm~\ref{alg:explRAM12ADD}, with $d = d_w$.
 \EndIf
 \end{algorithmic}
 \end{subroutine}
@@ -1884,7 +1884,7 @@ coefficient $n$ described in Section~\ref{sec:expladd}.
         \State $k = (f - v_1(v_1 + h))/u_1 \pmod{u_1}$.
         \State $a_{12} = (1 - b_2(v_1 + v_2 + h))/d_{w_1} \pmod{u_2}$ with weight $1/m_3^2$.
         \State $s' = s_1'x + s_0' = d_{w_3}s_1x + d_{w_3}s_0 = a_{12}(v_2 - v_1) + m_3^3k) \pmod{u_2}$, with weight $d_{w_3}$.
-        \Statex Go to line~5 of Degree 2 Addition Algorithm~\ref{alg:explSPLIT2ADD}, and let $d = d_{w_3}$.
+        \State Go to line~5 of Degree 2 Addition Algorithm~\ref{alg:explSPLIT2ADD}, and let $d = d_{w_3}$.
     \EndIf
 \EndIf
 \end{algorithmic}
@@ -1927,7 +1927,7 @@ the following.
 \algrule
 \State $d = u_1 \pmod{u_2}$
 \If{$d$ is 0}
-    \Statex Go to Degree 1 and 2 Addition ($d = 0$) Subroutine~\ref{sub:explSPLIT12ADDd}.
+    \State Go to Degree 1 and 2 Addition ($d = 0$) Subroutine~\ref{sub:explSPLIT12ADDd}.
 \EndIf
 \State $z = (f - v_1(v_1 + h)/(c_3u_1) \s\s\s$ (exact division).
 \State Compute $s_0' = ds_0 = (v_2 - v_1) \pmod{u_2}$.
@@ -1957,7 +1957,7 @@ the following.
 \State $v_1 = -\Vp - h - (-\Vp - h - v_1) \pmod{u_1}$.
 \State $d = u_1 \pmod{u_2}$
 \If{$d$ is 0}
-    \Statex Go to Degree 1 and 2 Addition ($d = 0$) Subroutine~\ref{sub:explSPLIT12ADDd}.
+    \State Go to Degree 1 and 2 Addition ($d = 0$) Subroutine~\ref{sub:explSPLIT12ADDd}.
 \EndIf
 \State $z = (f - v_1(v_1 + h)/(c_3u_1) \s\s\s$ (exact division).
 \State Compute $s_0' = ds_0 = (v_2 - v_1) \pmod{u_2}$.
@@ -1983,7 +1983,7 @@ Step~1 of degree 1 and 2 addition with up adjust computes a negative reduced
 normalization of $v_1$ to accommodate the up adjustment. Steps~2--4 in both
 algorithms is identical to the ramified setting. Steps~5--13, are similar to the
 ramified setting other than $z = k/c_3$ is computed via Technique~\ref{tq:8}.
-Therefore, in Steps~15--17 the computation of the required monic $u_n = (s(\vt -
+Therefore, in Steps~14--16 the computation of the required monic $u_n = (s(\vt -
 v_1) - k)/u_2$ is $u_n = ((s(\vt - v_1))/c_3 - z)/u_2$ made monic where $z = (f
 - v_1(v_1 + h)/(c_3u_1)$ and only the $x^2$ term of $z$ is computed. Note that
 the polynomial $s'$ is not computed with a weight of $1/c_3$ as in Degree 2
@@ -2016,9 +2016,9 @@ to an explicit formula is given in the following.
     \State $k = (f - v_1(v_1 + h))/u_1 \s\s\s$ (exact division).
     \State $s_0' = d_ws_0 = k \pmod{u_2}$.
     \If{$n_2 = 0$} 
-        \Statex Go to line~7 of Degree 1 and 2 Addition with Up Adjust Algorithm~\ref{alg:explSPLIT12ADDUP} and let $d = d_w$.
+        \State Go to line~7 of Degree 1 and 2 Addition with Up Adjust Algorithm~\ref{alg:explSPLIT12ADDUP} and let $d = d_w$.
     \Else 
-        \Statex Go to line~6 of Degree 1 and 2 Addition Algorithm~\ref{alg:explSPLIT12ADD} and let $d = d_w$.
+        \State Go to line~6 of Degree 1 and 2 Addition Algorithm~\ref{alg:explSPLIT12ADD} and let $d = d_w$.
     \EndIf
 \EndIf
 \end{algorithmic}
