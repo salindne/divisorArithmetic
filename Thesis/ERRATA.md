@@ -22,8 +22,13 @@ that is stated plainly rather than left to the reader to assume.
 | | |
 |---|---|
 | files differing | **3** (`chapter4.tex`, `chapter5.tex`, `chapter6.tex`) |
-| entries | **9** (E-T1 … E-T9) |
+| files present only here | **2** (`thesis.tex`, the reconstructed master; `ERRATA.md`, this file) |
+| entries | **14** (E-T1 … E-T14) |
 | published state | commit `399c817` |
+
+`thesis.tex` is not a divergence in the sense the rest of this file records: it was never in
+the published sources at all, which is why the thesis could not be rebuilt from either tree.
+It is reconstructed, and `Thesis/README.md` states what in it is inferred.
 
 ---
 
@@ -580,18 +585,25 @@ attempted, and three is that algorithm's `\EndIf` count.  Seven anchors do not l
 stated numbers by coincidence, and the first row is the useful one for a different reason:
 it is off by **two**, not three, so it rules out a constant offset from any other cause.
 
-**One typo found by the same numbering, and corrected.** `chapter6.tex:1257` introduced the
-`3ADD` `u_n` block as "The explicit formula for Step~15 is", where step 15 of that algorithm
-is `k`.  The sentence immediately above says "In Step~17, the output polynomial
-$u_n = rM_1 - qM_2$ ... is directly computed monic", and the parallel block above that reads
-"In Step~16 ... The explicit formula for Step~16 is", so the label is Step~17.  Present at
-`ThesisPublished/chapter6.tex:1257` as well, so it is not an artifact of this branch.
+**Two mislabelled formula blocks found by the same numbering, both corrected.** Each is a
+paragraph that names a step in prose and then labels its own `align*` block with a different
+one.  Both are present in `ThesisPublished/chapter6.tex` at the same positions, so neither is
+an artifact of this branch.
 
-**The identical string 736 lines earlier is CORRECT and was deliberately not touched.**
-`chapter6.tex:521` also reads "The explicit formula for Step~15 is", but that passage belongs
-to `3DBL`, whose step 15 really is `M_2'`.  Two occurrences of one string, one right and one
-wrong, is exactly the case a blind substitution ruins, so the edit was anchored on the
-surrounding sentence rather than on the string.
+| where | announced in prose | block was labelled | is |
+|---|---|---|---|
+| `chapter6.tex:1235` | "In Step~15, only the degree 2 and 3 terms of `k`" | Step~14 | **15**.  The block gives `k_3` and `k_2`, and two sentences earlier the text says Step~14's formula "is identical to that used in the same steps in Degree 3 Doubling", so it is not given here at all |
+| `chapter6.tex:1257` | "In Step~17, the output polynomial `u_n = rM_1 - qM_2` ... is directly computed monic" | Step~15 | **17**.  Step 15 is `k`, and the parallel block above reads "In Step~16 ... The explicit formula for Step~16 is" |
+
+**A scan of both chapters finds no third instance.** Every other
+"The explicit formula for Step~`N`" in chapters 5 and 6 agrees with the nearest preceding
+"In Step~`N`".
+
+**The identical string 736 lines before the second one is CORRECT and was deliberately not
+touched.** `chapter6.tex:521` also reads "The explicit formula for Step~15 is", but that
+passage belongs to `3DBL`, whose step 15 really is `M_2'`.  Two occurrences of one string,
+one right and one wrong, is exactly the case a blind substitution ruins, so both edits were
+anchored on the surrounding sentence rather than on the string.
 
 **One further step reference in the same passage is left alone.** After the `u_n` block,
 "the computation of $z = (ru_1 - u_n)/q$ in Step~17 must be adjusted" names Step~17, but `z`
