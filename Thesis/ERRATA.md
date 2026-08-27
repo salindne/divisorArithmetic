@@ -449,11 +449,33 @@ degree 1 and 2 addition passage looked non-uniform, and its last range was rewri
 Steps 15--17. Under the correct numbering the offset is a uniform +1 and that range is
 **14--16**. Fixed.
 
-**Also fixed here**, resolved by the author: `chapter5.tex:643` read `\vh_1 = h_1 + v_1`
-inside a block that otherwise writes `v_{11}`, `u_{11}`, `u_{21}`. It is `v_{21}` -- the
-enclosing algorithm is `alg:explRAM2ADD`, an addition, whose XGCD takes `h + v_1 + v_2`, so
-line 645's `\vh_1 + v_{11}` is the degree-1 coefficient of that sum. A reader would guess
-`v_{11}`.
+**Also fixed here:** `chapter5.tex:643` read `\vh_1 = h_1 + v_1` inside a block that
+otherwise writes `v_{11}`, `u_{11}`, `u_{21}`.  It is **`v_{11}`**, the first divisor.
+
+**This entry first said `v_{21}` and that was wrong.** The reasoning was that the enclosing
+`alg:explRAM2ADD` is an addition whose XGCD takes `h + v_1 + v_2`, so the second divisor must
+appear; and the code idiom `vh1 := h1 + vp1` was cited in support.  Both halves fail.  That
+idiom is from `Deg12ADD` (`arb_ramifiedG2_ADD.mag:134,181`), a *different* function, where the
+primed group is the degree-2 divisor.  The function this passage describes is `Deg2ADD`, whose
+signature is `Deg2ADD(u1,u0,v1,v0,up1,up0,vp1,vp0,...)` with the unprimed group first, and
+whose corresponding lines read
+
+    t4   := h1 + v1;
+    upp0 := spp0*(t3 - m3) + m1 + w3*(h2*(spp0 - up1) + t4 + v1) + w4*(u1 + up1 - f4);
+
+at `:449` and `:451`, repeated verbatim at `:410` and `:412` in branch `ADD09`.  So `\vh_1`
+is `h_1 + v_1` **unprimed**, and the thesis block's `\vh_1 + v_{11}` is `t4 + v1`, that is
+`h_1 + 2v_{11}`.
+
+**And the passage says so two lines above the block.** It states the polynomial being computed
+as `u_n' = (s(-su_1 - 2v_1 - h) + k)/u_2`, whose `2v_1 + h` has degree-1 coefficient
+`h_1 + 2v_{11}`.  `v_2` enters this step only through `s` and `k`, never as a bare
+coefficient, so no `v_{2i}` belongs in the block at all.  The XGCD's `h + v_1 + v_2` is a
+different step.
+
+**The lesson is the one this project keeps relearning: a code idiom is evidence only from the
+function under discussion.** The generalisation from `Deg12ADD` to `Deg2ADD` was never
+checked, and the reading it overrode -- the one a reader would naturally guess -- was correct.
 
 **What is NOT claimed.** No global "every reference resolves" statement. Three successive
 attempts to verify that automatically were each wrong -- counting only `\State` lines (13
