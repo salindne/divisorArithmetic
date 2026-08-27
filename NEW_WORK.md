@@ -3253,3 +3253,74 @@ caught before they were published** — each traceable to a specific, nameable f
 generalising an idiom across functions, mistaking arity for convention, fixing the near half of a
 two-ended defect, trusting a source count over a rendering, and accepting a hypothesis that fitted one
 case by coincidence.
+
+## N36 — A record that was wrong for years because nothing read it against what it described
+
+**Status** — established, PR34. **Where** — `g2/timings/`, `g3/timings/`,
+`verification/driver.py`, `verification/README.md`, `ERRATA.md` E7 and E25,
+`Thesis/ERRATA.md` E-T15 and E-T16, `Thesis/chapter5.tex`, `Thesis/chapter6.tex`.
+
+**What was there.** `g2/timings/` and `g3/timings/` hold copies of the genus-2 ramified,
+genus-2 split and genus-3 split formulas, and the published timing figures were produced from
+them.  A comment in `verification/driver.py`, duplicated in `verification/README.md` and
+reserved as erratum E7, described them as a divergent generation in which "every body differs",
+citing a different `ccs` layout, opposite signs on some terms, and a dependency the canonical
+tree lacked.  On that basis the trees were excluded from every gate, and E7 was held open for
+weeks as a live question about whether the published timings measured the formulas of record.
+
+**What changed.** All three specific claims are false, and false the same way: **they compare
+the genus-2 timings split files against `negReduced`.** That tree is `posReduced`, where
+`ccs[2][3]` and `dw := v0+vp0-u0*f4-upp0*upp1` are byte-identical to it, and where
+`nch2_splitG2_UTL.mag` — the "missing" dependency, which is in fact a stale doc comment rather
+than a load — is shipped.  `ccs[1][3][1]` and the `+` signs are `negReduced`'s, which is the
+*basis*, and a basis is supposed to differ in sign.
+
+Two more: the scope sentence said "the split formulas" while the filter it justifies excludes
+ramified files too, and "same function names" holds only at genus-2 split — genus-2 ramified has
+zero overlap, every name `_RAM`-suffixed, and genus 3 differs by exactly PR10's `Deg22ADD`
+rename, which this tree never received *because it is excluded from every gate*.
+
+**And the polarity was backwards.** The timings trees are the **frozen 2020 original**; the
+canonical tree is what moved, by dated post-publication improvements.  E7 called the frozen copy
+the divergence.
+
+**Why it is right.** The tell that would have caught it at any point is that the "missing"
+filename appears in `posReduced`'s addition file as well as the timings one.  Beyond that: an
+arithmetic operator census per shared function is identical in 22 of 24 genus-3 split additions
+and 8 of 11 genus-2 split additions against `posReduced`, the survivors differing by single
+operations; against `negReduced` **none** match and the up/down adjustment pairs are *swapped*,
+which is what opposite adjustment senses look like.  Two other artifacts in the repository
+already said `posReduced` was the genus-2 basis of record, so the file contradicted its own
+siblings.
+
+**Evidence, with its limits stated.** No differential was run under the gates, so the trees are
+*indicated* to compute the same group law, not shown to; doing that needs an opt-in reach and an
+adapter for the packed-tuple interface, deliberately left to separate work.  The census leaves
+**14 of 82 functions uncovered** — 10 dispatchers, 3 `Precompute`s, 1 curve generator — and the
+dispatchers are exactly where operand order and the equal-divisor route live.  A negative finding
+on that evidence is tolerable where a positive claim would not be, and E7 says so.
+
+**One difference no instrument could see.** The timings copy of `nch2_ramifiedG2_ADD` tests only
+`dw21` where canonical tests `IsZero(dw20) and IsZero(dw21)`, so its return condition is *wider*:
+on `dw21 = 0, dw20 ≠ 0` it returns the identity where canonical raises.  A silent wrong value
+against a loud crash, neither correct.  **A widened `and` adds no operator, moves no count and
+changes no fingerprint**, so every census, count and differential in this work is structurally
+blind to it; it was found by reading the two guards side by side.
+
+**A separate published erratum, found by recomputing rather than by reading.**
+`chapter5.tex:2669-2671` said split arithmetic is "about 20% slower" than ramified at genus 2.
+From the repository's own committed raw, addition runs 22% to 38% and doubling 28% to 53% over 4
+to 1024 bits: "about 20%" holds at one cell of eighteen.  Doubling is worse than addition at nine
+of ten field sizes, and addition's penalty peaks at 32 bits then falls monotonically — the
+signature of a fixed overhead being amortised, which a constant percentage asserts the opposite
+of.  Corrected to both ranges.  Also corrected: both chapters described the experiment as "series
+of thousands" of operations where the schedule runs from 500,000 steps down to 45,000, five
+trials each.
+
+**For the paper.** The interesting result is not that E7 was wrong but *how it stayed wrong*: it
+was a comparison against the wrong sibling, written into a code comment, which then justified
+excluding the very files that would have exposed it.  The exclusion made the record unfalsifiable
+and simultaneously froze the tree it described, which is why a two-year-old rename is the clearest
+evidence of what the tree is.  **A record that justifies not looking at its subject cannot decay
+gracefully.**  The companion finding is the opposite shape and equally cheap: a published
+performance claim contradicted by data committed alongside it, which nobody had recomputed.
