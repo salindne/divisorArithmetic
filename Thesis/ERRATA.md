@@ -266,19 +266,59 @@ not run at all in its committed state, for reasons unrelated to counting.
 
 ---
 
-## Known defects not yet corrected
+## Defects found while reading, and where each now stands
 
-Found while reading; recorded here so they are not rediscovered. None is
-corrected in `Thesis/` yet.
+Recorded here so they are not rediscovered.  Positions are `Thesis/`, re-anchored by
+content; the published-tree numbers this table originally carried were off by up to six.
+
+| where | defect | status |
+|---|---|---|
+| `chapter6.tex:1091` | `u_2 = x^3 + u_{12}x^2 + u_{21}x + u_{20}` — the leading coefficient should be `u_{22}`; `u_{12}` belongs to `u_1`, declared in the same sentence | **corrected.** Confined to that one declaration: `u_{12}` at `:1160`, `:1162`, `:1170` and `:1239` genuinely means divisor 1 and is untouched |
+| `chapter5.tex:403-407`, carrying into `:416-417` | bare `u_1`/`u_0` where the result's `u_{n_1}`/`u_{n_0}` are meant, colliding with `u_1` = input divisor 1 | **corrected**, 11 coefficient names, 6 of them `h_2u_i`. The section is Genus 2 Ramified Degree 2 **Doubling**, implemented by `Deg2DBL`. Proved rather than argued: each block states a formula and then its factored form, and the factorisation holds only for the corrected names |
+| `chapter6.tex:1260-1261` | two malformed `r`-subscripts | **corrected**, see `E-T12` |
+| `chapter5.tex:1838` | unbalanced parenthesis: `-w_4(` is never closed | **corrected.** Not gate-visible: an unbalanced `(` is legal in math mode, so the build is silent on it |
+| `chapter5.tex:647` | dangling text: "where only the degree 2 coefficient `k_2 = ` of `k` is used" | **corrected** |
+| `chapter4.tex:548-550` | `alg:g3nucomp` binds `S` and then tests and divides by an undefined `S'` | **corrected, in the opposite direction to the one first attempted.** See below |
+
+### `alg:g3nucomp`'s `S'`, and why the obvious repair is the wrong half
+
+The defect is real: master and `ThesisPublished/chapter4.tex:548` assign `(S,a_2,b_2)` and
+then `:549` tests `S' \neq 1` and `:550` divides by `S'`, which is never bound.
+
+**The first repair attempted here was to rename the assignment to `(S',a_2,b_2)`, and it is
+wrong.** `:561` reads `u_n = (s(\vt - v_1) + kS)/u_2`, and that factor must be the **second**
+gcd, because `k` was formed at `:545` from the *undivided* `u_1`.  Renaming the assignment
+leaves `kS` denoting `\gcd(u_1,u_2)`, turning an unbound symbol into a formula that is wrong
+whenever the two gcds differ.
+
+**The implementations settle it, and they use the overwrite convention the published text
+already had.** `g2/splitModel/posReduced/reduced_basis_arithmetic.mag:147-153` reads
+`S,a1,b1 := XGCD(u1,u2)` then `S,a2,b2 := XGCD(S,v2 + t1)` then
+`if not IsOne(S) then u1 := ExactQuotient(u1,S)`: `S` is overwritten in place, so the test,
+the divisions and every later `S` mean the second gcd.  The genus-3 ramified additions scale
+`k` by exactly that quantity — `k := k*S1` at nine live sites across `arb`, `nch2` and `ch2`,
+with `S1 := dw2*b2` the second gcd — and omit the multiplier entirely on the branch where the
+second gcd is 1.
+
+**So the repair is `S' \to S` at `:549` and `:550`**, which is what is applied.  It is also
+the only repair that is well defined on every path without adding a step: under `S'` naming,
+`S = 1` at the outer test leaves `S'` unassigned, so a downstream `kS'` would itself be
+unbound.  Chapter 3's parents avoid that by carrying an explicit `S = S'`
+(`chapter3.tex:1117`, `:1262`); the genus-3 specialisations dropped it, and adding it back
+would renumber steps that `chapter6.tex:1090` references.
+
+**Two related defects are recorded and NOT corrected, because both need the author.**
+`alg:g3balnucomp` has the same split convention unfixed on its downstream side: it assigns
+and tests `S'` but then uses `\deg(S)` and `kS`.  And `alg:g2balnucomp` assigns and tests
+`S'` while dividing by `S` and using `\deg(S)`.  So the four NUCOMP algorithms carry three
+different mixtures of the two conventions, and `alg:g2nucomp` is the only one that is
+internally consistent as printed.  Choosing one convention across all four is an editorial
+decision, not a typo fix.
+
+### Still open
 
 | where | defect |
 |---|---|
-| `chapter6.tex:1091` | `u_2 = x^3 + u_{12}x^2 + u_{21}x + u_{20}` — the leading coefficient should be `u_{22}`; `u_{12}` belongs to `u_1`, declared the line above |
-| `chapter5.tex:397-401` | bare `u_1`/`u_0` used where `u_{n_1}`/`u_{n_0}` are meant, colliding with `u_1` = input divisor 1; carries into `:410-411` |
-| `chapter6.tex:1260-1261` | malformed subscripts, `r_{\vt_2 + r_{q_{11}}t_7 + r_{q_01}}` — an expression inside a subscript and a missing brace pair. The parallel block at `:530-532` is clean |
-| `chapter5.tex:1831` | unbalanced parenthesis: `-w_4(` is never closed |
-| `chapter5.tex:643` | dangling text: "where only the degree 2 coefficient `k_2 = ` of `k` is used" |
-| `chapter4.tex:545` vs `:547` | `alg:g3nucomp` assigns `(S,a_2,b_2)` then tests `S' \neq 1`; `S'` is never defined. `alg:g3balnucomp:651` gets this right |
 | `chapter5.tex`, char-2 subsection | the `f₄ = f₃ = f₂ = 0` assumption stated beside `tab:ramfcosts` is **not exploited by the counts**. Those counts are generated from the implementation, which computes `k0 := f2 + …` rather than dropping the term — verified by matching the code's additions, squarings and inversions against the published Degree-2 doubling row exactly (25A, 4S, 1I). So the assumption is real but unused, and a genuinely `f₂`-free derivation would count fewer additions. Being resolved in the implementation's favour: the formulas are being restricted to the full normal form so the assumption becomes true of the code, after which these rows need regenerating |
 | `g2/ramifiedModel/g2Formulas/ch2_*` (code, not thesis) | the assumed shape `f = x⁵ + f₂x² + f₁x + f₀` fixes `f₃ = 0`. For `deg h = 2` and `deg h = 1` that is reachable, but when `h` is **constant** `f₃` is an isomorphism invariant, so such curves cannot be brought into the shape at all. `RandomG2Char2Curve` hard-zeroes `f₃`, so the family is never generated and never flagged — a coverage gap, not a formula error |
 
@@ -559,25 +599,58 @@ text kept one copy inside the bogus subscript and one outside, and the code has 
 Two smaller faults in the same block were fixed alongside: `r_{q_01}` for `r_{q_{01}}`
 twice, and a missing `+` before `q_{q_{01}}M'_{20}` that the parallel Step~16 block has.
 
-## E-T13 — eight generated OUT rows primed the result as an input
+## E-T13 — the generated OUT label disagrees with its own coefficients, and the label is the wrong side to fix
 
-**`latexTables/split_ADD.tex`, eight `\bf{OUT:}` rows.** **Fixed.**
+**`latexTables/split_ADD.tex`, four degree-zero blocks.** **Recorded, not corrected.  An
+attempted correction was reverted.**
 
-Each row declares `$D + D' = D'' = [\ldots]$` and then wrote its coefficients
-single-primed, `u^{\prime}_1`. Single primes belong to `D'`, the second *input*, so those
-rows named the result with the notation of an operand. Now `u^{\prime\prime}`, matching
-every other generated table -- `split_DBL`, `ram_ADD`, `ram_DBL` and `ram_arb_ADD` are all
-double-primed throughout, so `split_ADD.tex` was the sole outlier.
+Each `\bf{OUT:}` row in those blocks declares `$D + D' = D'' = [\ldots]$` and then writes
+its coefficients single-primed, `u^{\prime}_1`, so the label announces `D''` and the list
+names `D'`.
 
-Lines 26, 45, 79, 94, 134, 153, 191 and 206. Scoped to `OUT` rows so no body formula was
-touched.
+**The obvious repair -- double-prime the coefficients -- was applied at lines 26, 45, 79, 94,
+134, 153, 191 and 206, and then reverted, because its premise is false and it made things
+worse.**
 
-**Two things in the same file are deliberately left.**
+**The premise fails: there is no second input in these blocks.** The `IN` rows at `:5`,
+`:62`, `:111` and `:170` every one read `$D = [\ldots], D' = []$`.  `D'` is the *empty*
+divisor, so single primes could not have collided with an operand.  Contrast `:223`, where
+`D' = [u^{\prime}_0,v^{\prime}_0]` really is a second input and the body correctly writes
+`u^{\prime\prime}_1`.
 
-`:191` and `:206` now read `[u^{\prime\prime}_1,u^{\prime\prime}_0,v_1,v_0,0]` and
-`[1,u^{\prime\prime}_0,y_1,v_0,1]` -- the `v` coefficients are *unprimed*, so they name the
-first input. That may be correct: in a degenerate case the output `v` can be the input `v`
-unchanged. Deciding needs the case, not the notation.
+**The single primes are what the source says.** The four blocks are `Deg01ADDDWN`,
+`Deg01ADDUP`, `Deg02ADDDWN` and `Deg02ADDUP`, and
+`g2/splitModel/posReduced/g2Formulas/nch2_splitG2_ADD.mag:34` declares
+`Deg01ADDDWN:= function(u0,v0,ccs)` with **no primed parameter** -- the second operand is
+implicit -- so `up*`/`vp*` are free to name the result, and the function returns
+`1,up1,up0,vp1,vp0,0`.  Prime count in the `.tex` is a mechanical transcription of the Magma
+identifier, one `\prime` per `p`.  Where a function does take a primed operand,
+`Deg1ADD:= function(u0,v0,up0,vp0,ccs)`, its result is `upp*`/`vpp*` and the table is
+double-primed.  **Prime depth tracks arity, not the file.**
+
+**So the edit introduced a real inconsistency.** The bodies of those four blocks define only
+`u^{\prime}_*` and `v^{\prime}_*`; after double-priming, each OUT row named quantities defined
+nowhere in its own block and nowhere in the Magma.  Four self-consistent tables became four
+inconsistent ones.  It also hand-edited generator output, so re-running the generator would
+have silently reverted all eight lines.
+
+**Which side is actually off:** `latexTables/latexConverter.py:479` and `:561` append the
+prefix `$D + D' = D'' = ` for every addition block regardless of arity, while the coefficient
+list is transcribed from the source.  The tension is in the hardcoded label.  The defensible
+repairs are to make that prefix arity-aware, or to rename in the Magma source and regenerate.
+Both belong with the generator work, not here.
+
+**The claim that `split_ADD.tex` was the sole outlier is also withdrawn.** `split_DBL`,
+`ram_ADD`, `ram_DBL` and `ram_arb_ADD` carry no double-primed OUT rows by convention; they
+carry them because their sources name outputs `upp*`/`vpp*`.  None of them contains a
+degree-zero `D' = []` block, so they were never a comparison class.
+
+**One thing in the same file is deliberately left, and is now positively confirmed correct.**
+`:191` and `:206` write unprimed `v` coefficients.  That is right: `Deg02ADDUP` returns
+`1,up1,up0,-v1,-v0,0` and `0,1,up0,y1,-v0,1`, so those `v` values are the negated *inputs*,
+and the table body reassigns `v_1`, `v_0` in place at `:176-177`.  Separately, the generator
+drops the negation sign there, which is a pre-existing generator fault rather than a
+notation question.
 
 `:253` has `[0,1,y_1,y_0,_1nn^{\prime}_1]` in the balancing-weight slot, which is a
 generation artifact. **It compiles** -- `,_1` subscripts the comma, legal and meaningless --
