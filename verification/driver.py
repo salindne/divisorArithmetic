@@ -75,10 +75,24 @@ class Family(object):
 
     @property
     def basis(self):
-        """"pos" or "neg" for a split family; None for a ramified one."""
+        """"pos" or "neg" for a split family; None for a ramified one.
+
+        A split model that is neither raises rather than returning None, because
+        None reaches `curves.split_basis`, which treats anything that is not
+        "pos" as "neg" -- so an unrecognised split family would be tested
+        against the wrong basis and pass or fail for the wrong reason.
+        ERRATA.md E7.
+        """
         if self.model == "splitpos":
             return "pos"
-        return "neg" if self.model == "splitneg" else None
+        if self.model == "splitneg":
+            return "neg"
+        if self.model.startswith("split"):
+            raise ValueError(
+                "split family %r has no known reduced basis; expected model "
+                "'splitpos' or 'splitneg'. Returning None here would silently "
+                "select the negative basis in curves.split_basis." % (self.name,))
+        return None
 
     @property
     def name(self):
@@ -140,7 +154,22 @@ def discover_families(root=ROOT):
             elif "negReduced" in dirpath:
                 basis = "neg"
             key = (model + basis, genus, kind)
-            seen.setdefault(key, {})[op] = os.path.join(dirpath, fn)
+            path = os.path.join(dirpath, fn)
+            bucket = seen.setdefault(key, {})
+            # Two files keying to one slot is silent data loss: the second wins,
+            # and which one that is depends on os.walk order, so the family
+            # tested is filesystem-dependent. It cannot happen today -- the
+            # timings tree is excluded above and no two canonical files collide
+            # -- but the failure mode is invisible, so it is made loud rather
+            # than left to be discovered. ERRATA.md E7.
+            if op in bucket:
+                raise RuntimeError(
+                    "two files claim family %r operation %s:\n"
+                    "    %s\n    %s\n"
+                    "Keys are (model+basis, genus, kind). A collision means one "
+                    "file silently replaces the other, decided by directory "
+                    "traversal order." % (key, op, bucket[op], path))
+            bucket[op] = path
     for (model, genus, kind), ops in sorted(seen.items()):
         add = ops.get("ADD")
         utl = None
@@ -214,7 +243,8 @@ def read_support(path, op):
     out = {}
     for v in ("f", "h"):
         out[v] = {int(i) for i in
-                  re.findall(r"Coeff\(\s*%s\s*,\s*(\d+)\s*\)" % v, body)}
+                  re.findall(r"(?<![A-Za-z])Coeff(?:icient)?\(\s*%s\s*,\s*(\d+)\s*\)" % v,
+                              body)}
     return out
 
 
@@ -689,7 +719,7 @@ def _dead_reads(path):
         return set()
     nc = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", m.group(2), flags=re.S))
     dead = set()
-    for mm in re.finditer(r"\b([fh])(\d+)\s*:=\s*Coeff\(", nc):
+    for mm in re.finditer(r"\b([fh])(\d+)\s*:=\s*Coeff(?:icient)?\(", nc):
         name = mm.group(1) + mm.group(2)
         if len(re.findall(r"\b%s\b" % name, nc)) <= 1:
             dead.add(name)
@@ -815,7 +845,8 @@ def split_spec(fam, families=()):
                                       for kv in sorted(out["declared"].items())))
     nc = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", "", body, flags=re.S))
     out["reads"] = {(a, int(b)) for a, b in
-                    re.findall(r"Coeff\(\s*([fh])\s*,\s*(\d+)\s*\)", nc)}
+                    re.findall(r"(?<![A-Za-z])Coeff(?:icient)?\(\s*([fh])\s*,\s*(\d+)\s*\)",
+                                nc)}
     fac = re.search(r"Factorization\(([^)]*)\)", nc)
     if fac is None:
         out["y"] = 1

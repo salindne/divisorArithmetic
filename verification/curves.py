@@ -1041,6 +1041,14 @@ def split_basis(curve, basis):
     Raises ArithmeticError, via compute_vp, for a curve whose places at infinity
     are conjugate or coincide -- neither is a split curve over its own field.
     """
+    if basis not in ("pos", "neg"):
+        raise ValueError(
+            "basis must be 'pos' or 'neg', got %r. Anything else used to fall "
+            "through to the negative basis silently, so an unrecognised value "
+            "produced a curve tested against the wrong basis. Checked before "
+            "the curve is touched, so the error names the real fault rather "
+            "than surfacing as something else downstream. ERRATA.md E7."
+            % (basis,))
     vp = cantor.compute_vp(curve)
     return vp if basis == "pos" else cantor.compute_vn(curve, vp)
 
