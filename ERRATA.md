@@ -33,9 +33,45 @@ validity of both divisors gives `(vp − v)(v + vp + h) ≡ 0 (mod u)`, and when
 it is a unit mod `u`, forcing `vp = v` -- and the ADD dispatchers now route that case to `DBL` before any
 `Deg*` branch runs. The narrow guard inside `Deg2ADD` is unchanged and still divides by zero if called
 directly with these coefficients; `verification/selftest.py`'s errata section asserts both halves on
-every run (the dispatcher returns the reference double, the direct call still raises). Whether any
-`D1 ≠ D2` input can reach the guard is not proven impossible, only never observed -- 13,008 differential
-operations found none -- so the entry stays, demoted from live to latent.
+every run (the dispatcher returns the reference double, the direct call still raises).
+
+**PROVED UNREACHABLE 2026-08-28.** This entry previously said only that no `D1 ≠ D2` input had been
+observed to reach the guard -- "not proven impossible, only never observed, 13,008 differential
+operations found none". It is provable, in two steps, from the prologue all three files share:
+
+```
+m3 := up1 - u1;   m4 := u0 - up0;
+m1 := m4 + up1*m3;   m2 := -up0*m3;
+d  := m1*m4 - m2*m3;
+```
+
+**Step 1.** The branch needs `d = 0` *and* `m3 = 0`. With `m3 = 0` the prologue collapses to
+`m1 = m4`, `m2 = 0`, so `d = m4²`; then `d = 0` forces `m4 = 0`, and `m3 = m4 = 0` is exactly
+**`u = up`**.
+
+**Step 2.** Validity of both divisors gives `u | f - v(v+h)` and `up | f - vp(vp+h)`; with `u = up`,
+subtracting gives `u | (vp - v)(vp + v + h)`. The defect case is `dw2 = (vp + v + h) mod u` being a
+**nonzero constant** -- precisely `dw21 = 0, dw20 ≠ 0` -- which is a unit mod `u`, so `u | (vp - v)`.
+Both `v` and `vp` are reduced of degree below `deg u = 2`, so `vp = v`.
+
+`u = up` together with `v = vp` is `D1 = D2`, which every dispatcher has routed to `DBL` since PR5.
+**So the guard region is dead code on its entry points.**
+
+**Checked, not just argued.** `verification/e1_reachability.py` enumerates both steps: every
+`(u, up)` quadruple with `m3 = 0` and `d = 0`, confirming `u = up` and that there are exactly `q²`
+of them; and every ordered pair of distinct valid divisors sharing a `u`, confirming none reaches
+`dw21 = 0` with `dw20 ≠ 0`. Default run, GF(3)/GF(5)/GF(7): **17,068 curves, 1,242,140 pairs, 0
+reaching the defect**, in 30 seconds. With `--full`, adding GF(11): **163,478 curves, 32,237,830
+pairs, 0**. Three orders of magnitude beyond the 13,008 this entry used to cite, and now with a
+proof rather than a sample.
+
+**Scope, stated.** The enumeration is `nch2` (`h = 0`, odd characteristic), where `dw2 = vp + v`
+needs no reduction. The `arb` and `ch2` files include the `h` terms; the argument is unchanged,
+turning only on `dw2` being a unit, but the enumeration does not cover them.
+
+**The entry stays**, demoted from live to latent, because the narrow guard is still there and still
+divides by zero if `Deg2ADD` is called directly with those coefficients. What is now settled is
+that nothing reaches it through a dispatcher.
 
 **The frozen timings copy of this function fails the other way, and worse.**
 `g2/timings/formulas/ramFormulas/nch2_ramifiedG2_ADD.mag:98-103` tests **only** `dw21` and returns the
@@ -323,14 +359,23 @@ g2/ramifiedModel/g2Formulas/nch2_ramifiedG2_ADD.mag:284       if IsZero(dw20) an
 
 The timings copy's **return condition is wider**: on `dw21 = 0, dw20 ≠ 0` it returns the identity
 where canonical falls through to `dw21^-1` and raises. A silent wrong value against a loud crash,
-and neither is right. This is **E1's** region and is cross-referenced there. A widened `and` adds no
+and neither is right. This is **E1's** region and is cross-referenced there -- and since E1's proof
+of 2026-08-28 shows that region is unreachable with `D1 ≠ D2`, **the timings copy's wider condition
+is dead code on its entry points too**, the harness routing equal divisors to `DBL` before ADD is
+called. A widened `and` adds no
 operator, moves no count and changes no fingerprint, so every instrument used above is blind to it;
 it was found by reading the two guards side by side.
 
-### Three latent `driver.py` defects, recorded not fixed
+### Three latent `driver.py` defects — FIXED 2026-08-28
 
-They fire only if the timings tree becomes discoverable, which nothing currently does. The first is
-a real bug today regardless, and whoever attempts the reach must fix it first.
+**Recorded here first, then fixed.** They fire only if the timings tree becomes discoverable, which
+nothing currently does, so all three were latent — including the first, which an earlier draft of
+this entry and the PR #43 body both called "a real bug today". It is not: the timings exclusion runs
+*before* the key is built, and no two canonical files collide, so it cannot fire. **Corrected.**
+
+Each is now loud rather than silent, and `verification/selftest.py`'s `silent_widening` section
+exercises both halves of each — the repository must be clean, and the guard must fire when removed.
+Verified by removing them one at a time.
 
 1. **`driver.py:125-126` is last-writer-wins on a colliding key.** The key is
    `(model + basis, genus, kind)` with `basis` empty unless the path contains `posReduced` or
