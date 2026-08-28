@@ -349,7 +349,14 @@ decision, not a typo fix.
 | `chapter5.tex`, char-2 subsection | the `f₄ = f₃ = f₂ = 0` assumption stated beside `tab:ramfcosts` is **not exploited by the counts**. Those counts are generated from the implementation, which computes `k0 := f2 + …` rather than dropping the term — verified by matching the code's additions, squarings and inversions against the published Degree-2 doubling row exactly (25A, 4S, 1I). So the assumption is real but unused, and a genuinely `f₂`-free derivation would count fewer additions. Being resolved in the implementation's favour: the formulas are being restricted to the full normal form so the assumption becomes true of the code, after which these rows need regenerating |
 | `g2/ramifiedModel/g2Formulas/ch2_*` (code, not thesis) | the assumed shape `f = x⁵ + f₂x² + f₁x + f₀` fixes `f₃ = 0`. For `deg h = 2` and `deg h = 1` that is reachable, but when `h` is **constant** `f₃` is an isomorphism invariant, so such curves cannot be brought into the shape at all. `RandomG2Char2Curve` hard-zeroes `f₃`, so the family is never generated and never flagged — a coverage gap, not a formula error |
 
-## A notation inconsistency to resolve before the appendix is filled
+## A notation inconsistency that no longer needs resolving
+
+**Superseded 2026-08-28: the appendix is not being filled.** PR31 is declined, so the generated
+tables stay un-`\input` and the two conventions never meet in one document. The analysis below is
+kept because it is the clearest statement of what the two notations mean and why they differ, and
+because anyone who later fills the appendix inherits the problem exactly as described.
+
+The original heading was "A notation inconsistency to resolve before the appendix is filled".
 
 The thesis body indexes divisors numerically — `u_1`, `u_2` in, `u_n` out, with
 coefficients written by digit concatenation (`u_{11}` = divisor 1, degree 1) and
@@ -744,8 +751,11 @@ project's plan said `split_*.tex` orders coordinates low-to-high while `ram_*.te
 high-to-low. Measured, both files *mix* orderings internally -- `split_ADD` 28 ascending
 against 18 descending, `ram_ADD` 9 against 5, `ram_arb_ADD` 6 against 8. So it is not a
 disagreement between two files with a consistent convention each; no file is internally
-consistent. That is a larger problem than recorded and is folded into PR31, where these
-tables first get used and a reader would see it.
+consistent. That is a larger problem than recorded.
+
+**It will not be fixed, decided 2026-08-28.** It was folded into PR31, which is **declined** —
+the appendix stubs stay empty and the generated tables are never `\input`. So the ordering
+inconsistency is permanent and harmless: the tables it affects appear in no compiled document.
 
 ## E-T14 — the three front-matter list references are one page low
 
