@@ -3324,3 +3324,87 @@ and simultaneously froze the tree it described, which is why a two-year-old rena
 evidence of what the tree is.  **A record that justifies not looking at its subject cannot decay
 gracefully.**  The companion finding is the opposite shape and equally cheap: a published
 performance claim contradicted by data committed alongside it, which nobody had recomputed.
+
+## N37 — Closing a "not proven impossible", and three defects that failed by being quiet
+
+**Status** — established, PR44. **Where** — `ERRATA.md` E1 and E7,
+`verification/e1_reachability.py`, `verification/driver.py`, `verification/curves.py`,
+`verification/selftest.py`.
+
+**What was there.** Two kinds of loose end, left deliberately and recorded rather than fixed.
+`ERRATA.md` E1 described a guard too narrow to catch `dw21 = 0, dw20 != 0`, and said every observed
+firing had `D1 = D2` but that reaching it with distinct divisors was "not proven impossible, only
+never observed -- 13,008 differential operations found none".  And `E7` recorded three ways the
+verification harness could test the wrong thing without saying so.
+
+### The proof, and how cheap it turned out to be
+
+The branch needs `d = 0` and `m3 = 0`.  All three genus-2 ramified addition files share the
+prologue
+
+```
+m3 := up1 - u1;   m4 := u0 - up0;
+m1 := m4 + up1*m3;   m2 := -up0*m3;
+d  := m1*m4 - m2*m3;
+```
+
+so `m3 = 0` collapses it to `m1 = m4`, `m2 = 0`, hence `d = m4^2`, and `d = 0` forces `m4 = 0`.
+`m3 = m4 = 0` **is** `u = up`.  Then validity of both divisors gives `u | (vp - v)(vp + v + h)`, and
+the defect case is exactly `dw2 = (vp + v + h) mod u` being a nonzero constant -- a unit mod `u` --
+so `u | (vp - v)`, and both being reduced of degree below 2 forces `vp = v`.  `u = up` with `v = vp`
+is `D1 = D2`, intercepted by every dispatcher since PR5.
+
+**Two lines of algebra and thirty seconds of enumeration closed a question that had stood since
+PR3.**  `verification/e1_reachability.py` checks both steps rather than trusting either: every
+`(u, up)` quadruple in the branch, and every ordered pair of distinct valid divisors sharing a `u`.
+GF(3)/GF(5)/GF(7) gives 17,068 curves and 1,242,140 pairs; `--full` reaches 163,478 and 32,237,830.
+Zero hits throughout.
+
+**Worth saying plainly: the evidence was never the hard part.**  The entry already had 13,008 clean
+differential operations, and adding three orders of magnitude to that would still have been a
+sample.  What changed the status was noticing that `m3 = 0` makes the determinant a perfect square,
+which is visible in five lines of the file and had been sitting there since the formulas were
+written.
+
+### Three defects that failed by being quiet
+
+All three were **latent**, and the fix in each case is not to compute something different but to
+**refuse rather than guess**:
+
+| | it used to | it now |
+|---|---|---|
+| colliding family keys | keep the last file walked, so which family got tested depended on directory order | raise, naming both paths |
+| an unrecognised split model | return `None`, which `curves.split_basis` treats as "neg", testing the family against the wrong reduced basis | raise at both ends, and validate before touching the curve so the error names the real fault |
+| the long spelling `Coefficient(f, i)` | contribute nothing to `read_support`, silently widening the inferred domain | read it, with a lookbehind so `LeadingCoefficient(` is not mistaken for one |
+
+**A correction to our own record.** The first was called "a real bug today" in `E7` and in the #43
+pull request body.  It is not: the timings exclusion runs *before* the key is built, and no two
+canonical files collide, so it cannot fire.  Latent, like the other two.
+
+**And the section written to prove they fire had a silently skipped branch.**  The unknown-basis
+check was guarded by `hasattr(f, "_replace")`, which is False because `Family` is a plain class, so
+that third of the test never ran -- and the section still passed.  Found by removing the fix and
+watching the *wrong* assertion fail.  It is the exact failure mode the section exists to catch,
+reproduced inside the catcher.
+
+**Why it is right.** Each guard was removed in turn and the section shown to fail naming its own
+defect: the collision raise, the `Family.basis` raise, the `split_basis` raise, and the widened
+pattern.  A gate never seen to fire is not known to be a gate, and that applies to the parts of a
+gate as much as to the whole.
+
+**Evidence.** `opcount.py --json` byte-identical, md5 `2a93ffaa1e39fcbbe2bb3a1abfc878ce`, so nothing
+measured moved; `driver --strict` 13,746/13,746; whitebox PASS; dominance clean on 39 files;
+selftest 19 sections to **20**.  No `.mag` file touched anywhere in this work.
+
+**Honest limits.** The E1 enumeration is `nch2` only, where `dw2 = vp + v` needs no reduction; `arb`
+and `ch2` carry the `h` terms and are not enumerated, though the argument turns only on `dw2` being
+a unit and is unchanged.  E1 itself **stays open as latent**: the narrow guard is still there and
+still divides by zero on a direct call to `Deg2ADD`.  What is settled is that nothing reaches it
+through a dispatcher.
+
+**For the paper.** Two things.  A reachability question left open as "never observed" is often
+closed by an invariant already visible in the code -- here, that a `2x2` resultant with one entry
+zero is a perfect square -- and the cost of looking is far below the cost of the sampling that
+substitutes for it.  And a defect that makes a gate report the wrong *subject* is worse than one
+that makes it fail, because the run stays green; the corresponding fix is never a better guess, it
+is a refusal.
