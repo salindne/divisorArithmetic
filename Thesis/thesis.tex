@@ -95,7 +95,12 @@
 \include{chapter6}
 \include{chapter7}
 % \appendix
-% \include{appendix}   % empty stubs; PR31 fills these
+% \include{appendix}   % three empty stubs, deliberately left. Filling them was
+%                      % PR31, declined 2026-08-28: it exists to render LaTeX
+%                      % operation-count tables the author does not need, and
+%                      % dropping them in as they stand would put two
+%                      % contradictory coefficient notations in one document.
+%                      % See Thesis/ERRATA.md.
 \bibliographystyle{plain}
 \bibliography{mylib}
 \end{document}

@@ -515,8 +515,18 @@ outside `OPERANDS` hangs it just as surely. `g3/timings/formulas/previousBest/ra
 converter today, using Magma sequences, tuples and coercion (`[ ] < > ! ,` and bare `/`) that the tool
 never supported. So the hang is reachable by two doors and one is already open.
 
-**Affects:** any future operation-count row generated from a malformed directive. Belongs to PR9's
-repair list with E4–E6: the parser should reject empty tokens loudly.
+**Affects:** any future operation-count row generated from a malformed directive.
+
+**Nothing will be done about it, decided 2026-08-28.** This belonged to PR9's repair list with
+E4–E6, and **PR9 is declined**: the converter's remaining job was rendering LaTeX tables, and the
+author does not need them. So E4, E5's residue, E6 and E10 stand as a description of a tool that is
+**not the counter of record and is not maintained**. `verification/opcount.py` has been the counter
+since PR35 and has none of these faults — it parses each expression rather than string-matching
+declared names against source text.
+
+**The practical consequence, stated so nobody rediscovers it:** do not run `latexConverter.py`
+expecting correct counts. If a LaTeX table is ever wanted again, the honest routes are to repair
+the tool first or to emit from `opcount.py`, and the second is probably cheaper.
 
 ---
 
