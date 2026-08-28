@@ -2602,7 +2602,9 @@ Cantor and Magma's built-in arithmetic over split models, a
 Fibonacci-like sequence of divisors using $D_{i+1} = D_{i} + D_{i-1}$ was
 computed, starting from two random divisors. Similar experiments were performed
 for the doubling algorithms over ramified and split models, by computing series
-of thousands of additions of a divisor class with itself. Timings range over
+of additions of a divisor class with itself. Each chain length was scaled with
+the field size, from $500{,}000$ steps at $2$ bits down to $45{,}000$ at $1024$
+bits, and every reported timing is the mean of $5$ trials. Timings range over
 prime fields of sizes 2, 4, 8, 16, 32, 64, 128, 256, 512 and 1024 bits were
 collected. All timings were run over random hyperelliptic curves with $h=0$
 defined over prime fields, using algorithms specialized for this setting.

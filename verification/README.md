@@ -598,9 +598,14 @@ domain rather than admitting a curve the group law fails on.
   before its cases are trusted.
 
 - **`g2/timings/` and `g3/timings/` are excluded**, and named as excluded on every
-  `--list`. They hold an earlier generation of the formulas: the same function names, but
-  every body differs, with a different `ccs` layout, tuple returns and opposite signs on
-  some terms. They are not the formulas of record; see `ERRATA.md` E7.
+  `--list`. They hold the **frozen 2020 generation** of the formulas, both models,
+  repackaged for a chain-driving harness: packed-tuple dispatchers, `return <...>` tuple
+  returns where the canonical files carry `*_DEBUG` guards, and `_RAM`-suffixed names.
+  They are not the formulas of record, and half of them carry no `*_DEBUG` label at all,
+  so the coverage half of a pass would be vacuous for them. An earlier version of this
+  entry called them arithmetically divergent, citing a different `ccs` layout and
+  opposite signs; that was a comparison against the wrong genus-2 basis. Corrected in
+  `ERRATA.md` E7.
 
 - **Two `selftest.py` sections need artefacts from outside this repository** — the prior
   audit's harness and stored repros. They report as SKIP when absent, never as passing.

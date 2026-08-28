@@ -104,14 +104,30 @@ def discover_families(root=ROOT):
             m = pat.match(fn)
             if not m:
                 continue
-            # g2/timings/ and g3/timings/ hold an earlier self-contained generation
-            # of the split formulas, kept to reproduce the published timing figures.
-            # Same function names as the canonical files, but every body differs:
-            # a different `ccs` layout (ccs[2][3] against ccs[1][3][1]), Magma tuple
-            # returns instead of multi-value returns, and opposite signs on some
-            # terms. They are not the formulas of record and reference a
-            # `nch23_splitG2_UTL.mag` that the canonical tree does not have, so
-            # testing them here would report coverage of files nobody ships.
+            # g2/timings/ and g3/timings/ hold the frozen 2020 generation of these
+            # formulas -- both models, not just split -- kept because the published
+            # timing figures were produced from it. It is repackaged for a
+            # chain-driving harness rather than derived differently: packed-tuple
+            # dispatchers so a Fibonacci loop chains without repacking polynomials,
+            # `return <...>` tuple returns where the canonical files carry `*_DEBUG`
+            # guards, inline `ccs[i][j]` reads where canonical hoists them, and
+            # `_RAM`-suffixed names so several implementations load in one Magma
+            # session.
+            #
+            # This comment used to say every body differs, citing a different `ccs`
+            # layout (ccs[2][3] against ccs[1][3][1]), opposite signs, and a
+            # `nch23_splitG2_UTL.mag` the canonical tree lacks. All three were wrong,
+            # and wrong the same way: they compared the genus-2 timings SPLIT files
+            # against negReduced. That tree is posReduced, where `ccs[2][3]` and
+            # `dw := v0+vp0-u0*f4-upp0*upp1` are byte-identical to it; `ccs[1][3][1]`
+            # and the `+` signs are negReduced's, which is the basis and is supposed
+            # to differ. `nch23_splitG2_UTL.mag` is a stale doc comment shared with
+            # posReduced, not a load; the real load is `nch2_splitG2_UTL.mag`, which
+            # canonical ships in both genus-2 bases. See ERRATA.md E7.
+            #
+            # Still excluded, for the two reasons that survive: they are not the
+            # formulas of record, and half of them carry zero `*_DEBUG` labels, so the
+            # coverage half of a pass would be vacuous for them.
             # Excluded out loud rather than quietly passed over.
             if os.sep + "timings" + os.sep in dirpath + os.sep:
                 excluded.append(os.path.join(dirpath, fn))

@@ -23,7 +23,7 @@ that is stated plainly rather than left to the reader to assume.
 |---|---|
 | files differing | **3** (`chapter4.tex`, `chapter5.tex`, `chapter6.tex`) |
 | files present only here | **2** (`thesis.tex`, the reconstructed master; `ERRATA.md`, this file) |
-| entries | **14** (E-T1 … E-T14) |
+| entries | **16** (E-T1 … E-T16) |
 | published state | commit `399c817` |
 
 `thesis.tex` is not a divergence in the sense the rest of this file records: it was never in
@@ -777,3 +777,86 @@ original's quirk is evidence the reconstruction is faithful.
 algorithms entry only.  The other two are written by the class rather than by these sources,
 so a one-line fix would leave two of three wrong while changing the front matter.  Wants the
 author's call.
+
+## E-T15 — the split-against-ramified slowdown is 22 to 53 percent, not "about 20"
+
+**`chapter5.tex:2669-2671`, the final bullet of the genus-2 Empirical Analysis.** **Corrected
+against the repository's own committed data.**
+
+As published:
+
+> For Magma based implementations, split model arithmetic using balanced divisor classes is
+> about $20\%$ slower than ramified arithmetic for genus 2 curves.
+
+**Computed from `g2/timings/processing/poutg2_complete.raw`**, the raw file the published
+genus-2 plots were produced from, columns `OXAR`/`OXAS` for addition and `OXDR`/`OXDS` for
+doubling -- ours, complete, ramified against ours, complete, split:
+
+| bits | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256 | 512 | 1024 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| addition | 0.7% | 28.0% | 33.2% | 35.1% | **37.5%** | 33.4% | 31.8% | 28.0% | 24.4% | **22.2%** |
+| doubling | 40.5% | **52.8%** | 31.8% | 31.8% | 44.4% | 38.7% | 40.4% | 33.9% | 29.8% | **28.0%** |
+
+**"About 20%" holds at one cell of eighteen** from 4 bits up, and the nearest, 22.2%, is the
+1024-bit addition. Corrected to give both ranges: addition 22% to 38%, doubling 28% to 53%,
+over 4 to 1024 bits.
+
+**Three reasons to give ranges rather than a single revised figure.**
+
+1. **Doubling is consistently worse than addition** -- at nine of the ten field sizes -- and a
+   single number hides that. The split doubling carries the balancing weight through a
+   computation that has no second divisor to amortise it against.
+2. **The trend is not flat.** Addition's penalty peaks at 32 bits and falls monotonically from
+   there to 1024, which is the behaviour of a fixed overhead being amortised as field
+   arithmetic gets dearer. A constant percentage asserts the opposite.
+3. **The corrected statement is stronger for the thesis's own argument**, not weaker: split
+   arithmetic being 22% to 53% dearer than ramified is a sharper separation than "about 20%".
+
+**The 2-bit column is excluded from the range deliberately**, and this is a scoping decision
+rather than a discarded outlier. At 2 bits the addition costs are within 0.7% of each other
+while the doubling differs by 40.5%, which is what a chain dominated by interpreter overhead
+rather than field arithmetic looks like. The corrected sentence says "from 4 to 1024 bits" so
+the scope is explicit.
+
+**What this is not.** It is not an E7 consequence. Both columns come from the same tree, so the
+comparison is internally valid whatever that tree's relation to the canonical one, and the
+arithmetic difference between the trees on these shapes is at most one multiplication. The
+error is in reading the numbers, not in producing them.
+
+**Not re-measured, and deliberately so.** The figures above are the *published* raw data
+recomputed, not a fresh timing run. The published run used a 64-core Xeon 7550 in 2020, and
+`g2/timings/nch2_g2_complete.mag` cannot reproduce it as committed -- recorded in the
+repository's own `ERRATA.md` as **E25**, that script not being part of `Thesis/`. A fresh run on
+other hardware would measure a different thing and would invite exactly the absolute-timing
+comparison `chapter5.tex:2540-2544` disclaims.
+
+## E-T16 — "series of thousands" understates the chain lengths by an order of magnitude
+
+**`chapter5.tex:2566-2567` and `chapter6.tex:2604-2605`.** **Corrected.**
+
+Both Empirical Analysis sections described the doubling experiment as "computing series of
+thousands of additions of a divisor class with itself", and neither stated the trial count.
+
+The committed raw data records both, per row.  The chain length is scaled with the field size
+on an **identical schedule at both genera**, and every figure is a mean of five trials:
+
+| bits | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256 | 512 | 1024 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| chain steps | 500,000 | 380,000 | 360,000 | 360,000 | 210,000 | 190,000 | 166,500 | 135,000 | 90,000 | 45,000 |
+
+Read from the data rows of `g2/timings/processing/outg2_complete.raw` and
+`g3/timings/processing/outg3_complete.raw`, whose headers carry `# Average over:  5` and the
+generator seeds `643202358` (genus 2) and `1362920179` (genus 3).
+
+"Thousands" is true of none of these: the smallest is forty-five thousand and the largest half a
+million.  Both sentences now state the schedule and the trial count.
+
+**Why it is worth correcting rather than leaving vague.** The scaling is not incidental -- chain
+length falls by a factor of eleven as the field grows, precisely so that each data point costs
+comparable wall time.  A reader told "thousands" cannot tell that the 1024-bit points rest on a
+tenth the samples of the 2-bit ones, which is exactly what they need to know before reading a
+trend off the tails of those plots.
+
+**The seeds are stated in this entry rather than in the thesis**, on the ground that a seed is a
+reproduction detail for someone working from the repository, and the script that would consume it
+cannot reproduce the genus-2 run anyway -- see the repository's `ERRATA.md` **E25**.
