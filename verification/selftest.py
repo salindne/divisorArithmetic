@@ -2046,6 +2046,140 @@ def section_detect(rep, quick):
               100.0 * got["detectability"], got["invisible"], got["assigns"]))
 
 
+
+def section_silent_widening(rep, quick):
+    """Three ways the harness could have tested the wrong thing without saying so.
+
+    All three are recorded in `ERRATA.md` E7 and all three were LATENT when
+    found: the timings tree is excluded before any of them can fire, and no
+    canonical file trips them. They are fixed anyway, because each fails
+    *silently* -- the run stays green while the domain, the basis or the family
+    under test is not what the report claims. A gate that reports the wrong
+    subject is worse than one that fails.
+
+    Each half is exercised: the repository must be clean, and the guard must
+    fire when provoked.
+    """
+    import driver as D                                          # noqa: PLC0415
+    import curves as C                                          # noqa: PLC0415
+
+    # 1. Colliding family keys. Two files keying to one (model+basis, genus,
+    #    kind, op) slot used to be last-writer-wins, decided by os.walk order.
+    fams, _ = D.discover_families()
+    if len(fams) != 15:
+        rep.fail("silent_widening", "expected 15 families, found %d" % len(fams))
+        return
+    tmp = tempfile.mkdtemp(prefix="e7collide")
+    try:
+        # two directories, neither named posReduced/negReduced, so both key to
+        # ("ramified", 2, "nch2") -- exactly the timings-tree shape
+        for sub in ("a", "b"):
+            d = os.path.join(tmp, sub)
+            os.makedirs(d)
+            with open(os.path.join(d, "nch2_ramifiedG2_ADD.mag"), "w") as fh:
+                fh.write("// placeholder\n")
+        try:
+            D.discover_families(root=tmp)
+        except RuntimeError as exc:
+            if "two files claim family" not in str(exc):
+                rep.fail("silent_widening",
+                         "collision raised the wrong error: %s" % exc)
+                return
+        else:
+            rep.fail("silent_widening",
+                     "two files claiming one family slot did not raise")
+            return
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # 2. An unrecognised split model. `Family.basis` returned None, and
+    #    `curves.split_basis` treats anything that is not "pos" as "neg", so the
+    #    family would have been tested against the wrong reduced basis.
+    real = [f for f in fams if f.model.startswith("split")]
+    if not real:
+        rep.fail("silent_widening", "no split families to check basis on")
+        return
+    for f in real:
+        if f.basis not in ("pos", "neg"):
+            rep.fail("silent_widening",
+                     "%s reports basis %r" % (f.name, f.basis))
+            return
+    # Constructed directly. An earlier draft guarded this with
+    # hasattr(f, "_replace"), which is False because Family is a plain class,
+    # so the check was silently skipped -- the very failure mode of this section.
+    bogus = D.Family("splitweird", real[0].genus, real[0].kind,
+                     real[0].add_path, real[0].dbl_path)
+    try:
+        bogus.basis
+    except ValueError:
+        pass
+    else:
+        rep.fail("silent_widening",
+                 "an unknown split model returned %r from .basis instead of "
+                 "raising" % (bogus.basis,))
+        return
+    try:
+        C.split_basis(None, None)
+    except ValueError:
+        pass
+    except Exception:                                           # noqa: BLE001
+        rep.fail("silent_widening", "split_basis(None) raised the wrong type")
+        return
+    else:
+        rep.fail("silent_widening", "split_basis accepted basis=None")
+        return
+
+    # 3. The long spelling of coefficient extraction. `Coeff\(` was matched
+    #    literally, so a dispatcher writing `Coefficient(f, 4)` contributed
+    #    nothing to `read_support` and the inferred domain widened in silence.
+    #    Tested end to end on a real file rather than against the pattern: an
+    #    earlier selftest in this project exercised a regex object instead of
+    #    the function, so deleting the parse left it green.
+    src = os.path.join(ROOT, "g3", "ramifiedModel", "g3Formulas",
+                       "arb_ramifiedG3_ADD.mag")
+    want = D.read_support(src, "ADD")
+    if not want or not want.get("f"):
+        rep.fail("silent_widening", "read_support returned nothing for arb g3 ADD")
+        return
+    tmp2 = tempfile.mkdtemp(prefix="e7coeff")
+    try:
+        text = open(src, encoding="latin-1").read()
+        # rewrite only the short spelling, and only where it is an extraction
+        longer = re.sub(r"(?<![A-Za-z])Coeff\(", "Coefficient(", text)
+        if longer == text:
+            rep.fail("silent_widening", "no Coeff( to rewrite in the fixture")
+            return
+        alt = os.path.join(tmp2, "arb_ramifiedG3_ADD.mag")
+        with open(alt, "w", encoding="latin-1") as fh:
+            fh.write(longer)
+        got = D.read_support(alt, "ADD")
+        if got != want:
+            rep.fail("silent_widening",
+                     "the long spelling reads differently: %r against %r"
+                     % (got, want))
+            return
+        # and the widened pattern must not mistake LeadingCoefficient for one
+        stripped = re.sub(r"(?<![A-Za-z])Coeff(?:icient)?\(\s*[fh]\s*,\s*\d+\s*\)",
+                          "ZERO", longer)
+        alt2 = os.path.join(tmp2, "b_arb_ramifiedG3_ADD.mag")
+        with open(alt2, "w", encoding="latin-1") as fh:
+            fh.write(stripped)
+        leftover = D.read_support(alt2, "ADD")
+        if leftover and (leftover.get("f") or leftover.get("h")):
+            rep.fail("silent_widening",
+                     "LeadingCoefficient was read as an extraction: %r" % (leftover,))
+            return
+    finally:
+        shutil.rmtree(tmp2, ignore_errors=True)
+
+    rep.ok("silent_widening",
+           "15 families with no key collision, and a synthetic collision raises; "
+           "every split family reports pos/neg, and an unknown basis raises in "
+           "both Family.basis and curves.split_basis; both Coeff spellings are "
+           "read to the same %d indices, and LeadingCoefficient is not mistaken "
+           "for one" % (len(want["f"]) + len(want["h"])))
+
+
 SECTIONS = [
     ("fields", section_fields),
     ("parse", section_parse),
@@ -2066,6 +2200,7 @@ SECTIONS = [
     ("dominance", section_dominance),
     ("adjugate", section_adjugate),
     ("blocks", section_blocks),
+    ("silent_widening", section_silent_widening),
 ]
 
 
