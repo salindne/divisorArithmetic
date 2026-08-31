@@ -76,6 +76,7 @@ import tempfile
 import curves as C
 import driver as D
 import maginterp as M
+import projcheck as PC
 import reference as R
 from ff import GF
 from poly import Poly
@@ -957,8 +958,13 @@ def section_gate_guards(rep, quick):
     orig_decode = D.decode_divisor
 
     def fake_arity():
-        def dec(F, genus, vals):
-            gu, gv, note = orig_decode(F, genus, vals)
+        # Signature must MIRROR decode_divisor's, `coords` included. It did not,
+        # and adding that parameter made this stub raise TypeError on every call --
+        # so the section failed for a reason that had nothing to do with what it
+        # tests. A monkeypatch is a second implementation of an interface and goes
+        # stale exactly like any other.
+        def dec(F, genus, vals, coords="affine"):
+            gu, gv, note = orig_decode(F, genus, vals, coords)
             return gu, gv, note or "returned 6 values, expected 5 (injected)"
         D.decode_divisor = dec
 
@@ -2066,8 +2072,14 @@ def section_silent_widening(rep, quick):
     # 1. Colliding family keys. Two files keying to one (model+basis, genus,
     #    kind, op) slot used to be last-writer-wins, decided by os.walk order.
     fams, _ = D.discover_families()
-    if len(fams) != 15:
-        rep.fail("silent_widening", "expected 15 families, found %d" % len(fams))
+    # 16 since the first projective family landed: fifteen affine plus
+    # ramified/g3/nch2 in weighted projective coordinates. The pin is KEPT rather
+    # than relaxed -- a family appearing or vanishing unnoticed is exactly what it
+    # is for, and this PR is the reason to trust it: an unanchored exclude pattern
+    # hid the new formula from git entirely, and a count is one of the few things
+    # that would have noticed.
+    if len(fams) != 16:
+        rep.fail("silent_widening", "expected 16 families, found %d" % len(fams))
         return
     tmp = tempfile.mkdtemp(prefix="e7collide")
     try:
@@ -2173,11 +2185,265 @@ def section_silent_widening(rep, quick):
         shutil.rmtree(tmp2, ignore_errors=True)
 
     rep.ok("silent_widening",
-           "15 families with no key collision, and a synthetic collision raises; "
+           "16 families with no key collision, and a synthetic collision raises; "
            "every split family reports pos/neg, and an unknown basis raises in "
            "both Family.basis and curves.split_basis; both Coeff spellings are "
            "read to the same %d indices, and LeadingCoefficient is not mistaken "
            "for one" % (len(want["f"]) + len(want["h"])))
+
+
+
+def section_coords_declared(rep, quick):
+    """A projective return must be refused, not silently misread as affine.
+
+    THE DEFECT THIS GUARDS, and it was live on master: `decode_divisor` computed
+    `want = 2*genus + 1`, which is SEVEN at genus 3 -- exactly the arity of a
+    projective return `(U2, U1, U0, V2, V1, V0, Z)`. So a projective family's
+    output decoded with no note and no error, `Z` absorbed as `v_0`, and
+    `driver._compare`, `opcount._agrees` and `whitebox._replay_one` all compared
+    that garbage against `reference.py`.
+
+    Arity cannot tell the two apart, so the coordinate system is DECLARED and
+    guessing it is the defect rather than a conservative default.
+
+    The 8-value shape was worse: it hit the errata-E2 truncation, returned a
+    CORRECT affine divisor plus a note, and `opcount` discarded the note -- so a
+    projective family fed `Z = 1` would have been reported as measured and
+    validated while nothing had ever exercised `Z != 1`.
+    """
+    F = GF(31)
+
+    # 1. every family in the repository declares affine, so nothing is guessed
+    # Every family must DECLARE a coordinate system this decode understands, and
+    # the projective ones must be exactly the ones under a projective directory.
+    # An earlier version asserted every family was AFFINE, which was true until the
+    # first projective family landed and then failed for the best possible reason --
+    # the third fixture in this PR to encode a fact the work was about to change.
+    fams, _exc = D.discover_families()
+    if not fams:
+        rep.fail("coords_declared", "no families discovered")
+        return
+    unknown = [f.name for f in fams
+               if getattr(f, "coords", None) not in ("affine", "projective")]
+    if unknown:
+        rep.fail("coords_declared",
+                 "families declaring an unknown coordinate system: %s"
+                 % ", ".join(unknown))
+        return
+    for f in fams:
+        paths = [p for p in (f.add_path, f.dbl_path) if p]
+        under = any((os.sep + "projective" + os.sep) in p for p in paths)
+        if under != (f.coords == "projective"):
+            rep.fail("coords_declared",
+                     "%s: coords=%r but %s a projective directory"
+                     % (f.name, f.coords, "under" if under else "not under"))
+            return
+
+    # 2. the guard fires on anything that is not affine
+    seven = [F(2), F(3), F(4), F(5), F(6), F(7), F(9)]
+    try:
+        D.decode_divisor(F, 3, seven, "projective")
+        rep.fail("coords_declared",
+                 "decode_divisor accepted coords='projective' instead of refusing")
+        return
+    except ValueError:
+        pass
+
+    # 3. and the affine path is UNCHANGED -- the same seven values still decode,
+    #    which is the whole reason arity cannot be the discriminator. If this ever
+    #    starts raising, the guard has been made too broad and 13,746 comparisons
+    #    are about to change meaning.
+    u, v, note = D.decode_divisor(F, 3, seven)
+    if u is None or note is not None:
+        rep.fail("coords_declared",
+                 "the affine path stopped decoding a 7-value genus-3 return")
+        return
+
+    # 4. an arity anomaly is still REPORTED rather than swallowed
+    u2, v2, note2 = D.decode_divisor(F, 2, [F(1)] * 6)
+    if note2 is None:
+        rep.fail("coords_declared",
+                 "a 2g+2 return no longer reports an arity note (errata E2)")
+        return
+
+    rep.ok("coords_declared",
+           "%d families declare a known coordinate system and agree with their "
+           "directory; coords='projective' is refused by decode_divisor; the "
+           "affine 7-value decode is unchanged; a 2g+2 return still notes its "
+           "arity" % len(fams))
+
+
+
+def section_projcheck(rep, quick):
+    """The projective gate must see a WRONG GRADING, and must be worthless at Z=1.
+
+    `projcheck` exists because every equality in this harness is exact on the raw
+    return, and a projective representative is one point of an orbit. Its four
+    checks are normalise-then-compare, scaling invariance, chain consistency and
+    `Z = 0` classification. Two of those need a formula and are exercised when the
+    first projective file lands; the two that do not are exercised here.
+
+    THE CENTRAL DEMONSTRATION is the third case below: a wrong declared exponent
+    is INVISIBLE at `Z = 1` and caught immediately at `Z != 1`. That is not a
+    curiosity, it is the whole argument for the gate -- every frozen case and
+    every Magma generator in this repository feeds `Z = 1`, because neither the
+    extracted-case parser nor the harvested record has a `Z` slot. So a projective
+    formula tested by the existing corpus is tested only on the one input where it
+    degenerates to the affine one, and a wrong power of `Z` sails through.
+
+    It is also the reason the weight vector is DECLARED rather than derived from
+    the genus: declared, it is a falsifiable claim and this section is the test.
+    """
+    F = GF(1009)
+    W = {"u2": 2, "u1": 4, "u0": 6, "v2": 3, "v1": 5, "v0": 7}
+    NAMES = ["u2", "u1", "u0", "v2", "v1", "v0"]
+    rng = random.Random(5)
+    aff = [F(rng.randrange(1, 1009)) for _ in NAMES]
+
+    def project(Z, weights=W):
+        # 2g+2 = 8 values: the shipped shape INCLUDES the monic leading 1, and Z
+        # is appended. An earlier fixture built 7 and was therefore testing a
+        # shape nothing produces.
+        return ([F(1)] + [aff[i] * Z ** weights[n] for i, n in enumerate(NAMES)]
+                + [Z])
+
+    def recovered(vals, weights):
+        u, v, why = PC.normalise(F, 3, vals, weights)
+        if u is None:
+            return None, why
+        got = list(u.coeffs_up_to(3)[:3][::-1]) + list(v.coeffs_up_to(2)[::-1])
+        return got, None
+
+    # 1. positive control: projection round-trips at several Z
+    for Z in (F(1), F(7), F(500), F(1008)):
+        got, why = recovered(project(Z), W)
+        if got != aff:
+            rep.fail("projcheck", "normalise failed to invert projection at Z=%s (%s)"
+                     % (Z, why))
+            return
+
+    # 2. a wrong exponent is CAUGHT at Z != 1
+    bad = dict(W)
+    bad["v1"] = W["v1"] + 1
+    got, _why = recovered(project(F(7)), bad)
+    if got == aff:
+        rep.fail("projcheck",
+                 "a perturbed weight still recovered the divisor at Z=7; the gate "
+                 "cannot see a wrong grading")
+        return
+
+    # 3. THE CRUX: the same wrong exponent is INVISIBLE at Z = 1
+    got, _why = recovered(project(F(1)), bad)
+    if got != aff:
+        rep.fail("projcheck",
+                 "the Z=1 control did not reproduce the divisor under a wrong "
+                 "weight; the invisibility this gate exists for is not being "
+                 "demonstrated, so case 2 may be passing for the wrong reason")
+        return
+
+    # 3b. a DEGREE DROP: u weights shift by 2*drop, v weights do not. This is the
+    #     whole substance of the top-aligned question, and the author's decision
+    #     (2026-08-31) to keep the shipped return shape is what makes it a decode
+    #     rule rather than a change to any return statement.
+    u0a, v0a = F(41), F(802)
+    for Z in (F(1), F(11), F(777)):
+        vals = [F(0), F(0), F(1), u0a * Z ** 2, F(0), F(0), v0a * Z ** 7, Z]
+        u, v, why = PC.normalise(F, 3, vals, W)
+        if u is None or u.coeffs_up_to(1) != [u0a, F(1)] or v.coeffs_up_to(0) != [v0a]:
+            rep.fail("projcheck",
+                     "a deg-1 output did not normalise at Z=%s (%s); the u weights "
+                     "must shift by 2*drop while v stays at (2g+1)-2j" % (Z, why))
+            return
+    # and the shift must be REQUIRED, not cosmetic: weighting a dropped output as
+    # though it were full degree has to fail
+    vals = [F(0), F(0), F(1), u0a * Z ** 6, F(0), F(0), v0a * Z ** 7, Z]
+    u, _v, _why = PC.normalise(F, 3, vals, W)
+    if u is not None and u.coeffs_up_to(1) == [u0a, F(1)]:
+        rep.fail("projcheck",
+                 "a deg-1 output weighted at full-degree exponents still "
+                 "normalised; the degree shift is not being applied")
+        return
+
+    # 4. Z = 0, a non-monic lead, and a missing declaration are refused, not guessed
+    if PC.normalise(F, 3, [F(1)] * 7 + [F(0)], W)[2] is None:
+        rep.fail("projcheck", "Z = 0 was not refused")
+        return
+    if PC.normalise(F, 3, [F(3)] + [F(1)] * 6 + [F(1)], W)[2] is None:
+        rep.fail("projcheck", "a non-monic leading u coefficient was not refused")
+        return
+    if PC.normalise(F, 3, [F(1)] * 7 + [F(1)], {"u2": 2})[2] is None:
+        rep.fail("projcheck", "a missing declared weight was not refused")
+        return
+
+    # 5. the directive parser: E10's empty-token class, and a bad exponent
+    tmp = tempfile.mkdtemp(prefix="projcheck_")
+    try:
+        def banner(text):
+            q = os.path.join(tmp, "b.mag")
+            with open(q, "w") as fh:
+                fh.write(text)
+            return q
+
+        good = D.weights_declared(banner("//Weights: u2=2,u1=4,u0=6\n"))
+        if good != {"u2": 2, "u1": 4, "u0": 6}:
+            rep.fail("projcheck", "//Weights: parsed as %r" % (good,))
+            return
+        for text, what in (("//Weights: u2=2,,u0=6\n", "an empty token"),
+                           ("//Weights: u2=2,u1\n", "a token with no ="),
+                           ("//Weights: u2=x\n", "a non-integer exponent")):
+            try:
+                D.weights_declared(banner(text))
+                rep.fail("projcheck", "%s was accepted in //Weights:" % what)
+                return
+            except ValueError:
+                pass
+        # absence is not an error -- the fifteen shipped affine files declare none
+        if D.weights_declared(banner("// nothing here\n")) is not None:
+            rep.fail("projcheck", "a file with no //Weights: did not read as None")
+            return
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # 6. a gate with nothing to check must FAIL, not pass.
+    #
+    #    Tested against a SYNTHETIC empty discovery rather than the real tree. The
+    #    first version called PC.main([]) directly and asserted a nonzero exit,
+    #    which was right while no projective family existed and became WRONG the
+    #    moment C4 added one -- the section would have failed for the best possible
+    #    reason. A guard about "nothing to check" must not depend on whether there
+    #    happens to be something to check.
+    orig_discover = D.discover_families
+
+    def no_projective():
+        fams, exc = orig_discover()
+        return [f for f in fams if getattr(f, "coords", "affine") != "projective"], exc
+
+    D.discover_families = no_projective
+    try:
+        rc = PC.main([])
+    finally:
+        D.discover_families = orig_discover
+    if rc == 0:
+        rep.fail("projcheck",
+                 "projcheck exited 0 with no projective family to check; a gate "
+                 "that passes because it had nothing to do is the test_all.sh "
+                 "failure mode")
+        return
+
+    # 7. and with the real tree it must actually CHECK something, not skip through
+    rc = PC.main(["--curves", "2", "--chain", "4"])
+    if rc != 0:
+        rep.fail("projcheck", "projcheck failed on the committed tree")
+        return
+
+    rep.ok("projcheck",
+           "normalise inverts the 2g+2 shipped shape at 4 values of Z; a "
+           "perturbed weight is caught at Z!=1 and INVISIBLE at Z=1, which is why "
+           "the gate exists; a degree drop shifts the u weights by 2*drop and "
+           "leaves v alone, and full-degree exponents on a dropped output fail; "
+           "Z=0, a non-monic lead, a missing weight, an empty token, a malformed "
+           "token and a non-integer exponent are all refused; and an empty run "
+           "exits nonzero")
 
 
 SECTIONS = [
@@ -2201,6 +2467,8 @@ SECTIONS = [
     ("adjugate", section_adjugate),
     ("blocks", section_blocks),
     ("silent_widening", section_silent_widening),
+    ("coords_declared", section_coords_declared),
+    ("projcheck", section_projcheck),
 ]
 
 

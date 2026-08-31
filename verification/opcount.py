@@ -181,8 +181,18 @@ def _agrees(fam, cur, V, D1, D2, op, vals):
             want = (R.split_add(cur, D1, D2, V, pos) if op == "ADD"
                     else R.split_double(cur, D1, V, pos))
             return gu == want[0] and gv == want[1] and gn == want[3]
-        gu, gv, note = D.decode_divisor(F, fam.genus, vals)
+        gu, gv, note = D.decode_divisor(F, fam.genus, vals,
+                                        getattr(fam, "coords", "affine"))
         if gu is None:
+            return False
+        if note is not None:
+            # The note was BOUND AND NEVER READ here. An arity anomaly means the
+            # return was truncated to make it decode, so the sample says nothing
+            # about the values that were dropped -- histogramming it reports a
+            # count as validated when it was not. Dropped instead of laundered.
+            # No shipped file produces a note (E2 was fixed in PR5 and
+            # `arity_anomalies` is empty at HEAD), so this must change no figure;
+            # that invariance is the test. Surfacing it in the report is C3's job.
             return False
         want = R.add(cur, D1, D2) if op == "ADD" else R.double(cur, D1)
         return gu == want[0] and gv == want[1]
@@ -280,6 +290,17 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
                         if got and _agrees(fam, cur, None, D1, D2,
                                            "ADD", got[1]):
                             hist[_label("ADD", (i, j))][got[0]] += 1
+
+    if not hist:
+        # The guard `_count_split` has at :441 and this path did not. Without it an
+        # all-samples-dropped family returns `{}`, which is NOT None, so `main`
+        # writes `{'field': ..., 'ops': {}}`, keeps the family OUT of `skipped`,
+        # prints its header with no rows under it, and exits 0 -- reported as
+        # measured with nothing. Every route here is silent: a `build_args`
+        # KeyError swallowed by a bare `except: continue` above, or `_agrees`
+        # returning False on every sample. A projective family hits both.
+        return None, ("no sample agreed with the reference over GF(%d); nothing "
+                      "was measured" % field)
 
     out = {}
     for label, h in sorted(hist.items()):

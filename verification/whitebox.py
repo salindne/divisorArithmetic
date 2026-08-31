@@ -223,6 +223,16 @@ def family_of(tester):
     # in front of it would never match.
     name = os.path.basename(tester)
     m = re.match(r"(arb|nch2|ch2)_(ramified|split)G([23])_", name)
+    if m is None:
+        # `m.group(1)` on None is an AttributeError, and `find_testers` globs on
+        # `hite[bB]ox_tester\.mag$` -- so any tester whose name is not one of the
+        # six existing shapes IS picked up and then crashes the gate with a
+        # traceback instead of a reported failure. Raised with the name in it so
+        # the report says which file rather than which line of Python.
+        raise ValueError(
+            "tester %r does not match the <kind>_<model>G<genus>_ naming the "
+            "harness keys families on. A gate cannot report on a family it "
+            "cannot name." % name)
     kind, model, genus = m.group(1), m.group(2), int(m.group(3))
     basis = None
     if "posReduced" in tester:
@@ -947,7 +957,8 @@ def replay_harvested(res, show_all, only=None):
                 continue
             got, exp = (gu, gv, gn), (want[0], want[1], want[3])
         else:
-            gu, gv, note = D.decode_divisor(F, fam.genus, vals)
+            gu, gv, note = D.decode_divisor(F, fam.genus, vals,
+                                            getattr(fam, "coords", "affine"))
             if note:
                 ident = "harvested %s #%d %s" % (rec["family"], i, rec["op"])
                 res.arity_seen.add(ident)

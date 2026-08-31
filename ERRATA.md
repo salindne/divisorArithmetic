@@ -1278,6 +1278,32 @@ person recognises the symptom rather than debugging a phantom formula defect.
 naming a file the current work did not touch, check `git status` before believing
 it.
 
+### Amended 2026-08-31, by making the mistake again in a second way
+
+**A third form: editing the source while a gate is in flight.** `selftest` imports
+`driver` once at startup, so a run that begins before an edit executes the old
+module in memory while its own later sections read the new files from disk. A run
+reported `gate_guards: the control run already fails` for no reason connected to
+either version of the code. It was reported, then retracted.
+
+**And the concurrency form fires without any formula edit of one's own.** Two
+`selftest` runs launched minutes apart collided in `gate_guards`, one run's
+provocation corrupting the other's control. Same symptom as the 2026-08-26 case,
+same wrong first hypothesis.
+
+**One thing measured that LOWERS the severity, and it was not known in August.**
+After three overlapping runs, `git diff` on `verification/coverage_baseline.json`,
+`verification/harvested_cases.json` and every `.mag` was **empty**. The
+provocations restore correctly even when they collide. So the hazard is that
+**concurrent results are meaningless**, not that the tree is damaged -- the
+2026-08-26 lost restore was a narrower window than this entry implied. The
+practical consequence is unchanged, but a green `git status` after a collision is
+evidence the tree is fine, not evidence the run was valid.
+
+**So the rule is two rules, not one.** Run gates serially. And do not edit the
+source, tracked or otherwise, while one is running -- including the module the
+gate itself imports.
+
 ## E24: a proved saving in the split genus-3 addition that cannot yet be applied
 
 **Registered 2026-08-26, when C5 was dropped from the C4 pull request.** Not a
