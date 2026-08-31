@@ -63,11 +63,17 @@ ODD_FIELDS = (3, 5, 7, 11, 13)
 class Family(object):
     """One (model, genus, class) triple and the files implementing it."""
 
-    def __init__(self, model, genus, kind, add_path, dbl_path, utl_path=None):
+    def __init__(self, model, genus, kind, add_path, dbl_path, utl_path=None,
+                 coords="affine"):
         self.model, self.genus, self.kind = model, genus, kind
         self.add_path, self.dbl_path = add_path, dbl_path
         self.dbl_borrowed = False
         self.utl_path = utl_path
+        # The coordinate system, DECLARED rather than inferred -- a projective
+        # genus-3 return has the same arity as an affine one, so nothing
+        # downstream can detect it. `discover_families` sets this from the tree;
+        # every family in the repository today is affine. See `decode_divisor`.
+        self.coords = coords
 
     @property
     def is_split(self):
@@ -96,7 +102,24 @@ class Family(object):
 
     @property
     def name(self):
-        return "%s/g%d/%s" % (self.model, self.genus, self.kind)
+        """The family's identity as a string, INCLUDING its coordinate system.
+
+        `coords` became part of the discovery key in the projective work, so two
+        families can share (model, genus, kind) -- one affine, one projective --
+        exactly as posReduced and negReduced share a filename. Without it here,
+        `opcount`'s skip line read `['ramified/g3/nch2', 'no ADD file']` and a
+        reader could not tell WHICH nch2 genus-3 family was skipped; had the affine
+        one ever been skipped for a real reason it would have looked identical.
+
+        Same class as the basename ambiguity PR12 fixed for testers, where
+        `nch2_splitG2_whiteBox_tester.mag` existed under both split bases and a
+        failure report could not say which one failed.
+
+        Affine stays unsuffixed so no existing name, log line or CLI argument
+        moves -- fifteen of sixteen families are unaffected.
+        """
+        base = "%s/g%d/%s" % (self.model, self.genus, self.kind)
+        return base if self.coords == "affine" else "%s/%s" % (base, self.coords)
 
     def __repr__(self):
         return "<Family %s>" % self.name
@@ -153,8 +176,35 @@ def discover_families(root=ROOT):
                 basis = "pos"
             elif "negReduced" in dirpath:
                 basis = "neg"
-            key = (model + basis, genus, kind)
+            # The coordinate system is part of the family's IDENTITY, not a
+            # property of it: an affine and a projective genus-3 nch2 doubling are
+            # two different families that happen to share a filename, exactly as
+            # posReduced and negReduced do. Without this component the first
+            # projective file makes the collision guard below fire correctly and
+            # its RuntimeError escapes into driver.main, opcount.main, two
+            # whitebox entry points and four selftest sections -- one new file
+            # takes down the whole harness. Measured.
             path = os.path.join(dirpath, fn)
+            coords = "projective" if (os.sep + "projective" + os.sep) in dirpath + os.sep else "affine"
+            declared = coords_declared(path)
+            # Directory and banner must agree. Either alone is a guess; together
+            # they make a mislaid file loud. Absence means affine only OUTSIDE a
+            # projective directory, so the fifteen shipped files need no edit and
+            # a projective file cannot arrive undeclared.
+            if declared is not None and declared != coords:
+                raise RuntimeError(
+                    "%s sits in a %r directory but its banner declares "
+                    "'//Coordinates: %s'. The directory decides the family key and "
+                    "the banner decides what the return means; a disagreement means "
+                    "one of them is wrong and the harness cannot tell which."
+                    % (path, coords, declared))
+            if declared is None and coords != "affine":
+                raise RuntimeError(
+                    "%s is in a projective directory and declares no "
+                    "'//Coordinates:' line. A projective return has the same arity "
+                    "as an affine one at this genus, so nothing downstream can "
+                    "detect it -- see decode_divisor. Declare it." % path)
+            key = (model + basis, genus, kind, coords)
             bucket = seen.setdefault(key, {})
             # Two files keying to one slot is silent data loss: the second wins,
             # and which one that is depends on os.walk order, so the family
@@ -166,11 +216,11 @@ def discover_families(root=ROOT):
                 raise RuntimeError(
                     "two files claim family %r operation %s:\n"
                     "    %s\n    %s\n"
-                    "Keys are (model+basis, genus, kind). A collision means one "
+                    "Keys are (model+basis, genus, kind, coords). A collision means one "
                     "file silently replaces the other, decided by directory "
                     "traversal order." % (key, op, bucket[op], path))
             bucket[op] = path
-    for (model, genus, kind), ops in sorted(seen.items()):
+    for (model, genus, kind, coords), ops in sorted(seen.items()):
         add = ops.get("ADD")
         utl = None
         if add:
@@ -190,10 +240,10 @@ def discover_families(root=ROOT):
             # gave it a real nch2_ramifiedG3_DBL.mag. Kept because the next family
             # derived ADD-first lands in the same state -- ch2 genus-3 ramified,
             # between PR7 and PR8.
-            sib = seen.get((model, genus, "arb"), {}).get("DBL")
+            sib = seen.get((model, genus, "arb", coords), {}).get("DBL")
             if sib:
                 dbl, borrowed = sib, True
-        fam = Family(model, genus, kind, add, dbl, utl)
+        fam = Family(model, genus, kind, add, dbl, utl, coords)
         fam.dbl_borrowed = borrowed
         out.append(fam)
     return out, excluded
@@ -424,7 +474,13 @@ def family_domain(fam, families, op="ADD"):
     cons, why = domain_constraints(fam, families, op)
     if cons is None:
         return None, None, why
-    members = banner_members(fam.add_path)
+    # A family may have no ADD file. That is a legitimate state, not a defect:
+    # PR7+8 recorded that an ADD-only interval leaves a family mixed-domain, and
+    # the reverse arrived with the first projective family, which is DBL-only.
+    # `banner_members(None)` used to raise TypeError from `open(None)` deep inside
+    # `_banner_lines`, so the failure named a file-reading primitive rather than
+    # the missing operation.
+    members = banner_members(fam.add_path) if fam.add_path else set()
     # A BORROWED file's banner describes its own family, not the borrower's.
     # The case that established this, now historical: ramified/g3/nch2 has h = 0
     # and borrowed the arb DBL -- whose banner says (h3 in {0,1}). Reading that
@@ -567,7 +623,85 @@ def build_args(params, curve, D1, D2=None):
     return args
 
 
-def decode_divisor(F, genus, vals):
+# NO space between // and the keyword. `opcount._DIRECTIVE` allows one for
+# Constant/Ignore, and that is safe there because neither is a natural prose
+# heading. "Coordinates" and "Weights" ARE -- this file's own banner opens a
+# paragraph with "// Coordinates: a seventh coordinate Z carries the
+# denominator", and a permissive pattern read that as a declaration of "a".
+# The cross-check in `discover_families` caught it. So the directive form is
+# `//Coordinates:` flush against the slashes and prose is `// `.
+_COORDS_DIRECTIVE = re.compile(r"^[ \t]*//(?:Coordinates)[ \t]*:[ \t]*(\w+)", re.M)
+
+
+def coords_declared(path, head=80):
+    """The coordinate system the FILE declares, or None if it declares none.
+
+    Read from the source, on the same principle as `read_support`,
+    `banner_members` and `opcount.directives`: a table here would go on agreeing
+    with itself after someone edited a banner. The directory decides the
+    discovery KEY; this decides the meaning, and `discover_families`
+    cross-checks them so a projective file dropped in without a banner is a loud
+    contradiction rather than a silent affine misread.
+
+    Only the first `head` lines are scanned -- the directive belongs in the
+    banner, and a `//Coordinates:` mention a thousand lines down inside a
+    reference block is prose, not a declaration. Same reason `banner_members`
+    reads only the banner region.
+    """
+    with open(path) as fh:
+        text = "".join([next(fh, "") for _ in range(head)])
+    m = _COORDS_DIRECTIVE.search(text)
+    return m.group(1).lower() if m else None
+
+
+_WEIGHTS_DIRECTIVE = re.compile(r"^[ \t]*//(?:Weights)[ \t]*:[ \t]*(\S+)", re.M)
+
+
+def weights_declared(path, head=80):
+    """{name: exponent} the FILE declares for its projective grading, or None.
+
+    Format follows the house directive style -- `//Weights: u2=2,u1=4,u0=6,...`,
+    no spaces in the list, on the `//Constant:` precedent, where ERRATA.md E10
+    records that a stray empty token silently reclassifies an entire file.
+
+    DECLARED RATHER THAN DERIVED, and the reason is that a declaration is
+    FALSIFIABLE. The exponents could be computed from the genus -- for the
+    ramified model `wt(u_i) = 2(g-i)` and `wt(v_i) = (2g+1)-2i`, and that grading
+    was proved unique for genus-3 ramified. But a derived vector is a table by
+    another name: if a family ever used a different grading the derivation would
+    be silently wrong instead of loudly absent, and nothing would test it.
+    Declared, it becomes a claim, and `projcheck`'s scaling-invariance check is
+    the test of that claim -- scale the inputs by these exponents and the result
+    must scale to match. A wrong exponent fails on the first draw.
+
+    Read from the banner region only, same as `coords_declared` and for the same
+    reason.
+    """
+    with open(path) as fh:
+        text = "".join([next(fh, "") for _ in range(head)])
+    m = _WEIGHTS_DIRECTIVE.search(text)
+    if not m:
+        return None
+    out = {}
+    for tok in m.group(1).split(","):
+        if not tok:
+            raise ValueError(
+                "%s: empty token in //Weights:. A trailing or doubled comma is "
+                "the E10 defect class -- it parses and means something wrong."
+                % path)
+        if "=" not in tok:
+            raise ValueError("%s: //Weights: token %r is not name=exponent"
+                             % (path, tok))
+        name, val = tok.split("=", 1)
+        try:
+            out[name] = int(val)
+        except ValueError:
+            raise ValueError("%s: //Weights: %s has non-integer exponent %r"
+                             % (path, name, val))
+    return out
+
+
+def decode_divisor(F, genus, vals, coords="affine"):
     """(u, v) from a dispatcher's flat return, plus a note on any arity anomaly.
 
     The convention is `u_g, ..., u_0, v_{g-1}, ..., v_0`: coefficients descending,
@@ -576,7 +710,31 @@ def decode_divisor(F, genus, vals):
     errata E2. Measured: the genus-3 ramified ADD files are uniformly 7-valued, so
     the earlier "every ramified ADD" wording here overclaimed. That is returned as a note rather than raised, so a run surfaces it
     once instead of aborting on the first pair that reaches the branch.
+
+    `coords` EXISTS BECAUSE ARITY CANNOT TELL THE TWO APART. A projective genus-3
+    return is `(U2, U1, U0, V2, V1, V0, Z)` -- seven values, which is exactly
+    `2g+1` at genus 3. Measured before this parameter existed:
+    `decode_divisor(GF(31), 3, [U2,U1,U0,V2,V1,V0,Z])` returned a garbage divisor
+    with NO note and NO error, and `driver._compare`, `opcount._agrees` and
+    `whitebox._replay_one` then compared that garbage against `reference.py`. The
+    8-value shape is worse: it hits the E2 branch above, truncates to a *correct*
+    affine divisor, and returns a note -- which `opcount` used to discard, so a
+    projective family fed `Z = 1` inputs would have been reported as measured and
+    validated while nothing had ever exercised `Z != 1`.
+
+    So the coordinate system is DECLARED, never inferred. Guessing it is not a
+    conservative default, it is the defect. Projective decoding needs the family's
+    weight vector and a normalisation, which is `projcheck.py`'s job, not this
+    function's -- so it is refused here rather than approximated.
     """
+    if coords != "affine":
+        raise ValueError(
+            "decode_divisor decodes affine returns only, got coords=%r. A "
+            "projective return carries Z and must be normalised by the family's "
+            "weight vector before it means anything; at genus %d it has the same "
+            "arity as an affine one (%d values), so this function cannot detect "
+            "the difference and must not guess. Use projcheck.py."
+            % (coords, genus, 2 * genus + 1))
     want = 2 * genus + 1
     note = None
     if len(vals) == want + 1:
@@ -1387,7 +1545,7 @@ def _compare(fam, cur, fn, params, subs, res, D1, D2, op, q, mode, verbose):
         if step.startswith("PRINT:"):
             res.covered[src].add(step[6:])
 
-    gu, gv, note = decode_divisor(F, fam.genus, vals)
+    gu, gv, note = decode_divisor(F, fam.genus, vals, fam.coords)
     if note:
         res.notes["%s %s: %s" % (fam.name, op, note)] += 1
     if gu is None:

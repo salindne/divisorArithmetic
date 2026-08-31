@@ -1,0 +1,216 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner
+//
+// Description: Explicit divisor doubling in WEIGHTED PROJECTIVE coordinates for
+//              the genus-3 ramified model over fields of characteristic neither
+//              2 nor 7:
+//
+//              f(x) = x^7 + f5x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0
+//
+//              This is the same curve family as the affine
+//              g3/ramifiedModel/g3Formulas/nch2_ramifiedG3_DBL.mag, and the same
+//              family every published odd-characteristic genus-3 count assumes,
+//              so counts here are directly comparable with Fan-Wollinger-Gong's
+//              inversion-free genus-3 doubling at 107M + 10S.
+//
+// Representation: a seventh coordinate Z carries the denominator, so this file
+//              performs NO field inversion. The affine formulas spend exactly one;
+//              removing it costs 16M 6S 3C, so the trade pays when I > about 25M.
+//              A divisor is normalised once at the end of a chain, not per step,
+//              which is what a verifiable delay function wants.
+//
+// Grading:     wt(x) = 2 and wt(y) = 2g+1 = 7, from the pole orders at the single
+//              point at infinity. Everything else is forced:
+//
+//                  u_i = U_i/Z^(2(e-i))   for a monic u of degree e
+//                  v_j = V_j/Z^(7-2j)     on every branch, e-independent
+//                  f_i graded at 14-2i
+//
+//              The u exponents SHIFT with the output degree and the v exponents do
+//              not, because v == y on the support and y's weight does not depend on
+//              the divisor's degree. This grading is the unique primitive grading
+//              of the coordinates these formulas read, and it is a measured fixed
+//              point of the doubling, so a chain iterates in one coordinate system.
+//
+// Curve coefficients arrive RAW. This file carries them itself -- see the Z ladder
+//              at the top of Deg3DBL, which is where the 3C comes from -- so a
+//              caller that pre-scales them applies the carriage twice. That is
+//              correct at Z = 1 and wrong at every other Z.
+//
+// Scope:       FREQUENT PATH ONLY. Only the branch with gcd(u, 2v) = 1 and
+//              deg(s) = 2 is explicit here; DBL refuses every other input loudly
+//              rather than returning a quiet wrong answer. Completeness is the
+//              distinguishing property of the affine formulas and is not yet
+//              claimed for these.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+//Must keep next line in this format for latex conversion
+//Constant: f5,f4,f3,f2,f1,f0
+
+//Coordinates: projective
+//Weights: u2=2,u1=4,u0=6,v2=3,v1=5,v0=7,f5=4,f4=6,f3=8
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg3DBL():
+// Input: u2,u1,u0,v2,v1,v0: projective Mumford numerators of the degree-3
+//                     divisor D, each over Z at the weight declared above
+//        Z:          the shared denominator, nonzero
+//        f5,f4,f3:   curve coefficients, RAW
+//
+// Output: projective Mumford numerators upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0
+//         and the new denominator Znew, for D3 = 2*D. upp3 is the literal 1: u is
+//         monic and wt(u_3) = 0, so its numerator is 1 at every Z.
+//
+// Description: Doubles a degree-3 divisor whose gcd(u, 2v) is 1 with deg(s) = 2.
+//              Measured 69M 11S 61A 3C 0I, against 53M 5S 61A 0C 1I affine.
+///////////////////////////////////////////////////////////////////////////////
+Deg3DBL:= function(u2, u1, u0, v2, v1, v0, Z, f5, f4, f3)
+    Z2:= Z^2;
+    Z4:= Z2^2;
+    Z6:= Z4*Z2;
+    Z8:= Z4^2;
+    f5:= f5*Z4;
+    f4:= f4*Z6;
+    f3:= f3*Z8;
+    t1 := v0 + v0;
+    t4 := v1 + v1;					
+    t7 := v2 + v2;					
+	t2 := -u0*t7;
+    t5 := t1 - u1*t7;
+    t8 := t4 - u2*t7;    
+    //t3 := -u0*t8;
+    //t6 := t2 - u1*t8;
+    //t9 := t5 - u2*t8;
+
+	// Bottom row of the adjugate needs only columns 1 and 2 of T.
+	m9 := t1*t5 - t4*t2;
+	m8 := t7*t2 - t1*t8;
+	m7 := t4*t8 - t7*t5;
+
+	// Column 3 of T is x*(column 2) reduced mod u, so the remaining six
+	// adjugate entries are shifts of the bottom row with one multiplication each,
+	// not a 2x2 minor. m4 and m6 are the only two the determinant does not
+	// read, so they wait until the generic path below.
+	m5 := m9 + u2*m8;
+	m3 := -u0*m8;
+	m2 := -u0*m7;
+	m1 := m5 + u1*m7;
+    d := t1*m1 + t4*m2 + t7*m3; //Determinant of T = t1*m1 + t4*m2 + t7*m3
+	t2:= u2^2;
+	t8:= u0 + u0;
+	t9:= u1 + u1;
+	t11:= f5 + t2 - t9;			// M20's prefix below, and k2 is two additions from it
+	k2:= t11 + t2 + t2;
+	k1:= f4 - v2^2 - t8 + u2*(t9 - t11);
+	k0:= f3 + u1*(u1 + t2 - f5) + u2*(t8 - k1) - v1*t7;     // convenient precomputation
+	
+	// the two adjugate entries the determinant did not need
+	m4 := m8 + u2*m7;
+	m6 := m2 - u1*m8;
+
+	//s  := b1*k mod u;
+	// sp = s*d = M*k as a matrix-vector product. M is multiplication by
+	// q = d/(2v) mod u, so this is the same map as k*q mod u.
+    sp0 := k0*m1 + k1*m2 + k2*m3;
+    sp1 := k0*m4 + k1*m5 + k2*m6;
+    sp2 := k0*m7 + k1*m8 + k2*m9;
+
+    sq:= sp2^2;
+    D:= d*sp2;
+    dd:= d^2;
+    dD:= d*D;
+    us2:= u2*sp2;
+    Q:= us2 - sp1;
+    G:= -(us2 + sp1);
+    A0:= u1*sq - sp0*sp2 - sp1*Q;
+    B0:= u0*sq - sp0*Q;
+    u2s1:= u2*sp1;
+    H:= t11*sp2 + u2s1 + u2s1;
+    C1:= d*H + t7*A0;
+    A0sq:= A0^2;
+    sp1dD:= sp1*dD;
+    N2:= -sp1dD - sp1dD - A0sq;
+    C1d:= C1*d;
+    C1D:= C1*D;
+    ddG:= dd*G;
+    ddGQ:= ddG*Q;
+    AB:= A0*B0;
+    N1:= C1D + ddGQ - AB - AB;
+    B0sq:= B0^2;
+    N0:= C1d*Q - B0sq;
+    D2:= D^2;
+    D3:= D2*D;
+    X2:= N2 - sp1dD;
+    Nv2:= -A0*X2 + (B0 + dd)*D2 - v2*D3;
+    X1:= N1 - sp0*dD;
+    Nv1:= -A0*X1 + dD*(B0*sp1 + ddG) - v1*D3;
+    Nv0:= -A0*N0 + dD*(B0*sp0 + C1d) - v0*D3;
+
+    D4:= D2^2;
+    Upp2:= N2;
+    Upp1:= N1*D2;
+    Upp0:= N0*D4;
+    Vpp2:= Nv2;
+    Vpp1:= Nv1*D2;
+    Vpp0:= Nv0*D4;
+    Znew:= D*Z;
+    // upp3 is the literal 1, not a computed value: u is monic and wt(u_3) = 0.
+    // Returned explicitly so the shape matches the affine files, which all return
+    // u_g first -- 2g+2 values here against their 2g+1, the difference being Z.
+    return 1, Upp2, Upp1, Upp0, Vpp2, Vpp1, Vpp0, Znew;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// DBL():
+// Input: u, v: polynomial Mumford coordinates of the projective divisor
+//        Z:    its denominator
+//        f:    curve polynomial
+//
+// Output: projective Mumford coordinates upp3..upp0, vpp2..vpp0, Znew for 2*D
+//
+// Description: Dispatches to the frequent path, and REFUSES everything else. The
+//              affine dispatcher has a leaf per degree and per gcd class; this file
+//              has one. A quiet wrong answer on a degree drop is the failure this
+//              project keeps having to undo, so the guard is loud.
+///////////////////////////////////////////////////////////////////////////////
+DBL:= function(u, v, Z, f)//startIGNORE
+    if Degree(u) ne 3 then
+        // A single string literal, not a comma list: maginterp parses the house
+        // sentinel form ("THIS SHOULD NEVER HAPPEN";) and not `"x = ", expr, "y"`.
+        // The multi-value form made selftest's parse section report this file
+        // as containing an unparsed statement, which is a gate refusing to read
+        // the file at all rather than a cosmetic complaint.
+        "PROJECTIVE DBL: only deg u = 3 is explicit in this file";
+        return -1,-1,-1,-1,-1,-1,-1,-1;
+    end if;
+    // f2, f1 and f0 are extracted and NOT USED, and they are not deletable.
+    // `driver.read_support` infers a family's domain by contrasting what arb
+    // extracts against what the specialisation extracts, so an absent extraction
+    // reads as "this family assumes the coefficient is ZERO". This file is
+    // frequent-path only, and the frequent path genuinely needs just f5, f4 and
+    // f3 -- but that is a limit of SCOPE, not a statement about the curve. With
+    // them absent the contrast returned cons = {'f': {0,1,2,6}} and
+    // curve_in_domain could not find a valid curve at all, so the gate reported
+    // no comparisons rather than a wrong answer.
+    //
+    // Same class as PR21's finding that `f7 := Coeff(f, 7)` in the affine file is
+    // assigned, never read, and load-bearing: a line with no runtime effect can
+    // still carry meaning, because something parses the SOURCE rather than
+    // running it.
+    f2 := Coeff(f,2);
+    f1 := Coeff(f,1);
+    f0 := Coeff(f,0);
+    if not IsZero(Resultant(u, v + v)) then
+        return Deg3DBL(Coeff(u,2), Coeff(u,1), Coeff(u,0),
+                       Coeff(v,2), Coeff(v,1), Coeff(v,0), Z,
+                       Coeff(f,5), Coeff(f,4), Coeff(f,3));
+    end if;
+    // No comma and NO SEMICOLON inside a sentinel string: maginterp splits
+    // statements on `;` textually, so an internal one cuts the literal in half
+    // and leaves a dangling fragment -- which made this whole dispatcher fail
+    // to parse while the file still looked fine.
+    "PROJECTIVE DBL: this branch is not explicit in this file";
+    return -1,-1,-1,-1,-1,-1,-1,-1;
+end function;//endIGNORE

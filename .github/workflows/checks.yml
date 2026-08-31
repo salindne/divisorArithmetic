@@ -167,3 +167,24 @@ jobs:
         # default and branches cannot be traded one-for-one. All four developed
         # genus-3 ramified files are at 100%. Nothing here samples.
         run: python3 whitebox.py
+
+      - name: projective families
+        working-directory: verification
+        # The ONLY gate that can see a projective family. Every equality elsewhere
+        # in the harness is exact on the raw return -- driver._compare,
+        # whitebox._replay_one, blockcheck's `if E ne B then` -- and a projective
+        # representative is one point of an orbit, so all of them are wrong in
+        # principle here. blockcheck cannot even parse such a file: its parameter
+        # patterns reject a Z, so the function lands in `unrunnable`.
+        #
+        # Four checks. The one with no analogue anywhere else is SCALING
+        # INVARIANCE: a wrong power of Z is INVISIBLE at Z = 1, and every frozen
+        # case and every Magma generator in this repository feeds Z = 1, because
+        # neither the extracted-case parser nor the harvested record has a Z slot.
+        # So without this a projective formula would be tested only on the input
+        # where it degenerates to the affine one.
+        #
+        # It fails when no projective family is present, deliberately: a gate that
+        # passes because it had nothing to do is the failure this repository has
+        # already had twice.
+        run: python3 projcheck.py --curves 6 --chain 8

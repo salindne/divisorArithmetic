@@ -3408,3 +3408,84 @@ zero is a perfect square -- and the cost of looking is far below the cost of the
 substitutes for it.  And a defect that makes a gate report the wrong *subject* is worse than one
 that makes it fail, because the run stays green; the corresponding fix is never a better guess, it
 is a refusal.
+
+---
+
+## N38 — The first projective formula, and the grading that makes a ladder possible
+
+**Status** — established, PR46.  **Where** —
+`g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_DBL.mag`,
+`verification/projcheck.py`, `verification/driver.py`, `verification/selftest.py`,
+`ERRATA.md` E23.
+
+### The result
+
+Weighted projective coordinates for the genus-3 ramified model, at
+
+    wt(x) = 2,  wt(y) = 2g+1 = 7
+    u_i = U_i/Z^(2(e-i))   for a monic u of degree e
+    v_j = V_j/Z^(7-2j)     on every branch, independent of e
+    f_i graded at 14 - 2i
+
+with a single auxiliary coordinate `Z` and **no field inversion**.  The frequent-path
+doubling measures **69M 11S 61A 3C 0I**, against **53M 5S 61A 0C 1I** affine, so removing
+the inversion costs `16M 6S 3C` and the trade pays when `I > about 25M`.  Against
+Fan-Wollinger-Gong's twenty-year-old inversion-free genus-3 doubling at **107M + 10S** on
+the same curve family (`Fp`, `h = 0`, `f6 = 0`), that is **83 against 117**.
+
+**Three properties, each measured rather than argued.**
+
+**The grading is unique.**  An exact null-space solve over **Q** from the parsed AST, an
+exhaustive structured search of 585,000 candidate weightings of which exactly 6 pass and
+all 6 are integer multiples of the same vector, and 400,000 unstructured random vectors of
+which 0 pass.
+
+**It closes.**  The output is a valid input at the same exponents, so a ladder iterates in
+one coordinate system.  Verified by feeding the output straight back in: 39 chained
+doublings across five chains at depths 8,8,7,8,8, each step checked against
+`reference.scalar_mul`, `Z` never reset.
+
+**The `u` exponents shift with the output degree and the `v` exponents do not.**  The
+coefficient of `x^i` in a monic `u` of degree `e` sits at `2(e-i)`, so a degree drop of `d`
+lowers every `u` weight by `2d`; `v == y` on the support and `y`'s weight does not depend on
+the divisor's degree, so `v_j` is at `7-2j` on every branch.  That asymmetry is what lets
+the file keep the shipped bottom-aligned return shape -- slot `i` holds the coefficient of
+`x^i`, monic 1 at slot `deg u` -- instead of inverting the convention every affine family
+uses.
+
+### Two things that are NOT what an earlier reading of this work said
+
+**The curve coefficients arrive RAW.**  They are graded, and the carriage costs the 3C the
+counter charges -- but the FORMULA carries them, in its own prologue
+(`Z4 := Z2^2; f5 := f5*Z4; ...`).  A caller that pre-scales applies the carriage twice:
+correct at `Z = 1` and wrong at `Z = 2, 3, 7, 50`, measured.  Notes written during the
+derivation said a caller must "refresh `f5*Z^4` as `Z` changes", which has the cost right
+and the interface backwards.
+
+**Uniform single-`Z` is not a grading of this map at all.**  Equal weights force
+`wt(x) = 0`, hence `wt(y) = 0`.  Under iteration the uniform pattern diverges,
+`(1,1,1,1,1,1) -> (4,5,6,6,7,8) -> (10,14,18,15,19,23) -> unbounded`, so it must be
+re-imposed after every squaring.  FWG's published system is uniform single-`Z`, and their
+own conclusion nominated "generalized weighted projective coordinates" as the next step.
+Built as a control and optimised hard -- monomial addition chains at their floor, global
+CSE, `Z1,Z2` unified up front -- it still loses by 16 operations on the doubling.
+
+### For the paper
+
+The contribution is not "projective formulas for genus 3" -- those have existed since 2006.
+It is that the *weighting* was never derived from the curve's own grading, that doing so
+closes under iteration where the uniform scheme does not, and that a NUCOMP-derived affine
+base converts without giving back its structure: the addition count is unchanged at 61A.
+
+State the break-even honestly.  `I ~ 25M` is below FWG's own stated floor of "at least 30
+additional multiplications", and the figure that matters is not the speed but the
+calibration: a delay parameter set against 107M+10S overestimates its delay by about a
+quarter.
+
+### Limits, stated
+
+Frequent path only, so the completeness property the affine formulas are known for is **not**
+claimed here.  `opcount.py` skips the family for want of an ADD file, so the 69M figure rests
+on two independent counters in the local research tree rather than on the counter of record.
+And **nothing has run under real Magma** -- `ERRATA.md` E15 says a formula that cannot be run
+under Magma is not verified against the sibling-path class, and that stands unmet.
