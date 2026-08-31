@@ -75,6 +75,7 @@ import sys
 
 import curves as C
 import driver as D
+import projcheck as PJ
 import maginterp as M
 import reference as R
 from ff import GF
@@ -181,8 +182,30 @@ def _agrees(fam, cur, V, D1, D2, op, vals):
             want = (R.split_add(cur, D1, D2, V, pos) if op == "ADD"
                     else R.split_double(cur, D1, V, pos))
             return gu == want[0] and gv == want[1] and gn == want[3]
-        gu, gv, note = D.decode_divisor(F, fam.genus, vals,
-                                        getattr(fam, "coords", "affine"))
+        coords = getattr(fam, "coords", "affine")
+        if coords == "projective":
+            # A projective return has to be NORMALISED before it means anything,
+            # and `decode_divisor` refuses it by design (PR46) rather than
+            # guessing. Normalising here is what makes the counter of record able
+            # to measure such a family at all: before this, `count_family` skipped
+            # it with 'no ADD file' and the headline figure rested only on the two
+            # counters in the untracked research tree.
+            #
+            # The weight vector is READ from the file's banner, exactly as
+            # `projcheck` reads it -- not derived from the genus. A derived vector
+            # would be a table by another name and nothing would test it.
+            weights = D.weights_declared(fam.dbl_path if op == "DBL"
+                                         else fam.add_path)
+            if not weights:
+                return None                 # nothing declared: not blamed, not counted
+            gu, gv, why = PJ.normalise(F, fam.genus, list(vals), weights)
+            if gu is None:
+                # Off the frequent path (Znew = 0) is not a disagreement -- the file
+                # does not claim that branch. Neither counted nor blamed.
+                return None if why == "Z = 0" else False
+            want = R.add(cur, D1, D2) if op == "ADD" else R.double(cur, D1)
+            return gu == want[0] and gv == want[1]
+        gu, gv, note = D.decode_divisor(F, fam.genus, vals, coords)
         if gu is None:
             return False
         if note is not None:
@@ -215,18 +238,32 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
     if fam.is_split:
         return _count_split(fam, families, field, target, seed, verbose)
 
-    cons, members, why = D.family_domain(fam, families, "ADD")
+    # A DBL-ONLY FAMILY IS A LEGITIMATE SHAPE, and this function could not express
+    # one: it derived the domain with op="ADD" and then loaded `fam.add_path`
+    # unconditionally, so the first such family -- the projective doubling of PR46
+    # -- came back as `skipped: no ADD file` and the counter of record measured
+    # nothing for it. PR7+8 recorded the ADD-only case as leaving a family
+    # mixed-domain; this is its mirror, and `driver.family_domain` needed the same
+    # fix at :347.
+    #
+    # The domain is derived from whichever operation the family HAS. Ordering
+    # matters: with no ADD there is nothing to contrast, so asking for "ADD" is
+    # asking about a file that does not exist.
+    have_add = bool(fam.add_path)
+    cons, members, why = D.family_domain(fam, families, "ADD" if have_add else "DBL")
     if cons is None:
         return None, why
     unpinned = D.require_leading_pin(fam, members)
     if unpinned:
         return None, unpinned
 
-    try:
-        subs = M.discover(fam.add_path)
-        add_params, _ = D._dispatcher_body(fam.add_path, "ADD")
-    except Exception as e:
-        return None, "cannot load ADD: %s: %s" % (type(e).__name__, e)
+    subs, add_params = {}, None
+    if have_add:
+        try:
+            subs = M.discover(fam.add_path)
+            add_params, _ = D._dispatcher_body(fam.add_path, "ADD")
+        except Exception as e:
+            return None, "cannot load ADD: %s: %s" % (type(e).__name__, e)
     dbl_params = None
     if fam.dbl_path:
         try:
@@ -237,6 +274,8 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
             subs = merged
         except Exception:
             pass
+    if not subs:
+        return None, "neither an ADD nor a DBL file could be loaded"
 
     g = fam.genus
     F = GF(field)
@@ -291,7 +330,16 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
                                            "ADD", got[1]):
                             hist[_label("ADD", (i, j))][got[0]] += 1
 
-    if not hist:
+    if not any(hist.values()):
+        # `not any(hist.values())`, NOT `not hist`. PR46 added this guard with the
+        # latter and it never fired: `hist` is a defaultdict(Counter) and the share
+        # computation below READS hist[label] for every shape, which CREATES an
+        # empty Counter for each. So `hist` is never empty -- it is full of empty
+        # Counters -- and an all-samples-dropped family sailed through to `out = {}`
+        # with why=None, which is exactly the silent empty the guard was written to
+        # stop. Found by the first DBL-only projective family; the fix was ineffective
+        # for the whole of PR46.
+        #
         # The guard `_count_split` has at :441 and this path did not. Without it an
         # all-samples-dropped family returns `{}`, which is NOT None, so `main`
         # writes `{'field': ..., 'ops': {}}`, keeps the family OUT of `skipped`,
@@ -299,8 +347,20 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
         # measured with nothing. Every route here is silent: a `build_args`
         # KeyError swallowed by a bare `except: continue` above, or `_agrees`
         # returning False on every sample. A projective family hits both.
-        return None, ("no sample agreed with the reference over GF(%d); nothing "
-                      "was measured" % field)
+        # The reason names CAUSES THAT HAVE ACTUALLY BEEN OBSERVED. An earlier
+        # version of this message blamed the field size -- "the off-path rate is
+        # O(1/q), try a larger --field" -- which was plausible and wrong on both
+        # counts. Measured: the two real causes were `build_args` raising on an
+        # unmapped `Z` and a dispatcher calling `Resultant`, which maginterp does
+        # not implement; both are swallowed by the bare `except: continue` above.
+        # And the field is irrelevant -- once fixed, 454/471/472 samples agreed at
+        # GF(31), GF(101) and GF(211) alike.
+        return None, ("no sample agreed with the reference over GF(%d); nothing was "
+                      "measured. Every sample is dropped silently by the bare "
+                      "excepts above, so check in this order: does the dispatcher "
+                      "use a primitive maginterp lacks (try calling it directly), "
+                      "can build_args bind every parameter name, and does the "
+                      "family's domain admit any curve at all." % field)
 
     out = {}
     for label, h in sorted(hist.items()):

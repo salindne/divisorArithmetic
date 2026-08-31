@@ -618,6 +618,22 @@ def build_args(params, curve, D1, D2=None):
             args.append(curve.h)
         elif key == "q":
             args.append(curve.F.q)
+        elif key in ("Z", "z"):
+            # A PROJECTIVE dispatcher takes the shared denominator as an input --
+            # that is what makes it projective. Unmapped, it raised
+            # `KeyError: unmapped dispatcher parameter 'Z'` for every sample, and
+            # `opcount.count_family` swallows that in a bare `except: continue`, so
+            # the counter of record measured NOTHING for the family and said so with
+            # a reason that blamed the field size instead.
+            #
+            # Z = 1 is the AFFINE EMBEDDING of the divisor, so a caller that binds
+            # arguments this way is measuring the projective formula on affine
+            # inputs. That is legitimate for an operation COUNT -- the programs here
+            # are straight-line, so the count does not depend on the values -- but it
+            # is NOT sufficient for correctness: a wrong power of Z is invisible at
+            # Z = 1, which is the whole reason `projcheck` exists and drives its own
+            # arguments with Z != 1 rather than going through here.
+            args.append(curve.F(1))
         else:
             raise KeyError("unmapped dispatcher parameter %r" % key)
     return args

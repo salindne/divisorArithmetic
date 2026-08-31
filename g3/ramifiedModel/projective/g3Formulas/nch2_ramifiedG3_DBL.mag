@@ -176,41 +176,42 @@ end function;
 //              project keeps having to undo, so the guard is loud.
 ///////////////////////////////////////////////////////////////////////////////
 DBL:= function(u, v, Z, f)//startIGNORE
-    if Degree(u) ne 3 then
-        // A single string literal, not a comma list: maginterp parses the house
-        // sentinel form ("THIS SHOULD NEVER HAPPEN";) and not `"x = ", expr, "y"`.
-        // The multi-value form made selftest's parse section report this file
-        // as containing an unparsed statement, which is a gate refusing to read
-        // the file at all rather than a cosmetic complaint.
-        "PROJECTIVE DBL: only deg u = 3 is explicit in this file";
-        return -1,-1,-1,-1,-1,-1,-1,-1;
-    end if;
     // f2, f1 and f0 are extracted and NOT USED, and they are not deletable.
     // `driver.read_support` infers a family's domain by contrasting what arb
     // extracts against what the specialisation extracts, so an absent extraction
     // reads as "this family assumes the coefficient is ZERO". This file is
-    // frequent-path only, and the frequent path genuinely needs just f5, f4 and
-    // f3 -- but that is a limit of SCOPE, not a statement about the curve. With
-    // them absent the contrast returned cons = {'f': {0,1,2,6}} and
-    // curve_in_domain could not find a valid curve at all, so the gate reported
-    // no comparisons rather than a wrong answer.
-    //
-    // Same class as PR21's finding that `f7 := Coeff(f, 7)` in the affine file is
-    // assigned, never read, and load-bearing: a line with no runtime effect can
-    // still carry meaning, because something parses the SOURCE rather than
-    // running it.
+    // frequent-path only and genuinely needs just f5, f4 and f3 -- but that is a
+    // limit of SCOPE, not a statement about the curve. With them absent the
+    // contrast returned cons = {'f': {0,1,2,6}} and no valid curve could be built
+    // at all. Same class as PR21's `f7 := Coeff(f, 7)`, assigned, never read, and
+    // load-bearing because something parses the SOURCE rather than running it.
     f2 := Coeff(f,2);
     f1 := Coeff(f,1);
     f0 := Coeff(f,0);
-    if not IsZero(Resultant(u, v + v)) then
+
+    // DEGREE ONLY. An earlier version also tested `IsZero(Resultant(u, v + v))` to
+    // detect the frequent path, which maginterp cannot parse -- `unknown function
+    // 'Resultant'` -- so every sample raised and the counter of record measured
+    // nothing. The affine dispatchers dispatch on Degree(u) alone and let each
+    // Deg*DBL own its branches; this follows them.
+    //
+    // And the test is unnecessary, because THE REPRESENTATION ALREADY CARRIES THE
+    // SIGNAL: Znew = d*sp2*Z vanishes exactly when d = 0 or sp2 = 0, which are the
+    // two gates that leave the frequent path. Deg3DBL therefore returns Znew = 0 of
+    // its own accord on an input it does not claim, and `projcheck.normalise`
+    // refuses Z = 0. Measured 480/480 in the derivation: Znew = 0 iff the affine
+    // formula did not print DBL10.
+    //
+    // Z = 0 is also why the refusal below does NOT use the affine files' all-(-1)
+    // return. Eight -1s are indistinguishable from data to a caller that normalises
+    // -- Znew = -1 is nonzero, so a garbage divisor would be produced and counted as
+    // a DISAGREEMENT rather than a skip. Zero is the one value every consumer here
+    // already treats as "no answer".
+    if Degree(u) eq 3 then
         return Deg3DBL(Coeff(u,2), Coeff(u,1), Coeff(u,0),
                        Coeff(v,2), Coeff(v,1), Coeff(v,0), Z,
                        Coeff(f,5), Coeff(f,4), Coeff(f,3));
     end if;
-    // No comma and NO SEMICOLON inside a sentinel string: maginterp splits
-    // statements on `;` textually, so an internal one cuts the literal in half
-    // and leaves a dangling fragment -- which made this whole dispatcher fail
-    // to parse while the file still looked fine.
-    "PROJECTIVE DBL: this branch is not explicit in this file";
-    return -1,-1,-1,-1,-1,-1,-1,-1;
+    "PROJECTIVE DBL: only deg u = 3 is explicit in this file";
+    return 0, 0, 0, 0, 0, 0, 0, 0;
 end function;//endIGNORE
