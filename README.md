@@ -197,6 +197,7 @@ With a stock emulator only the six genus-2 ramified testers load, and every othe
 |---|---|
 | [g2/ramifiedModel/](g2/ramifiedModel/) | genus 2 ramified formulas, testers, shared utilities |
 | [g3/ramifiedModel/](g3/ramifiedModel/) | genus 3 ramified formulas, testers, shared utilities |
+| [g3/ramifiedModel/projective/](g3/ramifiedModel/projective/) | weighted projective, odd characteristic, **frequent path only** — inversion-free, not complete, and outside the suite tallies above.  Its own [README](g3/ramifiedModel/projective/README.md) carries the counts against Fan–Wollinger–Gong |
 | [g2/splitModel/posReduced/](g2/splitModel/posReduced/) | genus 2 balanced split, positive reduced |
 | [g2/splitModel/negReduced/](g2/splitModel/negReduced/) | genus 2 balanced split, negative reduced |
 | [g3/splitModel/negReduced/](g3/splitModel/negReduced/) | genus 3 balanced split, negative reduced |

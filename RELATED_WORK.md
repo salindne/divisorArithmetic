@@ -425,7 +425,19 @@ shape, not of the method, and the two must not be compared directly.
 
 FWG's own contribution also includes inversion-free (projective) formulas for
 both field types (Fp, h=0, f₆=0: ADD 123M + 7S, DBL 107M + 10S, mixed ADD
-104M + 6S — their Table V), out of scope for this repository's affine work.
+104M + 6S — their Table V).
+
+**These three rows are no longer out of scope**, and this paragraph said they were
+until weighted projective formulas existed here to compare against. All three are
+now answered on the same curve shape, odd characteristic and frequent case only:
+100, 86 and 83 against their 130, 110 and 117, measured by `opcount.py` under
+`ramified/g3/nch2/projective`. See
+`g3/ramifiedModel/projective/README.md` for the table and the normalisation, and
+`NEW_WORK.md` N38 and N39 for the derivation.
+
+Only these three are quoted. Any further variant in their Table V is not
+transcribed here, and on the standing rule a figure we cannot open is not compared
+against.
 
 ---
 

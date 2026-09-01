@@ -3515,9 +3515,20 @@ Two projective additions on the grading of N38, both frequent-path, both inversi
 | `Deg3ADD`, independent `Z1, Z2` | 86 | 13 | 61 | 1 | 0 | **100** against their `123M+7S = 130` |
 | `Deg3ADDmix`, one operand affine | 75 | 10 | 61 | 1 | 0 | **86** against their `104M+6S = 110` |
 
-With N38's doubling at **83 against 117**, all four of Fan-Wollinger-Gong's published rows are
-answered.  A verifier's ladder -- about `2*lambda` doublings and `lambda/2` mixed additions,
-independent of `T` -- comes to roughly **18,000 against their 24,300**.
+With N38's doubling at **83 against 117**, all **three** Fan-Wollinger-Gong projective rows this
+repository transcribes from their Table V are answered.  **Three, not four**: a draft of this entry
+claimed a fourth, an affine-input doubling at 79 against 92, and that figure appears in no tracked
+document -- `RELATED_WORK.md:427-428` records exactly three.  On the standing rule that a figure we
+cannot open is not compared against, the fourth is withdrawn rather than carried.
+
+A verifier's ladder is `2*lambda` doublings plus `lambda/2` mixed additions, windowed at `w = 4`, and
+is independent of `T`.  Stated **per bit of lambda**, so it needs no security parameter chosen for it:
+`2(83) + (86/2) = 209` against `2(117) + (110/2) = 289`, a saving of 80 per bit or **27.7%**.  At
+lambda = 128 that is 26,752 against 36,992.
+
+**A draft said "roughly 18,000 against 24,300, about 26% cheaper" and gave no lambda.**  Those two
+numbers imply lambda = 86.1 and lambda = 84.1 -- **different security parameters** -- so they were
+never a consistent pair, and neither was derivable from the rows beside them.  The per-bit form is.
 
 **Why an addition at all, when the delay is pure squaring.**  Verify is general exponentiation and is
 the half that has to be fast; Eval is the half that is *supposed* to be slow.  So the addition is
