@@ -2335,8 +2335,10 @@ of 1,001, and dropping `h₁v₀` from `Deg1DBL`'s `k₀` gives 12 wrong of 41 �
 than given as a single total.
 
 All four reference blocks agree with their explicit code. `whitebox` replays 1,886 cases with
-the new files at 37/37 and 11/11. `driver --strict` rises from 12,972 to 13,746 comparisons,
-0 wrong, now that the family is covered. The Magma suite is 30 testers, 0 failures, 0 skips.
+the new files at 37/37 and 11/11. `driver --curves 3 --pairs 3 --seed 11 --strict`,
+the smoke invocation, rises from 12,972 to 13,746 comparisons, 0 wrong, now that the family is
+covered.  (The flags matter and were omitted here originally: the UNQUALIFIED `driver --strict`
+is a larger run and prints 55,236, which is the figure `README.md` quotes.) The Magma suite is 30 testers, 0 failures, 0 skips.
 
 **One honest limit on the derivation.** `Deg3ADD` is 956 lines and was derived in five regions
 — prologue, and one per gcd family. The glue lines *between* regions belonged to no region, and
@@ -3393,7 +3395,8 @@ pattern.  A gate never seen to fire is not known to be a gate, and that applies 
 gate as much as to the whole.
 
 **Evidence.** `opcount.py --json` byte-identical, md5 `2a93ffaa1e39fcbbe2bb3a1abfc878ce`, so nothing
-measured moved; `driver --strict` 13,746/13,746; whitebox PASS; dominance clean on 39 files;
+measured moved; `driver --curves 3 --pairs 3 --seed 11 --strict` 13,746/13,746, and the
+unqualified `driver --strict` 55,236/55,236; whitebox PASS; dominance clean on 39 files;
 selftest 19 sections to **20**.  No `.mag` file touched anywhere in this work.
 
 **Honest limits.** The E1 enumeration is `nch2` only, where `dw2 = vp + v` needs no reduction; `arb`
@@ -3528,12 +3531,27 @@ one computation and neither was renormalised, which a double-and-add ladder does
 
 ### What the counter of record can and cannot reach, stated because it is quotable
 
-`opcount` measures the doubling and the **mixed** addition at share 1.00.  It **cannot** measure the
-general addition: `build_args` constructs affine divisors, so both denominators bind to 1 and the
-dispatcher's mixed branch always wins.  The `33ADD` row for a projective family is therefore the
-MIXED figure, and anyone comparing it against FWG's addition row would be comparing the wrong
-operation.  The independent-`Z` figure comes from `projcheck`, which drives its own arguments because
-`build_args` cannot.
+`opcount` measures all three at share 1.00, and the **naming** is the part to get right.  A
+projective family's plain `33ADD` row is the **MIXED** addition, because `build_args` constructs
+affine divisors and binds both denominators to 1, so `IsOne(Zp)` in the dispatcher is always true.
+Anyone comparing that row against FWG's addition row would be comparing the wrong operation, and the
+two differ by 11M 3S.  The general addition is therefore measured under its own label,
+`33ADD general-Z`, by binding two distinct denominators and calling the general function directly:
+
+```
+  ramified/g3/nch2/projective GF(31)
+     33ADD  75M 10S  61A  1C  0I    share 1.00 of 2229 calls
+     33ADD general-Z  86M 13S  61A  1C  0I    share 1.00 of 75 calls
+     3DBL  69M 11S  61A  3C  0I    share 1.00 of 2446 calls
+```
+
+**This was added because the alternative was a headline figure backed only by an untracked tree.**
+An earlier revision of this entry attributed the general figure to `projcheck`, which drives
+independent denominators but **counts nothing at all** -- so the row compared against FWG's `123M+7S`
+could not be reproduced from a clone.  Every sample in the new row is checked against `reference.py`
+by `_agrees` before it is histogrammed, and the fifteen affine families are byte-identical across the
+change, verified by running `--json` on a `git archive` of the previous tree and comparing the affine
+subset (md5 `fed5324ce11f7234a6ab7a4b3bab4829` both sides).
 
 ### Two checks with no analogue in the doubling
 
@@ -3572,15 +3590,52 @@ and counts it as a disagreement rather than a skip.
 would have to be present in both to survive -- with `Z != 1` throughout, since a wrong power of `Z`
 is invisible at `Z = 1`.  Four checks per curve over GF(11), GF(13), GF(31), GF(101): the doubling,
 the addition on independent `Z1, Z2`, the mixed addition, and the overlap where the general addition
-at `Z2 = 1` must agree with the mixed one.  **69 comparisons, 0 wrong, 7 off-path.**  This discharges
-`ERRATA.md` E15 for both projective files, which N38 recorded as unmet.
+at `Z2 = 1` must agree with the mixed one -- and must also REFUSE on the same inputs, a split refusal
+being counted as wrong.
+
+**89 comparisons, 0 wrong, 3 off-path**, replayable:
+
+```
+cd g3/ramifiedModel/projective
+RND_SEED=1805123479 ../../../tools/magma-docker/magma.sh nch2_projectiveG3_random.mag
+```
+
+Magma does not seed deterministically, so without the seed the comparison count moves run to run
+(55, 62, 69, 82, 89 were all observed, every one at 0 wrong).  The seed is honoured in both
+directions, checked rather than assumed after the recorded near-miss where two probe runs began in
+the same second and the identical draws were read as proof: the same seed gives 89/3 twice, and
+`RND_SEED=42` gives 67/13.
+
+This discharges `ERRATA.md` E15 for both projective files, which N38 recorded as unmet.
+
+**The tester is deliberately NOT in `test_all.sh`.**  It follows `whitebox/probes/`, which holds
+hand-run verification artifacts that the suite does not count -- appropriate while the projective set
+covers three frequent paths rather than a complete family.  So `README.md`'s tallies still describe
+the twelve shipped families and stay true, and the run is reproducible from the command above rather
+than from the suite.
 
 **Getting there found a defect class no Python gate can see, recorded as `ERRATA.md` E26.**  `Coeff`
 is a repository helper defined at `ramifiedUtilities.mag:25`, and `verification/maginterp.py`
 implements a `Coeff` of its own as an interpreter builtin.  So a file that calls it without loading
-the utilities is accepted by `opcount`, `driver`, `whitebox`, `dominance`, `blockcheck` and
-`projcheck` alike -- every one of them drives the interpreter that supplies the name -- and refused
-by Magma.
+the utilities is accepted by every Python gate and refused by Magma.
+
+**The six gates are not blind for one reason, and an earlier revision of this entry said they were.**
+Four of them -- `opcount`, `driver`, `whitebox`, `projcheck` -- drive the interpreter that supplies
+the name.  `dominance` does not import `maginterp` at all: it whitelists `Coeff` in a hardcoded
+known-callables list at `dominance.py:50`, which is blind for a **worse** reason, the name being
+blessed with no reference to where it is defined.  And `blockcheck` **is not blind at all** -- it
+drives real Magma by subprocess and its generated scripts already load `ramifiedUtilities.mag`
+(`blockcheck.py:220`).
+
+**So the one gate that would have caught this did not run, and its exclusion is DOCUMENTED rather
+than silent.**  `blockcheck` discovers families by globbing
+`g3/ramifiedModel/*_ramifiedG3_random.mag`, and the projective tester sits one directory deeper, so
+the glob does not match it -- stated at `blockcheck.py:93` and again in its `--list` footer, with the
+CI comment beside the `projcheck` step recording independently that its parameter patterns reject a
+`Z`.  **A draft of this entry called that a silent cap; the retraction belongs in the record**, since
+the honest finding is narrower and still worth having: **no Magma-backed gate covered the projective
+files at all until this work's tester existed.**  A coverage gap by construction, not an instrument
+misreporting what it did.
 
 **The failure is partial, which is what makes it worth a paper's worth of caution.**  Magma executes
 a loaded file statement by statement, so the three `Deg3*` functions loaded and both dispatchers did

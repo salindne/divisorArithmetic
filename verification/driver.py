@@ -631,8 +631,10 @@ def build_args(params, curve, D1, D2=None):
             # of both operands, which is fine for an operation COUNT because these
             # programs are straight-line -- but it means the independent-Z variant,
             # the one FWG's published row compares against, is NOT reachable from
-            # here. That figure comes from `projcheck`, which drives its own
-            # arguments with Z1 != Z2 precisely because this cannot.
+            # here. `opcount` measures it under its own `NNADD general-Z` label by
+            # binding two distinct denominators and calling the general function
+            # directly, precisely because this cannot; `projcheck` exercises the
+            # same path for CORRECTNESS but counts nothing.
             args.append(curve.F(1))
         elif key in ("Z", "z"):
             # A PROJECTIVE dispatcher takes the shared denominator as an input --

@@ -344,6 +344,51 @@ def count_family(fam, families, field, target=400, seed=7, verbose=False):
                                            "ADD", got[1]):
                             hist[_label("ADD", (i, j))][got[0]] += 1
 
+        # THE GENERAL PROJECTIVE ADDITION, which the loop above structurally
+        # cannot reach. `build_args` binds both denominators to 1 (driver.py, the
+        # `Zp`/`Z2` and `Z`/`z` branches), so `IsOne(Zp)` in the dispatcher is
+        # always true and the mixed branch always wins -- which means the NNADD row
+        # above is the MIXED figure for a projective family, not the general one.
+        #
+        # Measured here instead by binding two DISTINCT denominators and calling
+        # the general function directly. Reported under its own label so the mixed
+        # row keeps its name and neither can be mistaken for the other.
+        #
+        # This exists because the alternative was a headline figure backed only by
+        # an untracked local tree: `projcheck` drives independent denominators but
+        # counts nothing, so before this the general addition's cost could not be
+        # reproduced from a clone at all.
+        if getattr(fam, "coords", "affine") == "projective" and have_add:
+            gen_add = subs.get("Deg%dADD" % g)
+            weights = D.weights_declared(fam.add_path)
+            if gen_add is not None and weights:
+                tried = 0
+                while (sum(hist[_general_label(g)].values()) < per_shape
+                       and tried < 60):
+                    cur = D.curve_in_domain(F, fam, cons, rng, members=members)
+                    tried += 1
+                    if cur is None:
+                        break
+                    for _ in range(per_shape):
+                        D1 = C.random_divisor(cur, rng, degs=(g,))
+                        D2 = C.random_divisor(cur, rng, degs=(g,))
+                        if not D1 or not D2 or D1[0] == D2[0]:
+                            continue
+                        z1, z2 = F(rng.randrange(2, field)), F(rng.randrange(2, field))
+                        if z1 == z2:
+                            continue          # equal denominators is the same map
+                        try:
+                            args = ([z1, z2]
+                                    + _numer(D1, z1, g, weights)
+                                    + _numer(D2, z2, g, weights)
+                                    + [cur.f.coeffs_up_to(2 * g - 1)[2 * g - 1]])
+                        except Exception:
+                            continue
+                        got = measure_call(gen_add, args, subs, F)
+                        if got and _agrees(fam, cur, None, D1, D2,
+                                           "ADD", got[1]):
+                            hist[_general_label(g)][got[0]] += 1
+
     if not any(hist.values()):
         # `not any(hist.values())`, NOT `not hist`. PR46 added this guard with the
         # latter and it never fired: `hist` is a defaultdict(Counter) and the share
@@ -542,6 +587,33 @@ def _count_split(fam, families, field, target=400, seed=7, verbose=False):
 def _label(op, degs):
     """"2DBL", "12ADD", "2ADD" -- the thesis's own row naming."""
     return "".join(str(d) for d in degs) + op
+
+
+def _general_label(g):
+    """The general projective addition's row, kept distinct from the mixed one.
+
+    A projective family's plain "33ADD" is the MIXED addition, because
+    `build_args` binds both denominators to 1. Naming the general one explicitly
+    is the point: the two differ by 11M 3S here, and comparing the wrong one
+    against a published addition row compares the wrong operation.
+    """
+    return "%d%dADD general-Z" % (g, g)
+
+
+def _numer(d, Z, g, weights):
+    """A projective divisor's numerators at denominator `Z`, descending.
+
+    `u_i = U_i / Z^(2(e-i))` and `v_j = V_j / Z^((2g+1)-2j)`, so the numerators
+    are the affine coefficients scaled UP by the declared weight. The weight
+    vector is read from the file's banner rather than derived from the genus, so
+    a file that changes its grading changes this with it.
+
+    Descending, and that ordering is load-bearing: it was reconstructed wrongly
+    once already, in `projcheck`, minutes after the banner warning about it.
+    """
+    uc, vc = d[0].coeffs_up_to(g), d[1].coeffs_up_to(g - 1)
+    return ([uc[i] * Z ** weights["u%d" % i] for i in range(g - 1, -1, -1)]
+            + [vc[j] * Z ** weights["v%d" % j] for j in range(g - 1, -1, -1)])
 
 
 def _split_label(op, shape):

@@ -30,12 +30,33 @@
 // line the Deg3* functions load and both dispatchers do NOT, silently, because
 // Magma executes a loaded file statement by statement and the failures come after
 // the function definitions. That is ERRATA.md E15's argument demonstrated.
-load "g3/ramifiedModel/ramifiedUtilities.mag";
-load "g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_DBL.mag";
-load "g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_ADD.mag";
+// Paths are relative to THIS file's directory, which is the repository's
+// convention: test_all.sh cd's into the family directory before invoking Magma
+// (test_all.sh:202 and its siblings), and tools/magma-docker/magma.sh mirrors the
+// invoking working directory into the container.  Root-relative loads work when
+// run from the root and fail everywhere else, and tools/check_paths.py resolves
+// load targets against the loading file, so they also fail the path-integrity gate.
+load "../ramifiedUtilities.mag";
+load "g3Formulas/nch2_ramifiedG3_DBL.mag";
+load "g3Formulas/nch2_ramifiedG3_ADD.mag";
+
+///////////////////////////////////////////////////////////////////////////////
+//REPRODUCIBILITY
+///////////////////////////////////////////////////////////////////////////////
+// Magma does not seed deterministically, so without this the comparison count
+// moves between runs and a failure in a rarely-drawn branch cannot be replayed.
+// The fourteen canonical testers were given this in PR6; a fifteenth without it
+// would reintroduce the gap.  RND_SEED=<n> reruns that draw sequence exactly and
+// is forwarded into the container unconditionally by magma.sh.
+if GetEnv("RND_SEED") ne "" then
+    SetSeed(StringToInteger(GetEnv("RND_SEED")));
+end if;
 
 FIELDS := [11, 13, 31, 101];
 TRIALS := 6;
+
+sd, st := GetSeed();
+printf "// - Random seed %o, step %o. Replay this run with RND_SEED=%o\n", sd, st, sd;
 
 compared := 0;
 wrong    := 0;
