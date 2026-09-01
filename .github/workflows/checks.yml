@@ -177,7 +177,12 @@ jobs:
         # principle here. blockcheck cannot even parse such a file: its parameter
         # patterns reject a Z, so the function lands in `unrunnable`.
         #
-        # Four checks. The one with no analogue anywhere else is SCALING
+        # Four checks on the doubling and four on the addition; the addition's two
+        # extra kinds -- INDEPENDENT scaling, where each operand carries its own
+        # lambda, and general-versus-mixed at Z2 = 1 -- have no analogue in the
+        # doubling because it has only one denominator to get wrong.
+        #
+        # The one with no analogue anywhere else is SCALING
         # INVARIANCE: a wrong power of Z is INVISIBLE at Z = 1, and every frozen
         # case and every Magma generator in this repository feeds Z = 1, because
         # neither the extracted-case parser nor the harvested record has a Z slot.

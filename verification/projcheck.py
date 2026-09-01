@@ -244,6 +244,130 @@ def _env(F, cur, u, v, Z, weights, genus):
     return env
 
 
+def _check_add(rep, fam, g, cons, members, ncurves, chain, seed):
+    """The addition's checks, which are the doubling's plus one with no analogue.
+
+    TWO DENOMINATORS ARE INDEPENDENT, so scaling both operands by the SAME lambda
+    cannot detect a formula that quietly assumes Z1 = Z2 -- it would pass every
+    same-lambda test, every same-Z test, and `opcount` too, since `build_args` binds
+    both denominators to 1 and therefore only ever exercises the mixed branch. It
+    would fail first on Wesolowski's pi^l * x^r, the one multiplication in a VDF
+    that cannot be engineered into the mixed form.
+    """
+    path = fam.add_path
+    weights = D.weights_declared(path)
+    if not weights:
+        rep.fail("%s ADD" % fam.name,
+                 "declares projective coordinates and no '//Weights:'")
+        return
+    fns = M.discover(path)
+    gen, mix = "Deg%dADD" % g, "Deg%dADDmix" % g
+    if gen not in fns:
+        rep.fail("%s ADD" % fam.name, "no %s in %s" % (gen, path))
+        return
+
+    F = GF(101)
+    rng = random.Random(seed)
+    n = {"gen": 0, "mix": 0, "lam": 0, "agree": 0, "off": 0}
+    bad = []
+
+    def numer(d, Z):
+        uc, vc = d[0].coeffs_up_to(g), d[1].coeffs_up_to(g - 1)
+        return ([uc[i] * Z ** weights["u%d" % i] for i in range(g - 1, -1, -1)]
+                + [vc[j] * Z ** weights["v%d" % j] for j in range(g - 1, -1, -1)])
+
+    for _ in range(ncurves):
+        cur = D.curve_in_domain(F, fam, cons, rng, members=members)
+        if cur is None:
+            continue
+        D1 = C.random_divisor_of_degree(cur, g, rng)
+        D2 = C.random_divisor_of_degree(cur, g, rng)
+        if D1 is None or D2 is None or D1[0] == D2[0]:
+            continue
+        want = R.add(cur, D1, D2)
+        f5 = cur.f.coeffs_up_to(5)[5]
+
+        def run_gen(z1, z2):
+            out = list(fns[gen](z1, z2, *(numer(D1, z1) + numer(D2, z2) + [f5]),
+                                funcs=fns, F=F))
+            return normalise(F, g, out, weights)
+
+        # 1. the general addition, with the two denominators DIFFERENT
+        z1 = F(rng.randrange(2, 101))
+        z2 = F(rng.randrange(2, 101))
+        a = run_gen(z1, z2)
+        if a[0] is None:
+            n["off"] += 1
+        elif a[0] == want[0] and a[1] == want[1]:
+            n["gen"] += 1
+        else:
+            bad.append("general ADD wrong at Z1=%s Z2=%s" % (z1, z2))
+
+        # 2. INDEPENDENT SCALING -- the check the doubling cannot have. Scale each
+        #    operand by its OWN lambda; the class must not move.
+        l1 = F(rng.randrange(2, 101))
+        l2 = F(rng.randrange(2, 101))
+        b = run_gen(z1 * l1, z2 * l2)
+        if b[0] is not None and a[0] is not None:
+            if b[0] == a[0] and b[1] == a[1]:
+                n["lam"] += 1
+            else:
+                bad.append("independent scaling by (%s,%s) changed the class"
+                           % (l1, l2))
+
+        # 3. the mixed addition, and 4. that it AGREES with the general one at
+        #    Z2 = 1 -- the overlap where the two must compute the same map. Nothing
+        #    else compares them, and they have only ever been exercised apart.
+        if mix in fns:
+            uc, vc = D2[0].coeffs_up_to(g), D2[1].coeffs_up_to(g - 1)
+            aff = ([uc[i] for i in range(g - 1, -1, -1)]
+                   + [vc[j] for j in range(g - 1, -1, -1)])
+            pn = numer(D1, z1)
+            # THE MIXED SIGNATURE CARRIES THREE COEFFICIENT ORDERS: the affine
+            # operand descends, the projective u block ASCENDS, the projective v
+            # block descends again. `numer` returns everything descending, so only
+            # the u block is reversed.
+            #
+            # An earlier version wrote `[pn[g-1-i] for i in range(g)][::-1]`, which
+            # reverses twice and cancels -- so the u block went in descending and
+            # every mixed comparison failed. The hand test that established this
+            # mapping got it right by writing pu[2],pu[1],pu[0] literally; the
+            # generalised form undid it. That is the three-order hazard biting in
+            # the second place the order is reconstructed, and it is the practical
+            # argument for the rename follow-up: this cannot happen once the
+            # signature is uniform.
+            args = [z1, f5] + aff + list(reversed(pn[:g])) + pn[g:]
+            try:
+                out = list(fns[mix](*args, funcs=fns, F=F))
+            except Exception as exc:
+                bad.append("mixed ADD raised: %s" % str(exc)[:40])
+                continue
+            m = normalise(F, g, out, weights)
+            if m[0] is None:
+                n["off"] += 1
+            elif m[0] == want[0] and m[1] == want[1]:
+                n["mix"] += 1
+                o = run_gen(z1, F(1))
+                if o[0] is not None:
+                    if o[0] == m[0] and o[1] == m[1]:
+                        n["agree"] += 1
+                    else:
+                        bad.append("general at Z2=1 disagrees with mixed")
+            else:
+                bad.append("mixed ADD wrong at Z=%s" % z1)
+
+    tag = "%s ADD" % fam.name
+    if bad:
+        rep.fail(tag, "; ".join(bad[:4]))
+    elif n["gen"] == 0:
+        rep.fail(tag, "no curve produced a comparison; a gate with nothing to "
+                      "check is not a pass")
+    else:
+        rep.ok(tag, "%d general (Z1!=Z2), %d INDEPENDENTLY scaled, %d mixed, "
+                    "%d general-vs-mixed at Z2=1, %d off-path"
+                    % (n["gen"], n["lam"], n["mix"], n["agree"], n["off"]))
+
+
 def check_family(rep, fam, ncurves, pairs, chain, seed):
     if fam.is_split:
         rep.skip(fam.name, "split model: balancing weight and ccs layer unhandled")
@@ -259,6 +383,8 @@ def check_family(rep, fam, ncurves, pairs, chain, seed):
         return
 
     g = fam.genus
+    if fam.add_path:
+        _check_add(rep, fam, g, cons, members, ncurves, chain, seed)
     for op, path in (("DBL", fam.dbl_path),):
         if not path:
             rep.skip("%s %s" % (fam.name, op), "no file")

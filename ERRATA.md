@@ -1434,3 +1434,106 @@ thousands"; see `Thesis/ERRATA.md` E-T16.
 
 **Affects:** reproducibility of the genus-2 timing plots from source. The plots themselves, their
 raw data, and every relative comparison drawn from them are unaffected.
+
+## E26: a repository helper reimplemented as an interpreter builtin makes a missing `load` invisible to every Python gate
+
+**Found 2026-09-01**, by running the projective genus-3 formulas under real Magma for the first
+time. `ERRATA.md` E15 already says only Magma catches the assigned-on-another-path class. This is
+a **second** Magma-only class, and its cause is in the harness rather than in a formula.
+
+`Coeff` is a repository helper, defined at
+[g3/ramifiedModel/ramifiedUtilities.mag:25](g3/ramifiedModel/ramifiedUtilities.mag#L25). It is not
+a Magma builtin. `verification/maginterp.py:277` implements a `Coeff` of its own, as a builtin of
+the interpreter.
+
+**So the two substrates disagree about what a formula file may assume.** A file that calls `Coeff`
+without loading the utilities is accepted by every Python gate and refused by Magma with
+`User error: Identifier 'Coeff' has not been declared or assigned`.
+
+**The six gates are not blind for one reason, and the differences matter more than the headline.**
+An earlier revision of this entry said all six drive `maginterp`, which supplies the name. That is
+false for two of them, measured by `grep -c "import maginterp"` on each:
+
+| gate | drives `maginterp` | why it does not see this |
+|---|---|---|
+| `opcount`, `driver`, `whitebox`, `projcheck` | yes | the interpreter supplies `Coeff`, so the name always resolves |
+| `dominance` | **no** | `Coeff` is hardcoded into a known-callables list at `dominance.py:50`, alongside `Degree` and `ExactQuotient`. Blind for a **worse** reason: the name is blessed with no reference to where it is defined, so no `load` chain is consulted even in principle |
+| `blockcheck` | **no** | it drives **real Magma** by subprocess and its generated scripts already `load "../g3/ramifiedModel/ramifiedUtilities.mag"` (`blockcheck.py:220`). **It is not blind at all** |
+
+**So the one gate that would have caught this did not run, and the reason is DOCUMENTED rather than
+silent.** `blockcheck` discovers families by globbing
+`g3/ramifiedModel/*_ramifiedG3_random.mag`; the projective tester sits one directory deeper, at
+`g3/ramifiedModel/projective/`, so the glob does not match it. Its module header says so at
+`blockcheck.py:93`, and `--list` prints "Families are discovered from the random testers above, so a
+family without one cannot be named here yet." The CI comment beside the `projcheck` step records the
+second reason independently: blockcheck's parameter patterns reject a `Z`, so a projective function
+would land in its `unrunnable` list even if discovered.
+
+**An earlier revision of this entry called that a silent cap. It is not, and the retraction is the
+point** -- the exclusion is stated in three places, and the correct finding is narrower: **no
+Magma-backed gate covered the projective files at all until the tester in this work existed**, and
+the two Magma-backed instruments that exist are scoped away from them for stated reasons. That is a
+coverage gap by construction, not a gate lying about what it did.
+
+**Measured, and the failure is partial, which is what makes it dangerous.** Magma executes a loaded
+file statement by statement, so the definitions that precede the offending call load normally and
+only the caller fails:
+
+| | loaded | outcome |
+|---|---|---|
+| `Deg3DBL`, `Deg3ADD`, `Deg3ADDmix` | yes | callable, and correct |
+| the `DBL` and `ADD` dispatchers | **no** | `Coeff` at DBL:188 and ADD:326 |
+
+A tester that calls the `Deg3*` functions directly therefore reports a **fully green run over two
+dispatchers that do not exist**: 62 comparisons, 0 wrong, with two `User error` lines scrolled off
+above the summary. Both figures are true. Neither is the figure the reader wants.
+
+**Fixed in the caller, not in the harness.** The projective tester loads
+`g3/ramifiedModel/ramifiedUtilities.mag` first, with the reason stated inline, and the run then
+reports 69 comparisons and 0 wrong with both dispatchers loaded.
+
+**Not fixed in `maginterp.py`, deliberately.** Removing its `Coeff` builtin would make every
+Python gate depend on resolving a `load` chain it currently has no need to read, which is a large
+change to the gate stack to catch a defect whose real fix is one line in the file that has it. The
+durable protection is the rule below.
+
+**The rule this leaves.** A formula file may use `Coeff` only if something loads
+`ramifiedUtilities.mag` before it, and **no Python gate as currently configured will tell you**
+whether that holds. The check is a real Magma run whose output is read for `User error` lines
+rather than for its summary -- which is `ERRATA.md` E12 one level down: E12 is a tester that
+compared nothing and said so greenly, and this is a tester that compared something real while **two
+of the five functions it loaded were absent**. It has three subjects, `Deg3DBL`, `Deg3ADD` and
+`Deg3ADDmix`, and it never calls the two dispatchers at all; "four" elsewhere in this record is the
+number of *checks per curve*, not of subjects, and the two must not be conflated.
+
+**Affects:** any file using a `ramifiedUtilities.mag` helper.
+
+**Measured: 0 entry points are missing a provider**, so the two projective files were the only
+instance and they are fixed.
+
+**The scope has to be stated with the figure, and an earlier revision of this entry did not, which
+made it unreproducible.** It quoted "0 of 81 entry points" and "called in 90 files" -- both true,
+of *different* populations, so no single run reproduces the pair. Over **tracked** `.mag` files,
+which is the population that reaches a clone:
+
+| population | files | call `Coeff` | entry points (have a `load`) |
+|---|---|---|---|
+| all tracked | 169 | 90 | 87 |
+| tracked, E7 `timings/` trees excluded | 134 | 83 | **81** |
+
+`Coeff` is **defined in 13 tracked files, none of them a formula file**, and that figure is stable
+under every scope. The timings trees are excluded from every gate in this repository, which is why
+the second row is the operative one; measuring the *worktree* instead of the index gives higher
+numbers again, because the untracked local research trees contain `.mag` files.
+
+The method is worth a sentence, because the instrument was wrong three times before it was right
+and each way was plausible. Resolving `load` targets against the repository root reports 59
+failures, resolving them against the loading file's own directory reports 34, and counting
+`ramifiedUtilities.mag` as its own unsatisfied dependency -- it calls the helper it defines --
+accounts for most of both. **The load path cannot be resolved statically at all**: most testers
+write `load "g3Formulas/..."` and are run from their model directory by `test_all.sh`, while
+`whitebox/probes/` uses repository-root-relative loads, so the same text resolves differently by
+invocation. The provision check therefore matches on basename, which is the only CWD-independent
+question available. **Any run reporting a nonzero count should be assumed to be measuring its own
+path resolution until proved otherwise** -- three of the four attempts were, and the fourth still
+needed its population pinned before it meant anything.

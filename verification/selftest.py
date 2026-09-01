@@ -2251,8 +2251,8 @@ def section_coords_declared(rep, quick):
 
     # 3. and the affine path is UNCHANGED -- the same seven values still decode,
     #    which is the whole reason arity cannot be the discriminator. If this ever
-    #    starts raising, the guard has been made too broad and 13,746 comparisons
-    #    are about to change meaning.
+    #    starts raising, the guard has been made too broad and every one of the
+    #    driver's comparisons is about to change meaning.
     u, v, note = D.decode_divisor(F, 3, seven)
     if u is None or note is not None:
         rep.fail("coords_declared",

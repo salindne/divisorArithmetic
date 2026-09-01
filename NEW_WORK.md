@@ -2335,8 +2335,10 @@ of 1,001, and dropping `h₁v₀` from `Deg1DBL`'s `k₀` gives 12 wrong of 41 �
 than given as a single total.
 
 All four reference blocks agree with their explicit code. `whitebox` replays 1,886 cases with
-the new files at 37/37 and 11/11. `driver --strict` rises from 12,972 to 13,746 comparisons,
-0 wrong, now that the family is covered. The Magma suite is 30 testers, 0 failures, 0 skips.
+the new files at 37/37 and 11/11. `driver --curves 3 --pairs 3 --seed 11 --strict`,
+the smoke invocation, rises from 12,972 to 13,746 comparisons, 0 wrong, now that the family is
+covered.  (The flags matter and were omitted here originally: the UNQUALIFIED `driver --strict`
+is a larger run and prints 55,236, which is the figure `README.md` quotes.) The Magma suite is 30 testers, 0 failures, 0 skips.
 
 **One honest limit on the derivation.** `Deg3ADD` is 956 lines and was derived in five regions
 — prologue, and one per gcd family. The glue lines *between* regions belonged to no region, and
@@ -3393,7 +3395,8 @@ pattern.  A gate never seen to fire is not known to be a gate, and that applies 
 gate as much as to the whole.
 
 **Evidence.** `opcount.py --json` byte-identical, md5 `2a93ffaa1e39fcbbe2bb3a1abfc878ce`, so nothing
-measured moved; `driver --strict` 13,746/13,746; whitebox PASS; dominance clean on 39 files;
+measured moved; `driver --curves 3 --pairs 3 --seed 11 --strict` 13,746/13,746, and the
+unqualified `driver --strict` 55,236/55,236; whitebox PASS; dominance clean on 39 files;
 selftest 19 sections to **20**.  No `.mag` file touched anywhere in this work.
 
 **Honest limits.** The E1 enumeration is `nch2` only, where `dw2 = vp + v` needs no reduction; `arb`
@@ -3485,7 +3488,191 @@ quarter.
 ### Limits, stated
 
 Frequent path only, so the completeness property the affine formulas are known for is **not**
-claimed here.  `opcount.py` skips the family for want of an ADD file, so the 69M figure rests
-on two independent counters in the local research tree rather than on the counter of record.
-And **nothing has run under real Magma** -- `ERRATA.md` E15 says a formula that cannot be run
-under Magma is not verified against the sibling-path class, and that stands unmet.
+claimed here.
+
+Two limits recorded here at the time have since been discharged, and are kept rather than
+deleted because what closed them is the substance of N39.  `opcount.py` skipped the family for
+want of an ADD file, so the 69M figure rested on two counters in the local research tree rather
+than on the counter of record -- it now measures the doubling directly, and the figure is 83.
+And nothing had run under real Magma, leaving `ERRATA.md` E15 unmet: **that is closed too**, by
+`g3/ramifiedModel/projective/nch2_projectiveG3_random.mag`, and closing it found a defect
+neither counter could see -- see N39.
+
+---
+
+## N39 — The projective additions, and what a gate for a new representation finds
+
+**Status** — established, PR47.  **Where** —
+`g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_ADD.mag`,
+`verification/projcheck.py`, `verification/opcount.py`, `verification/driver.py`.
+
+### The result
+
+Two projective additions on the grading of N38, both frequent-path, both inversion-free:
+
+| | M | S | A | C | I | vs FWG |
+|---|---|---|---|---|---|---|
+| `Deg3ADD`, independent `Z1, Z2` | 86 | 13 | 61 | 1 | 0 | **100** against their `123M+7S = 130` |
+| `Deg3ADDmix`, one operand affine | 75 | 10 | 61 | 1 | 0 | **86** against their `104M+6S = 110` |
+
+With N38's doubling at **83 against 117**, all **three** Fan-Wollinger-Gong projective rows this
+repository transcribes from their Table V are answered.  **Three, not four**: a draft of this entry
+claimed a fourth, an affine-input doubling at 79 against 92, and that figure appears in no tracked
+document -- `RELATED_WORK.md:427-428` records exactly three.  On the standing rule that a figure we
+cannot open is not compared against, the fourth is withdrawn rather than carried.
+
+A verifier's ladder is `2*lambda` doublings plus `lambda/2` mixed additions, windowed at `w = 4`, and
+is independent of `T`.  Stated **per bit of lambda**, so it needs no security parameter chosen for it:
+`2(83) + (86/2) = 209` against `2(117) + (110/2) = 289`, a saving of 80 per bit or **27.7%**.  At
+lambda = 128 that is 26,752 against 36,992.
+
+**A draft said "roughly 18,000 against 24,300, about 26% cheaper" and gave no lambda.**  Those two
+numbers imply lambda = 86.1 and lambda = 84.1 -- **different security parameters** -- so they were
+never a consistent pair, and neither was derivable from the rows beside them.  The per-bit form is.
+
+**Why an addition at all, when the delay is pure squaring.**  Verify is general exponentiation and is
+the half that has to be fast; Eval is the half that is *supposed* to be slow.  So the addition is
+co-primary.  Mixed is the verifier's inner loop, because a windowed exponentiation adds a
+precomputed *normalised* table entry to a projective accumulator, and the table can be batch-inverted
+up front -- Montgomery's trick applies there and is unavailable in the delay chain by construction.
+
+**A third variant is deliberately not shipped.**  Shared-`Z` measures `66M 9S 61A 1C`, the best
+number here, and is the least realisable: two operands share a denominator only if both came out of
+one computation and neither was renormalised, which a double-and-add ladder does not produce.
+
+### What the counter of record can and cannot reach, stated because it is quotable
+
+`opcount` measures all three at share 1.00, and the **naming** is the part to get right.  A
+projective family's plain `33ADD` row is the **MIXED** addition, because `build_args` constructs
+affine divisors and binds both denominators to 1, so `IsOne(Zp)` in the dispatcher is always true.
+Anyone comparing that row against FWG's addition row would be comparing the wrong operation, and the
+two differ by 11M 3S.  The general addition is therefore measured under its own label,
+`33ADD general-Z`, by binding two distinct denominators and calling the general function directly:
+
+```
+  ramified/g3/nch2/projective GF(31)
+     33ADD  75M 10S  61A  1C  0I    share 1.00 of 2229 calls
+     33ADD general-Z  86M 13S  61A  1C  0I    share 1.00 of 75 calls
+     3DBL  69M 11S  61A  3C  0I    share 1.00 of 2446 calls
+```
+
+**This was added because the alternative was a headline figure backed only by an untracked tree.**
+An earlier revision of this entry attributed the general figure to `projcheck`, which drives
+independent denominators but **counts nothing at all** -- so the row compared against FWG's `123M+7S`
+could not be reproduced from a clone.  Every sample in the new row is checked against `reference.py`
+by `_agrees` before it is histogrammed, and the fifteen affine families are byte-identical across the
+change, verified by running `--json` on a `git archive` of the previous tree and comparing the affine
+subset (md5 `fed5324ce11f7234a6ab7a4b3bab4829` both sides).
+
+### Two checks with no analogue in the doubling
+
+**Independent scaling.**  Each operand scaled by its OWN `lambda`.  A formula quietly assuming
+`Z1 = Z2` passes every same-`lambda` test, every same-`Z` test and `opcount` too, and fails first on
+Wesolowski's `pi^l * x^r` -- the one multiplication in a VDF that cannot be put in mixed form.
+
+**General versus mixed at `Z2 = 1`.**  The overlap where the two functions must compute the same map.
+Nothing else compares them and they had only ever been exercised apart.
+
+### For the paper, and it is a methodological point rather than a number
+
+**A gate written for a new representation finds defects in the harness, not in the formulas.**  Across
+PR46 and PR47 the projective work surfaced ten latent defects and implicated the formulas zero times.
+Three deserve recording because they share a shape -- *a guard against emptiness that did not cover
+the shape emptiness actually took*:
+
+- PR46's `if not hist:` could **never fire**: `hist` is a `defaultdict(Counter)` whose keys the share
+  computation creates by reading them.  The commit that added it advertised the fix.
+- `count_family` could not express a **DBL-only** family, the third layer to assume both operations
+  exist after `family_domain` and `run_family`.
+- A missing `//Weights:` made one SHAPE vanish from an otherwise healthy report, because an 80-line
+  banner window cut between `//Coordinates:` on line 80 and `//Weights:` on line 81.  Replaced with a
+  structural boundary: everything before the first function definition.
+
+And two conventions were established the hard way.  **Curve coefficients arrive raw** -- graded, but
+carried by the formula, so a caller that pre-scales applies the carriage twice: correct at `Z = 1`
+and wrong at `Z = 2, 3, 7, 50`.  And **`Z = 0` is the refusal signal**, not the affine files'
+all-`(-1)` return, because `-1` is nonzero and a normalising caller builds a garbage divisor from it
+and counts it as a disagreement rather than a skip.
+
+### Under real Magma, and the defect that only Magma could see
+
+`g3/ramifiedModel/projective/nch2_projectiveG3_random.mag` checks all three functions against
+**Magma's own Jacobian arithmetic** -- an oracle sharing no code with `reference.py`, so a defect
+would have to be present in both to survive -- with `Z != 1` throughout, since a wrong power of `Z`
+is invisible at `Z = 1`.  Four checks per curve over GF(11), GF(13), GF(31), GF(101): the doubling,
+the addition on independent `Z1, Z2`, the mixed addition, and the overlap where the general addition
+at `Z2 = 1` must agree with the mixed one -- and must also REFUSE on the same inputs, a split refusal
+being counted as wrong.
+
+**89 comparisons, 0 wrong, 3 off-path**, replayable:
+
+```
+cd g3/ramifiedModel/projective
+RND_SEED=1805123479 ../../../tools/magma-docker/magma.sh nch2_projectiveG3_random.mag
+```
+
+Magma does not seed deterministically, so without the seed the comparison count moves run to run
+(55, 62, 69, 82, 89 were all observed, every one at 0 wrong).  The seed is honoured in both
+directions, checked rather than assumed after the recorded near-miss where two probe runs began in
+the same second and the identical draws were read as proof: the same seed gives 89/3 twice, and
+`RND_SEED=42` gives 67/13.
+
+This discharges `ERRATA.md` E15 for both projective files, which N38 recorded as unmet.
+
+**The tester is deliberately NOT in `test_all.sh`.**  It follows `whitebox/probes/`, which holds
+hand-run verification artifacts that the suite does not count -- appropriate while the projective set
+covers three frequent paths rather than a complete family.  So `README.md`'s tallies still describe
+the twelve shipped families and stay true, and the run is reproducible from the command above rather
+than from the suite.
+
+**Getting there found a defect class no Python gate can see, recorded as `ERRATA.md` E26.**  `Coeff`
+is a repository helper defined at `ramifiedUtilities.mag:25`, and `verification/maginterp.py`
+implements a `Coeff` of its own as an interpreter builtin.  So a file that calls it without loading
+the utilities is accepted by every Python gate and refused by Magma.
+
+**The six gates are not blind for one reason, and an earlier revision of this entry said they were.**
+Four of them -- `opcount`, `driver`, `whitebox`, `projcheck` -- drive the interpreter that supplies
+the name.  `dominance` does not import `maginterp` at all: it whitelists `Coeff` in a hardcoded
+known-callables list at `dominance.py:50`, which is blind for a **worse** reason, the name being
+blessed with no reference to where it is defined.  And `blockcheck` **is not blind at all** -- it
+drives real Magma by subprocess and its generated scripts already load `ramifiedUtilities.mag`
+(`blockcheck.py:220`).
+
+**So the one gate that would have caught this did not run, and its exclusion is DOCUMENTED rather
+than silent.**  `blockcheck` discovers families by globbing
+`g3/ramifiedModel/*_ramifiedG3_random.mag`, and the projective tester sits one directory deeper, so
+the glob does not match it -- stated at `blockcheck.py:93` and again in its `--list` footer, with the
+CI comment beside the `projcheck` step recording independently that its parameter patterns reject a
+`Z`.  **A draft of this entry called that a silent cap; the retraction belongs in the record**, since
+the honest finding is narrower and still worth having: **no Magma-backed gate covered the projective
+files at all until this work's tester existed.**  A coverage gap by construction, not an instrument
+misreporting what it did.
+
+**The failure is partial, which is what makes it worth a paper's worth of caution.**  Magma executes
+a loaded file statement by statement, so the three `Deg3*` functions loaded and both dispatchers did
+not.  The tester calls the `Deg3*` functions directly, so the first run reported **62 comparisons, 0
+wrong** -- a green run, over two dispatchers that did not exist, with two `User error` lines scrolled
+off above the summary.  Every figure in it was true.  None was the figure a reader would take from
+it.
+
+That is `ERRATA.md` E12 one level down.  E12 is a tester that compared nothing and said so greenly;
+this is a tester that compared something real while half its subjects were absent.  **The lesson for
+the write-up is that a Magma run is evidence only if its output is read for `User error` lines
+rather than for its summary** -- the summary cannot distinguish a complete run from a partial one,
+and a comparison count, which E12 added precisely to make vacuity visible, does not either.
+
+### Limits
+
+Frequent path only.  The degenerate addition branches -- `ADD24`, `ADD26`, `ADD28`-`ADD33`, `ADD35`
+in both families -- are not quasi-homogeneous statement by statement, every case being a Karatsuba
+cross-term fold over coefficients two weights apart.  Fixing that is 23 re-associations at
+`+15M -69A` whole-file and **nothing on the frequent path**, and it is the precondition for
+completeness rather than part of it.
+
+**Parameter names are the derivation's, not house style**, and that is knowing.  Renaming is blocked:
+every target name already occurs in both bodies as an internal value, so a whole-token rename would
+merge an input with an unrelated intermediate -- PR21's hazard.  The follow-up must be two-phase.
+The cost is not cosmetic: `Deg3ADDmix`'s signature carries **three coefficient orders**, and the
+order was reconstructed WRONGLY the first time anyone rebuilt it, in `projcheck` itself, minutes
+after the banner warning about it was written.  Every caller is a place to get it wrong, and there
+are already two.
