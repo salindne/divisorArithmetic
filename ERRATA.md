@@ -1434,3 +1434,67 @@ thousands"; see `Thesis/ERRATA.md` E-T16.
 
 **Affects:** reproducibility of the genus-2 timing plots from source. The plots themselves, their
 raw data, and every relative comparison drawn from them are unaffected.
+
+## E26: a repository helper reimplemented as an interpreter builtin makes a missing `load` invisible to every Python gate
+
+**Found 2026-09-01**, by running the projective genus-3 formulas under real Magma for the first
+time. `ERRATA.md` E15 already says only Magma catches the assigned-on-another-path class. This is
+a **second** Magma-only class, and its cause is in the harness rather than in a formula.
+
+`Coeff` is a repository helper, defined at
+[g3/ramifiedModel/ramifiedUtilities.mag:25](g3/ramifiedModel/ramifiedUtilities.mag#L25). It is not
+a Magma builtin. `verification/maginterp.py:277` implements a `Coeff` of its own, as a builtin of
+the interpreter.
+
+**So the two substrates disagree about what a formula file may assume, and the disagreement is
+undetectable from the Python side.** A file that calls `Coeff` without loading the utilities is
+accepted by `opcount`, `driver`, `whitebox`, `dominance`, `blockcheck` and `projcheck` -- every one
+of them drives `maginterp`, which supplies the name -- and refused by Magma with
+`User error: Identifier 'Coeff' has not been declared or assigned`.
+
+**Measured, and the failure is partial, which is what makes it dangerous.** Magma executes a loaded
+file statement by statement, so the definitions that precede the offending call load normally and
+only the caller fails:
+
+| | loaded | outcome |
+|---|---|---|
+| `Deg3DBL`, `Deg3ADD`, `Deg3ADDmix` | yes | callable, and correct |
+| the `DBL` and `ADD` dispatchers | **no** | `Coeff` at DBL:188 and ADD:326 |
+
+A tester that calls the `Deg3*` functions directly therefore reports a **fully green run over two
+dispatchers that do not exist**: 62 comparisons, 0 wrong, with two `User error` lines scrolled off
+above the summary. Both figures are true. Neither is the figure the reader wants.
+
+**Fixed in the caller, not in the harness.** The projective tester loads
+`g3/ramifiedModel/ramifiedUtilities.mag` first, with the reason stated inline, and the run then
+reports 69 comparisons and 0 wrong with both dispatchers loaded.
+
+**Not fixed in `maginterp.py`, deliberately.** Removing its `Coeff` builtin would make every
+Python gate depend on resolving a `load` chain it currently has no need to read, which is a large
+change to the gate stack to catch a defect whose real fix is one line in the file that has it. The
+durable protection is the rule below.
+
+**The rule this leaves.** A formula file may use `Coeff` only if something loads
+`ramifiedUtilities.mag` before it, and **no Python gate will tell you** whether that holds. The
+check is a real Magma run whose output is read for `User error` lines rather than for its summary
+-- which is `ERRATA.md` E12 one level down: E12 is a tester that compared nothing and said so
+greenly, and this is a tester that compared something real while two of its four subjects were
+absent.
+
+**Affects:** any file using a `ramifiedUtilities.mag` helper.
+
+**Measured across the repository: 0 of 81 entry points is missing a provider**, so the two
+projective files were the only instance and they are fixed. `Coeff` is called in 90 files and
+defined in 13, none of them a formula file.
+
+The measurement is worth one sentence of method, because the instrument was wrong three times
+before it was right and each way was plausible. Resolving `load` targets against the repository
+root reports 59 failures, resolving them against the loading file's own directory reports 34, and
+counting `ramifiedUtilities.mag` as its own unsatisfied dependency -- it calls the helper it
+defines -- accounts for most of both. **The load path cannot be resolved statically at all**: some
+testers write `load "g3Formulas/..."` and are run from their model directory, others write
+`load "g3/ramifiedModel/..."` and are run from the repository root, so the same text resolves
+differently by invocation. The figure above therefore matches on basename, which is the only
+CWD-independent question available, and it is a check on provision rather than on path
+correctness. **Any run reporting a nonzero count here should be assumed to be measuring its own
+path resolution until proved otherwise** -- three of the four attempts were.

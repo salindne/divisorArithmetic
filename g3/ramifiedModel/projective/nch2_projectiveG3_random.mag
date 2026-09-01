@@ -1,0 +1,165 @@
+///////////////////////////////////////////////////////////////////////////////
+// Random tester for the WEIGHTED PROJECTIVE genus-3 ramified formulas.
+//
+// The oracle is MAGMA'S OWN JACOBIAN ARITHMETIC, which is independent of
+// verification/reference.py -- so a defect would have to be present in both to
+// survive. ERRATA.md E15: a formula edit that cannot be run under Magma is not
+// verified against the sibling-path class, and until this file existed neither
+// projective formula had been near it.
+//
+// What it checks, per curve:
+//   DBL        normalise the projective result and compare against 2*D
+//   ADD        both operands projective on INDEPENDENT Z1, Z2, against D1 + D2
+//   ADDmix     one operand affine, against D1 + D2
+//   agreement  ADD at Z2 = 1 against ADDmix on the same inputs -- the overlap
+//              where the two must compute the same map
+//
+// Z != 1 THROUGHOUT, deliberately. A wrong power of Z is invisible at Z = 1, and
+// this is the only Magma-side check of that.
+//
+// Prints a comparison count and asserts it nonzero, per ERRATA.md E12: every
+// tester used to print a green summary when its loads had failed and it had
+// compared nothing.
+///////////////////////////////////////////////////////////////////////////////
+
+// ramifiedUtilities FIRST: `Coeff` is a REPOSITORY HELPER defined at
+// ramifiedUtilities.mag:25, not a Magma builtin. Both dispatchers call it, and
+// `verification/maginterp.py` implements `Coeff` as a builtin of its own -- so a
+// file using it passes every Python gate and still fails to load in Magma with
+// "Identifier 'Coeff' has not been declared or assigned". Measured: without this
+// line the Deg3* functions load and both dispatchers do NOT, silently, because
+// Magma executes a loaded file statement by statement and the failures come after
+// the function definitions. That is ERRATA.md E15's argument demonstrated.
+load "g3/ramifiedModel/ramifiedUtilities.mag";
+load "g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_DBL.mag";
+load "g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_ADD.mag";
+
+FIELDS := [11, 13, 31, 101];
+TRIALS := 6;
+
+compared := 0;
+wrong    := 0;
+offpath  := 0;
+
+for q in FIELDS do
+    F := GF(q);
+    R<x> := PolynomialRing(F);
+
+    for t in [1..TRIALS] do
+        // y^2 = x^7 + f5x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0, the nch2 form
+        f5 := Random(F); f4 := Random(F); f3 := Random(F);
+        f2 := Random(F); f1 := Random(F); f0 := Random(F);
+        f := x^7 + f5*x^5 + f4*x^4 + f3*x^3 + f2*x^2 + f1*x + f0;
+        if not IsSquarefree(f) then continue; end if;
+
+        C := HyperellipticCurve(f);
+        if Genus(C) ne 3 then continue; end if;
+        J := Jacobian(C);
+
+        D1 := Random(J);
+        D2 := Random(J);
+        if Degree(D1[1]) ne 3 or Degree(D2[1]) ne 3 then continue; end if;
+
+        u  := D1[1]; v  := D1[2];
+        up := D2[1]; vp := D2[2];
+
+        Z1 := Random(F);  while IsZero(Z1) do Z1 := Random(F); end while;
+        Z2 := Random(F);  while IsZero(Z2) do Z2 := Random(F); end while;
+
+        // numerators: u_i = U_i/Z^(2(3-i)), v_j = V_j/Z^(7-2j)
+        U12 := Coefficient(u,2)*Z1^2; U11 := Coefficient(u,1)*Z1^4;
+        U10 := Coefficient(u,0)*Z1^6;
+        V12 := Coefficient(v,2)*Z1^3; V11 := Coefficient(v,1)*Z1^5;
+        V10 := Coefficient(v,0)*Z1^7;
+        U22 := Coefficient(up,2)*Z2^2; U21 := Coefficient(up,1)*Z2^4;
+        U20 := Coefficient(up,0)*Z2^6;
+        V22 := Coefficient(vp,2)*Z2^3; V21 := Coefficient(vp,1)*Z2^5;
+        V20 := Coefficient(vp,0)*Z2^7;
+
+        // ---- DOUBLING ----
+        a3,a2,a1,a0,b2,b1,b0,Zn := Deg3DBL(U12,U11,U10,V12,V11,V10,Z1,f5,f4,f3);
+        if IsZero(Zn) then
+            offpath := offpath + 1;
+        else
+            nu := x^3 + (a2/Zn^2)*x^2 + (a1/Zn^4)*x + (a0/Zn^6);
+            nv := (b2/Zn^3)*x^2 + (b1/Zn^5)*x + (b0/Zn^7);
+            E := 2*D1;
+            compared := compared + 1;
+            if nu ne E[1] or nv ne E[2] then
+                wrong := wrong + 1;
+                print "WRONG DBL over GF(", q, ")";
+            end if;
+        end if;
+
+        // ---- ADDITION, independent Z1 and Z2 ----
+        c3,c2,c1,c0,d2,d1,d0,Za := Deg3ADD(Z1,Z2,U12,U11,U10,V12,V11,V10,
+                                           U22,U21,U20,V22,V21,V20,f5);
+        if IsZero(Za) then
+            offpath := offpath + 1;
+        else
+            au := x^3 + (c2/Za^2)*x^2 + (c1/Za^4)*x + (c0/Za^6);
+            av := (d2/Za^3)*x^2 + (d1/Za^5)*x + (d0/Za^7);
+            S := D1 + D2;
+            compared := compared + 1;
+            if au ne S[1] or av ne S[2] then
+                wrong := wrong + 1;
+                print "WRONG ADD over GF(", q, ")";
+            end if;
+        end if;
+
+        // ---- MIXED, second operand affine.  Primed names are the AFFINE one, and
+        //      the projective u block is passed ASCENDING -- see the file banner.
+        e3,e2,e1,e0,g2,g1,g0,Zm := Deg3ADDmix(Z1,f5,
+                                              Coefficient(up,2),Coefficient(up,1),
+                                              Coefficient(up,0),
+                                              Coefficient(vp,2),Coefficient(vp,1),
+                                              Coefficient(vp,0),
+                                              U10,U11,U12, V12,V11,V10);
+        if IsZero(Zm) then
+            offpath := offpath + 1;
+        else
+            mu := x^3 + (e2/Zm^2)*x^2 + (e1/Zm^4)*x + (e0/Zm^6);
+            mv := (g2/Zm^3)*x^2 + (g1/Zm^5)*x + (g0/Zm^7);
+            S := D1 + D2;
+            compared := compared + 1;
+            if mu ne S[1] or mv ne S[2] then
+                wrong := wrong + 1;
+                print "WRONG ADDmix over GF(", q, ")";
+            end if;
+        end if;
+
+        // ---- OVERLAP: the general addition at Z2 = 1 against the mixed one ----
+        // At Z2 = 1 the two compute the same map, so they must agree on the same
+        // inputs AND refuse on the same inputs.  This is the only place under Magma
+        // where the two schedules are held against each other rather than each
+        // against the Jacobian.
+        o3,o2,o1,o0,p2,p1,p0,Zo := Deg3ADD(Z1,1,U12,U11,U10,V12,V11,V10,
+                                           Coefficient(up,2),Coefficient(up,1),
+                                           Coefficient(up,0),
+                                           Coefficient(vp,2),Coefficient(vp,1),
+                                           Coefficient(vp,0),f5);
+        if IsZero(Zo) and IsZero(Zm) then
+            offpath := offpath + 1;
+        elif IsZero(Zo) or IsZero(Zm) then
+            // One refused and the other did not: a divergence in the refusal
+            // domain, which at Z2 = 1 is itself a defect.
+            wrong := wrong + 1;
+            print "SPLIT REFUSAL ADD/ADDmix over GF(", q, ")";
+        else
+            ou := x^3 + (o2/Zo^2)*x^2 + (o1/Zo^4)*x + (o0/Zo^6);
+            ov := (p2/Zo^3)*x^2 + (p1/Zo^5)*x + (p0/Zo^7);
+            compared := compared + 1;
+            if ou ne mu or ov ne mv then
+                wrong := wrong + 1;
+                print "DISAGREE ADD(Z2=1) vs ADDmix over GF(", q, ")";
+            end if;
+        end if;
+    end for;
+end for;
+
+print "// Comparisons:", compared;
+print "// Off-path   :", offpath;
+print "// Wrong      :", wrong;
+assert compared gt 0;
+assert wrong eq 0;
+print "// No errors.";

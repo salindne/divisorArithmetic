@@ -197,7 +197,21 @@ def _agrees(fam, cur, V, D1, D2, op, vals):
             weights = D.weights_declared(fam.dbl_path if op == "DBL"
                                          else fam.add_path)
             if not weights:
-                return None                 # nothing declared: not blamed, not counted
+                # LOUD. Returning None here made every sample vanish and the shape's
+                # row simply not appear -- a per-shape version of the silent empty,
+                # and it happened for real: an 80-line banner window cut between
+                # `//Coordinates:` on line 80 and `//Weights:` on line 81, so the
+                # doubling measured and the addition silently did not.
+                #
+                # A file declaring '//Coordinates: projective' with no '//Weights:'
+                # is MISCONFIGURED, not an awkward sample. Raising is right: the
+                # bare `except: continue` above would swallow it per sample, so this
+                # deliberately raises the exception type that escapes it.
+                raise RuntimeError(
+                    "%s declares '//Coordinates: projective' but no '//Weights:' "
+                    "in its banner region, so a projective return cannot be "
+                    "normalised and nothing about this family can be measured."
+                    % (fam.dbl_path if op == "DBL" else fam.add_path))
             gu, gv, why = PJ.normalise(F, fam.genus, list(vals), weights)
             if gu is None:
                 # Off the frequent path (Znew = 0) is not a disagreement -- the file

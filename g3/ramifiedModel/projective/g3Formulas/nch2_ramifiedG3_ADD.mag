@@ -1,0 +1,345 @@
+///////////////////////////////////////////////////////////////////////////////
+// Author: Sebastian Lindner
+//
+// Description: Explicit divisor ADDITION in WEIGHTED PROJECTIVE coordinates for
+//              the genus-3 ramified model, characteristic neither 2 nor 7:
+//
+//              f(x) = x^7 + f5x^5 + f4x^4 + f3x^3 + f2x^2 + f1x + f0
+//
+//              Companion to nch2_ramifiedG3_DBL.mag in this directory. Same
+//              grading, same single auxiliary coordinate, no field inversion.
+//
+// Why an addition at all, when a VDF's delay is pure squaring: the VERIFIER is
+//              general exponentiation, roughly 2*lambda doublings and lambda/2
+//              additions independent of T, and it is the half that has to be fast.
+//              Eval is the half that is supposed to be slow. So the addition is
+//              co-primary, not secondary.
+//
+// TWO ENTRY POINTS, and the distinction is the input convention, not the maths:
+//
+//   Deg3ADD     both divisors projective on INDEPENDENT Z1, Z2. Unconditionally
+//               applicable, and the shape Fan-Wollinger-Gong publish, so it is the
+//               apples-to-apples comparison: 87M + 13S = 100 against their
+//               123M + 7S = 130. Measured 86M 13S 61A 1C 0I.
+//
+//   Deg3ADDmix  one operand projective, one AFFINE. The verifier's inner loop -- a
+//               windowed exponentiation adds a precomputed, normalised table entry
+//               to a projective accumulator -- and about 38% of its operation
+//               budget. Measured 75M 10S 61A 1C 0I, against FWG's mixed 104M + 6S.
+//               The precondition is cheap because the table is built up front, so
+//               Montgomery's batch trick applies there and NOT in the delay chain.
+//
+//              A shared-Z variant exists and measures 66M 9S 61A 1C, and is
+//              deliberately NOT shipped: two operands share a denominator only if
+//              both came out of one computation and neither was renormalised, which
+//              a double-and-add ladder does not produce. It is the prettiest number
+//              here and the least realisable.
+//
+// Grading:     as the doubling. wt(x) = 2, wt(y) = 2g+1 = 7, so
+//                  u_i = U_i/Z^(2(e-i))   for a monic u of degree e
+//                  v_j = V_j/Z^(7-2j)     on every branch, e-independent
+//              The u exponents shift with the output degree and the v exponents do
+//              not, which is what lets these files keep the shipped bottom-aligned
+//              return shape rather than inverting the affine convention.
+//
+// Curve coefficients arrive RAW. These functions carry them themselves -- see the
+//              Z ladder at the top of each -- so a caller that pre-scales applies
+//              the carriage twice: correct at Z = 1 and wrong at every other Z.
+//
+// PARAMETER NAMES ARE THE DERIVATION'S, NOT HOUSE STYLE, and that is a knowing
+//              deviation recorded rather than hidden. Renaming to u/v/up/vp is
+//              blocked: every target name ALREADY OCCURS in both bodies as an
+//              internal value, so a whole-token rename would merge an input with an
+//              unrelated intermediate -- PR21's exact hazard, where u1_1 -> u1
+//              silently merged with a polynomial u1. PR21 was an entire PR for that
+//              work on the affine files, 7,310 replacements with a drift guard, and
+//              doing it inline here is how a silent wrong answer ships. The rename
+//              is follow-up work and must be TWO-PHASE: move the internal names
+//              first, then the parameters.
+//
+//              So the mapping is documented instead, and it was established by
+//              MEASUREMENT against reference.add rather than read off the names --
+//              the alternative assignment disagrees. Note in particular that the
+//              orders are not uniform: three different ones appear below.
+//
+// Scope:       FREQUENT PATH ONLY, as the doubling. The degenerate addition
+//              branches -- ADD24, ADD26, ADD28 through ADD33, ADD35 in both arb and
+//              nch2 -- are NOT quasi-homogeneous statement by statement: each
+//              contains a Karatsuba cross-term fold (a+b)*(c+d) - a*c - b*d where a
+//              and b are adjacent coefficients of one polynomial, and adjacent
+//              coefficients differ by exactly 2 in weight. The fold is exact, so the
+//              VALUE is graded and the STATEMENT is not. Fixing it is 23
+//              re-associations at +15M -69A whole-file and nothing on the frequent
+//              path; until then ADD refuses what it does not implement.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+//Must keep next line in this format for latex conversion
+//Constant: f5,f4,f3,f2,f1,f0
+
+//Coordinates: projective
+//Weights: u2=2,u1=4,u0=6,v2=3,v1=5,v0=7,up2=2,up1=4,up0=6,vp2=3,vp1=5,vp0=7,f5=4,f4=6,f3=8
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg3ADDmix():
+// Input: Z:                  the PROJECTIVE operand's denominator, nonzero
+//        f5:                 curve coefficient, RAW
+//        ap2,ap1,ap0:        AFFINE operand's u coefficients, DESCENDING
+//        bp2,bp1,bp0:        AFFINE operand's v coefficients, DESCENDING
+//        u0,u1,u2:           PROJECTIVE operand's u numerators -- ASCENDING, and
+//                            that is not a typo. This signature carries three
+//                            different coefficient orders; see the file banner.
+//        v2,v1,v0:           PROJECTIVE operand's v numerators, DESCENDING
+//
+// Output: upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0, Znew, as Deg3ADD.
+//
+// Description: Adds a projective divisor to an AFFINE one. Measured
+//              75M 10S 61A 1C 0I, eleven multiplicative operations under the general
+//              case, because only six coordinates need lifting instead of twelve and
+//              no denominator unification is needed.
+//
+//              THE PRIMED NAMES ARE THE AFFINE OPERAND. Verified against
+//              reference.add: the transposed assignment disagrees. Addition is
+//              commutative, so a swapped call can still return a correct answer for
+//              a symmetric input -- which is exactly why this is stated rather than
+//              left to the reader, and why a test using two Z = 1 operands would
+//              pass either mapping.
+///////////////////////////////////////////////////////////////////////////////
+Deg3ADDmix:= function(Z, f5, ap2, ap1, ap0, bp2, bp1, bp0, u0, u1, u2, v2, v1, v0)
+    Z2 := Z^2;
+    Z4 := Z2^2;
+    F5 := f5*Z4;
+    Z3 := Z2*Z;
+    Z5 := Z4*Z;
+    Z6 := Z3^2;
+    Z7 := Z6*Z;
+    up2 := ap2*Z2;
+    up1 := ap1*Z4;
+    up0 := ap0*Z6;
+    vp2 := bp2*Z3;
+    vp1 := bp1*Z5;
+    vp0 := bp0*Z7;
+    t1 := u0 - up0;
+    t4 := u1 - up1;
+    t7 := u2 - up2;
+    t2 := -up0*t7;
+    t5 := t1 - up1*t7;
+    t8 := t4 - up2*t7;
+    m7 := t4*t8 - t5*t7;
+    m8 := t2*t7 - t1*t8;
+    m9 := t1*t5 - t2*t4;
+    m5 := m9 + up2*m8;
+    m2 := -up0*m7;
+    m1 := m5 + up1*m7;
+    d := t1*m1 + t4*m2 + t2*m8;
+    k2 := F5 - u1 + u2^2;
+    vt2 := vp2 - v2;
+    vt1 := vp1 - v1;
+    vt0 := vp0 - v0;
+    m3 := -up0*m8;
+    sp0 := vt0*m1 + vt1*m2 + vt2*m3;
+    sp1 := vt0*(m8 + up2*m7) + vt1*m5 + vt2*(m2 - up1*m8);
+    sp2 := vt0*m7 + vt1*m8 + vt2*m9;
+    A2 := sp2^2;
+    G := up2*sp2 - sp1;
+    R1 := up1*A2 - sp1*G - sp0*sp2;
+    R0 := up0*A2 - sp0*G;
+    P := sp2*d;
+    P2 := P^2;
+    P3 := P2*P;
+    P4 := P2^2;
+    P5 := P4*P;
+    P6 := P3^2;
+    P7 := P6*P;
+    W := P*d;
+    Ls1 := sp1*W;
+    Lw3 := W^2;
+    Lr1 := R1;
+    Lr0 := R0*P2;
+    Lu2 := u2*P2;
+    Lup2 := up2*P2;
+    Lv2 := v2*P3;
+    Lvt2 := vt2*P3;
+    Lkmu := (k2 - up1)*P4;
+    Lu1 := u1*P4;
+    Lv1 := v1*P5;
+    Lu0 := u0*P6;
+    Lv0 := v0*P7;
+    Lt7 := Lu2 - Lup2;
+    Lv2p := Lv2 + Lv2 + Lvt2;
+    Lq0 := Lup2 - Ls1;
+    LM10 := Lvt2 + Lr0 + Lr1*Lt7;
+    LM21 := -Lu2 - Ls1;
+    LM20 := Lkmu + Ls1*(Lu2 + Lup2) + Lr1*Lv2p;
+    LE := LM21 - Lr1^2;
+    Lupp2 := LE + Lq0;
+    Lupp1 := LM20 - Lr1*(LM10 + Lr0) + LM21*Lq0;
+    Lupp0 := LM20*Lq0 - Lr0*LM10;
+    Lt1 := Lr0 - Lr1*Lq0;
+    Lt2 := (Lu2 - Lq0)*Lt1 + LE*Lw3;
+    Lvpp2 := Lr1*(Lu2 - Lupp2) + Lt1 + Lw3 - Lv2;
+    Lvpp1 := Lr1*(Lu1 - Lupp1) + Lt2 - Lv1;
+    Lvpp0 := Lr1*(Lu0 - Lupp0) + Lu1*Lt1 - Lq0*Lt2 + Lupp1*Lw3 - Lv0;
+    Znew := P*Z;
+    return 1, Lupp2, Lupp1, Lupp0, Lvpp2, Lvpp1, Lvpp0, Znew;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg3ADD():
+// Input: Z1, Z2:            the two operands' independent denominators, both nonzero
+//        X2,X1,X0, Y2,Y1,Y0:    first divisor's numerators, u then v, DESCENDING,
+//                               over Z1 at the declared weights
+//        Xp2,Xp1,Xp0, Yp2,Yp1,Yp0: second divisor's, over Z2, DESCENDING
+//        f5:                    curve coefficient, RAW
+//
+// Output: upp3, upp2, upp1, upp0, vpp2, vpp1, vpp0, Znew -- 2g+2 values, the shipped
+//         shape plus the denominator. upp3 is the literal 1: u is monic and
+//         wt(u_3) = 0.
+//
+// Description: Adds two degree-3 divisors whose supports are disjoint, both in
+//              projective coordinates with unrelated denominators. Measured
+//              86M 13S 61A 1C 0I. Roughly 13M of that is unifying the two
+//              denominators -- Z := Z1*Z2 and the lifts -- which is the price of the
+//              general case and is exactly what Deg3ADDmix avoids.
+//
+//              Mapping VERIFIED against reference.add, not inferred: X/Y is the
+//              first operand over Z1 and Xp/Yp the second over Z2. The transposed
+//              assignment disagrees.
+///////////////////////////////////////////////////////////////////////////////
+Deg3ADD:= function(Z1, Z2, X2, X1, X0, Y2, Y1, Y0, Xp2, Xp1, Xp0, Yp2, Yp1, Yp0, f5)
+    Z := Z1*Z2;
+    a2 := Z2^2;
+    a3 := a2*Z2;
+    a4 := a2^2;
+    a5 := a4*Z2;
+    a6 := a3^2;
+    a7 := a6*Z2;
+    b2 := Z1^2;
+    b3 := b2*Z1;
+    b4 := b2^2;
+    b5 := b4*Z1;
+    b6 := b3^2;
+    b7 := b6*Z1;
+    u2 := X2*a2;
+    u1 := X1*a4;
+    u0 := X0*a6;
+    v2 := Y2*a3;
+    v1 := Y1*a5;
+    v0 := Y0*a7;
+    up2 := Xp2*b2;
+    up1 := Xp1*b4;
+    up0 := Xp0*b6;
+    vp2 := Yp2*b3;
+    vp1 := Yp1*b5;
+    vp0 := Yp0*b7;
+    Z4 := a4*b4;
+    F5 := f5*Z4;
+    t1 := u0 - up0;
+    t4 := u1 - up1;
+    t7 := u2 - up2;
+    t2 := -up0*t7;
+    t5 := t1 - up1*t7;
+    t8 := t4 - up2*t7;
+    m7 := t4*t8 - t5*t7;
+    m8 := t2*t7 - t1*t8;
+    m9 := t1*t5 - t2*t4;
+    m5 := m9 + up2*m8;
+    m2 := -up0*m7;
+    m1 := m5 + up1*m7;
+    d := t1*m1 + t4*m2 + t2*m8;
+    k2 := F5 - u1 + u2^2;
+    vt2 := vp2 - v2;
+    vt1 := vp1 - v1;
+    vt0 := vp0 - v0;
+    m3 := -up0*m8;
+    sp0 := vt0*m1 + vt1*m2 + vt2*m3;
+    sp1 := vt0*(m8 + up2*m7) + vt1*m5 + vt2*(m2 - up1*m8);
+    sp2 := vt0*m7 + vt1*m8 + vt2*m9;
+    A2 := sp2^2;
+    G := up2*sp2 - sp1;
+    R1 := up1*A2 - sp1*G - sp0*sp2;
+    R0 := up0*A2 - sp0*G;
+    P := sp2*d;
+    P2 := P^2;
+    P3 := P2*P;
+    P4 := P2^2;
+    P5 := P4*P;
+    P6 := P3^2;
+    P7 := P6*P;
+    W := P*d;
+    Ls1 := sp1*W;
+    Lw3 := W^2;
+    Lr1 := R1;
+    Lr0 := R0*P2;
+    Lu2 := u2*P2;
+    Lup2 := up2*P2;
+    Lv2 := v2*P3;
+    Lvt2 := vt2*P3;
+    Lkmu := (k2 - up1)*P4;
+    Lu1 := u1*P4;
+    Lv1 := v1*P5;
+    Lu0 := u0*P6;
+    Lv0 := v0*P7;
+    Lt7 := Lu2 - Lup2;
+    Lv2p := Lv2 + Lv2 + Lvt2;
+    Lq0 := Lup2 - Ls1;
+    LM10 := Lvt2 + Lr0 + Lr1*Lt7;
+    LM21 := -Lu2 - Ls1;
+    LM20 := Lkmu + Ls1*(Lu2 + Lup2) + Lr1*Lv2p;
+    LE := LM21 - Lr1^2;
+    Lupp2 := LE + Lq0;
+    Lupp1 := LM20 - Lr1*(LM10 + Lr0) + LM21*Lq0;
+    Lupp0 := LM20*Lq0 - Lr0*LM10;
+    Lt1 := Lr0 - Lr1*Lq0;
+    Lt2 := (Lu2 - Lq0)*Lt1 + LE*Lw3;
+    Lvpp2 := Lr1*(Lu2 - Lupp2) + Lt1 + Lw3 - Lv2;
+    Lvpp1 := Lr1*(Lu1 - Lupp1) + Lt2 - Lv1;
+    Lvpp0 := Lr1*(Lu0 - Lupp0) + Lu1*Lt1 - Lq0*Lt2 + Lupp1*Lw3 - Lv0;
+    Znew := P*Z;
+    return 1, Lupp2, Lupp1, Lupp0, Lvpp2, Lvpp1, Lvpp0, Znew;
+end function;
+
+///////////////////////////////////////////////////////////////////////////////
+// ADD():
+// Input: u, v, Z:     polynomial Mumford coordinates and denominator of D1
+//        up, vp, Zp:  the same for D2. Zp = 1 selects the mixed path.
+//        f:           curve polynomial
+//
+// Output: projective upp3..upp0, vpp2..vpp0, Znew for D1 + D2
+//
+// Description: Dispatches on degree and on whether the second operand is affine,
+//              and REFUSES everything else. Returns Znew = 0 on refusal -- NOT the
+//              affine files' all-(-1) convention, because -1 is nonzero and a
+//              normalising caller would build a garbage divisor from it and count it
+//              as a disagreement rather than a skip. Zero is the one value every
+//              consumer here already refuses.
+//
+//              Degree tests only: no Resultant, which maginterp does not implement.
+//              The frequent-path condition needs no test anyway -- Znew = d*sp2*Z
+//              vanishes exactly when the input leaves it.
+///////////////////////////////////////////////////////////////////////////////
+ADD:= function(u, v, Z, up, vp, Zp, f)//startIGNORE
+    // Extracted and NOT USED, and not deletable: driver.read_support infers the
+    // family's domain by contrast, so an absent extraction reads as "assumed zero".
+    // PR21's f7 := Coeff(f, 7) is the precedent.
+    f2 := Coeff(f,2);
+    f1 := Coeff(f,1);
+    f0 := Coeff(f,0);
+    if Degree(u) eq 3 and Degree(up) eq 3 then
+        if IsOne(Zp) then
+            return Deg3ADDmix(Z, Coeff(f,5),
+                              Coeff(up,2), Coeff(up,1), Coeff(up,0),
+                              Coeff(vp,2), Coeff(vp,1), Coeff(vp,0),
+                              Coeff(u,0), Coeff(u,1), Coeff(u,2),
+                              Coeff(v,2), Coeff(v,1), Coeff(v,0));
+        end if;
+        return Deg3ADD(Z, Zp,
+                       Coeff(u,2), Coeff(u,1), Coeff(u,0),
+                       Coeff(v,2), Coeff(v,1), Coeff(v,0),
+                       Coeff(up,2), Coeff(up,1), Coeff(up,0),
+                       Coeff(vp,2), Coeff(vp,1), Coeff(vp,0), Coeff(f,5));
+    end if;
+    "PROJECTIVE ADD: only deg u = deg up = 3 is explicit in this file";
+    return 0, 0, 0, 0, 0, 0, 0, 0;
+end function;//endIGNORE

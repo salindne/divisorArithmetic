@@ -618,6 +618,22 @@ def build_args(params, curve, D1, D2=None):
             args.append(curve.h)
         elif key == "q":
             args.append(curve.F.q)
+        elif key in ("Zp", "zp", "Z2", "z2"):
+            # The SECOND operand's denominator. Bound to 1, which means this caller
+            # always selects a projective ADD's MIXED branch -- and that is a real
+            # limitation rather than a neutral default, so it is stated here and in
+            # `opcount`'s output rather than left for someone to infer from a
+            # figure.
+            #
+            # `build_args` constructs AFFINE divisors; it has no projective
+            # representative to hand, so 1 is the only honest value for either
+            # denominator. A projective ADD with both Z = 1 is the affine embedding
+            # of both operands, which is fine for an operation COUNT because these
+            # programs are straight-line -- but it means the independent-Z variant,
+            # the one FWG's published row compares against, is NOT reachable from
+            # here. That figure comes from `projcheck`, which drives its own
+            # arguments with Z1 != Z2 precisely because this cannot.
+            args.append(curve.F(1))
         elif key in ("Z", "z"):
             # A PROJECTIVE dispatcher takes the shared denominator as an input --
             # that is what makes it projective. Unmapped, it raised
@@ -637,6 +653,29 @@ def build_args(params, curve, D1, D2=None):
         else:
             raise KeyError("unmapped dispatcher parameter %r" % key)
     return args
+
+def _banner_region(path):
+    """Everything before the first function definition.
+
+    A STRUCTURAL boundary, not a line count. Both readers here used `head=80`,
+    and the first file with a long banner put `//Coordinates:` on line 80 and
+    `//Weights:` on line 81 -- so the window cut BETWEEN TWO ADJACENT DIRECTIVE
+    LINES. The coordinate system was read and the weight vector was not, `_agrees`
+    returned None for every addition sample, and the row simply never appeared in
+    `opcount`'s output. Silent, and off by one line.
+
+    "Before any code" is what "in the banner" actually means, and it still excludes
+    the hazard the limit existed for: a `//Coordinates:` mention inside a reference
+    block is inside a function, so it is past this boundary.
+    """
+    out = []
+    with open(path) as fh:
+        for line in fh:
+            if re.search(r"^\s*\w+\s*:=\s*function\s*\(", line):
+                break
+            out.append(line)
+    return "".join(out)
+
 
 
 # NO space between // and the keyword. `opcount._DIRECTIVE` allows one for
@@ -664,8 +703,7 @@ def coords_declared(path, head=80):
     reference block is prose, not a declaration. Same reason `banner_members`
     reads only the banner region.
     """
-    with open(path) as fh:
-        text = "".join([next(fh, "") for _ in range(head)])
+    text = _banner_region(path)
     m = _COORDS_DIRECTIVE.search(text)
     return m.group(1).lower() if m else None
 
@@ -693,8 +731,7 @@ def weights_declared(path, head=80):
     Read from the banner region only, same as `coords_declared` and for the same
     reason.
     """
-    with open(path) as fh:
-        text = "".join([next(fh, "") for _ in range(head)])
+    text = _banner_region(path)
     m = _WEIGHTS_DIRECTIVE.search(text)
     if not m:
         return None
@@ -1228,6 +1265,22 @@ def sentinel_labels(path):
 
 
 def run_family(fam, families, res, fields, n_curves, n_pairs, seed, verbose):
+    # A PROJECTIVE family cannot be gated here, and the skip is REPORTED rather
+    # than silent. Every comparison in this file is exact on the raw return, and a
+    # projective representative is one point of an orbit -- so `decode_divisor`
+    # refuses it by design and raising here would abort the whole run rather than
+    # report one family.
+    #
+    # It only became reachable when the family acquired an ADD file: before that it
+    # was skipped for want of one, so the guard was never met. Adding an operation
+    # made a previously unreachable path reachable, which is the same shape as the
+    # four fixtures in PR46 that encoded the absence of what was being added.
+    if getattr(fam, "coords", "affine") != "affine":
+        res.skipped.append((fam.name,
+                            "projective coordinates: gated by projcheck.py, which "
+                            "normalises before comparing; this file compares raw "
+                            "returns and cannot"))
+        return
     cons, members, why = family_domain(fam, families, "ADD")
     if cons is None:
         res.skipped.append((fam.name + " ADD", why))
@@ -1617,7 +1670,17 @@ def report(res, families_run, show_all, strict=False, min_coverage=100.0):
             w("    %-18s %6d%s\n" % (mode, n, flag))
         w("\n")
 
-    silent = [f.name for f in families_run if not res.per_family.get(f.name)]
+    # SILENT means selected, attempted, and yielded nothing WITHOUT SAYING SO. A
+    # family that appears in res.skipped announced itself and its reason, which is
+    # the opposite of silent -- conflating the two would weaken the rule rather
+    # than uphold it, and would fail a run for doing exactly what it should.
+    #
+    # This became live when the projective family acquired an ADD file: before
+    # that it was skipped for want of one and never reached `run_family`, so a
+    # DECLARED skip and a silent nothing had never been distinguishable here.
+    declared = {name.split(" ")[0] for name, _why in res.skipped}
+    silent = [f.name for f in families_run
+              if not res.per_family.get(f.name) and f.name not in declared]
     w("  comparisons per family\n")
     for fam in families_run:
         n = res.per_family.get(fam.name, 0)
