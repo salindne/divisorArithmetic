@@ -157,7 +157,12 @@ Deg3ADDmix:= function(Z, f5, ap2, ap1, ap0, bp2, bp1, bp0, u0, u1, u2, v2, v1, v
     Lr1 := R1;
     Lr0 := R0*P2;
     Lu2 := u2*P2;
-    Lup2 := up2*P2;
+    //Lup2 := up2*P2; is NOT formed.  Lq0 = Lup2 - Ls1 = W*G exactly: W = sp2*d^2
+    // and P2 = sp2^2*d^2, so up2*P2 = W*(up2*sp2) and Ls1 = sp1*W, whence
+    // Lup2 - Ls1 = W*(up2*sp2 - sp1) = W*G, and G is already held above.  The
+    // multiplication is unmoved -- it becomes Lq0's -- and the addition that used
+    // to form Lq0 is gone.  Lup2's other two readers re-derive for free:
+    // Lt7 = (Lu2 - Lq0) - Ls1, and Lu2 + Lup2 = Lq0 - LM21.
     Lv2 := v2*P3;
     Lvt2 := vt2*P3;
     Lkmu := (k2 - up1)*P4;
@@ -165,18 +170,19 @@ Deg3ADDmix:= function(Z, f5, ap2, ap1, ap0, bp2, bp1, bp0, u0, u1, u2, v2, v1, v
     Lv1 := v1*P5;
     Lu0 := u0*P6;
     Lv0 := v0*P7;
-    Lt7 := Lu2 - Lup2;
+    Lq0 := W*G;
+    Lu2q0 := Lu2 - Lq0;			// shared by Lt7 and Lt2 below
+    Lt7 := Lu2q0 - Ls1;
     Lv2p := Lv2 + Lv2 + Lvt2;
-    Lq0 := Lup2 - Ls1;
     LM10 := Lvt2 + Lr0 + Lr1*Lt7;
     LM21 := -Lu2 - Ls1;
-    LM20 := Lkmu + Ls1*(Lu2 + Lup2) + Lr1*Lv2p;
+    LM20 := Lkmu + Ls1*(Lq0 - LM21) + Lr1*Lv2p;
     LE := LM21 - Lr1^2;
     Lupp2 := LE + Lq0;
     Lupp1 := LM20 - Lr1*(LM10 + Lr0) + LM21*Lq0;
     Lupp0 := LM20*Lq0 - Lr0*LM10;
     Lt1 := Lr0 - Lr1*Lq0;
-    Lt2 := (Lu2 - Lq0)*Lt1 + LE*Lw3;
+    Lt2 := Lu2q0*Lt1 + LE*Lw3;
     Lvpp2 := Lr1*(Lu2 - Lupp2) + Lt1 + Lw3 - Lv2;
     Lvpp1 := Lr1*(Lu1 - Lupp1) + Lt2 - Lv1;
     Lvpp0 := Lr1*(Lu0 - Lupp0) + Lu1*Lt1 - Lq0*Lt2 + Lupp1*Lw3 - Lv0;
@@ -273,7 +279,12 @@ Deg3ADD:= function(Z1, Z2, X2, X1, X0, Y2, Y1, Y0, Xp2, Xp1, Xp0, Yp2, Yp1, Yp0,
     Lr1 := R1;
     Lr0 := R0*P2;
     Lu2 := u2*P2;
-    Lup2 := up2*P2;
+    //Lup2 := up2*P2; is NOT formed.  Lq0 = Lup2 - Ls1 = W*G exactly: W = sp2*d^2
+    // and P2 = sp2^2*d^2, so up2*P2 = W*(up2*sp2) and Ls1 = sp1*W, whence
+    // Lup2 - Ls1 = W*(up2*sp2 - sp1) = W*G, and G is already held above.  The
+    // multiplication is unmoved -- it becomes Lq0's -- and the addition that used
+    // to form Lq0 is gone.  Lup2's other two readers re-derive for free:
+    // Lt7 = (Lu2 - Lq0) - Ls1, and Lu2 + Lup2 = Lq0 - LM21.
     Lv2 := v2*P3;
     Lvt2 := vt2*P3;
     Lkmu := (k2 - up1)*P4;
@@ -281,18 +292,19 @@ Deg3ADD:= function(Z1, Z2, X2, X1, X0, Y2, Y1, Y0, Xp2, Xp1, Xp0, Yp2, Yp1, Yp0,
     Lv1 := v1*P5;
     Lu0 := u0*P6;
     Lv0 := v0*P7;
-    Lt7 := Lu2 - Lup2;
+    Lq0 := W*G;
+    Lu2q0 := Lu2 - Lq0;			// shared by Lt7 and Lt2 below
+    Lt7 := Lu2q0 - Ls1;
     Lv2p := Lv2 + Lv2 + Lvt2;
-    Lq0 := Lup2 - Ls1;
     LM10 := Lvt2 + Lr0 + Lr1*Lt7;
     LM21 := -Lu2 - Ls1;
-    LM20 := Lkmu + Ls1*(Lu2 + Lup2) + Lr1*Lv2p;
+    LM20 := Lkmu + Ls1*(Lq0 - LM21) + Lr1*Lv2p;
     LE := LM21 - Lr1^2;
     Lupp2 := LE + Lq0;
     Lupp1 := LM20 - Lr1*(LM10 + Lr0) + LM21*Lq0;
     Lupp0 := LM20*Lq0 - Lr0*LM10;
     Lt1 := Lr0 - Lr1*Lq0;
-    Lt2 := (Lu2 - Lq0)*Lt1 + LE*Lw3;
+    Lt2 := Lu2q0*Lt1 + LE*Lw3;
     Lvpp2 := Lr1*(Lu2 - Lupp2) + Lt1 + Lw3 - Lv2;
     Lvpp1 := Lr1*(Lu1 - Lupp1) + Lt2 - Lv1;
     Lvpp0 := Lr1*(Lu0 - Lupp0) + Lu1*Lt1 - Lq0*Lt2 + Lupp1*Lw3 - Lv0;

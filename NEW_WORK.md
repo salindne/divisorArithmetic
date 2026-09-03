@@ -3676,3 +3676,93 @@ The cost is not cosmetic: `Deg3ADDmix`'s signature carries **three coefficient o
 order was reconstructed WRONGLY the first time anyone rebuilt it, in `projcheck` itself, minutes
 after the banner warning about it was written.  Every caller is a place to get it wrong, and there
 are already two.
+
+---
+
+## N40 — One addition off both projective genus-3 additions, and the search that says it is the last one
+
+**Status** — established.  **Where** —
+`g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_ADD.mag`.
+
+### The saving
+
+`W = P*d = sp2*d²` and `P2 = P² = sp2²*d²`, so `up2*P2 = W*(up2*sp2)` while `Ls1 = sp1*W`.  Hence
+
+    Lq0 = Lup2 - Ls1 = W*(up2*sp2 - sp1) = W*G      exactly,
+
+and `G = up2*sp2 - sp1` is already held from the `R1`/`R0` block above.  So `Lup2` is never formed:
+its multiplication becomes `Lq0`'s, and the addition that used to build `Lq0` disappears.  Its two
+other readers re-derive for nothing — `Lt7 = (Lu2 - Lq0) - Ls1`, reusing the `Lu2 - Lq0` that `Lt2`
+already forms, and `Lu2 + Lup2 = Lq0 - LM21`.
+
+| | before | after |
+|---|---|---|
+| `Deg3ADD`, independent `Z1, Z2` | 86M 13S **61A** 1C 0I | 86M 13S **60A** 1C 0I |
+| `Deg3ADDmix` | 75M 10S **61A** 1C 0I | 75M 10S **60A** 1C 0I |
+| `Deg3DBL` | 69M 11S 61A 3C 0I | unchanged |
+
+M, S, C and I are all unchanged, so there is no trade to weigh — this is a free addition on both
+entry points, and the two blocks were byte-identical so one edit served both.
+
+### Why it survived where nine other candidates did not
+
+The finding matters less than the search around it, because that search says it is **the last one of
+its kind**.  A recomputation pass built the frequent path's def-use graph as an executable
+straight-line program, verified value-for-value against the interpreter, and then searched every
+node against every earlier node for equality, negation and constant ratio; every product against
+every product of two held values, signature-hashed over the whole 13,530-pair table; every product
+against `held × (held, −held, 2·held, held ± held)`, a 51,000-key table; the same with three-term
+combinations; and every multi-addition node against a 51,000-key table of `held ± held` and `2·held`.
+
+**Across all five, this was the only non-trivial hit in the entire function**, and no two multi-term
+sums share a two-term partial sum, so there is no reassociation left.  Three algebraic floors came
+with it: the `upp` block is `7M 1S` and cannot go lower in this form, because multiplying a monic
+quadratic by a monic linear is inherently 2M and two linear forms sharing a leading coefficient are
+inherently `1S 2M` — which the shipped `Lr1*(LM10 + Lr0)` already attains, explicit Karatsuba there
+costing `1S 2M + 4A`.  The `vpp` block is `9M`, the shipped Horner costing 5M for the `x¹` and `x⁰`
+coefficients where forming them directly costs 6M.  And the `s`-block's `15M` beats the textbook
+route on **both** axes: three-way Karatsuba on two quadratics plus reduction plus the `m2` that `d`
+still needs is `16M` and about `+12A`; schoolbook is `19M`.
+
+A division-lens pass then closed the function a second way.  Every division site on the frequent
+path was enumerated with a verdict, and the five affine divisions `w1, w2, w3, s1, s0` turn out to be
+**already collapsed** into the `P`-tower, `Lw3 := W²` and `Ls1 := sp1*W`, with `s0` never formed.
+`q0 = up2 - s1 = G/sp2` was the one live site — and it is this finding, reached independently.  A
+factorisation sweep restricted every input coefficient to a random affine function of one parameter
+and did exact univariate arithmetic over `GF(2³¹−1)` and `GF(10⁹+7)` on two independent lines,
+dividing every node by 36 candidate factors; the only hits in the whole program were
+`R1 = d·rho1`, `R0 = d·rho0` and `M21 = −(u2·sp2 + sp1)/sp2`, the last of which the file already
+realises as `−Lu2 − Ls1`.
+
+### For the paper, and it is the honest shape of an efficiency result
+
+**Nine candidates were built and measured; one survived.**  Two of the deaths are worth as much as
+the survivor.
+
+An explicit-`N` tail — the same shape that collapsed the affine doubling's `ExactQuotient` — has a
+**real identity**: the shipped `Lt1`/`Lt2` *are* that collapse with `n0` eliminated.  Made explicit
+it costs `+2M` to buy `1A`, and even in its strongest form, where `Lu0` goes dead and its `P6` lift
+can be deleted for `1M` back, it lands at `87M 13S 60A` and still loses.  **It also spends its `−1A`
+on the same axis as this finding**, so the two can never be stacked.
+
+The `R1`/`R0` cofactor route is exact — `d` divides both, with division-free cofactors, `d` being a
+single irreducible of total degree 5 so the cofactors are unique — and costs `+17M +1S +9A`, with a
+hand floor of `+15M +1S +8A` because `phi` alone costs 9M, more than the entire `6M 1S` block it
+replaces.  **And it is antagonistic to this finding rather than independent of it:** `G` is consumed
+nowhere but `R1` and `R0`, so a route that deletes both consumers would force `Lq0 := W*G` to
+recompute `G` at `1M 1A`.  That is the ledger-is-not-line-items lesson of N17 in its sharpest form
+yet: two candidates that each look like a saving, one of which destroys the other's premise.
+
+A third, a "dual exact quotient" for `M2`, was logged as an independent derivation of the same block
+and is not one: `expand(candidate − shipped)` returns **0 with no relation imposed**, so it is an
+identity in the free polynomial ring over **Z**, holding in every characteristic.  It is a
+re-association — the dual `LM20` is the shipped one with `(u2² − up2²)·P4` moved out of `Lkmu` and
+into the coefficient of `(Lu2 + Lup2)` — and the curve relations it was derived from are not needed
+at all.
+
+### Limits
+
+Frequent path only, as with everything in this projective set.  `Deg3ADDmix` has had one lens rather
+than three, so its floor is less well established than the general addition's, though the two share
+this block verbatim.  And the affine `Deg3ADD` is **not** touched: the identity is projective, resting
+on `W` and `P2`, which have no affine counterpart.
