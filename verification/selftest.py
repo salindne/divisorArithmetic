@@ -1,9 +1,8 @@
 """selftest.py -- checks the verification framework itself.
 
-`driver.py` compares the .mag formulas against `reference.py`. Nothing it reports
-tells you whether that comparison is trustworthy: a reference that is wrong in the
-same way as a formula agrees with it, and a curve generator that only ever produces
-degenerate curves agrees with everything. This is the file that checks the checker.
+`driver.py` compares the .mag formulas against `reference.py`.  Nothing it reports
+tells you whether that comparison is trustworthy: a reference wrong in the same way
+as a formula agrees with it.  This is the file that checks the checker.
 
 Usage:
 
@@ -12,53 +11,46 @@ Usage:
     python3 selftest.py --list          # what the sections are
     python3 selftest.py --quick         # smaller samples, for a pre-commit run
 
-Exit status is 0 only if every section that ran passed. A section that cannot run
-because an external artefact is missing is reported as SKIP and does not fail the
-run -- but it is never silently omitted, because a selftest that quietly shrinks is
-worse than one that fails.
+Exit status is 0 only if every section that ran passed.  A section that cannot run
+for want of an external artefact reports SKIP and does not fail the run, but is
+never silently omitted.
 
 Sections, and what each would catch:
 
-  fields          Arithmetic in ff.py and poly.py. Everything rests on these.
-  parse           Every function in every formula file still parses. A parser
-                  regression shows up here as a number rather than as a driver
-                  that quietly tests less.
-  acceptance      The empirical curve filter against the textbook singularity
-                  criterion, both models. Catches a filter that accepts curves the
-                  group law fails on -- which it was doing for the split model.
-  group_axioms    Identity, closure, commutativity, associativity, and inverses
-                  where available, over every model, genus, class and basis.
-  reference       Three-way agreement between reference.py, the repository's own
-                  Nucomp_g3_RAM and the thesis algorithm as printed. The strongest
-                  soundness check on reference.py that does not need Magma.
-  errata          The recorded defects E1 and E2, as required test vectors. If the
-                  framework cannot surface these, its D1 = D2 coverage is not real
-                  and PR5 cannot be shown to fix anything.
-  repros          The audit's stored failures, replayed through the current
-                  files. Since PR5, the equal-divisor records must give the
-                  reference sum (they are the wrong ADD(D, D) outputs the audit
-                  froze, and the dispatch corrects them); any unequal-divisor
-                  record must still reproduce byte-for-byte.
-  swap            That a deliberately swapped operand pair is detected. PR10
-                  reorders parameters in the genus-3 models and a mistake there is
-                  wrong only on mixed-degree inputs, so this capability has to be
-                  demonstrated before that work starts, not assumed.
-  adjugate        That `adjugate.py`'s verdict on the genus-3 adjugate block can
-                  come out negative. Two wrong programs are required to be
-                  caught, and one of them only outside characteristic 2, which is
-                  what shows the sixteen fields are load-bearing. Needs no
-                  Magma, so it runs in CI.
-  blocks          That `blockcheck.py` -- the only thing here that executes a
-                  reference block -- catches a block that disagrees with the
-                  explicit code in the `u = up` class, which is where the real
-                  defect hid. Needs Magma, so it SKIPs without it.
+  fields          Arithmetic in ff.py and poly.py.
+  parse           Every function in every formula file still parses, so a parser
+                  regression shows up as a number rather than as a driver that
+                  quietly tests less.
+  acceptance      The curve filter against the textbook singularity criterion,
+                  both models.  Catches a filter accepting curves the group law
+                  fails on, which it did for the split model.
+  group_axioms    Identity, closure, commutativity, associativity and inverses,
+                  over every model, genus, class and basis.
+  reference       Three-way agreement: reference.py, the repository's own
+                  Nucomp_g3_RAM, the thesis algorithm as printed.
+  errata          E1 and E2 as required test vectors.  Without them the D1 = D2
+                  coverage is not real and PR5 cannot be shown to fix anything.
+  repros          The audit's stored failures replayed: equal-divisor records must
+                  give the reference sum (the dispatch corrects the wrong
+                  ADD(D, D) outputs the audit froze), unequal ones must still
+                  reproduce byte-for-byte.
+  swap            A deliberately swapped operand pair is detected.  PR10 reorders
+                  genus-3 parameters and a mistake there is wrong only on
+                  mixed-degree inputs.
+  adjugate        `adjugate.py`'s verdict on the genus-3 adjugate block can come
+                  out negative: two wrong programs must be caught, one of them
+                  only outside characteristic 2, which is what makes the sixteen
+                  fields load-bearing.  Needs no Magma, so it runs in CI.
+  blocks          `blockcheck.py`, the only thing here that executes a reference
+                  block, catches a block disagreeing with the explicit code in the
+                  `u = up` class, where the real defect hid.  Needs Magma.
 
 More sections exist than this list names; `python3 selftest.py --list` prints them
 all, from each section's own docstring.
 
-The `reference` and `repros` sections need the audit artefacts, which live outside
-this repository. Point AUDIT_HARNESS at them, or let those two sections skip.
-The `blocks` section needs real Magma, which no hosted runner has.
+`reference` and `repros` need the audit artefacts, which live outside this
+repository: point AUDIT_HARNESS at them or let those two skip.  `blocks` needs
+real Magma, which no hosted runner has.
 """
 
 from __future__ import annotations
@@ -84,12 +76,9 @@ from poly import Poly
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
-# The audit's harness and stored repros. Outside this repository on purpose: they are
-# evidence from a prior review, not part of the deliverable.
-#
-# Resolved relative to the repository, not to anyone's home directory. A committed
-# absolute path would be wrong on every machine but one, and would have made the two
-# sections that use it look permanently skipped to everybody else.
+# The audit's harness and stored repros: evidence from a prior review, kept outside
+# this repository on purpose.  Resolved relative to the repository, not to a home
+# directory, or the two sections that use it look permanently skipped elsewhere.
 AUDIT_HARNESS = os.environ.get(
     "AUDIT_HARNESS",
     os.path.join(os.path.dirname(ROOT), "divisor-audits", "g3ram", "harness"))
@@ -202,7 +191,7 @@ def section_parse(rep, quick):
                     M.MagmaFn(path, name)
                     ok += 1
                 except Exception as exc:                    # noqa: BLE001
-                    bad.append("%s::%s: %s" % (fn, name, str(exc)[:60]))
+                    bad.append("%s::%s: %s" % (os.path.relpath(path, ROOT), name, str(exc)[:60]))
     # The Random*Curve generators are not formulas and are not interpreted:
     # curves.py generates curves instead. Anything else failing is a regression.
     unexpected = [b for b in bad if "Curve" not in b.split("::")[1]]
@@ -302,9 +291,8 @@ def section_group_axioms(rep, quick):
                             ok_n += 1
                         else:
                             rej += 1
-                            # A rejected curve is the filter working. Only an
-                            # axiom failure on an otherwise-accepted shape is a
-                            # problem, and those are what `acceptance` covers.
+                            # A rejected curve is the filter working; an axiom
+                            # failure on an accepted shape is `acceptance`'s job.
                             reason = why
                     label = "%s g%d %s%s" % (model, genus, kind,
                                              "" if basis is None else "/" + basis)
@@ -324,11 +312,10 @@ def section_group_axioms(rep, quick):
 def section_reference(rep, quick):
     """Three-way agreement: reference.py, the repo's NUCOMP, the printed thesis.
 
-    Expected outcome is NOT unanimity. reference.py and the repository must agree
-    everywhere; the thesis as printed must disagree at a measurable rate, because
-    its middle-branch guard reads `deg(s) <= 2` where the repository has
-    `deg(s) < 2`. That disagreement is a recorded erratum, so seeing it is the pass
-    condition and *not* seeing it would mean this check had stopped working.
+    Not unanimity.  reference.py and the repository must agree everywhere; the
+    printed thesis must disagree at a measurable rate, its middle-branch guard
+    reading `deg(s) <= 2` where the repository has `deg(s) < 2`.  That erratum is
+    the pass condition, so not seeing it means the check has stopped working.
     """
     if not os.path.isdir(AUDIT_HARNESS):
         rep.skip("reference", "AUDIT_HARNESS not present at %s" % AUDIT_HARNESS)
@@ -390,9 +377,8 @@ def section_errata(rep, quick):
     """E1 and E2 as required test vectors."""
     problems, notes = [], []
 
-    # E2, fixed in PR5: no 6-valued return may remain in any genus-2 ramified
-    # ADD file. Static, so it is checked by reading the source; a reappearance
-    # is a regression of the fix, not a new pin.
+    # E2, fixed in PR5: no 6-valued return may remain in any genus-2 ramified ADD
+    # file.  Static, so it is checked by reading the source.
     for fn in ("arb", "ch2", "nch2"):
         path = os.path.join(ROOT, "g2", "ramifiedModel", "g2Formulas",
                             "%s_ramifiedG2_ADD.mag" % fn)
@@ -410,17 +396,15 @@ def section_errata(rep, quick):
             notes.append("E2 %-4s fixed: 0 6-valued returns among %d 5-valued"
                          % (fn, arities.get(5, 0)))
 
-    # E1: the exact vector from the errata. GF(11), y^2 = x^5 + x^3 + 1,
-    # u = x^2 + 1, v = 1, D1 = D2. The guard `IsZero(dw20) and IsZero(dw21)` is
+    # E1: the exact vector from the errata.  GF(11), y^2 = x^5 + x^3 + 1,
+    # u = x^2 + 1, v = 1, D1 = D2.  The guard `IsZero(dw20) and IsZero(dw21)` is
     # too narrow, so dw21 = 0 with dw20 nonzero reaches `dw21^-1`.
     #
-    # Two assertions since PR5, and both must hold:
-    #   1. ADD on this vector now returns the correct double -- the dispatcher
-    #      routes D1 = D2 to DBL before any Deg* case runs, which closes every
-    #      known firing of E1 (they all have D1 = D2, the unit-mod-u argument).
-    #   2. Deg2ADD called DIRECTLY with the same coefficients still divides by
-    #      zero. The narrow guard is retained and recorded, not repaired; this
-    #      is what keeps E1 an erratum rather than silently declaring it fixed.
+    # Both must hold:
+    #   1. ADD returns the correct double.  The dispatcher routes D1 = D2 to DBL
+    #      before any Deg* case runs, closing every known firing of E1.
+    #   2. Deg2ADD called DIRECTLY still divides by zero.  The narrow guard is
+    #      retained and recorded, not repaired, which keeps E1 an erratum.
     F = GF(11)
     f = Poly.from_coeffs_desc(F, [F.one, F.zero, F.one, F.zero, F.zero, F.one])
     h = Poly.zero(F)
@@ -473,9 +457,9 @@ def section_errata(rep, quick):
         except Exception as exc:                            # noqa: BLE001
             problems.append("E1 in %s raised %s, expected ZeroDivisionError"
                             % (name, type(exc).__name__))
-    # ch2 is deliberately not on that list: the vector is over GF(11) and the ch2
-    # formulas require characteristic 2, so it is outside their domain. Their own
-    # instance of E1 shows up in driver.py runs over GF(2) and GF(8).
+    # ch2 is not on that list: the vector is over GF(11), outside the domain of
+    # formulas requiring characteristic 2.  Their own instance of E1 shows up in
+    # driver.py runs over GF(2) and GF(8).
     notes.append("E1: ADD(D,D) dispatches to the correct double in %s; Deg2ADD "
                  "directly still divides by zero in %s (ch2 needs a char-2 "
                  "vector, out of domain for this one)"
@@ -520,16 +504,10 @@ def _norm_value(v):
 def section_repros(rep, quick):
     """Replay the audit's stored failures through the current files.
 
-    Originally this asserted byte-identity: the recorded defects still present,
-    and PR2's rename neutral. PR5's equal-divisor dispatch deliberately changes
-    the answer on every record whose two divisors are EQUAL -- those were the
-    wrong ADD(D, D) outputs the audit stored -- so the assertion is now split:
-
-      * records with D1 = D2 must now equal the REFERENCE sum. Differing from
-        the recorded value is the fix working; matching the reference is the
-        stronger replacement for byte-identity.
+      * records with D1 = D2 must equal the REFERENCE sum.  The audit stored the
+        wrong ADD(D, D) outputs; PR5's equal-divisor dispatch corrects them.
       * records with D1 != D2 must still reproduce byte-for-byte, which is the
-        rename-neutrality evidence, unchanged.
+        evidence that PR2's rename was neutral.
     """
     files = ("vfy-odd-repros.json", "even_minimal_repros.json",
              "lowdeg-failures.json")
@@ -573,21 +551,15 @@ def section_repros(rep, quick):
             except AssertionError as exc:
                 problems.append("%s: curve rejected: %s" % (fname, str(exc)[:50]))
                 continue
-            # A record whose curve is outside the family's DECLARED domain can no
-            # longer be replayed against it. Every one of the audit's odd-
-            # characteristic records sits on an f6 != 0 curve, and until PR6 the
-            # family had no doubling of its own -- it borrowed the arb one, which
-            # takes general f6, so the equal-divisor records resolved against a
-            # file that accepted them. Now that nch2_ramifiedG3_DBL.mag exists and
-            # assumes f6 = 0 (PR17's depression, which the ADD already assumed),
-            # those records describe a curve this family does not claim. Skipping
-            # them is the honest outcome; comparing them would assert the
-            # specialisation wrong for answering correctly on its own domain.
-            # What the family's own dispatchers EXTRACT is the sharp test: a
-            # coefficient neither operation reads cannot influence a result, so a
-            # record with that coefficient nonzero is outside the domain. Index
-            # 2g+1 is excluded -- f monic of degree 7 is a property of the model,
-            # never an assumption a specialisation makes.
+            # A record whose curve is outside the family's DECLARED domain is
+            # skipped, not compared.  The audit's odd-characteristic records sit
+            # on f6 != 0 curves and nch2_ramifiedG3_DBL.mag assumes f6 = 0, so
+            # they describe a curve this family does not claim; comparing them
+            # would call the specialisation wrong for answering correctly on its
+            # own domain.  What the family's own dispatchers EXTRACT is the sharp
+            # test: a coefficient neither operation reads cannot influence a
+            # result.  Index 2g+1 is excluded, f monic of degree 7 being a
+            # property of the model and never a specialisation's assumption.
             reads = set(D.read_support(fam.add_path, "ADD").get("f", ()))
             if fam.dbl_path:
                 reads |= set(D.read_support(fam.dbl_path, "DBL").get("f", ()))
@@ -599,9 +571,8 @@ def section_repros(rep, quick):
                     "%s %s: %s != 0" % (fname, r.get("branch", "?"),
                                         ",".join(out_of_domain)))
                 continue
-            # DBL merged for the same reason the testers load both files: the
-            # dispatcher's equal-divisor route resolves against it. nch2 borrows
-            # the arb DBL exactly as its tester and driver.py do.
+            # DBL merged because the dispatcher's equal-divisor route resolves
+            # against it.  nch2 borrows the arb DBL, as its tester and driver do.
             subs = dict(M.discover(fam.dbl_path)) if fam.dbl_path else {}
             subs.update(M.discover(fam.add_path))
             params, _body = D._dispatcher_body(fam.add_path, "ADD")
