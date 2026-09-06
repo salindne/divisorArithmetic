@@ -426,21 +426,11 @@ The asymmetry is the check that the sixteen fields are not decoration.
 
 ## Current state
 
-Measured with `driver.py --curves 30 --pairs 16` on 2026-08-05:
+The sampling table above carries the `driver.py` figures; they are not restated here.
+Parse coverage is 240 of 246 functions, the 6 uninterpreted being `Random*Curve`
+generators, which are not formulas: `curves.py` generates curves instead.
 
-| | |
-|---|---|
-| families covered | **14**, the whole tree at that date — ramified and split, genus 2 and 3, both reduced bases |
-| operations compared | **674,528** |
-| wrong on the formulas' documented domains | **0** |
-| branch coverage | **86.9%** overall; **100% on all nine ramified files** |
-| `selftest.py` | 19 sections, 19 passing |
-| parse coverage | 240 of 246 functions |
-
-The 6 functions not interpreted are `Random*Curve` generators, which are not formulas
-— `curves.py` generates curves instead.
-
-The tree now holds sixteen families.  `driver.py` covers fifteen of them and reports the
+The tree holds sixteen families.  `driver.py` covers fifteen of them and reports the
 sixteenth as skipped: the projective genus-3 ramified family cannot be compared here,
 because every equality in that file is exact on the raw return and a projective
 representative is one point of an orbit.  `projcheck.py` is its gate.
