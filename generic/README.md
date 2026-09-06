@@ -56,16 +56,14 @@ the same checkout mtime. What can be established by comparison:
 |---|---|---|
 | `graphs/` | 62 PDFs | plots only, no raw data alongside. All 62 differ from both other PDF sets. |
 | `processing/` | 62 PDFs, 20 `.raw`, gnuplot script, `parse_timings.py` | self-contained generation |
-| `newProcessing/` | 62 PDFs, 20 `.raw`, gnuplot script, `parse_timings.py` | self-contained generation; all 62 PDFs differ from `processing/`, and its 20 `.raw` match **neither** `raw/` nor `newRaw/` |
-| `raw/` | 20 `.raw`, `parse_timings.py` | **redundant**, all 21 files are byte-identical to their `processing/` counterparts |
-| `newRaw/` | 10 `.raw` | **orphaned**, distinct random seeds from `raw/`, and matches nothing in either processing directory |
+| `newProcessing/` | 62 PDFs, 20 `.raw`, gnuplot script, `parse_timings.py` | self-contained generation; all 62 PDFs differ from `processing/`, and its 20 `.raw` match nothing in `newRaw/` |
+| `newRaw/` | 10 `.raw` | **orphaned**, and matches nothing in either processing directory |
 
-So: `raw/` is a duplicate of part of `processing/` and can be regarded as such; `newRaw/` is a partial
-re-run whose outputs are not present here; and `processing/` and `newProcessing/` are two complete but
-different generations of the same 62 plots.
+`newRaw/` is a partial re-run whose outputs are not present here.  `processing/` and
+`newProcessing/` are two complete but different generations of the same 62 plots.
 
-The old version of this file pointed only at `graphs/` and `raw/`, which is why the ambiguity was not
-apparent.
+A `raw/` directory was removed at v1.0.1: all 21 of its files were byte-identical to their
+`processing/` counterparts.
 
 A defect affecting the negative-reduced timings produced by these scripts is recorded in
 [../ERRATA.md](../ERRATA.md).
