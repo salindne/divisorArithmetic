@@ -3804,3 +3804,359 @@ change: the parser of record accepts the construct and its own comment named thi
 The case for it is uniformity across the corpus and the loss is a published erratum's specimen.
 That trade was the author's call, and PR4's standing decision that imported formulas are not
 respelled to suit a tool is the nearest precedent against it.
+
+---
+
+## N42 — Every trade taken under the 1M : 3A rule, re-verdicted against a measured benchmark
+
+**Status** — recorded, not established.  It re-verdicts prior results.  **Where** —
+`Thesis/chapter4.tex:817`, the acceptance rule itself; the rows below name their own files.
+
+**What was there.**  The thesis fixes one acceptance rule and applies it to every efficiency
+decision in both genera: the formulas "never trade 1 field multiplication for more than 3 field
+additions" (`Thesis/chapter4.tex:827`, in the subsection at `:817`), aligned there with
+Sutherland's Sato-Tate computations.  Every trade this project has since accepted or refused
+was decided against that same threshold, in both directions, and no entry in this file has
+asked what the threshold itself depends on.
+
+**The thesis already contains the counter-argument.**  `Thesis/chapter6.tex:2326-2330` reads,
+in full: "Unlike many previous works additive field operation counts are included, as these
+have been shown to have non-trivial cost working with large
+fields~\cite{HisilCostello_jaccoord_2014}, and significant cost relative to multiplications
+working with word sized fields~\cite{Sutherland_sato_2016}."  The cost of an addition relative
+to a multiplication is therefore field-dependent in the thesis's own words, with a separate
+source cited for each end of the range, and the very next sentence at `:2330-2333` restates the
+threshold as a constant anyway.  Chapter 4 does the same thing: `:819-822` opens "There are
+many suggestions for the relative cost of a field addition compared to a field multiplication
+in previous works.  These suggestions generally rely on properties of specific base fields",
+and `:825-828` then fixes one number for all of them.  **So this entry is not a rule being
+wrong.  It is a constant applied outside the range its own document describes.**
+
+**What the thesis leaves open.**  `Thesis/chapter6.tex:2324-2326` defines `M` a multiplication,
+`S` a squaring, `C` a multiplication by a constant curve coefficient and `A` an addition, and
+the only relative costs stated anywhere are `1M : 3A` and, at `:2333-2335`, that division by
+two in odd characteristic costs one addition.  **No ratio is fixed for `S` and none for `C`**,
+and the trade subsection attaches no field size, saying only that the formulas "are designed to
+work efficiently over many fields" (`Thesis/chapter4.tex:822-823`).
+
+**What changed.**  There is now a measurement, at sixteen field sizes, in two timing modes,
+with every figure reported as a range.
+
+| `r`, additions per multiplication | source | field size |
+|---|---|---|
+| **3** | the acceptance rule, `Thesis/chapter4.tex:827` | the thesis names none |
+| **3.3 to 5.0** | measured | word size, at 5, 32 and 60 bits |
+| **11.5 to 14.7** | measured | 640-bit |
+| **24.2 to 31.7** | measured | 1131-bit |
+
+The benchmark states thresholds by size rather than one constant: about `4A` at word size,
+`13A` at 640-bit and `26A` at 1131-bit.  It puts the **validity window of the single `1M : 3A`
+constant at roughly 192 to 320 bits**.  Below that window the ratio falls to 1.6 to 2.9 between
+64 and 128 bits; above it it climbs over every size measured, reaching 49.5 to 59.3 at 2048
+bits.  So `1M : 3A` is a right number for a two-hundred-bit field, applied to formulas whose
+stated design goal is "many fields".
+
+**Provenance.**  The author's own field-operation benchmark of 4 September 2026, "Field
+arithmetic on real hardware: two thresholds, re-measured": NTL 11.5.1 with GMP 6.3.0 on an
+Apple M3 Pro, clang 21 at `-O2`, sixteen field sizes, each timed in a dependent-chain latency
+mode and an independent throughput mode, three full runs across the two modes giving **six
+independent observations behind every verdict**, which is why every figure is a range and not a
+point.  The noise floor is measured rather than assumed, run-to-run deviation across 336
+matched measurements having a median of 5.0% and a 90th percentile of 13.6%, and nothing is
+timed before it is checked against an independent computation.  **Its limits, carried because
+quoting the numbers without them overclaims:** one machine and one microarchitecture, arm64
+throughout, so the ratios are clock-independent and not architecture-independent; NTL built
+with GMP, so the inversion path is GMP's subquadratic half-GCD; variable-time inversion only;
+and field arithmetic only, so it can re-verdict a trade and cannot endorse a formula.
+
+**The cost convention, measured rather than assumed.**  `S/M` is about **0.96** and `C/M` has a
+median of about **0.97** over a range of **0.83 to 1.29**, so a squaring and a constant
+multiplication each cost a full multiplication and **`C` is not cheap**: its measured range
+spans 1.00, and the benchmark's own recommendation is that `C` be added to `M`.  Every figure
+below charges `S` and `C` at one multiplication each on that basis, and not on the thesis's,
+which states no ratio for either.  **A row whose verdict turns on the `S` or the `C` charge
+rather than on `r` says so on its own line**, because 0.96 and 0.97 are point estimates inside
+a noise floor whose median is 5.0%, and a row turning on a four-percent gap is not decided by a
+five-percent measurement.
+
+### How to read the tables
+
+**Signs are the change to the operation count.  `+` is a cost, `−` is a saving.**  So `+1M
+−12A` reads "spend one more multiplication, save twelve additions", and `−1M +15A` the reverse;
+both directions appear because the rule was applied both ways, and the mirror pair is on record
+together at `NEW_WORK.md:1005`.  Cost in multiplication-equivalents is
+
+    ΔM + ΔS + ΔC + ΔA/r
+
+with `S` and `C` each charged at one multiplication.  **Because `r` is a range at every size,
+every derived cost is a range**, computed at both ends.  The flip threshold `r* = −ΔA / (ΔM +
+ΔS + ΔC)` now has three cases rather than two: `r*` **below** the measured range, so the row is
+decided and has flipped; **above** it, decided and not flipped; or **inside** it, in which case
+the cost straddles zero and **the measurement does not decide the row at all**.  A row whose
+multiplicative part is zero has no `r*` and never flips with `r`, and whatever it turns on is
+`S/M` or `C/M`.  Negative is better throughout.
+
+**The per-row derivations are held outside this repository**, in a working record that is not
+committed.  Two sources behind the figures are likewise uncommitted local research files, the
+degenerate-branch survey and the negative-results record; every figure they carry is inlined
+below and no path to either is cited.
+
+### The headline: nineteen cells change verdict once the ranges replace the point ratios
+
+An earlier scoring used the point ratios 3, 15 and 28.  Three of those sat almost exactly on a
+flip threshold, which is why it carried so many exact zeros, and **those zeros were artifacts
+of round assumed numbers landing on round thresholds, not results.**
+
+| row and size | at the point ratio | on the measured range |
+|---|---|---|
+| **A1 at 640** | `+1.20`, a loss | **−0.26 to +1.10, straddles**; `r* = 12` is inside 11.5 to 14.7 |
+| **A2 at 640** | `+0.20`, a loss | **−0.04 to +0.18, straddles**, same `r*` |
+| **A4 whole function at word** | `−8.00`, a win | **−5.91 to +1.20, straddles**; `r* = 4.6` is inside 3.3 to 5.0 |
+| **A4 summed at word** | `−15.00`, a win | **−11.36 to +1.00, straddles**; `r* = 4.8` is inside |
+| **A5 whole function at word** | `0.00`, break-even | **+2.36 to +10.40, a loss**; `r* = 3.0` is below 3.3 |
+| **A5 summed at word** | `0.00`, break-even | **+4.45 to +19.60, a loss** |
+| **A6 at word** | `0.00`, break-even | **+0.09 to +0.40, a loss** |
+| **A7a at word** | `−1.00`, a win | **−0.64 to +0.60, straddles**; `r* = 4.0` is inside |
+| **A7b at word** | `0.00`, break-even | **+0.27 to +1.20, a loss** |
+| **A7c at word** | `0.00`, break-even | **+0.55 to +2.40, a loss** |
+| **A7d at word** | `0.00`, break-even | **+0.45 to +2.00, a loss** |
+| **B1 at 640** | `0.00`, break-even | **+0.02 to +0.30, a marginal loss**; `r* = 15` sits just above the range, not inside it |
+| **B2 at word** | `+0.67`, a loss | **+0.00 to +0.52**, break-even at the top of the range and a loss below it |
+| **B5 at word** | `0.00`, break-even | **−0.40 to −0.09, a win at word size** |
+| **B3 at 1131** | `+0.04`, open on `S/M` | **a wash**; it needs `S < 0.959M` at `r = 24.2` and `S < 0.968M` at `r = 31.7`, and measured `S/M` is 0.96 |
+| **B6 at every size** | `0.00`, open on `S/M` | **−0.16 flat**, from `4(M − S)` at `S/M = 0.96`; bounded, small, inside the noise floor |
+| **T13 into the addition at 640** | `−0.20`, a win | **−0.18 to +0.04, straddles**; it is A2 read backwards |
+| **D2 at 1131** | `−0.04`, a marginal win | **−0.15 to +0.12, straddles**; `r* = 27` is inside 24.2 to 31.7 |
+| **D1 at word** | `15.33M` for 46 additions | **9.20M to 13.94M**; `RELATED_WORK.md:310`'s published "~15M" sits above the top of the range |
+
+**Two readings follow.**  The `r* = 3.0` cluster sits **below** the whole word-size range, so
+every row that read an exact zero is decided at word size after all: A5, A6 and three of A7's
+four folds are losses there and B5 is a win, and not one of them was ever break-even.  And
+every remaining flip is a **straddle at exactly one size**, with the size differing by family,
+so the question this entry opens is not one line between word size and large fields but three,
+one per family.
+
+Three verdicts do **not** move.  **A3 is a win at every size and must not be reversed.**
+**`ARBDBL-09`, carried below as B7, is a flat one-multiplication win at every size.**  And the
+four rows in table C that lose on every column stay losses at both ends of every range.
+
+### A.  Accepted because of the rule, now losses
+
+Every row here bought additions with a multiplication.  The split is the practical point: A1 to
+A3 are merged into shipped formulas, so anything wrong in them has to be reversed, while A4 to
+A7 are proposed and unimplemented and need only be declined.
+
+#### A.1  Merged, and in shipped formulas
+
+| # | what | where | trade | `r*` | word size | 640-bit | 1131-bit |
+|---|---|---|---|---|---|---|---|
+| **A1** | **The adjugate trade, six sites.**  The addition's full-adjugate shape ported into the doubling.  Merged as C4, pull request #39, merge `fe4c87e`; moved six published thesis cells | genus-3 split `Deg3ADD` + `Deg3DBL`, all three classes | `+6M −72A` (`+1M −12A` per site) | **12** | **−15.82 to −8.40** | **−0.26 to +1.10, straddles** | **+3.02 to +3.73** |
+| **A2** | The same trade in genus-3 **ramified**, PR16 item C2.  **A component of A3, not an item beside it.**  Merged in pull requests #24 (`33b3ba3`) and #25 (`bbc8386`) | `arb` `Deg3DBL` | `+1M −12A` | **12** | **−2.64 to −1.40** | **−0.04 to +0.18, straddles** | **+0.50 to +0.62** |
+| **A3** | **The whole PR16 doubling result.**  `55M 5S 114A 4C → 57M 4S 92A 3C` at `NEW_WORK.md:908`, called "a decisive win" at `:912`, same two pull requests | genus-3 `arb` `Deg3DBL` | `+2M −1S −22A −1C` | **none** | **−6.67 to −4.40** | **−1.91 to −1.50** | **−0.91 to −0.69** |
+
+**A3's true delta is `+2M −1S −22A −1C`**, the four-column reading of `NEW_WORK.md:908`, and
+the entry's own prose at `:911-912` says it in words, "with M+S rising 60 → 61 and the wider
+M+S+C holding at 64".  Under the measured convention that clause is exactly "multiplicative
+part zero", so A3 is twenty-two additions removed for no multiplicative cost, a win at every
+`r` with no `r*` to flip at.  An earlier reading scored it `+1M −22A` with `r* = 22`, which is
+what the delta reduces to once `C` is charged at nothing.  The one sensitivity it carried,
+needing `C > 0.21M` at the largest size, is closed by a measured `C/M` bottoming at 0.83, four
+times that.
+
+**A2 is a component of A3, not an item beside it.**  PR16 item C2 is one of the six findings
+whose sum is A3, and its own before and after are in the merge history, `55M 5S 111A 4C → 56M
+5S 99A 4C`, exactly `+1M −12A`.  **Reversing A2 and reversing A3 are the same twelve additions,
+so scoring both as reversals double-counts them.**  The other five findings sum to `−1M −1S
+−10A −1C`, a saving in every column, and they are what carries A3.  Reversing A2 inside the
+shipped doubling changes it by `−0.18M` to `+0.04M` at 640 bits, which straddles, and improves
+it by `0.50M` to `0.62M` at 1131, so **at 640-bit the measurement does not support reversing A2
+at all.**
+
+**A1 is the clearest case for two versions selected by field size, and it is now a 1131-bit
+case.**  It is merged, it is the largest single item at `+6M −72A` over six sites, and it turns
+on `r` alone with no `S` or `C` charge to assume.  It also moved published cells:
+`Thesis/ERRATA.md` E-T10 records six, `+1M −12A` in each, across the `arb`, `nch2` and `ch2`
+columns of `tab:g3splitfcostsDBL` at `Thesis/chapter6.tex:2389` and `tab:g3splitfcostsADD` at
+`:2491`.  If the trade is wrong at 1131 bits those cells are right for word-sized fields and
+wrong for the large-field setting, which is an errata question and not only an optimisation
+one.
+
+#### A.2  Proposed, not implemented
+
+The evidence that nothing here is shipped is the statements themselves.  The two clearest
+replacement targets still carry the un-collapsed Karatsuba fold,
+`g3/ramifiedModel/g3Formulas/nch2_ramifiedG3_ADD.mag:1316` and `:1449`, against the collapsed
+form already present on another branch of the same file at `:1703`; their twins are
+`g3/ramifiedModel/g3Formulas/arb_ramifiedG3_ADD.mag:1331` and `:1464` against `:1720`.  No
+commit in either addition file's history applies the re-association.
+
+| # | what | where | trade | `r*` | word size | 640-bit | 1131-bit |
+|---|---|---|---|---|---|---|---|
+| **A4** | **Degenerate-branch Karatsuba re-associations, `nch2`**, 23 statements over 21 branches.  The stated precondition for projective completeness | genus-3 `nch2`, the degenerate branches of all six `Deg*ADD` functions, ADD03 through ADD35 | `+15M −69A` whole function / `+25M −120A` summed over the 21 branches | **4.6** / **4.8** | **−5.91 to +1.20, straddles** / **−11.36 to +1.00, straddles** | **+9.00 to +10.31** / **+14.57 to +16.84** | **+12.15 to +12.82** / **+20.04 to +21.21** |
+| **A5** | The same batch in `arb`, 26 statements over the same 21 branches | genus-3 `arb`, same functions | `+26M −78A` whole function / `+49M −147A` summed | **3.0** both | **+2.36 to +10.40** / **+4.45 to +19.60** | +19.22 to +20.69 / +36.22 to +39.00 | +22.78 to +23.54 / +42.93 to +44.36 |
+| **A6** | **Per-statement, the unit of A5**, and of A4 only in part | 26 statements in the `arb` file | `+1M −3A` each | **3.0** | **+0.09 to +0.40** | +0.74 to +0.80 | +0.88 to +0.91 |
+| **A7** | The heavier per-branch folds | ADD28 `nch2`; ADD32 `nch2`; ADD32 `arb`; ADD31/33 `arb` | `+3M −12A`; `+3M −9A`; `+6M −18A`; `+5M −15A` | 4.0; 3.0; 3.0; 3.0 | **−0.64 to +0.60, straddles**; +0.27 to +1.20; +0.55 to +2.40; +0.45 to +2.00 | +1.96 to +2.18; +2.22 to +2.39; +4.43 to +4.78; +3.70 to +3.98 | +2.50 to +2.62; +2.63 to +2.72; +5.26 to +5.43; +4.38 to +4.53 |
+
+Neither A4 column is the cost of a single call: the first counts each breaking statement once
+across the whole function, the second sums the same statements over the affected paths, and no
+execution enters 21 branches.  **A4's whole-function `+15M` has `5M` unexplained by anything on
+record.**  Twenty-three statements at `+1M −3A` would give `+23M −69A`, the additions match and
+the multiplications do not, and three statements where the fold collapses to a single product
+account for `3M` of the `8M` gap.  A6's per-statement claim is therefore restricted to the
+`arb` file, where `26 × (+1M −3A)` reconciles exactly.  The frequent path ADD36 is clean and is
+untouched by any of this.
+
+At the thesis's constant the per-statement fold was exactly break-even and the batch was
+justified on the aggregate; measured, it is a small loss even at word size, and at both large
+sizes the whole programme inverts by an order of magnitude.  It is the stated precondition for
+projective completeness, so that plan rests on a trade which does not hold at the sizes it
+targets and does not clearly hold at word size either.
+
+### B.  Rejected because of the rule, now wins
+
+None of these is implemented.  Most save a multiplication at the cost of additions, the mirror
+of table A.  Four do not turn on `r` at all: B3, B4 and B6 turn on `S/M`, and B7 on `C/M`.
+
+| # | what | where | trade | `r*` | word size | 640-bit | 1131-bit |
+|---|---|---|---|---|---|---|---|
+| **B1** | **Rank-5 simultaneous minors, projective genus 2.**  `{d, sp0, sp1}` are the three 2×2 minors of one 2×3 matrix, and the rank-5 method, Type-M4 as cited by Hisil-Costello 2014, gives them in `5M + 17A`.  Refused for buying 1M with 15A | genus-2 projective doubling | `−1M +15A` | **15** | +2.00 to +3.55 | **+0.02 to +0.30, a marginal loss** | **−0.53 to −0.38** |
+| **B2** | **The same scheme in the shipped ramified files.**  `verification/README.md:303` records it losing every comparison at word size, 57 → 59, 65 → 67, 32 → 34, 98 → 100 | genus-3 ramified `Deg3ADD`, `Deg3DBL` | `−1M +5A` | **5** | **+0.00 to +0.52** | **−0.66 to −0.57** | **−0.84 to −0.79** |
+| **B3** | **`A0` via `sp1²`**, sharing `u2s1` with `H`.  Three algebraically distinct routes all land here.  Turns on `S/M` | genus-3 projective `Deg3DBL` | `−1M +1S +1A` | **none** | +0.20 to +0.30 | +0.07 to +0.09 | **+0.03 to +0.04, a wash** |
+| **B4** | **Karatsuba on `2·A0·B0`** from the held `A0sq`/`B0sq`.  Turns on `S/M` | genus-3 projective `Deg3DBL` | `−1M +1S +2A` | **none** | +0.40 to +0.61 | +0.14 to +0.17 | +0.06 to +0.08 |
+| **B5** | **Three Karatsubas left alone in both directions**, `1M 4A` against `2M 1A` being 7 against 7 (`NEW_WORK.md:1794`) | genus-3 ramified, both files | `−1M +3A` each | **3.0** | **−0.40 to −0.09, a win** | **−0.80 to −0.74** | **−0.91 to −0.88** |
+| **B6** | **Four M→S sites in the genus-2 projective low-weight schedule**, both squares already present.  Turns on `S/M` alone, no addition term | genus-2 projective doubling | `−4M +4S` | **none** | **−0.16 flat** at `S/M = 0.96` | **−0.16 flat** | **−0.16 flat** |
+| **B7** | **`ARBDBL-09`, Horner-nesting `k0` in `Deg1DBL`** (`EFFICIENCY_ARB_G3.md:129`, `ERRATA.md:721`).  Built, measured and withdrawn before it shipped.  Turns on `C/M` alone, no addition term | genus-3 `arb` `Deg1DBL` | `+3M −3C −1S` | **none** | **−1.00** | **−1.00** | **−1.00** |
+
+**B7, and why it is no longer filed under do not reopen.**  `ARBDBL-09` sat in the
+do-not-reopen table on the ground that it spends general multiplications to buy constant ones
+and is the wrong direction at any `r`.  **That was an artifact of assuming constant
+multiplications are cheap.**  `+3M −3C −1S` scores `3 − 3 − 1 = −1M` flat once `C = M`, a
+one-multiplication saving at every field size, and it has no `A` column at all, so **no ratio
+in this entry touches it**; across the measured `C/M` range with `S/M` at 0.96 it runs `−0.45M`
+to `−1.83M` and would need `C < 0.68M` to lose.  It is the one row the entry's own premise
+flips, and it was filed where nobody would look.  None of this says the change should now be
+made: `Deg1DBL` is byte-identical to its pre-PR16 form and the withdrawal was a hand
+classification rather than a bad measurement.
+
+**B5 is the cleanest single correction the measurement makes to a recorded finding here.**  A
+row filed at `NEW_WORK.md:1794` as "left alone in both directions" because it scored 7 against
+7 is worth `0.09M` to `0.40M` per site at word size and `0.74M` to `0.91M` at both large sizes,
+in one direction, at every size measured.  **B1 is a marginal loss at 640, not a break-even**:
+`r* = 15` sits just above the measured range rather than inside it, and the old exact zero came
+from the point ratio coinciding with `r*` to the digit.
+
+**B3, B4 and B6 move from undecidable to bounded and no further.**  All three are `M → S`
+conversions, so charging `S` at `M` makes the conversion free and leaves only the addition
+term; what decides them is how far below `M` a squaring sits, which the measurement bounds at
+about 4%.  Against `S/M = 0.96`, B3 is a loss at word size and 640 and a wash at 1131, B4 a
+loss everywhere, B6 a `0.16M` win everywhere.  That bound is `0.04` against a noise floor whose
+median is 5.0%, so **the measurement says the stake is small rather than resolving them**, and
+a row worth `0.16M` does not justify a second version of a function.
+
+### C.  Unaffected, recorded so nobody re-opens them
+
+| what | trade | word / 640 / 1131 | why it stays refused |
+|---|---|---|---|
+| The T13 first-column recipe applied to the genus-3 **addition** | `−1M +12A` | +1.40 to +2.64 / **−0.18 to +0.04, straddles** / −0.62 to −0.50 | `r* = 12`, so it does flip, **but it is the exact inverse of A2.**  Reversing A2 and adopting this are one decision, not two |
+| The genus-3 low-weight doubling regrading | `+8M −2S +6A` | +7.20 to +7.82 / +6.41 to +6.52 / +6.19 to +6.25 | A loss on every reading.  `ΔS = −2`, so a cheaper squaring makes it worse, and the best case is `S = M` at `+6M` before a single addition is counted |
+| The `R1`/`R0` cofactor route (`NEW_WORK.md:3749`) | `+17M +1S +9A` | +19.80 to +20.73 / +18.61 to +18.78 / +18.28 to +18.37 | The same, with a hand floor of `+15M +1S +8A` at +17.60 to +18.42 / +16.54 to +16.70 / +16.25 to +16.33 |
+| The explicit-`N` tail (`NEW_WORK.md:3742`) | `+2M −1A` | +1.70 to +1.80 / +1.91 to +1.93 / +1.96 to +1.97 | Spends 2M to save 1A; worse at higher `r`, not better |
+| The `#2.x` reduce-first rewrite (`NEW_WORK.md:1755`) | `+2M −5A` | +0.48 to +1.00 / +1.57 to +1.66 / +1.79 to +1.84 | `r* = 2.5`, below every measured range, so a loss at every size |
+
+### D.  Two consequences beyond the formula files
+
+**D1.  One published comparison figure is now outside the measured range.**
+`RELATED_WORK.md:310` converts a 46-addition lead over Nyukai and GKP into "~15M at the
+thesis's own 1M : 3A rule".  Measured, those additions are worth `9.20M` to `13.94M` at word
+size, `3.13M` to `4.00M` at 640-bit and `1.45M` to `1.90M` at 1131-bit, so the published figure
+sits above the top of the word-size range.  The comparison still wins, because we are ahead on
+M+S and on A independently and there is no trade to argue, but **any margin quoted in
+multiplication-equivalents needs restating as a range with its field size attached**.
+
+**D2.  Hisil-Costello's own refused row straddles at 1131 bits.**  Their Table 2 carries a
+trade-off doubling at `21M + 12S + 2D + 52a` which they benchmarked and declined in favour of
+`26M + 8S + 2D + 25a`, a delta of `−5M +4S +27a`.  Charging `S` at `M` that is `+4.40M` to
+`+7.18M` at word size, `+0.84M` to `+1.35M` at 640, and `−0.15M` to `+0.12M` at 1131, which
+straddles, since `r* = 27` is inside the measured 1131-bit range.  Their benchmark was
+empirical and should outrank a rule, but **at what field size did they run it?**  If
+word-sized, the row they discarded may be the better one above 1000 bits.
+
+### E.  Three findings about how this repository counts
+
+None of the three re-verdicts a row above, because all three cancel in a delta between two
+forms carrying the same constant products, literal products and halvings, which is every row
+here.  All three condition the absolute counts in the published tables.
+
+- **Constant multiplications are not cheap.**  `verification/opcount.py` reports `C` in its own
+  column and computes no aggregate at all, which is right and needs no change.  The one
+  aggregate scale in the tree, `verification/adjugate.py:2386`'s `equiv = 3*(M+S) + A`, charges
+  `C` at **zero**; it is inert there, since that tool runs the interpreter with an empty
+  constant set, and unsafe if the scale is reused.
+- **Small integer literals are charged cheap by about a factor of four too much.**
+  `verification/maginterp.py:426-428` charges a literal-integer product as one addition, stated
+  in prose at `verification/README.md:273`.  Measured, such a product costs `0.32M` at 640-bit
+  and `0.15M` at 1131-bit, which is 3.6 to 4.8 additions at both, so the honest charge is about
+  `4A`.  The direction is right, the magnitude is understated, and the error accumulates in an
+  absolute count while cancelling in a delta.
+- **The thesis's `x/2 = 1A` is a condition on the count rather than an error in it.**
+  `Thesis/chapter6.tex:2333-2335` states the assumption and `verification/maginterp.py:439-442`
+  implements it.  Measured, a halving by bit-shift costs `1.7A`, and one by multiplication by
+  the inverse of two costs `14A` at 640-bit and `28A` at 1131-bit, a full multiplication at
+  each size.  So the published `A` columns are correct for a shifting implementation and
+  overstate the odd-characteristic advantage for any other, and that condition is stated
+  nowhere near the tables.
+
+### F.  What to do with this
+
+The deliverable is not a re-optimisation but **two versions of each formula, selected by field
+size**, which is variant selection rather than derivation.  What the measurement changes is
+where the selection point sits: not between word size and everything above it, but at a
+different size per row family, and for the two merged rows above 640 bits.
+
+1. **Reverse A1 for 1131-bit fields only.**  Largest merged item, confined to the generic path,
+   turns on `r` alone, and the pre-C4 code is in git history at `fe4c87e`, so it is a revert
+   plus a re-measure.  At 640 bits it straddles and the measurement does not support reversing
+   it there, and it moved six published cells, so it needs the errata treatment either way.
+2. **Then A2, at 1131 bits only, inside PR16's doubling.**  A3 as a whole must not be reversed;
+   its C2 component is the part that flips, worth `0.50M` to `0.62M` at 1131.  Since reversing
+   A2 and reversing A3 are the same twelve additions, this is one operation on one function.
+3. **Decide A4 to A7 before the completeness work.**  Nothing is merged, so what is at stake is
+   whether to do it at all.  The batch costs `+9.00M` to `+16.84M` at 640 bits and `+12.15M` to
+   `+21.21M` at 1131, the spread running from the low end of the whole-function figure to the
+   high end of the summed one, and the low end is the unreconciled `+15M`.  At word size it now
+   straddles rather than winning, so there is no size at which it is clearly worth doing.
+4. **Implement B5 first among the refused rows, then B2, and B1 only above 640 bits.**  B5 is a
+   win at every size, per site, over three sites in both ramified files.  B2 wins at both large
+   sizes and is break-even at best at word size.  Both are worked out with their arithmetic
+   recorded, so this is implementation rather than research.
+5. **Re-examine B7 and close it**, and **stop spending measurement on B3, B4 and B6**, whose
+   entire remaining stake is `0.16M` for B6 and `0.04M` each for B3 and B4, inside the noise
+   floor.
+6. **State the counting conditions of section E alongside the published cost tables.**  Neither
+   changes a delta here, both change what an absolute `A` count means, and neither is stated
+   anywhere near the tables it conditions.
+
+### Limits
+
+**Every figure here is a recorded trade**, measured under `opcount`'s conventions at the time
+it was taken and re-scored here rather than re-measured.  Before reversing anything, re-measure
+it: this project has twice found a structural prediction running opposite to reality, and a
+measured ratio is not a licence to trust arithmetic over measurement.
+
+**Nothing in this repository reproduces the benchmark, and nothing in it measures a bare field
+`A/M` ratio at any of the three sizes.**  The closest tracked material is `g2/timings/`, which
+carries genus-2 divisor-operation timings over ten field sizes from 2 to 1024 bits at
+five-trial averages, the data in `g2/timings/processing/g2_timings.raw`, the driver in
+`g2/timings/nch2_g2_timings.mag` and the reduction in `g2/timings/processing/parse_timings.py`.
+It does not settle the question: every column is a whole addition or doubling timed against a
+previous best formula, so a field `A/M` ratio is confounded there with every other difference
+between the two formulas being timed.
+
+**The `S` and `C` charges are measured point estimates inside a noise floor, not exact.**  Both
+sit within 5% of unity against a run-to-run deviation whose median is 5.0%, so the charge of
+one multiplication each is the right convention and not a precise one.  Four rows turn on those
+columns rather than on `r`, and for them the measurement bounds the stake rather than settling
+the verdict.
+
+**Nothing here is implemented and nothing is reversed.**  Each row still owes its own
+measurement, its own oracle run, and where it touches a published cell, its own errata entry.
