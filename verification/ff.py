@@ -1,21 +1,15 @@
 """
 ff.py -- finite fields GF(p^n) for the genus-3 ramified-model audit harness.
 
-Elements of GF(p^n) are represented as polynomials over GF(p) modulo a monic
-irreducible polynomial of degree n that is found by exhaustive search (so the
-construction is self-contained and needs no tables).
+Elements of GF(p^n) are polynomials over GF(p) modulo a monic irreducible of
+degree n found by exhaustive search, so the construction needs no tables.
 
-Design notes
-------------
-*   Elements are *interned*: for a given field there is at most one FFElement
-    object per value, so `==` / `hash` are cheap and objects are shared.  Field
-    orders in this harness are tiny (<= 32 in the colleague's testers), so the
-    pool never gets large.
-*   `int` interoperates with FFElement everywhere (0, 1, -1, 2, ... are the
-    common cases), which lets poly.py and curve.py write `2*v + h` naturally in
-    a characteristic-agnostic way.
-*   No dependency on poly.py -- the small amount of GF(p)[x] arithmetic needed
-    to build the field is implemented here on plain integer lists.
+Elements are interned, at most one object per value per field, so `==` and `hash`
+are cheap; orders here are tiny (<= 32 in the colleague's testers) and the pool
+stays small.  `int` interoperates with FFElement everywhere, which lets poly.py
+and curve.py write `2*v + h` characteristic-agnostically.  No dependency on
+poly.py: the little GF(p)[x] arithmetic needed to build the field is done here on
+plain integer lists.
 """
 
 from __future__ import annotations
@@ -124,10 +118,9 @@ def _monic_polys_of_degree(d, p):
 def _is_irreducible(poly, p):
     """Trial-division irreducibility test for poly monic of degree n over GF(p).
 
-    A degree-n polynomial is reducible iff it has a factor of degree <= n/2,
-    hence iff it is divisible by *some* monic polynomial of degree 1..n//2.
-    Exhaustive trial division is therefore a complete test.  Cost is ~p^(n/2),
-    which is negligible for the field orders used here.
+    Reducible iff divisible by some monic polynomial of degree 1..n//2, so
+    exhaustive trial division is a complete test.  Cost ~p^(n/2), negligible for
+    the field orders used here.
     """
     n = len(poly) - 1
     if n <= 1:
@@ -144,15 +137,15 @@ def _is_irreducible(poly, p):
 
 
 # Magma's own defining polynomials, ascending coefficients, for the extension fields
-# this repository's testers actually use. Queried from Magma directly rather than
-# assumed -- `DefiningPolynomial(GF(q))` under tools/magma-docker/.
+# this repository's testers use.  Queried from Magma rather than assumed:
+# `DefiningPolynomial(GF(q))` under tools/magma-docker/.
 #
-# Matching matters because the whitebox testers write extension-field elements as
-# `FF.1^k`, powers of Magma's generator. Any irreducible gives an isomorphic field, so
-# a case stays a valid test either way, but the curve it names is only the intended one
-# when the generator agrees. The search order below already agrees for GF(4), GF(8),
-# GF(16), GF(27) and GF(32); it did not for GF(9) or GF(25), and that mismatch
-# reproduced as two wrong constructed cases over GF(9).
+# The whitebox testers write extension-field elements as `FF.1^k`, powers of Magma's
+# generator.  Any irreducible gives an isomorphic field, so a case stays a valid test
+# either way, but it names the intended curve only when the generator agrees.  The
+# search order below already agrees for GF(4), GF(8), GF(16), GF(27) and GF(32); it did
+# not for GF(9) or GF(25), and that mismatch reproduced as two wrong constructed cases
+# over GF(9).
 MAGMA_MODULI = {
     (2, 2): [1, 1, 1],              # x^2 + x + 1
     (2, 3): [1, 1, 0, 1],           # x^3 + x + 1

@@ -9,114 +9,95 @@ explicit code that is supposed to implement it.
 
 NEEDS REAL MAGMA, SO IT CANNOT RUN IN HOSTED CI
 
-Every other module here is Magma-free by construction: `maginterp.py` executes
-the `.mag` source in Python. This one is not, and cannot be, because a reference
-block is written in the *full* language -- `Resultant`, `XGCD`, `quo<R | up>`,
-polynomial `div` -- which is precisely the part `maginterp.py` does not
-implement, since the explicit formulas never use it. So this needs
-`tools/magma-docker/magma.sh`, Magma is licensed commercial software, and this is
-not a gate a hosted runner can execute. Same standing as the `*_random.mag`
-testers: run locally, and before a release.
+A reference block is written in the *full* language: `Resultant`, `XGCD`,
+`quo<R | up>`, polynomial `div`, precisely the part `maginterp.py` does not
+implement.  So this needs `tools/magma-docker/magma.sh`, and Magma is licensed
+commercial software.  Same standing as the `*_random.mag` testers: run locally,
+and before a release.
 
-Magma exits 0 even when a script dies, so exit status is never trusted here.
-Python requires the machine-readable `BLOCKCHECK` lines to come back and decides
-the verdict itself; a runtime error anywhere in the run suppresses them and is
-reported as a failure rather than as silence.
+Magma exits 0 even when a script dies, so exit status is never trusted.  Python
+requires the machine-readable `BLOCKCHECK` lines to come back and decides the
+verdict itself; a runtime error suppresses them and reads as a failure, not as
+silence.
 
 WHAT IT IS FOR
 
 Each formula function opens with a `//Formulation` block inside
 `/* //startIGNORE ... */ //endIGNORE`: the readable polynomial-level algorithm
-that the explicit coefficient code below it implements. **Nothing else in this
-repository ever runs one.** `maginterp.py` interprets the explicit code and reads
-*values*, so `whitebox.py`, `driver.py`, `opcount.py` and every one of the Magma
-random testers step over the blocks entirely, and every Magma tester loads the
-file with the block still commented out. "Uncomment it and it produces the right
-answers" was therefore an unverified claim for the whole life of these files --
-and it was false: the arbitrary-characteristic genus-3 `Deg3ADD` block agreed on
-every input whose `gcd(u, up)` had degree 0, 1 or 2 and disagreed in the `u = up`
-class, one cause being a missing `upp := upp/LeadingCoefficient(upp);`.
+that the explicit coefficient code below it implements.  **Nothing else in this
+repository ever runs one**, and "uncomment it and it produces the right answers"
+was false: the arbitrary-characteristic genus-3 `Deg3ADD` block agreed wherever
+`gcd(u, up)` had degree 0, 1 or 2 and disagreed in the `u = up` class, one cause
+being a missing `upp := upp/LeadingCoefficient(upp);`.
 
 This module splices the block into a scratch file as its own function and drives
 it against the file's own explicit code on the same inputs.
 
-That particular line is now dead code -- in the rewritten CASE #4.1 `upp` is a
-monic exact quotient already -- so `selftest.py`'s `blocks` section gates this
-module with a different single-line deletion in the same branch, and measures the
-original one to keep that statement evidence rather than assertion.
+That line is now dead code, `upp` being a monic exact quotient already in the
+rewritten CASE #4.1, so `selftest.py`'s `blocks` section gates this module with a
+different single-line deletion in the same branch.
 
 CASE CONTROL IS BY CONSTRUCTION, NOT SAMPLING
 
 That defect survived earlier three-way Magma checking because `Random(Jac)`
-essentially never returns two divisors that share a `u`. So divisors are built
-here from *affine points of the curve*, which makes the number of shared
-x-coordinates -- and hence `deg gcd(u, up)`, the quantity every branch keys on --
-a parameter rather than a coincidence:
+essentially never returns two divisors sharing a `u`.  So divisors are built here
+from *affine points of the curve*, making `deg gcd(u, up)`, the quantity every
+branch keys on, a parameter rather than a coincidence:
 
     shared = 0   ->  gcd(u, up) = 1, the typical path
     shared = 1   ->  gcd of degree 1
     shared = 2   ->  gcd of degree 2
     shared = 3   ->  u = up  (the y at a shared x is changed, so D1 != D2)
 
-Every class in range is required to be non-empty. "Nothing failed" must not be
-reachable by comparing nothing -- the same rule `driver.py` applies to a selected
-family that produces no comparisons.
+Every class in range is required to be non-empty, the same rule `driver.py`
+applies, so "nothing failed" is not reachable by comparing nothing.
 
 EVERY ADD BLOCK IN THESE FILES, NOT ONLY Deg3ADD
 
 The two divisor degrees are read out of the function's signature, so `--function`
 reaches all six blocks in each file, and `add_functions` discovers which six they
-are rather than naming them. `selftest.py`'s `blocks` section drives every one of
-them in both families, so all twelve are gated, not only the one the provocation
-is injected into. At that section's settings, `--curves=4 --pairs=6 --seed 11`,
-all twelve agree over 9,061 comparisons: `arb` 752/744/973/618/906/1158 and `nch2`
-529/528/764/486/738/865 for Deg1ADD, Deg12ADD, Deg2ADD, Deg13ADD, Deg23ADD,
-Deg3ADD. The seed is named because it has to be: at the CLI default `--seed 1` the
-same twelve agree over 8,904 instead. A comparison count is a property of the run,
-not of the formulas -- it moves with the seed, with the field set the tester
-declares, and with the curves the generator happens to produce -- so quote one
-only with the settings that produced it. The `blocks` section reproduces the 9,061
-on every run, which is what keeps that figure honest.
+are.  `selftest.py`'s `blocks` section drives all twelve.  At its settings,
+`--curves=4 --pairs=6 --seed 11`, all twelve agree over 9,061 comparisons: `arb`
+752/744/973/618/906/1158 and `nch2` 529/528/764/486/738/865 for Deg1ADD, Deg12ADD,
+Deg2ADD, Deg13ADD, Deg23ADD, Deg3ADD.  The seed is named because a comparison
+count is a property of the run, not of the formulas: at the CLI default `--seed 1`
+the same twelve agree over 8,904.  Quote one only with its settings.
 
-`Deg3ADD` is the default because it is the only one with a `u = up` class -- the
-two degree-3 divisors can be equal -- and that is where the defect was.
+`Deg3ADD` is the default because it is the only one with a `u = up` class, and
+that is where the defect was.
 
 WHAT IT DOES NOT COVER, PLAINLY
 
   * It compares the block against the *explicit code*, not against the group
-    law. A defect present in both is invisible here. That is not a gap in
-    practice -- the explicit code is what `whitebox.py` and `driver.py` check
-    against `reference.py`'s independent Cantor arithmetic, and what the Magma
-    testers check against Magma's own Jacobian -- but the claim this module
-    licenses is exactly "the block agrees with the verified code", and no more.
+    law, so a defect present in both is invisible here.  The explicit code is
+    itself checked against `reference.py`'s Cantor arithmetic and against Magma's
+    own Jacobian, but the claim this module licenses is exactly "the block agrees
+    with the verified code", and no more.
 
   * Only the genus-3 ramified families are discovered, by globbing
-    `g3/ramifiedModel/*_ramifiedG3_random.mag`. The split model is not covered:
+    `g3/ramifiedModel/*_ramifiedG3_random.mag`.  The split model is not covered:
     its divisors carry a weight alongside `(u, v)` and its blocks read it, so the
-    point-based construction below cannot express its inputs. Genus 2 is not
-    covered either, for no reason beyond nobody having needed it: the machinery
-    below is degree-driven and would likely extend.
+    point-based construction below cannot express its inputs.  Genus 2 is not
+    covered either, for no reason beyond nobody having needed it.
 
   * ADD only. A `DBL` block takes one divisor and has no shared-x axis at all, so
     it needs a different driver, not a different argument list.
 
-  * Divisor construction gives `u` distinct roots in the base field. A `u` with a
-    repeated root or an irreducible factor is not reachable this way, so a branch
-    that only such a `u` can reach is not exercised. The branch structure of
-    these functions keys on `gcd(u, up)`, which is why that is the axis chosen,
-    but the limit is real.
+  * Divisor construction gives `u` distinct roots in the base field, so a branch
+    reachable only by a `u` with a repeated root or an irreducible factor is not
+    exercised.  The limit is real; the branch structure keys on `gcd(u, up)`,
+    which is why that is the axis chosen.
 
 NOTHING FAMILY-SPECIFIC IS TABULATED HERE
 
-On the same principle as `driver.read_support` and `opcount.directives`: a table
-in this file would keep agreeing with itself after the source changed. Which
-files to load, which curve generator to draw from and which fields to sweep are
-all read out of the family's own `*_random.mag` tester; the degrees of the two
-divisors, the argument order and the number of return values are read out of the
-function's own signature and first `return`. The `nch2` sweep therefore includes
-GF(7), which its banner excludes as a *derivation* characteristic -- deliberately,
-because `ramifiedUtilities.mag` records that GF(7) curves already in the depressed
-form are legitimate inputs.
+Same principle as `driver.read_support` and `opcount.directives`: a table here
+would keep agreeing with itself after the source changed.  Which files to load,
+which curve generator to draw from and which fields to sweep come from the
+family's own `*_random.mag` tester; the two divisor degrees, the argument order
+and the return arity come from the function's own signature and first `return`.
+The `nch2` sweep therefore includes GF(7), which its banner excludes as a
+*derivation* characteristic, because `ramifiedUtilities.mag` records that GF(7)
+curves already in the depressed form are legitimate inputs.
 
 The only file this module writes is a scratch `.mag` in this directory, removed
 in a `finally`. It never writes under `g3/`, whose files it opens read-only.
@@ -151,8 +132,7 @@ DEFAULT_FUNCTION = "Deg3ADD"
 class Target(object):
     """One family: where its formulas are, what curves it is tested over.
 
-    Every field is read from the tester or from the formula file. Nothing here
-    is declared by this module.
+    Every field is read from the tester or the formula file, none declared here.
     """
 
     def __init__(self, name, tester):
@@ -176,11 +156,9 @@ class Target(object):
         self.add_rel = add[0]
         self.add_path = os.path.join(os.path.dirname(tester), self.add_rel)
 
-        # The DBL the tester loads. Read rather than assumed, which is what made
-        # the borrow visible while it lasted: nch2 genus-3 ramified had no doubling
-        # of its own and said so by loading arb's. PR6 gave it one, so every tester
-        # now names its own family's DBL -- and a future ADD-first specialisation
-        # will show up here as a borrow again without this needing to change.
+        # The DBL the tester loads, read rather than assumed: a family that
+        # borrows another's doubling shows up here as a borrow instead of
+        # passing unnoticed.
         dbl = [p for p in self.loads if "_DBL" in p]
         self.dbl_rel = dbl[0] if len(dbl) == 1 else None
         self.dbl_path = (os.path.join(os.path.dirname(tester), self.dbl_rel)
@@ -216,9 +194,8 @@ class Target(object):
         """`load` statements rewritten relative to this directory.
 
         The scratch file runs from `verification/`, not from the tester's
-        directory, so `load "ramifiedUtilities.mag"` has to become
-        `load "../g3/ramifiedModel/ramifiedUtilities.mag"`. magma.sh mounts the
-        repository root, so a `..` here stays inside the mount.
+        directory.  magma.sh mounts the repository root, so the `..` this
+        introduces stays inside the mount.
         """
         base = os.path.dirname(self.tester)
         out = []
@@ -253,8 +230,7 @@ def extract(path, fn=DEFAULT_FUNCTION, span=800):
     """(signature, block body lines, return arity) for one function.
 
     The body is what lies strictly between the `startIGNORE` and `endIGNORE`
-    marker lines -- the markers themselves are part of the commenting, not of
-    the algorithm.
+    markers; the markers are part of the commenting, not of the algorithm.
     """
     lines = _read(path).split("\n")
     head = re.compile(r"^%s\s*:=\s*function\((.*)\)\s*$" % re.escape(fn))
@@ -297,13 +273,12 @@ _ADD_HEAD = re.compile(r"^(Deg\d+ADD)\s*:=\s*function\(", re.M)
 def add_functions(path):
     """(runnable, [(name, why)]) -- the ADD blocks in one formula file.
 
-    Discovered, not tabulated, on the same principle as everything else here: a
-    function added to the file gets checked, and one renamed stops being silently
-    skipped by a list that would keep agreeing with itself. `ADD` itself is
-    excluded by the pattern -- it is the dispatcher, taking whole divisors rather
-    than coefficients, so the machinery below cannot call it -- and so is every
-    `DBL`, which has no shared-x axis. Anything named `Deg<n>ADD` whose block or
-    signature cannot be read is returned in the second list rather than dropped.
+    Discovered, not tabulated, so a function added to the file gets checked and
+    one renamed stops being silently skipped.  The pattern excludes `ADD` itself,
+    the dispatcher, which takes whole divisors rather than coefficients; and
+    every `DBL`, which has no shared-x axis.  Anything named `Deg<n>ADD` whose
+    block or signature cannot be read is returned in the second list rather than
+    dropped.
     """
     runnable, unrunnable = [], []
     for m in _ADD_HEAD.finditer(_read(path)):
@@ -336,8 +311,7 @@ def degrees_and_args(sig):
     """((deg D1, deg D2), Magma expressions for the call, in signature order).
 
     Read from the signature, so a reordered parameter list moves the arguments
-    with it -- which is the point: PR10 reorders these, and a table here would
-    keep passing.
+    with it: PR10 reorders these, and a table here would keep passing.
     """
     params = [p.strip() for p in sig.split(",") if p.strip()]
     pat = re.compile(r"^(up|vp|u|v|f|h)(\d+)$")
@@ -367,7 +341,7 @@ def drop_in_case(body, needle, case):
     """Delete `needle` lines that sit inside `case`, up to its next `return`.
 
     Used to inject a known defect: the caller asserts on how many were dropped,
-    so a mutation that silently matched nothing cannot pass for a provocation.
+    so a mutation that matched nothing cannot pass for a provocation.
     """
     out, dropped, armed = [], 0, False
     for line in body:
@@ -516,9 +490,9 @@ def build_script(target, function=DEFAULT_FUNCTION, curves=3, pairs=4, seed=1,
                  fields=None, block_lines=None):
     """The whole scratch Magma file, as text.
 
-    The block is spliced in as `BLOCK`, taking the explicit function's own
-    signature, so both callees are handed identical arguments by construction
-    rather than by two argument lists that could drift apart.
+    The block is spliced in as `BLOCK` taking the explicit function's own
+    signature, so both callees get identical arguments by construction rather
+    than from two argument lists that could drift apart.
     """
     sig, body, arity = extract(target.add_path, function)
     if block_lines is not None:
@@ -564,8 +538,8 @@ _DBL_HEAD = re.compile(r"^(Deg\d+DBL)\s*:=\s*function\(", re.M)
 def dbl_functions(path):
     """(runnable, [(name, why)]) -- the DBL blocks in one formula file.
 
-    Same discovery rule as `add_functions`, and the same reason for it. `DBL`
-    itself is excluded by the pattern: it is the dispatcher.
+    Same discovery rule as `add_functions`.  `DBL` itself is the dispatcher and
+    is excluded by the pattern.
     """
     runnable, unrunnable = [], []
     for m in _DBL_HEAD.finditer(_read(path)):
@@ -584,15 +558,13 @@ def dbl_functions(path):
 def degree_and_args_dbl(name, sig):
     """(deg D, Magma call expressions, signature width) for one DBL block.
 
-    The degree comes from the NAME, not the signature, and that is not laziness.
-    `Deg2DBL` still takes the shared full-degree-3 parameter list -- `u2, u1,
-    u0, v2, v1, v0` -- while operating on a degree-2 divisor, so reading the
-    highest `u` index gives 3 and builds the wrong divisor. That is the
-    signature bloat this plan tracks for PR10; `Deg1DBL` carried it until
-    2026-08-21. The addition half reads its degrees off the signature because
-    there the two operands' degrees are the only thing distinguishing the
-    mixed-degree callees, and PR10 will reorder them; here the name is
-    authoritative and the signature is what needs trimming.
+    The degree comes from the NAME, not the signature: `Deg2DBL` still takes the
+    shared full-degree-3 list `u2, u1, u0, v2, v1, v0` while operating on a
+    degree-2 divisor, so the highest `u` index gives 3 and builds the wrong
+    divisor.  That signature bloat is tracked for PR10; `Deg1DBL` carried it
+    until 2026-08-21.  The addition half reads its degrees off the signature
+    instead, because there the two operands' degrees are the only thing
+    distinguishing the mixed-degree callees.
 
     The third return is the width the signature implies, so a caller can report
     the gap rather than silently accommodate it.
@@ -831,18 +803,16 @@ _ERROR_LINE = re.compile(r"^\s*>>|User error:|Runtime error|^Aborting|"
 def _magma(script, tag, timeout=3600, keep=False):
     """Run one scratch script. Returns (stdout+stderr, path or None, error).
 
-    The scratch file has to live inside the mount magma.sh sets up, and that
-    mount is the repository root. It goes here, in `verification/`, and not
-    under `g3/`: the formula files are opened read-only by this module, and a
-    tool that writes beside a file a human is editing is a tool that can lose
-    their work.
+    The scratch file has to live inside magma.sh's mount, which is the
+    repository root.  It goes here, in `verification/`, and not under `g3/`,
+    so nothing is ever written beside a formula file a human may be editing.
     """
     if not os.access(MAGMA, os.X_OK):
         return "", None, "no runnable magma.sh at %s" % os.path.relpath(MAGMA, ROOT)
-    # The pid is part of the name because the name is not otherwise unique: two
-    # runs of the same family and function -- a `selftest.py` in one shell and a
-    # `blockcheck.py` in another -- would otherwise share this path, and each
-    # one's `finally` would delete the other's script out from under Magma.
+    # The pid is in the name because two concurrent runs of the same family and
+    # function, a `selftest.py` in one shell and a `blockcheck.py` in another,
+    # would otherwise share this path and each `finally` would delete the
+    # other's script out from under Magma.
     path = os.path.join(HERE, "_blockcheck_%s_%d.mag" % (tag, os.getpid()))
     try:
         with open(path, "w", encoding="utf-8") as fh:
@@ -865,15 +835,13 @@ def magma_status(timeout=60):
     """(ok, why) -- whether real Magma can be reached at all.
 
     Probed by running a two-line script through the same path a real run uses,
-    rather than by re-deriving magma.sh's docker knowledge here, which would be
-    a second copy to go stale. A hosted runner has `docker` and no image, so the
-    probe has to be short: `selftest.py`'s `blocks` section calls this to decide
-    whether to skip, and CI must not sit waiting to be told what it knows.
+    rather than by re-deriving magma.sh's docker knowledge here as a second copy
+    to go stale.  It has to be short: `selftest.py`'s `blocks` section calls this
+    to decide whether to skip, and a hosted runner has `docker` and no image.
     """
     # Twice, because the container has been seen once in ~35 runs to print its
-    # banner and then return nothing -- the emulator this image patches is the
-    # likely culprit. One retry turns a rare flake into a rarer one; a genuinely
-    # missing image fails both times, in under a second each.
+    # banner and then return nothing.  One retry turns a rare flake into a rarer
+    # one; a genuinely missing image fails both times, in under a second each.
     for _attempt in (1, 2):
         out, _p, err = _magma(PROBE, "probe", timeout=timeout)
         if "BLOCKCHECK probe ok" in out:
@@ -902,9 +870,9 @@ def run(target, function=DEFAULT_FUNCTION, curves=3, pairs=4, seed=1, fields=Non
 
     tag = "%s_%s" % (target.name, function)
     out, path, err = _magma(script, tag, timeout=timeout, keep=keep)
-    # The one retry, and only for the shape the container's rare flake takes:
-    # no tally and no diagnostic either, meaning nothing came back at all. A run
-    # that reported a Magma error is never repeated -- that is the answer.
+    # The one retry, only for the shape the container's rare flake takes: no
+    # tally and no diagnostic either, meaning nothing came back at all.  A run
+    # that reported a Magma error is never repeated; that is the answer.
     if not err and "BLOCKCHECK" not in out and not _ERROR_LINE.search(out):
         res.retried = True
         out, path, err = _magma(script, tag, timeout=timeout, keep=keep)
@@ -913,8 +881,7 @@ def run(target, function=DEFAULT_FUNCTION, curves=3, pairs=4, seed=1, fields=Non
         return res
 
     for line in out.splitlines():
-        # `shared` for an addition, `ramified` for a doubling: the same axis role,
-        # named for what it counts.
+        # `shared` for an addition, `ramified` for a doubling: the same axis role.
         m = re.match(r"BLOCKCHECK class (shared|ramified)=(\d+) compared=(\d+) wrong=(\d+)", line)
         if m:
             res.axis = m.group(1)
@@ -926,12 +893,11 @@ def run(target, function=DEFAULT_FUNCTION, curves=3, pairs=4, seed=1, fields=Non
         if m:
             res.curves_used = int(m.group(1))
 
-    # Two independent failure signals, because Magma has both shapes. A dead
+    # Two independent failure signals, because Magma has both shapes.  A dead
     # ExactQuotient kills the script and the tally lines never appear; an
-    # undeclared identifier -- the shape a half-finished rename leaves, and the
-    # shape that hid in this repository until a shared-u pair reached it -- only
-    # aborts the enclosing loop, so the tally lines DO appear, all zeros. Neither
-    # moves the exit status, which Magma leaves at 0 either way.
+    # undeclared identifier, the shape that hid here until a shared-u pair
+    # reached it, only aborts the enclosing loop, so the tally lines DO appear,
+    # all zeros.  Neither moves the exit status, which Magma leaves at 0.
     why = [x.strip() for x in out.splitlines() if _ERROR_LINE.search(x)]
     if not re.search(r"^BLOCKCHECK total compared=\d+ wrong=\d+", out, re.M):
         res.error = ("the run did not finish: %s"
@@ -958,8 +924,7 @@ def _print_outcome(res, verbose=False):
             for line in res.stdout.splitlines()[-40:]:
                 w("       | %s\n" % line)
         return
-    # An addition classifies on shared x-coordinates, a doubling on ramified
-    # points; the driver says which, so the label is never the wrong one.
+    # The driver says which axis it used, so the label is never the wrong one.
     axis = "ramified points     " if res.axis == "ramified" else "shared x-coordinates"
     for cls, compared, wrong in res.classes:
         w("     %s = %d : %7d compared, %d wrong%s\n"
@@ -968,9 +933,8 @@ def _print_outcome(res, verbose=False):
       % (res.curves_used, res.compared, res.wrong))
     if res.empty_fields:
         # Not a failure: a field with fewer than deg(u) + deg(up) affine
-        # x-coordinates cannot supply these divisors at all. Printed because a
-        # sweep that quietly tested twelve of seventeen fields reads as
-        # seventeen.
+        # x-coordinates cannot supply these divisors.  Printed because a sweep
+        # that quietly tested twelve of seventeen fields reads as seventeen.
         w("     no usable curve over GF(%s) -- too few affine x-coordinates\n"
           % "), GF(".join(str(q) for q in res.empty_fields))
     if res.verdict == "AGREE":
@@ -1030,12 +994,10 @@ def main(argv=None):
             print("           curves %s, fields %s" %
                   (t.curve_fn, ",".join(str(q) for q in t.fields)))
             print("           %s" % blk)
-        # DBL blocks ARE covered -- pass --function Deg1DBL/Deg2DBL/Deg3DBL. They
+        # DBL blocks ARE covered: pass --function Deg1DBL/Deg2DBL/Deg3DBL. They
         # classify on ramified points rather than shared x-coordinates, and the
-        # report says which axis it used. This line claimed otherwise for the whole
-        # life of the file, which is worse than a missing feature: it tells a
-        # reader an oracle does not exist when it does. The default is Deg3ADD
-        # only because that is the block most worth checking, not the only one.
+        # report says which axis it used.  Deg3ADD is the default only because
+        # it is the block most worth checking, not the only one.
         print("\n  --function selects the block: Deg3ADD (default), Deg1DBL,"
               "\n  Deg2DBL, Deg3DBL. Not covered: the split model and genus 2."
               "\n  Families are discovered from the random testers above, so a"

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Check that every file this repository references actually exists.
 
-Stale paths are the single largest class of defect in this repository: broken
-`load` statements in Magma files and broken `open()` calls in Python scripts,
-several of which silently disabled whole tools. This catches new ones.
+Broken `load` statements in Magma files and broken `open()` calls in Python
+scripts are the largest class of defect here, and several silently disabled whole
+tools.  This catches new ones.
 
-Known-broken paths are listed in tools/known_broken_paths.txt so the check can
-pass today while still failing on anything newly broken. That file is debt with
-a name attached; it should only ever shrink.
+Known-broken paths live in tools/known_broken_paths.txt so the check can pass
+today while still failing on anything newly broken.  That list should only ever
+shrink.
 
 Usage:
     tools/check_paths.py              # fail on any unlisted broken path
@@ -43,9 +43,8 @@ def tracked(suffix: str) -> list[Path]:
 def base_dir(path: Path) -> Path:
     """The directory a file's relative references resolve against.
 
-    Normally the file's own directory. The whitebox case generators are the
-    exception: whitebox_auto_NEG.py drives them from whitebox/, so their paths
-    are relative to that.
+    The file's own directory, except for the whitebox case generators:
+    whitebox_auto_NEG.py drives those from whitebox/.
     """
     rel = path.relative_to(ROOT)
     if rel.parts[:2] == ("whitebox", "genFiles"):
@@ -56,16 +55,12 @@ def base_dir(path: Path) -> Path:
 def is_relocatable(path: Path) -> bool:
     """True for files whose references are not meant to resolve where they sit.
 
-    whitebox/testerFiles/ holds generator *output*. A generated tester is meant
-    to be copied into the formula directory it tests and run from there, so its
-    `load "g2Formulas/..."` lines resolve at the destination, not here. Checking
-    them in place would report two dozen phantom breakages.
-
-    whitebox/probes/ is the same category by a different route: a probe is driven
-    from the repository root, because the Magma wrapper mounts the working
-    directory, so its loads are root-relative and do not resolve beside the file.
-    The alternative was three allowlist entries, and this is a rule rather than
-    debt -- the same distinction the allowlist's own header draws.
+    whitebox/testerFiles/ holds generator *output*: a tester is copied into the
+    formula directory it tests and run from there, so its `load "g2Formulas/..."`
+    lines resolve at the destination.  whitebox/probes/ is driven from the
+    repository root, so a probe's loads are root-relative.  Checking either in
+    place would report two dozen phantom breakages.  A rule rather than allowlist
+    debt, the same distinction the allowlist's own header draws.
     """
     head = path.relative_to(ROOT).parts[:2]
     return head in (("whitebox", "testerFiles"), ("whitebox", "probes"))
