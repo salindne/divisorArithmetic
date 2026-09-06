@@ -62,8 +62,8 @@ the same checkout mtime. What can be established by comparison:
 `newRaw/` is a partial re-run whose outputs are not present here.  `processing/` and
 `newProcessing/` are two complete but different generations of the same 62 plots.
 
-A `raw/` directory was removed at v1.0.1: all 21 of its files were byte-identical to their
-`processing/` counterparts.
+A raw data directory was removed at v1.0.1: all 21 of its files were byte-identical to their
+counterparts under `processing/`.
 
 A defect affecting the negative-reduced timings produced by these scripts is recorded in
 [../ERRATA.md](../ERRATA.md).
