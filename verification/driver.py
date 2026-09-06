@@ -1491,36 +1491,6 @@ def _compare_split(fam, cur, V, ccs, fn, params, subs, res, D1, D2, op, q, mode,
     return 0, 1
 
 
-def resolve_root_choice(fam, families, fields, seed, curves=2, pairs=2):
-    """Settle which root of the infinite-place quadratic Precompute's index means.
-
-    The arb and ch2 Precompute functions take the value at infinity from
-    `Factorization(x^2 + h*x - f)[2][1]`, "the second solution from the
-    factorization given by magma". Magma's ordering of the two factors is an
-    internal detail that cannot be reproduced by reading the source, and the two
-    choices are not interchangeable: swapping them exchanges y and yn, which
-    exchanges the positive and negative reduced bases.
-
-    So it is measured, not assumed. Both orderings are run against the independent
-    reference and the one that agrees is adopted. If both agree the choice does not
-    matter for this family; if neither does, the disagreement is a finding rather
-    than a silently wrong constant.
-
-    This establishes the harness is self-consistent. It does NOT prove the ordering
-    matches Magma's -- only running Magma can do that, which PR1's emulator fix now
-    makes possible and which the plan lists as external calibration.
-    """
-    scores = {}
-    for choice in ("first", "second"):
-        M.ROOT_CHOICE[0] = choice
-        throwaway = Result()
-        agree, total = run_split_family(fam, families, throwaway, fields, curves,
-                                        pairs, seed, False, probe=True)
-        scores[choice] = (agree, total)
-    M.ROOT_CHOICE[0] = "first"
-    return scores
-
-
 def _exercise(fam, cur, add, params, dbl, dbl_params, subs, res, rng,
               n_pairs, q, verbose):
     F = cur.F
