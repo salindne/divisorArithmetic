@@ -535,26 +535,6 @@ def build_script(target, function=DEFAULT_FUNCTION, curves=3, pairs=4, seed=1,
 _DBL_HEAD = re.compile(r"^(Deg\d+DBL)\s*:=\s*function\(", re.M)
 
 
-def dbl_functions(path):
-    """(runnable, [(name, why)]) -- the DBL blocks in one formula file.
-
-    Same discovery rule as `add_functions`.  `DBL` itself is the dispatcher and
-    is excluded by the pattern.
-    """
-    runnable, unrunnable = [], []
-    for m in _DBL_HEAD.finditer(_read(path)):
-        name = m.group(1)
-        try:
-            sig, body, _arity = extract(path, name)
-            degree_and_args_dbl(name, sig)
-            if not [x for x in body if x.strip()]:
-                raise ValueError("the block is empty")
-            runnable.append(name)
-        except Exception as exc:                                # noqa: BLE001
-            unrunnable.append((name, str(exc)))
-    return runnable, unrunnable
-
-
 def degree_and_args_dbl(name, sig):
     """(deg D, Magma call expressions, signature width) for one DBL block.
 
