@@ -363,7 +363,7 @@ grep -oE '^(ADD|DBL)[0-9]+$' logs/<family>_log.txt | sort -u | wc -l
 Limitations:
 
 - An unreached branch is reported, and writing a tester with a gap needs `--allow-incomplete`.
-- [whitebox/testerFiles/](whitebox/testerFiles/) is a staging directory, not the testers of record, and `verification/whitebox.py` deliberately excludes it.  Its [arb_splitG3_whiteBox_tester.mag](whitebox/testerFiles/arb_splitG3_whiteBox_tester.mag) is a two-case fragment from an aborted run; the deployed genus-3 split testers hold 1,979, 1,209 and 1,203 cases and live in [g3/splitModel/negReduced/](g3/splitModel/negReduced/).
+- `whitebox/testerFiles/` is the generator's staging directory and is gitignored.  A tester is of record only once it is copied next to the formulas it tests; `verification/whitebox.py` excludes the staging path so a half-finished run cannot be mistaken for a gate.
 - [whitebox/logs/](whitebox/logs/) holds the residue of a pre-2025 orchestrator run alongside output from aborted ones.  Two of the three original files begin mid-polynomial: that generation reset the log with `truncate(0)` while Magma still held it open at its own write offset.  The runner now writes to a separate `.new` file and never truncates.  Regeneration logs are gitignored, running to gigabytes where the committed ones are kilobytes.
 
 ---

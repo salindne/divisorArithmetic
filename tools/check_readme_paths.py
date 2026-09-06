@@ -55,6 +55,10 @@ EXPECTED_ABSENT = {
     "timings_[xx]bit.mag": "placeholder for the ten per-field-size drivers",
     # Created at runtime by test_all.sh and gitignored.
     ".test-logs/": "gitignored: per-tester logs, created on first run",
+    # The generator's staging area, gitignored since v1.0.1. A tester is of record
+    # once copied next to its formulas, so a committed staging copy could only be a
+    # second, diverging source of truth.
+    "whitebox/testerFiles/": "gitignored: generator staging, written on first run",
     # A Docker platform identifier, not a filesystem path.
     "linux/arm64": "docker platform string, not a path",
     "linux/amd64": "docker platform string, not a path",

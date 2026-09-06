@@ -44,3 +44,6 @@ whitebox/logs/*_ramifiedG3_log.txt
 # Python bytecode from the verification harness
 __pycache__/
 *.pyc
+
+# Generator staging. A tester is of record once copied next to its formulas.
+whitebox/testerFiles/

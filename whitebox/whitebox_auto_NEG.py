@@ -639,6 +639,11 @@ class Magma(object):
 
 
     def makeFile(self):
+        # testerFiles/ is staging and is gitignored, so it is absent in a fresh
+        # clone. A tester is of record once copied next to its formulas.
+        d = os.path.dirname(self.file.OUT)
+        if d:
+            os.makedirs(d, exist_ok=True)
         with open(self.file.OUT, 'w+') as out:
             out.writelines(self.magma)
 
