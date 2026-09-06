@@ -1,9 +1,8 @@
 """maginterp.py -- executes the .mag formula source directly.
 
-Running the Magma source text itself is the point: no formula is transcribed into
-Python, so no transcription can introduce a bug or hide one. Every family in the
-repository is in scope, both models and both genuses, not just the file this began
-as an interpreter for.
+No formula is transcribed into Python, so no transcription can introduce a bug or
+hide one.  Every family in the repository is in scope, both models and both
+genuses.
 
 Statements supported, which is everything the formula files and their dispatchers
 use:
@@ -16,25 +15,17 @@ use:
     "literal";  and  if ADD_DEBUG then "literal"; end if;
 
 Debug prints are kept, not skipped: they name the computation path taken and are
-the branch-coverage instrumentation `driver.py` reports against.
+the branch-coverage instrumentation `driver.py` reports against.  Expressions are
+parsed by `_parser`.
 
-Expressions are parsed by `_parser`, which handles calls, indexing, sequence and
-tuple literals, and the full precedence chain -- see its docstring for why an
-ad-hoc tokeniser was not enough.
+Two conventions that are silent when wrong:
 
-Two conventions worth stating because getting them wrong is silent:
-
-  * Integer literals stay Python ints. Coercing them into the field made every
-    literal used as an index or an exponent reduce modulo the characteristic, so
-    `Coeff(u,2)` read the constant term in characteristic 2. Arithmetic still
-    coerces where an int meets a field element or polynomial, so `2*v` is zero in
-    characteristic 2 and `-1 == 1`, exactly as Magma.
+  * Integer literals stay Python ints, never field elements; see `ev`, where the
+    reason is spelled out.  Arithmetic still coerces where an int meets a field
+    element or polynomial, so `2*v` is zero in characteristic 2 and `-1 == 1`,
+    exactly as Magma.
   * `/` is field division and a zero divisor raises ZeroDivisionError rather than
-    being smoothed over. Errata E1 is exactly such a division, and it has to
-    surface.
-
-`COUNT` accumulates operation counts; the conventions there mirror the "4m 2s 32a"
-comments in the formula files.
+    being smoothed over.  Errata E1 is exactly such a division and has to surface.
 """
 import re
 
@@ -47,12 +38,12 @@ from poly import Poly
 # field division is one inversion plus one multiplication; squaring is S.
 COUNT = {}
 
-# Counting conventions, opted into by a caller. All three default to OFF, so the
-# interpreter counts exactly as it did before unless something sets them --
+# Counting conventions, opted into by a caller and all defaulting to OFF, so the
+# interpreter counts as it always has unless something sets them.
 # verification/opcount.py is what does, and it owns the thesis's conventions.
 # Set here rather than there because the multiplication and division sites are
-# inside `ev`, and monkeypatching an evaluator from outside is the kind of thing
-# that works until someone reorders a branch.
+# inside `ev`, and monkeypatching an evaluator from outside works until someone
+# reorders a branch.
 #
 # CONSTS  names declared `//Constant:` in the file being counted. A product with
 #         one is a multiplication by a curve coefficient: C, not M.
@@ -61,22 +52,20 @@ COUNT = {}
 # DIV_LITERAL_AS_ADD
 #         `x/2` is a halving, which this thesis counts as one addition
 #         (chapter6.tex:2333), and `1/x` is an inversion with no product. Without
-#         this every `/` is charged I+M, which is right for `sp0/dw0` and wrong
-#         for both of those.
+#         it every `/` is charged I+M, right for `sp0/dw0` and wrong for both.
 # INT_ARITH_FREE
 #         `+`/`-` between two plain integers is bookkeeping, not a field
-#         operation, so it is not an A. This exists for the split model, whose
-#         divisors carry a balancing weight: every addition runs
-#         `n := n1 + n2 - 2` and every doubling `np := n + n - 2` on small
-#         integers in [0, g], and the `Degree(...)` arithmetic in the balancing
-#         branches is the same thing. Charged as field additions they put a flat
-#         +2A on every split row -- which is precisely the disagreement against
-#         all four published arbitrary cells that this flag explains.
-#         Testing by operand TYPE is sound here because a field element is an
-#         `FFElement` in every field this repository builds and never a Python
-#         `int`, so no field addition can be freed by it. Testing by syntax --
-#         the `node[1][0] == "int"` form used for products just above -- would
-#         not work: `n1 + n2` has no integer literal in it.
+#         operation, so it is not an A. The split model's divisors carry a
+#         balancing weight: every addition runs `n := n1 + n2 - 2` and every
+#         doubling `np := n + n - 2` on small integers in [0, g], and the
+#         `Degree(...)` arithmetic in the balancing branches is the same thing.
+#         Charged as field additions they put a flat +2A on every split row,
+#         which is precisely the disagreement against all four published
+#         arbitrary cells that this flag explains. Testing by operand TYPE is
+#         sound because a field element is an `FFElement` in every field this
+#         repository builds and never a Python `int`. Testing by syntax, the
+#         `node[1][0] == "int"` form used for products just above, would not
+#         work: `n1 + n2` has no integer literal in it.
 CONSTS = set()
 IGNORED = set()
 DIV_LITERAL_AS_ADD = False
@@ -86,8 +75,8 @@ INT_ARITH_FREE = False
 def _plain_int(x):
     """A Python integer, not a field element and not a bool.
 
-    `bool` is excluded explicitly because it subclasses `int`, so a comparison
-    result reaching an arithmetic node would otherwise be silently free.
+    `bool` subclasses `int`, so without excluding it a comparison result reaching
+    an arithmetic node would be silently free.
     """
     return isinstance(x, int) and not isinstance(x, bool)
 
@@ -99,24 +88,22 @@ def _bump(k, n=1):
 def _leafname(node):
     """The variable name a factor reduces to, seeing through unary minus.
 
-    `-yn2*W2` parses as ("*", ("neg", ("var","yn2")), ("var","W2")) because the
-    parser binds unary minus tighter than `*`. A bare node[1][0] == "var" test
-    therefore misses a declared constant behind a minus sign and charges M where
-    the cost is C.
+    `-yn2*W2` parses as ("*", ("neg", ("var","yn2")), ("var","W2")), so a bare
+    node[1][0] == "var" test misses a declared constant behind a minus sign and
+    charges M where the cost is C.
     """
     while node[0] == "neg":
         node = node[1]
     return node[1] if node[0] == "var" else None
 
 
-# Magma builtins the cleaned formula bodies actually use. Measured: IsZero 1347,
-# Coeff 460, ExactQuotient 126, LeadingCoefficient 57, Degree 42, IsOne 18.
-# The same table serves both levels, because 114 of the 126 Deg* functions are
-# pure field arithmetic while 12 (genus-3 split ADD) work on polynomials, and
-# poly.Poly supplies every one of these operations under the same names.
+# Magma builtins the cleaned formula bodies use. Measured: IsZero 1347, Coeff 460,
+# ExactQuotient 126, LeadingCoefficient 57, Degree 42, IsOne 18. One table serves
+# both levels: 114 of the 126 Deg* functions are pure field arithmetic and 12
+# (genus-3 split ADD) work on polynomials, and poly.Poly supplies every one of
+# these operations under the same names.
 def _is_zero(x):
-    # Plain ints reach here now that literals are no longer coerced into the field,
-    # e.g. `IsZero(0)` and constants that arithmetic left as ints.
+    # Plain ints reach here: `IsZero(0)`, and constants arithmetic left as ints.
     if isinstance(x, int):
         return x == 0
     return x.is_zero()
@@ -147,12 +134,11 @@ def _exact_quotient(a, b):
 
 
 def _gf(F, q):
-    """Magma's `GF(q)`.
+    """Magma's `GF(q)`: check the size against the one field threaded as F.
 
-    The interpreter runs over one field at a time, the one threaded as F, so this
-    confirms the requested size matches rather than constructing a second field
-    that the surrounding arithmetic could not mix with. A mismatch is a real error:
-    it would mean the file is asking for a field the caller did not supply.
+    Constructing a second field would give elements the surrounding arithmetic
+    could not mix with, and a mismatch means the file is asking for a field the
+    caller did not supply.
     """
     q = _as_int(q)
     if q != F.q:
@@ -163,9 +149,9 @@ def _gf(F, q):
 def _polynomial_ring(F, base=None):
     """Magma's `PolynomialRing(...)`, as the ring's own indeterminate.
 
-    Returning `x` directly, rather than a ring object, is what makes the
-    `R<x> := PolynomialRing(GF(q));` statement usable: the interpreter binds the
-    angle-bracket name to this value, which is exactly what the source then uses.
+    Returning `x` rather than a ring object is what makes
+    `R<x> := PolynomialRing(GF(q));` usable: the interpreter binds the
+    angle-bracket name to this value, which is what the source then uses.
     """
     return Poly.x(F)
 
@@ -173,28 +159,20 @@ def _polynomial_ring(F, base=None):
 def _factorization(F, p):
     """Magma's `Factorization` for the one shape the split files need.
 
-    The split-model Precompute functions factor a monic quadratic to obtain the two
-    values attached to the places at infinity:
+    The split-model Precompute functions factor a monic quadratic for the values
+    attached to the places at infinity: y_g solves x^2 + h_g*x - f_{2g+2}.  Only
+    that case is supported; anything else raises rather than returning a plausible
+    wrong answer.  The result mimics Magma's shape, a 1-based sequence of
+    <factor, multiplicity> pairs, so `Factorization(...)[2][1]` works unchanged.
 
-        y_g is a solution of x^2 + h_g*x - f_{2g+2}
-
-    Only that case is supported, and anything else raises rather than returning a
-    plausible wrong answer. The result mimics Magma's shape, a 1-based sequence of
-    <factor, multiplicity> pairs, so source that writes `Factorization(...)[2][1]`
-    works unchanged.
-
-    Ordering is the delicate part and it is NOT guessed.
-
-    `ROOT_PIN`, when set, names the root that `[2][1]` must yield. That is the exact
-    answer and is what `whitebox.py` uses: a constructed case supplies its basis
-    polynomial V explicitly, and y_{g+1} is V's leading coefficient, so the root is
-    known rather than chosen. Neither global ordering works for every case --
-    measured over 1,258 constructed cases, "second" fails 247 of them and all in
-    characteristic 2, while "first" fails 332 and all over odd primes.
-
-    `ROOT_CHOICE` is the fallback for generated inputs, where no V is given.
+    Ordering is NOT guessed.  `ROOT_PIN`, when set, names the root `[2][1]` must
+    yield, which is exact; `whitebox.py` sets it from the case's own basis
+    polynomial V, whose leading coefficient is y_{g+1}.  Neither global ordering
+    works for every case: measured over 1,258 constructed cases, "second" fails
+    247, all in characteristic 2, and "first" fails 332, all over odd primes.
+    `ROOT_CHOICE` is the fallback for generated inputs, where no V is given, and
     `driver.py` establishes it by running both settings against the independent
-    reference rather than by assuming Magma's internal factor order.
+    reference rather than assuming Magma's internal factor order.
     """
     if ROOT_PIN[0] is not None:
         want = ROOT_PIN[0]
@@ -220,20 +198,19 @@ def _factorization(F, p):
 class _Irreducible(Exception):
     """The quadratic defining the infinite places has no root in this field.
 
-    Not a defect: such a curve has its two places at infinity conjugate over a
-    quadratic extension, so it is not a split-model curve at all and the caller
-    should skip it. Distinguished from a genuine error so a driver can count it
-    as a skip rather than a failure.
+    Not a defect: the two places are conjugate over a quadratic extension, so the
+    curve is not a split-model curve at all and the caller should skip it.  Its own
+    type so a driver counts it as a skip rather than a failure.
     """
 
 
 def _quadratic_roots(F, b, c):
     """Roots of x^2 + b*x + c in F, or None if it has none.
 
-    Brute force over the field. The fields in play are GF(2) to GF(32) and small
-    primes, so enumeration is cheaper and far more obviously correct than a
-    characteristic-split formula -- and it needs no separate char-2 branch, where
-    the quadratic formula does not apply at all.
+    Brute force over the field.  The fields in play are GF(2) to GF(32) and small
+    primes, so enumeration is cheaper and more obviously correct than a
+    characteristic-split formula, and it needs no char-2 branch, where the
+    quadratic formula does not apply at all.
     """
     out = []
     for e in F.elements():
@@ -249,12 +226,11 @@ def _quadratic_roots(F, b, c):
 # Which root of the infinite-place quadratic `Factorization` returns first.
 #
 # "second" is not a guess. The source says "We pick the second solution from the
-# factorization given by magma" and takes `Factorization(...)[2][1]`, and measuring
-# both orderings against the independent reference confirms it: over the negative
-# reduced basis the arb genus-2 family agrees on 31 of 32 operations with "second"
-# and 2 of 32 with "first", and ch2 agrees 28 of 32 against 2 of 32. The two
-# orderings are not interchangeable because swapping them exchanges y and yn, hence
-# the positive and negative reduced bases.
+# factorization given by magma" and takes `Factorization(...)[2][1]`, and both
+# orderings measured against the independent reference confirm it: over the
+# negative reduced basis the arb genus-2 family agrees on 31 of 32 operations with
+# "second" and 2 of 32 with "first", and ch2 agrees 28 of 32 against 2 of 32.
+# Swapping them exchanges y and yn, hence the positive and negative reduced bases.
 #
 # A list so `driver.py` can flip it to re-derive this rather than trust it.
 ROOT_CHOICE = ["second"]
@@ -306,18 +282,17 @@ def _truthy(v):
 def _order_key(v):
     """Sort key for Magma's `lt/le/gt/ge` when the operands are polynomials.
 
-    The genus-3 ramified ADD dispatchers open with `if D2[1] le D1[1] then`, the
-    comment saying "ensure u1 is always the larger polynomial", so this ordering
-    decides which divisor reaches a mixed-degree function first -- and those
-    functions are not symmetric in their arguments.
+    The genus-3 ramified ADD dispatchers open with `if D2[1] le D1[1] then`,
+    commented "ensure u1 is always the larger polynomial", so this ordering decides
+    which divisor reaches a mixed-degree function first, and those functions are
+    not symmetric in their arguments.
 
-    Degree dominates, which is the part that matters and the part Magma agrees
-    with. Equal degrees are broken deterministically by coefficient text. Magma's
-    own tiebreak for equal-degree polynomials is not reproduced here and does not
-    need to be: when the degrees are equal both divisors go to the same
-    same-degree function, and addition is commutative, so either order must give
-    the same sum. `driver.py` checks that rather than assuming it -- an operand
-    order the formulas were sensitive to would show up as a mismatch.
+    Degree dominates, which is the part Magma agrees with.  Equal degrees are broken
+    deterministically by coefficient text; Magma's own tiebreak is not reproduced
+    and need not be, since equal degrees send both divisors to the same same-degree
+    function and addition is commutative.  `driver.py` checks that rather than
+    assuming it: an operand order the formulas were sensitive to would show up as a
+    mismatch.
     """
     if hasattr(v, "deg"):
         return (1, v.deg, tuple(str(v.coeff(i)) for i in range(v.deg, -1, -1)))
@@ -362,15 +337,13 @@ def ev(node, env, F, funcs=None):
         except KeyError:
             raise ParseError("undefined name %r" % node[1])
     if k == "int":
-        # A Python int, NOT F(n). Coercing literals into the field here made every
-        # literal that is an index or an exponent silently reduce modulo the
-        # characteristic: `Coeff(u,2)` became `Coeff(u, F(2))`, and F(2) == 0 in
-        # characteristic 2, so it returned the constant term. Every char-2 result
-        # was wrong, and only in char 2 -- odd fields gave the right answer by
-        # coincidence, which is exactly how it stayed hidden. Genus 3 would have
-        # been worse still: `Coeff(f,7)` would have read coefficient 1.
-        # Arithmetic against field elements and polynomials still works, because
-        # both coerce int operands (including via __radd__/__rsub__/__rmul__).
+        # A Python int, NOT F(n). Coercing literals into the field makes every
+        # index and exponent reduce modulo the characteristic: `Coeff(u,2)` becomes
+        # `Coeff(u, F(2))`, and F(2) == 0 in characteristic 2, so it returns the
+        # constant term; at genus 3 `Coeff(f,7)` reads coefficient 1. Odd fields
+        # give the right answer by coincidence, which is how it stays hidden.
+        # Arithmetic against field elements and polynomials still works, since both
+        # coerce int operands (including via __radd__/__rsub__/__rmul__).
         return node[1]
     if k == "neg":
         return -ev(node[1], env, F, funcs)
@@ -455,26 +428,24 @@ def ev(node, env, F, funcs=None):
 
 def clean_body(path, fn):
     src = open(path).read()
-    # Tolerate a space before ":=" and any trailing text after the closing
-    # paren: the dispatchers are declared "ADD:= function(D1, D2, f, h)//startIGNORE",
-    # and requiring ")" at end of line made every one of them unfindable.
+    # Tolerate a space before ":=" and any trailing text after the closing paren:
+    # the dispatchers are declared "ADD:= function(D1, D2, f, h)//startIGNORE", and
+    # requiring ")" at end of line makes every one of them unfindable.
     m = re.search(r"^%s\s*:=\s*function\s*\((.*?)\)[^\n]*$(.*?)^end function;" % fn,
                   src, re.S | re.M)
     assert m, "%s not found in %s" % (fn, path)
     params = [p.strip() for p in m.group(1).split(",")]
     body = m.group(2)
-    # Debug prints are NOT stripped. They are the branch-coverage instrumentation:
-    # each one names the computation path the formulas just took, and `run` records
-    # it. Stripping them here would have been silent and selective -- the repository
-    # writes the guard two ways, `if ADD_DEBUG then` (1743 occurrences) and
-    # `if (ADD_DEBUG) then` (70), and a strip of only the parenthesised form removed
-    # exactly the genus-3 ramified family, which is the one this work exists to
-    # verify. Coverage would have read 0 branches out of 0 and looked like success.
-    # Both forms are matched as statements in `_statement`.
-    # Block comments FIRST. The genus-3 split files close theirs as
-    # "*///endIGNORE" with no space, so a line-comment pass run first matches at
-    # the "//" one character early, eats the "*/" with it, and orphans the "/*".
-    # That silently broke all 18 genus-3 split functions that carry such a block.
+    # Debug prints are NOT stripped: each names the computation path the formulas
+    # just took, and `run` records it as the branch-coverage instrumentation. The
+    # repository writes the guard two ways, `if ADD_DEBUG then` (1743 occurrences)
+    # and `if (ADD_DEBUG) then` (70), so a strip of only the parenthesised form
+    # removes exactly the genus-3 ramified family and coverage reads 0 branches out
+    # of 0, looking like success. Both forms are matched in `_statement`.
+    # Block comments FIRST. The genus-3 split files close theirs as "*///endIGNORE"
+    # with no space, so a line-comment pass run first matches the "//" one character
+    # early, eats the "*/" with it and orphans the "/*", silently breaking all 18
+    # genus-3 split functions that carry such a block.
     body = re.sub(r"/\*.*?\*/", "", body, flags=re.S)
     body = re.sub(r"//[^\n]*", "", body)          # line comments
     return params, body
@@ -490,9 +461,8 @@ def statements(body):
             continue
         buf = (buf + " " + ln).strip() if buf else ln
         if buf.endswith(";") or buf.endswith("then"):
-            # A physical line may carry several statements: the dispatchers open
-            # with "u1 :=D1[1]; v1:= D1[2]; ...". Split at top-level semicolons
-            # so each becomes its own statement.
+            # One physical line may carry several statements: the dispatchers open
+            # with "u1 :=D1[1]; v1:= D1[2]; ...".
             for piece in _split_semis(buf):
                 # "else <stmt>" and "elif ..." appear inline in the dispatchers,
                 # e.g. `else u2:= D1[1];`. Peel the keyword off so the block
@@ -517,13 +487,11 @@ def _depth_delta(s, i):
     """Bracket-nesting change at position i, treating Magma tuples as brackets.
 
     `<` and `>` delimit tuples, and `Precompute` in the genus-2 negReduced nch2
-    file returns `<<<f0,f1,...>,...>>`. Without counting them the commas inside
-    read as depth zero and the return was torn into fragments, the first of which
-    was the unparsable `<<<f0`.
-
-    Safe because these files spell comparison `lt`/`le`/`gt`/`ge` as words and never
-    as symbols; `<=` and `>=` are still skipped explicitly so a stray one cannot
-    unbalance the count.
+    file returns `<<<f0,f1,...>,...>>`.  Uncounted, the commas inside read as depth
+    zero and the return is torn into fragments starting with the unparsable
+    `<<<f0`.  Safe because these files spell comparison `lt`/`le`/`gt`/`ge` as
+    words; `<=` and `>=` are skipped explicitly so a stray one cannot unbalance the
+    count.
     """
     ch = s[i]
     if ch in "([":
@@ -558,9 +526,8 @@ def _split_semis(s):
 def _split_top(s):
     """Split on commas at bracket depth zero.
 
-    `return Deg12ADDUP(u20,v20,u10,u11,v10,v11,ccs);` is one value, not seven.
-    A naive split on "," tore the call apart and the fragments then failed to
-    parse.
+    `return Deg12ADDUP(u20,v20,u10,u11,v10,v11,ccs);` is one value, not seven; a
+    naive split on "," tears the call apart into fragments that fail to parse.
     """
     out, depth, cur = [], 0, ""
     for i, ch in enumerate(s):
@@ -582,11 +549,10 @@ class Block(list):
 def _branch(lines, i):
     """Build statements from `i` until an else / elif / end if.
 
-    Returns (block, index_of_terminator, terminator_text). Keeping the
-    terminator visible to the caller is what makes else a *sibling* of its if
-    rather than a child of it: recursing blindly on `if` buried the else inside
-    the then-branch, so it only ran when the condition was true, exactly
-    backwards.
+    Returns (block, index_of_terminator, terminator_text).  The caller seeing the
+    terminator is what makes else a *sibling* of its if: recursing blindly on `if`
+    buries the else inside the then-branch, so it runs only when the condition is
+    true, exactly backwards.
     """
     blk = Block()
     while i < len(lines):
@@ -627,13 +593,12 @@ def _branch(lines, i):
             i += 1
             continue
 
-        # `R<x> := PolynomialRing(GF(q));` in every split-model Precompute. The
-        # angle-bracket name is bound to the ring's indeterminate, which is what the
-        # source then uses: the arb and ch2 files build `x^2 + h3*x - f6` and factor
-        # it to get the values attached to the two places at infinity. The ring
-        # object itself is never used, only its generator, so that is what is bound.
-        # In the nch2 files this is dead code -- the Factorization call below it is
-        # commented out and the root is hardcoded -- and binding it costs nothing.
+        # `R<x> := PolynomialRing(GF(q));` in every split-model Precompute. Only the
+        # ring's generator is ever used, so that is what the angle-bracket name is
+        # bound to: the arb and ch2 files build `x^2 + h3*x - f6` and factor it for
+        # the values attached to the two places at infinity. In the nch2 files it is
+        # dead code, the Factorization call being commented out and the root
+        # hardcoded, and binding it costs nothing.
         m = re.match(r"^[A-Za-z_]\w*\s*<\s*(\w+)\s*>\s*:=\s*(PolynomialRing\(.*\));$",
                      ln)
         if m:
@@ -727,11 +692,11 @@ class MagmaFn:
     def __call__(self, *args, path=None, funcs=None, F=None):
         """Invoke the function.
 
-        `funcs` supplies sibling functions so a dispatcher can delegate to its
-        Deg* cases. `F` names the field explicitly; without it the field is taken
-        from whichever argument carries one, since the first parameter is not
-        always a field element (dispatchers take polynomials, and some functions
-        lead with a bare weight).
+        `funcs` supplies sibling functions so a dispatcher can delegate to its Deg*
+        cases.  `F` names the field explicitly; without it the field comes from
+        whichever argument carries one, since the first parameter is not always a
+        field element (dispatchers take polynomials, some functions lead with a bare
+        weight).
         """
         if len(args) != len(self.params):
             raise AssertionError("%s expects %d args %r, got %d"
@@ -748,10 +713,9 @@ class MagmaFn:
         env = dict(zip(self.params, args))
         pth = [] if path is None else path
         # Bind the sibling table once. A raw `funcs[name](*args)` inside `ev` drops
-        # funcs/F/path, so it worked one level deep and then failed as soon as a
-        # Deg* case delegated further (Deg12ADD -> Deg12ADDUP). Binding keeps a
-        # single shared `path`, which is what makes branch coverage account for
-        # branches taken inside nested calls rather than only in the dispatcher.
+        # funcs/F/path, which fails as soon as a Deg* case delegates further
+        # (Deg12ADD -> Deg12ADDUP). Binding keeps one shared `path`, which is what
+        # makes branch coverage account for branches inside nested calls.
         bound = _bind(funcs, pth, F) if funcs else None
         try:
             run(self.blk, env, F, pth, bound)
@@ -763,13 +727,11 @@ class MagmaFn:
 class _BoundTable(dict):
     """A sibling table whose entries already carry path/funcs/F.
 
-    Exists so `_bind` can recognise its own output. Without that, a call chain of
-    depth three -- ADD -> DBL -> Deg2DBL, which is exactly what the PR5 equal-divisor
-    dispatch creates -- re-bound the already-bound table inside DBL's __call__, and
-    the second wrapper then passed path=/funcs=/F= keywords to the first wrapper's
-    positional-only closure: TypeError. Nothing reached depth three before that
-    dispatch, so the defect was latent; the docstring below claimed "nests to any
-    depth" and was wrong until now.
+    Its own type so `_bind` recognises its own output.  Without that, a call chain
+    of depth three (ADD -> DBL -> Deg2DBL, which the PR5 equal-divisor dispatch
+    creates) re-binds the already-bound table inside DBL's __call__, and the second
+    wrapper passes path=/funcs=/F= keywords to the first wrapper's positional-only
+    closure: TypeError.
     """
 
 
@@ -779,11 +741,9 @@ def _bind(funcs, path, F):
     Self-referential on purpose: a bound callee is given the same bound table, so
     delegation nests to any depth and every branch label lands in one `path`.
 
-    Idempotent: a table that is already bound is returned unchanged. That is
-    correct, not merely convenient -- the nested call threads the same shared
-    `path` list and the same F that the table was bound with, and the single
-    shared path is what makes branch coverage account for branches taken inside
-    nested calls.
+    Idempotent: an already-bound table is returned unchanged, which keeps the one
+    shared `path` list and the one F it was bound with, and that shared path is
+    what makes branch coverage account for branches inside nested calls.
     """
     if isinstance(funcs, _BoundTable):
         return funcs
@@ -803,8 +763,8 @@ def _bind(funcs, path, F):
 def function_names(path):
     """Every `Name := function(...)` defined in a .mag file, in source order.
 
-    Replaces having the caller enumerate names by hand. Tolerates both spacings
-    the repo uses, `Deg1ADD:= function` and `ADD := function`.
+    Tolerates both spacings the repo uses, `Deg1ADD:= function` and
+    `ADD := function`.
     """
     src = open(path).read()
     return [m.group(1) for m in
@@ -818,17 +778,14 @@ def discover(path, only=None, skip_unparsable=True):
     """{name: MagmaFn} for a .mag file, discovering the names itself.
 
     `skip_unparsable=True` returns what it can and records the rest in
-    `.unparsable`, so a driver can report partial coverage rather than dying on
-    the first dispatcher it cannot read.
+    `.unparsable`, so a driver reports partial coverage rather than dying on the
+    first dispatcher it cannot read.
 
-    Memoised on (path, only, skip_unparsable). The callers replay hundreds of cases
+    Memoised on (path, only, skip_unparsable): callers replay hundreds of cases
     against the same few files, and re-parsing every function of a 9,000-line
-    dispatcher per case was measured at 20.7s of whitebox.py's 21.4s.
-
-    A fresh dict is returned each time because callers mutate what they get
-    (driver.py assigns the result and updates it), and MagmaFn is safe to share:
-    it stores only path, name and parsed statements, taking everything
-    call-dependent as an argument.
+    dispatcher per case measured 20.7s of whitebox.py's 21.4s.  A fresh dict comes
+    back each time because callers mutate what they get (driver.py updates it), and
+    MagmaFn is safe to share, storing only path, name and parsed statements.
     """
     key = (path, None if only is None else tuple(sorted(only)), skip_unparsable)
     hit = _DISCOVER_CACHE.get(key)

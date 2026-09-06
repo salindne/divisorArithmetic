@@ -69,6 +69,12 @@ jobs:
           python-version: '3.12'
       - run: python3 tools/check_paths.py --strict
 
+      - name: formula manifest matches the tree
+        # Generated from discover_families(), so the manifest and the gates
+        # cannot disagree about what exists. Also fails on a formula file
+        # discovery cannot see, which otherwise produces no family and no error.
+        run: python3 tools/gen_manifest.py --check
+
   readme-paths:
     # The previous README named a tester that had never existed, gave three
     # filenames wrong and two directories wrong. Note this job is the authority
@@ -152,11 +158,11 @@ jobs:
         # on nothing.
         #
         # ALL 7,043 cases are read at run time out of the repository's own whitebox
-        # testers -- 15 of them, one per family -- so they cannot drift out of step
-        # with the testers they come from, and every one of those files is held to
-        # 100% coverage. harvested_cases.json is EMPTY: it existed for the two
-        # genus-3 ramified families, which had no Magma tester, and PR6 wrote them
-        # generators and testers, so their coverage is extracted like everyone
+        # testers -- 15 of them, one per affine family -- so they cannot drift out
+        # of step with the testers they come from, and every one of those files is
+        # held to 100% coverage. harvested_cases.json is EMPTY: it existed for the
+        # two genus-3 ramified families, which had no Magma tester, and PR6 wrote
+        # them generators and testers, so their coverage is extracted like everyone
         # else's. The harvest channel is kept, not deleted -- the next family
         # derived ADD-first needs it, which is ch2 at genus 3 between PR7 and PR8.
         # (Earlier figures, for anyone reading old logs: 1,338 + 344 across three

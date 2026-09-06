@@ -1,7 +1,7 @@
 """driver.py -- differential test of the .mag explicit formulas against reference.py.
 
-Runs the actual Magma source through `maginterp`, runs `reference.py`'s Cantor
-implementation on the same inputs, and compares Mumford coordinates exactly. The
+Runs the Magma source through `maginterp`, runs `reference.py`'s Cantor
+implementation on the same inputs, and compares Mumford coordinates exactly.  The
 formulas are never transcribed into Python, so there is nothing to drift.
 
 Usage:
@@ -12,23 +12,21 @@ Usage:
     python3 driver.py --list                           # families and why any is skipped
 
 Exit status is 0 only if every comparison matched *and* every labelled branch of
-every file under test was exercised at least once. Both halves matter: a run that
-compares 100,000 divisor pairs but only ever enters the generic branch has tested
-one branch, and reporting that as a pass is how the `ADD(D, D)` defect survived
-in the inherited testers for as long as it did.
+every file under test was exercised at least once.  Both halves matter: comparing
+100,000 divisor pairs while only ever entering the generic branch tests one
+branch, and reporting that as a pass is how the `ADD(D, D)` defect survived in the
+inherited testers.
 
-Three things this deliberately does not do quietly:
+Three things this does not do quietly:
 
-  * It never invents the curve domain. Which coefficients a family's formulas are
-    valid for is read out of the family's own source (see `read_support`), not
-    written down here, so a formula that stops reading `f4` cannot be silently
-    tested on curves where `f4` is nonzero.
-  * It never caps coverage silently. Anything dropped -- a family that cannot be
-    loaded, a degree combination with no divisors over a small field, a branch
-    never reached -- is printed and counted.
-  * It does not treat an arity anomaly as a crash. One branch of every ramified
-    ADD returns an extra value (errata E2); the run records it as a finding and
-    keeps going, because stopping there would hide everything after it.
+  * The curve domain is read out of each family's own source (see `read_support`),
+    never written down here, so a formula that stops reading `f4` cannot be
+    silently tested on curves where `f4` is nonzero.
+  * Anything dropped is printed and counted: a family that cannot be loaded, a
+    degree combination with no divisors over a small field, a branch never reached.
+  * An arity anomaly is a finding, not a crash.  One branch of every ramified ADD
+    returns an extra value (errata E2); the run records it and keeps going, because
+    stopping there would hide everything after it.
 """
 
 from __future__ import annotations
@@ -69,10 +67,10 @@ class Family(object):
         self.add_path, self.dbl_path = add_path, dbl_path
         self.dbl_borrowed = False
         self.utl_path = utl_path
-        # The coordinate system, DECLARED rather than inferred -- a projective
-        # genus-3 return has the same arity as an affine one, so nothing
-        # downstream can detect it. `discover_families` sets this from the tree;
-        # every family in the repository today is affine. See `decode_divisor`.
+        # DECLARED rather than inferred: a projective genus-3 return has the same
+        # arity as an affine one, so nothing downstream can detect it.
+        # `discover_families` sets it from the tree; every family today is affine.
+        # See `decode_divisor`.
         self.coords = coords
 
     @property
@@ -83,11 +81,9 @@ class Family(object):
     def basis(self):
         """"pos" or "neg" for a split family; None for a ramified one.
 
-        A split model that is neither raises rather than returning None, because
-        None reaches `curves.split_basis`, which treats anything that is not
-        "pos" as "neg" -- so an unrecognised split family would be tested
-        against the wrong basis and pass or fail for the wrong reason.
-        ERRATA.md E7.
+        Any other split model raises: None reaches `curves.split_basis`, which
+        treats anything that is not "pos" as "neg", so an unrecognised split
+        family would be tested against the wrong basis.  ERRATA.md E7.
         """
         if self.model == "splitpos":
             return "pos"
@@ -104,19 +100,11 @@ class Family(object):
     def name(self):
         """The family's identity as a string, INCLUDING its coordinate system.
 
-        `coords` became part of the discovery key in the projective work, so two
-        families can share (model, genus, kind) -- one affine, one projective --
-        exactly as posReduced and negReduced share a filename. Without it here,
-        `opcount`'s skip line read `['ramified/g3/nch2', 'no ADD file']` and a
-        reader could not tell WHICH nch2 genus-3 family was skipped; had the affine
-        one ever been skipped for a real reason it would have looked identical.
-
-        Same class as the basename ambiguity PR12 fixed for testers, where
-        `nch2_splitG2_whiteBox_tester.mag` existed under both split bases and a
-        failure report could not say which one failed.
-
-        Affine stays unsuffixed so no existing name, log line or CLI argument
-        moves -- fifteen of sixteen families are unaffected.
+        Two families can share (model, genus, kind), one affine and one projective,
+        exactly as posReduced and negReduced share a filename.  Without `coords`
+        here, `opcount`'s skip line read `['ramified/g3/nch2', 'no ADD file']` and
+        a reader could not tell WHICH nch2 genus-3 family was skipped.  Affine
+        stays unsuffixed so no existing name, log line or CLI argument moves.
         """
         base = "%s/g%d/%s" % (self.model, self.genus, self.kind)
         return base if self.coords == "affine" else "%s/%s" % (base, self.coords)
@@ -128,9 +116,8 @@ class Family(object):
 def discover_families(root=ROOT):
     """Every family present in the repository, found by walking the tree.
 
-    Not a hardcoded list: PR7 and PR8 add files to these directories, and a
-    driver that had to be edited to see a new specialisation would report full
-    coverage of a matrix with a hole in it.
+    Not a hardcoded list: a driver that had to be edited to see a new
+    specialisation would report full coverage of a matrix with a hole in it.
     """
     out = []
     pat = re.compile(r"^(arb|nch2|ch2)_(ramified|split)G([23])_(ADD|DBL)\.mag$")
@@ -142,30 +129,21 @@ def discover_families(root=ROOT):
             if not m:
                 continue
             # g2/timings/ and g3/timings/ hold the frozen 2020 generation of these
-            # formulas -- both models, not just split -- kept because the published
-            # timing figures were produced from it. It is repackaged for a
-            # chain-driving harness rather than derived differently: packed-tuple
-            # dispatchers so a Fibonacci loop chains without repacking polynomials,
-            # `return <...>` tuple returns where the canonical files carry `*_DEBUG`
-            # guards, inline `ccs[i][j]` reads where canonical hoists them, and
-            # `_RAM`-suffixed names so several implementations load in one Magma
-            # session.
+            # formulas, both models, kept because the published timing figures were
+            # produced from it.  Same derivation, repackaged for a chain-driving
+            # harness: packed-tuple dispatchers so a Fibonacci loop chains without
+            # repacking polynomials, `return <...>` where the canonical files carry
+            # `*_DEBUG` guards, inline `ccs[i][j]` reads where canonical hoists
+            # them, and `_RAM`-suffixed names so several implementations load in one
+            # Magma session.
             #
-            # This comment used to say every body differs, citing a different `ccs`
-            # layout (ccs[2][3] against ccs[1][3][1]), opposite signs, and a
-            # `nch23_splitG2_UTL.mag` the canonical tree lacks. All three were wrong,
-            # and wrong the same way: they compared the genus-2 timings SPLIT files
-            # against negReduced. That tree is posReduced, where `ccs[2][3]` and
-            # `dw := v0+vp0-u0*f4-upp0*upp1` are byte-identical to it; `ccs[1][3][1]`
-            # and the `+` signs are negReduced's, which is the basis and is supposed
-            # to differ. `nch23_splitG2_UTL.mag` is a stale doc comment shared with
-            # posReduced, not a load; the real load is `nch2_splitG2_UTL.mag`, which
-            # canonical ships in both genus-2 bases. See ERRATA.md E7.
+            # The genus-2 timings SPLIT files are posReduced and byte-identical to
+            # it; compare them against negReduced instead and its `ccs[1][3][1]`
+            # indexing and opposite signs look like defects.  See ERRATA.md E7.
             #
-            # Still excluded, for the two reasons that survive: they are not the
-            # formulas of record, and half of them carry zero `*_DEBUG` labels, so the
-            # coverage half of a pass would be vacuous for them.
-            # Excluded out loud rather than quietly passed over.
+            # Excluded out loud rather than quietly passed over, for two reasons:
+            # they are not the formulas of record, and half of them carry zero
+            # `*_DEBUG` labels, so the coverage half of a pass would be vacuous.
             if os.sep + "timings" + os.sep in dirpath + os.sep:
                 excluded.append(os.path.join(dirpath, fn))
                 continue
@@ -176,14 +154,12 @@ def discover_families(root=ROOT):
                 basis = "pos"
             elif "negReduced" in dirpath:
                 basis = "neg"
-            # The coordinate system is part of the family's IDENTITY, not a
-            # property of it: an affine and a projective genus-3 nch2 doubling are
-            # two different families that happen to share a filename, exactly as
-            # posReduced and negReduced do. Without this component the first
-            # projective file makes the collision guard below fire correctly and
-            # its RuntimeError escapes into driver.main, opcount.main, two
-            # whitebox entry points and four selftest sections -- one new file
-            # takes down the whole harness. Measured.
+            # The coordinate system is part of the family's IDENTITY: an affine and
+            # a projective genus-3 nch2 doubling are two different families sharing
+            # a filename, exactly as posReduced and negReduced are.  Without it the
+            # first projective file trips the collision guard below and the
+            # RuntimeError escapes into driver.main, opcount.main, two whitebox
+            # entry points and four selftest sections.  Measured.
             path = os.path.join(dirpath, fn)
             coords = "projective" if (os.sep + "projective" + os.sep) in dirpath + os.sep else "affine"
             declared = coords_declared(path)
@@ -207,11 +183,9 @@ def discover_families(root=ROOT):
             key = (model + basis, genus, kind, coords)
             bucket = seen.setdefault(key, {})
             # Two files keying to one slot is silent data loss: the second wins,
-            # and which one that is depends on os.walk order, so the family
-            # tested is filesystem-dependent. It cannot happen today -- the
-            # timings tree is excluded above and no two canonical files collide
-            # -- but the failure mode is invisible, so it is made loud rather
-            # than left to be discovered. ERRATA.md E7.
+            # and which one depends on os.walk order, so the family tested is
+            # filesystem-dependent.  It cannot happen today, but the failure mode
+            # is invisible, so it is made loud.  ERRATA.md E7.
             if op in bucket:
                 raise RuntimeError(
                     "two files claim family %r operation %s:\n"
@@ -231,15 +205,12 @@ def discover_families(root=ROOT):
         borrowed = False
         if add and not dbl and kind != "arb":
             # A specialisation with an ADD but no DBL of its own doubles with the
-            # general formula, and its own Magma tester loads the arb DBL for
-            # exactly this reason. Without the borrow this driver silently skipped
-            # the family's doubling altogether -- no skip line, against this
-            # file's own rule that nothing is capped silently.
+            # general formula, and its own Magma tester loads the arb DBL for the
+            # same reason.  Without the borrow this driver silently skipped the
+            # family's doubling altogether, with no skip line.
             #
-            # NO FAMILY BORROWS TODAY: ramified/g3/nch2 was the only one, and PR6
-            # gave it a real nch2_ramifiedG3_DBL.mag. Kept because the next family
-            # derived ADD-first lands in the same state -- ch2 genus-3 ramified,
-            # between PR7 and PR8.
+            # NO FAMILY BORROWS TODAY: ramified/g3/nch2 was the only one and now
+            # has its own DBL.  Kept for the next family derived ADD-first.
             sib = seen.get((model, genus, "arb", coords), {}).get("DBL")
             if sib:
                 dbl, borrowed = sib, True
@@ -262,9 +233,9 @@ _BODY_CACHE = {}
 def _dispatcher_body(path, op):
     """(parameter names, body) for a dispatcher, or (None, None).
 
-    Memoised alongside M.discover: this rereads and strips comments from a file that
-    can be 9,000 lines, and the replay loops call it once per case. The parameter
-    list is copied out because callers are free to modify it.
+    Memoised alongside M.discover: this rereads and strips comments from a file
+    that can be 9,000 lines, and the replay loops call it once per case.  The
+    parameter list is copied out because callers modify it.
     """
     key = (path, op)
     if key not in _BODY_CACHE:
@@ -283,9 +254,9 @@ def _dispatcher_body(path, op):
 def read_support(path, op):
     """{'f': {indices}, 'h': {indices}} that the dispatcher actually reads.
 
-    Only the dispatcher is inspected, because it is the boundary: it decomposes
-    the curve into coefficients and hands the Deg* cases exactly the ones they
-    need. A coefficient it never extracts cannot influence any result.
+    Only the dispatcher, because it is the boundary: it decomposes the curve into
+    coefficients and hands the Deg* cases exactly the ones they need, so one it
+    never extracts cannot influence any result.
     """
     _params, body = _dispatcher_body(path, op)
     if body is None:
@@ -300,13 +271,13 @@ def read_support(path, op):
 
 _BANNER_MEMBER = re.compile(r"\(\s*([fh])(\d+)\s+in\s*\{([^}]*)\}\s*\)")
 
-# The set form above cannot express a coefficient pinned to ONE value. The char-2
-# decision of 2026-08-09 does exactly that -- `h2 = 1`, not `h2 in {0,1}` -- so a
-# banner written that way parsed as nothing at all, `members` came back empty, and
-# because the zero-contrast says nothing about h_g either, the tested domain
-# widened silently back to general h_g. Measured before this fix: 60 draws over
-# GF(8) spanning all eight field elements, including the h2 = t case behind the 36
-# wrong DBL4 doublings the restriction exists to exclude.
+# The set form above cannot express a coefficient pinned to ONE value.  The char-2
+# decision of 2026-08-09 does exactly that, `h2 = 1` and not `h2 in {0,1}`, so such
+# a banner parsed as nothing at all, `members` came back empty, and since the
+# zero-contrast says nothing about h_g either, the tested domain widened silently
+# back to general h_g.  Measured before this fix: 60 draws over GF(8) spanning all
+# eight field elements, including the h2 = t case behind the 36 wrong DBL4
+# doublings the restriction exists to exclude.
 _BANNER_EQ = re.compile(r"\b([fh])(\d+)\s*=\s*(\d+)\b")
 
 # Declarations are parenthesised; prose is not. See banner_members.
@@ -319,15 +290,13 @@ _BANNER_DEG = re.compile(r"\bdeg\s+([fh])\s*=\s*(\d+)\b")
 
 
 def _banner_lines(path):
-    """The file's leading comment block -- its banner, and nothing after it.
+    """The file's leading comment block, its banner, and nothing after it.
 
-    Scope matters for the equality form. A formula body is full of derivation
-    comments like `//at1:= -h3 = 0;` (nch2_ramifiedG3_ADD.mag:1731), and a
-    whole-file scan would read that as a domain statement pinning h3 = 0. The set
-    form was safe whole-file only because `(h3 in {0,1})` is distinctive enough
-    not to occur by accident. Both are now read from the banner, which is where a
-    domain is actually declared. Verified to leave every shipped family's members
-    byte-identical -- see selftest's `domain` section.
+    Scope matters for the equality form: a formula body is full of derivation
+    comments like `//at1:= -h3 = 0;` (nch2_ramifiedG3_ADD.mag:1731), which a
+    whole-file scan would read as a domain statement pinning h3 = 0.  Reading both
+    forms from the banner leaves every shipped family's members byte-identical; see
+    selftest's `domain` section.
     """
     out = []
     for line in open(path):
@@ -351,14 +320,13 @@ def banner_members(path):
     """{('h', 2): {0, 1}} from a file's own banner.
 
     The genus-2 arbitrary and char-2 files state `h(x) = h2*x^2 + h1*x + h0
-    (h2 in {0,1})` in their header, and it is a real restriction, not decoration:
-    `h2` is declared `//Ignore: h2` so that products with it are free in the
-    operation counts, which is only sound when it is 0 or 1. Feeding h2 = t over
-    GF(4) produced 36 wrong doublings in branch DBL4 -- correct `u`, wrong `v` --
-    all of them outside the stated domain.
+    (h2 in {0,1})`, and it is a real restriction: `h2` is declared `//Ignore: h2`
+    so products with it are free in the operation counts, which is only sound when
+    it is 0 or 1.  Feeding h2 = t over GF(4) produced 36 wrong doublings in branch
+    DBL4, correct `u` and wrong `v`, all outside the stated domain.
 
-    Read from the source rather than tabulated here, for the same reason
-    `read_support` is: a table would silently keep passing after a banner changed.
+    Read from the source rather than tabulated here, same reason as `read_support`:
+    a table would silently keep passing after a banner changed.
     """
     out = {}
     for line in _banner_lines(path):
@@ -374,15 +342,13 @@ def banner_members(path):
                 out[(m.group(1), int(m.group(2)))] = vals
         # `h2 = 1`: a singleton, and the form the char-2 normal form uses.
         #
-        # Read ONLY inside parentheses, which is where the declarations live:
-        # `(deg h = 2, h2 = 1)`. Unrestricted, this matched explanatory PROSE in
-        # the same banner and silently redefined the tested domain -- a genus-3
-        # ch2 banner explaining that the reduction fails "at h3 = 0" was read as
-        # permitting h3 = 0, i.e. exactly the deg h < 3 family those formulas do
-        # not cover. The nch2 genus-3 banners have the same shape ("gives f6 = 0")
-        # and were harmless only because the prose happened to state the true
-        # constraint; that is luck, not a design. A sentence must not be able to
-        # move the domain.
+        # Read ONLY inside parentheses, where the declarations live:
+        # `(deg h = 2, h2 = 1)`.  Unrestricted, this matched explanatory PROSE in
+        # the same banner and silently redefined the tested domain: a genus-3 ch2
+        # banner explaining that the reduction fails "at h3 = 0" was read as
+        # permitting h3 = 0, exactly the deg h < 3 family those formulas do not
+        # cover.  The nch2 genus-3 banners have the same shape ("gives f6 = 0") and
+        # were harmless only by luck.  A sentence must not move the domain.
         for span in _BANNER_PARENS.finditer(line):
             for m in _BANNER_EQ.finditer(span.group(1)):
                 out.setdefault((m.group(1), int(m.group(2))), set()).add(int(m.group(3)))
@@ -392,15 +358,13 @@ def banner_members(path):
 def domain_constraints(fam, families, op="ADD"):
     """Coefficients that must be zero for `fam`'s formulas to be applicable.
 
-    Derived by contrast with the `arb` family of the same model and genus, which
-    is the one valid on arbitrary curves. What `arb` reads and a specialisation
-    does not is precisely what that specialisation assumes away.
-
-    The contrast matters. "Unread implies zero" on its own is wrong: no genus-2
-    ramified file reads `f0`, `arb` included, because Cantor reduction needs only
-    the quotient and the low coefficients of `f` land in the remainder. Treating
-    that as an assumption would have restricted every genus-2 run to curves with
-    `f0 = 0` and quietly skipped most of the domain.
+    By contrast with the `arb` family of the same model and genus, the one valid on
+    arbitrary curves: what `arb` reads and a specialisation does not is precisely
+    what that specialisation assumes away.  The contrast is needed because "unread
+    implies zero" alone is wrong: no genus-2 ramified file reads `f0`, `arb`
+    included, because Cantor reduction needs only the quotient and the low
+    coefficients of `f` land in the remainder, and treating that as an assumption
+    would restrict every genus-2 run to curves with `f0 = 0`.
     """
     path = fam.add_path if op == "ADD" else fam.dbl_path
     if path is None:
@@ -408,9 +372,8 @@ def domain_constraints(fam, families, op="ADD"):
     params, _body = _dispatcher_body(path, op)
     if params and any(p.strip() == "ccs" for p in params):
         # The split dispatchers never touch f or h: they take `ccs`, the constants
-        # `Precompute` derives from the curve. Their domain therefore is not visible
-        # from this contrast and is derived by `split_spec` instead, which reads
-        # Precompute. Callers for split families use that, not this.
+        # `Precompute` derives from the curve.  Their domain is invisible to this
+        # contrast; `split_spec` derives it from Precompute instead.
         return None, "split family: see split_spec"
     mine = read_support(path, op)
     if mine is None:
@@ -426,21 +389,21 @@ def domain_constraints(fam, families, op="ADD"):
         return None, "arb family has no %s file" % op
     theirs = read_support(ref_path, op)
     cons = {"f": theirs["f"] - mine["f"], "h": theirs["h"] - mine["h"]}
-    # f_{2g+1} is the monic leading coefficient of a ramified f -- a property of
-    # the MODEL, not an assumption any specialisation makes, and the contrast
-    # cannot tell the difference: it only sees "arb extracted this, I did not".
-    # A ch2 genus-3 dispatcher in the decided normal form reads only
-    # Coeff(f,2..0), because f7 is 1 by definition, so the contrast put index 7
-    # in cons["f"], curve_in_domain zeroed the leading coefficient, and C.Curve
-    # raised an UNCAUGHT AssertionError ("f must be monic of degree 7 for genus 3
-    # ramified, got degree 2") -- the gate crashing rather than skipping. Genus 2
-    # escaped it only by accident, arb_ramifiedG2 never reading Coeff(f,5).
+    # f_{2g+1} is the monic leading coefficient of a ramified f, a property of the
+    # MODEL rather than an assumption, and the contrast cannot tell the difference:
+    # it only sees "arb extracted this, I did not".  A ch2 genus-3 dispatcher in the
+    # decided normal form reads only Coeff(f,2..0) because f7 is 1 by definition, so
+    # the contrast put index 7 in cons["f"], curve_in_domain zeroed the leading
+    # coefficient, and C.Curve raised an UNCAUGHT AssertionError ("f must be monic
+    # of degree 7 for genus 3 ramified, got degree 2"): the gate crashing rather
+    # than skipping.  Genus 2 escaped only by accident, arb_ramifiedG2 never reading
+    # Coeff(f,5).
     #
-    # Deliberately NOT done for split: there f_{2g+2} is a live non-monic
-    # parameter both Precompute functions read, and forcing it to 1 makes every
-    # characteristic-2 candidate unusable (see curves.Curve). Moot in practice --
-    # this function returns early for split families -- but stated so the
-    # symmetry is not "fixed" later.
+    # Deliberately NOT done for split, where f_{2g+2} is a live non-monic parameter
+    # both Precompute functions read and forcing it to 1 makes every
+    # characteristic-2 candidate unusable (see curves.Curve).  Moot in practice,
+    # since this function returns early for split, but stated so the symmetry is not
+    # "fixed" later.
     if fam.model == "ramified":
         cons["f"].discard(C.deg_f(fam.genus, "ramified"))
     return cons, None

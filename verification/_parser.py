@@ -1,24 +1,16 @@
 """_parser.py -- expression and condition parsing for the .mag interpreter.
 
-Replaces an ad-hoc tokeniser that handled only `+ - * / ^ ( )` and conditions of
-the exact shape `<expr> eq 0` / `<expr> ne 0` joined by `and`. That was enough
-for one family of files and nothing else. Measured across this repository's
-formula files, what is actually needed is:
+Recursive descent with precedence, calls, chained indexing and boolean structure.
+Measured over this repository's formula files, all of which is needed:
 
-  IsZero(...) and friends            1347 uses. Calls in conditions were the
-                                     single largest gap; without them every
-                                     genus-2 file failed to parse at all.
-  ccs[1][2][3]                       531 uses in one split file. Indexing.
-  bare booleans, `if ADD_DEBUG then` 1791 uses.
-  lt / le / ge / ne as well as eq    101 uses between them.
-  negative literals, `eq -1`         53 uses. Faithfulness matters here: in
-                                     characteristic 2, -1 == 1, and that
-                                     coincidence is a real defect in the
-                                     testers, so the parser must not normalise
-                                     it away.
+  IsZero(...) and friends            1347 uses
+  ccs[1][2][3] indexing              531 uses in one split file
+  bare booleans, `if ADD_DEBUG then` 1791 uses
+  lt / le / ge / ne as well as eq    101 uses between them
+  negative literals, `eq -1`         53 uses
 
-So this is a proper recursive-descent parser with precedence, calls, chained
-indexing and boolean structure, rather than another special case.
+Negative literals are kept as written, not normalised: in characteristic 2,
+-1 == 1, and that coincidence is a real defect in the testers.
 
 Grammar, loosest binding first:
 
@@ -143,7 +135,7 @@ class _P:
             self.take()
             return ("neg", self.unary())
         if self.peek() == "+":
-            # Leading unary plus: the formulas write things like "+v0 + h0".
+            # Magma accepts a leading '+'; same tree as its absence.
             self.take()
             return self.unary()
         return self.power()
@@ -193,22 +185,16 @@ class _P:
             self.expect(")")
             return n
         if tk in ("[", "<"):
-            # Sequence `[..]` and tuple `<..>` literals, both nestable. The
-            # split-model `Precompute` returns its precomputed constants as
-            # [[f0..f6],[y0,y1,d1..d4],...], and the ADD dispatchers reach into it
-            # as ccs[1][2], so literals and indexing have to agree on one
-            # representation.
+            # Sequence `[..]` and tuple `<..>` literals, both nestable, both
+            # mapped to one list type: both are 1-based indexable and nothing in
+            # these files depends on Magma's homogeneous/heterogeneous
+            # distinction. The tuple form is needed for the genus-2 negReduced
+            # nch2 Precompute, which returns `<<<f0,...>>>`.
             #
-            # Magma distinguishes the two -- a sequence is homogeneous, a tuple is
-            # not -- but both are 1-based indexable and nothing in these files
-            # depends on the difference, so both become one list type. The genus-2
-            # negReduced nch2 Precompute returns `<<<f0,...>>>`, which is why the
-            # tuple form is needed at all.
-            #
-            # `<` is unambiguous here: the formulas spell comparison `lt`/`le`/`gt`,
-            # never `<`, and the one other use of angle brackets, `R<x> :=
-            # PolynomialRing(...)`, is matched as a whole statement before any
-            # expression parsing happens.
+            # `<` is unambiguous here: the formulas spell comparison
+            # `lt`/`le`/`gt`, never `<`, and the one other use of angle brackets,
+            # `R<x> := PolynomialRing(...)`, is matched as a whole statement
+            # before any expression parsing happens.
             close = "]" if tk == "[" else ">"
             items = []
             if self.peek() != close:
@@ -239,9 +225,9 @@ def parse_expr(s):
 
 
 def parse_cond(s):
-    """Parse a condition.
+    """Parse a condition, same AST shape as parse_expr.
 
-    Returns the same AST shape as parse_expr. A bare expression is treated as a
-    truth test by the evaluator, which is what `if ADD_DEBUG then` needs.
+    A bare expression is a truth test to the evaluator, which is what
+    `if ADD_DEBUG then` needs.
     """
     return _parse(s, True)

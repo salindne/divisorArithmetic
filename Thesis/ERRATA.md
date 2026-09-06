@@ -234,6 +234,14 @@ appearing inside an expression — `Deg23ADD` carries three internal negations a
 was over-counted by 3A. A sign is unary exactly when the token before it is an
 operator, an open parenthesis, or the assignment.
 
+The statement quoted above is no longer in the tree.  `ch2_splitG3_ADD.mag:4173`
+is still that assignment and now reads `vpp0 := v0 + h0 + t5 + s1*upp0`, every
+unary `+` in that file having been removed.  No published cell moves: the
+eighteen cells this entry corrects were established by the fixed static scan and
+by the interpreter, neither of which ever charged a leading sign.  The converter
+is unrepaired and this entry's other fault is untouched.  `NEW_WORK.md` N41
+records the removal, what it costs this entry, and what it does not.
+
 **How the corrected values were established, and why they are trustworthy.**
 Two counters that share no code now agree on **every one of the 208** published
 own-work quadruples:

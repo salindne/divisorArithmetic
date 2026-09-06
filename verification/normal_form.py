@@ -1,42 +1,35 @@
 """
 Normal forms for ramified hyperelliptic curves, verified rather than asserted.
 
-Every curve shape this repository's formula files declare in their banners is a
-normal form: a claim that an arbitrary curve can be brought to that shape by an
-isomorphism, so restricting the formulas to it costs no generality. The claims
-are load-bearing -- they decide which coefficients a formula may drop -- but
-until this file they were only ever argued on paper, and one of them turned out
-to be wrong in the published thesis (see Thesis/ERRATA.md, E-T6).
-
-This script establishes the whole account by construction and exhaustive
-search, at genus 2 and genus 3 together. It is standalone: run it directly, no
-arguments.
+Every curve shape the formula files declare in their banners is a normal form: a
+claim that an arbitrary curve can be brought to that shape by an isomorphism, so
+restricting the formulas to it costs no generality.  Those claims decide which
+coefficients a formula may drop, and one of them is wrong in the published thesis
+(Thesis/ERRATA.md, E-T6).  This establishes the account by construction and
+exhaustive search, at genus 2 and genus 3 together.  Standalone, no arguments.
 
     python3 verification/normal_form.py
 
 WHAT IS CHECKED
 
-  1. The characteristic-2 form.  Random curves with deg h = g and h NOT monic
-     are normalised to h monic and f_{2g} = ... = f_g = 0.  Each of the three
-     steps is verified POINTWISE: every affine point of the old curve is
-     carried by the explicit substitution onto the new curve, bijectively.  A
-     point count alone would not catch a substitution that permutes the curve
-     onto a different one with the same order.
+  1. The characteristic-2 form.  Random curves with deg h = g and h NOT monic are
+     normalised to h monic and f_{2g} = ... = f_g = 0.  Each of the three steps
+     is verified POINTWISE, because a point count alone would not catch a
+     substitution that permutes the curve onto a different one of the same order.
 
-  2. The degree-g floor rule, by negative control.  With deg h < g the a_0
-     lever is a_0 * h_g and dies, so f_g is no longer clearable.  Confirmed by
+  2. The degree-g floor rule, by negative control.  With deg h < g the a_0 lever
+     is a_0 * h_g and dies, so f_g is no longer clearable.  Confirmed by
      EXHAUSTIVE search over the entire shift space, not by sampling.
 
   3. Why f_{2g} is routed through the x-translation and not the y-shift.  The
-     y-shift route raises an Artin-Schreier equation a_g^2 + a_g = f_{2g},
-     solvable only when the absolute trace vanishes -- about half the time.
-     The x-translation route is unconditional in characteristic 2 because
-     deg f is odd.
+     y-shift raises an Artin-Schreier equation a_g^2 + a_g = f_{2g}, solvable
+     only when the absolute trace vanishes, about half the time.  The translation
+     is unconditional in characteristic 2 because deg f is odd.
 
-  4. The odd-characteristic form, and why it stops one coefficient in.
-     Completing the square removes h entirely but SPENDS the y-shift, leaving
-     only x -> a^2 x + b, y -> a^(2g+1) y.  b kills f_{2g}; a only rescales.
-     Confirmed by exhaustive search over that entire surviving group.
+  4. The odd-characteristic form, and why it stops one coefficient in.  Completing
+     the square removes h entirely but SPENDS the y-shift, leaving only
+     x -> a^2 x + b, y -> a^(2g+1) y.  b kills f_{2g}; a only rescales.  Confirmed
+     by exhaustive search over that entire surviving group.
 
   5. Necessity of char != 2g+1 for the depression (char != 5 at genus 2,
      char != 7 at genus 3): over GF(2g+1) the x^{2g} coefficient is invariant
@@ -53,9 +46,8 @@ import random
 from ff import GF
 
 # --------------------------------------------------------------------------
-# Polynomials as low-to-high lists of field elements.  Deliberately not
-# poly.py: that module is tuned for the divisor arithmetic and carries a
-# modulus notion this file has no use for.
+# Polynomials as low-to-high lists of field elements.  Not poly.py: that module
+# carries a modulus notion this file has no use for.
 # --------------------------------------------------------------------------
 
 
@@ -154,9 +146,9 @@ def check_iso(f, h, fn, hn, phi, F, what):
 def make_h_monic(f, h, g):
     """alpha-scaling  x = a^2 x~,  y = a^(2g+1) y~,  divided by a^(4g+2).
 
-    Sends h_g -> h_g / a and leaves f monic.  Divides by nothing except a = h_g
-    itself, so it is valid in EVERY characteristic -- this is the step that
-    makes 'h monic' a free assumption rather than a restriction.
+    Sends h_g -> h_g / a and leaves f monic.  Divides by nothing but a = h_g, so
+    it is valid in EVERY characteristic, which is what makes 'h monic' a free
+    assumption rather than a restriction.
     """
     a = coeff(h, g)
     if a.is_zero():
@@ -183,11 +175,11 @@ def clear_floor(f, h, g):
     """y -> y + a(x), deg a <= g-1, clearing f_{2g-1} ... f_g.
 
     THE DEGREE-g FLOOR RULE.  In characteristic 2 the shift leaves h untouched
-    and sends f -> f + a^2 + a*h.  Coefficient a_i controls degree i+g through
-    a_i * h_g = a_i, while a_i^2 lands at degree 2i, and 2i < i+g exactly when
-    i < g.  Every square therefore lands strictly BELOW the coefficient its own
-    a_i controls, so the system is triangular from the top with no obstruction
-    anywhere -- and it bottoms out at degree g because deg a stops at g-1.
+    and sends f -> f + a^2 + a*h.  a_i controls degree i+g through a_i * h_g =
+    a_i, while a_i^2 lands at degree 2i, and 2i < i+g exactly when i < g.  Every
+    square lands strictly BELOW the coefficient its own a_i controls, so the
+    system is triangular from the top with no obstruction, and it bottoms out at
+    degree g because deg a stops at g-1.
     """
     F = f[0].F
     if F.char != 2:

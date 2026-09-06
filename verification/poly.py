@@ -1,8 +1,7 @@
 """
 poly.py -- dense univariate polynomials over a finite field from ff.py.
 
-Conventions chosen to match Magma, because the whole point of the harness is to
-mirror Magma code faithfully:
+Conventions match Magma, which this harness exists to mirror faithfully:
 
 *   `deg` of the zero polynomial is -1 (Magma's `Degree(0)`).
 *   `gcd` and `xgcd` return a **monic** gcd (Magma's `GCD` / `XGCD` normalise).

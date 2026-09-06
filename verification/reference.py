@@ -12,16 +12,14 @@ curve models, both written straight from composition-plus-reduction:
                          w = (f - v(v+h))/u, and a balancing weight n counting
                          the infinite places.
 
-It deliberately shares nothing with the explicit formulas: no continued-fraction
-step, no NUCOMP, no case analysis on degrees, no reuse of any intermediate they
-name. That independence is the entire reason it can be trusted as an oracle, so
-keep it.
+It shares nothing with the explicit formulas: no continued-fraction step, no
+NUCOMP, no case analysis on degrees, no reuse of any intermediate they name.
+That independence is why it can be trusted as an oracle, so keep it.
 
 The ramified half derives from the audited harness (3,240,293 exhaustively
-enumerated pairs, zero wrong results). The split half is ported from this
-repository's own generic-genus Magma reference,
-generic/arbitrary/reduced_basis_arithmetic.mag, which is itself independent of
-the explicit formulas.
+enumerated pairs, zero wrong results).  The split half is ported from
+generic/arbitrary/reduced_basis_arithmetic.mag, this repository's own
+generic-genus Magma reference, itself independent of the explicit formulas.
 """
 
 from __future__ import annotations
@@ -73,9 +71,8 @@ def is_valid_divisor(curve, D, genus=None):
 def check_divisor(curve, D, genus=None):
     """None if D is a valid reduced divisor on `curve`, else a reason string.
 
-    `genus` defaults to the curve's own, rather than to a module constant. The
-    harness this came from hardcoded GENUS = 3 and, worse, `add` did not pass it
-    through, so at genus 2 it silently under-reduced. See add().
+    `genus` defaults to the curve's own, not to a module constant: a hardcoded
+    GENUS = 3 silently under-reduced at genus 2.  See add().
     """
     if genus is None:
         genus = curve.genus
@@ -134,9 +131,8 @@ def reduce_divisor(curve, D, genus=None, verify=False):
 def add(curve, D1, D2, verify=False):
     """The reduced representative of [D1] + [D2].
 
-    Note `genus=curve.genus` is threaded explicitly. The original omitted it
-    here, so reduction always ran to the module default of 3 and returned
-    unreduced garbage on a genus-2 curve.
+    `genus=curve.genus` must be threaded explicitly: omitting it leaves reduction
+    running to a genus-3 default and returning unreduced garbage at genus 2.
     """
     return reduce_divisor(curve, compose(curve, D1, D2),
                           genus=curve.genus, verify=verify)
@@ -167,14 +163,13 @@ def scalar_mul(curve, n, D):
 def compute_vp(curve):
     """Vp, one of the two square roots of f at infinity, truncated to degree g+1.
 
-    Vp is the solution of Vp*(Vp + h) == f in the top g+2 coefficients. Built
-    leading term downwards, exactly as ComputeVpl in
+    Vp solves Vp*(Vp + h) == f in the top g+2 coefficients, built leading term
+    downwards, exactly as ComputeVpl in
     generic/arbitrary/reduced_basis_arithmetic.mag.
 
-    Raises if 2*Vl + hl is not invertible, which is the derivative of
-    fl - hl*y - y^2 and the denominator of every step. In characteristic 2 that
-    is hl alone, so a char-2 split curve needs deg h == g+1 for Vp to exist by
-    this construction. Refusing loudly beats returning something wrong.
+    Raises if 2*Vl + hl is not invertible: it is the derivative of fl - hl*y - y^2
+    and the denominator of every step.  In characteristic 2 it is hl alone, so a
+    char-2 split curve needs deg h == g+1 for Vp to exist this way.
     """
     F, f, h, g = curve.F, curve.f, curve.h, curve.genus
     hl = h.coeff(g + 1)
@@ -240,17 +235,14 @@ def adapted_basis(curve, D):
 def split_identity(curve, V=None):
     """The zero class in the split model, in whichever basis V names.
 
-    Its balancing weight is ceil(g/2), not 0. Composition sets
-    n = n1 + n2 + deg(S) - ceil(g/2), so adding a u = 1 class (where S = 1 and
-    deg S = 0) shifts n by n_E - ceil(g/2). Only n_E = ceil(g/2) leaves the
-    other operand's weight alone, which is what an identity has to do.
+    Its balancing weight is ceil(g/2), not 0: composition sets
+    n = n1 + n2 + deg(S) - ceil(g/2), so adding a u = 1 class shifts n by
+    n_E - ceil(g/2), and only n_E = ceil(g/2) leaves the other operand's weight
+    alone.
 
-    Takes no `positive` flag, unlike split_add and split_adjust: the identity is
-    whatever `reduced_basis` makes of (1, 0) against the given V, and that is
-    already generic in V. Passing Vp gives the positive-basis identity.
-
-    The V=None default is the negative basis, matching the rest of this module's
-    history. Callers testing the positive basis must pass Vp explicitly.
+    No `positive` flag, unlike split_add and split_adjust: `reduced_basis` is
+    already generic in V, so passing Vp gives the positive-basis identity.
+    V=None means the negative basis.
     """
     if V is None:
         V = compute_vn(curve)
@@ -263,8 +255,8 @@ def split_identity(curve, V=None):
 def split_check_divisor(curve, D, V):
     """None if D is a valid negative-reduced balanced divisor, else a reason.
 
-    Checks the closure identity as an identity on w rather than trusting the
-    carried value, which is what makes w safe to carry at all.
+    Recomputes the closure identity on w rather than trusting the carried value,
+    which is what makes w safe to carry at all.
     """
     u, v, w, n = _split4(curve, D)
     g = curve.genus
@@ -347,13 +339,11 @@ def split_double(curve, D, V, positive=False):
 def _split_normalise_reduce(curve, u, v, w, n, V, positive=False):
     """The normalise-then-reduce tail shared by split_add and split_double.
 
-    `positive=True` selects the positive reduced basis. Compose and normalise are
-    identical in both; the only difference in the reduce loop is which of the two
-    leading coefficients is tested first, and Add_SPLIT_POS and Add_SPLIT_NEG
-    differ in exactly that. Getting it backwards produces a valid divisor in the
-    right basis that is nonetheless the wrong class, which is what the positive
-    families looked like before this existed: 37 of 63 operations agreeing rather
-    than all of them.
+    `positive=True` selects the positive reduced basis.  Compose and normalise are
+    identical in both; the reduce loop differs only in which of the two leading
+    coefficients is tested first, exactly as Add_SPLIT_POS differs from
+    Add_SPLIT_NEG.  Getting it backwards yields a valid divisor in the right basis
+    that is the wrong class: 37 of 63 operations agreeing rather than all.
     """
     f, h, g = curve.f, curve.h, curve.genus
 
@@ -402,12 +392,11 @@ def split_adjust(curve, D, V, positive=False):
     """Bring the balancing weight into range.
 
     Ported from Adjust_SPLIT_NEG, with `positive=True` selecting Adjust_SPLIT_POS.
-    The two are mirror images: each adjusts directly in its own basis in one
-    direction, and in the other direction converts to the opposite basis, loops
-    there, and converts back.
+    Mirror images: each adjusts directly in its own basis one way, and the other
+    way converts to the opposite basis, loops there, and converts back.
 
-    Adjusts up while n < 0, down while n > g - deg u, and leaves an
-    already-balanced divisor alone.
+    Up while n < 0, down while n > g - deg u, and an already-balanced divisor is
+    left alone.
     """
     if positive:
         return _split_adjust_pos(curve, D, V)
@@ -526,8 +515,8 @@ def _split_adjust_pos(curve, D, V):
 def _split4(curve, D):
     """Accept (u, v, w, n) or (u, v, n) or (u, v), filling in what is missing.
 
-    w is derivable as (f - v(v+h))/u, so callers may omit it; when supplied it
-    is used as given, and split_check_divisor verifies it.
+    w is derivable as (f - v(v+h))/u, so callers may omit it; supplied, it is used
+    as given and split_check_divisor verifies it.
     """
     if len(D) == 4:
         return D
@@ -539,8 +528,7 @@ def _split4(curve, D):
 
 
 def _monomial(F, degree, coeff):
-    """coeff * x^degree. Poly has no monomial constructor, only little-endian
-    from_coeffs, so build the coefficient list."""
+    """coeff * x^degree; Poly offers only little-endian from_coeffs."""
     return Poly.from_coeffs(F, [F.zero] * degree + [coeff])
 
 

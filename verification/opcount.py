@@ -1,7 +1,7 @@
 """
 Operation counts for the explicit formulas, measured by running them.
 
-    python3 verification/opcount.py                     # all fifteen families
+    python3 verification/opcount.py                     # all sixteen families
     python3 verification/opcount.py --family ramified/g2/ch2
     python3 verification/opcount.py --family splitneg/g3/arb --json
 
@@ -45,7 +45,7 @@ domain is dropped rather than histogrammed as a plausible wrong count.
 
 BOTH MODELS
 
-All fifteen families are measured. The split half needs three things the
+All sixteen families are measured. The split half needs three things the
 ramified half does not, which is why it was refused for so long: its domain
 cannot be derived by the arb-contrast (the dispatchers read `ccs`, not curve
 coefficients), its dispatcher signature needs `Precompute` run once per curve to
@@ -653,15 +653,16 @@ def main(argv=None):
                 print("   ", f.name)
             return 2
     else:
-        # EVERY family. All fifteen are measurable now, so this no longer decides
+        # EVERY family. All sixteen are measurable now, so this no longer decides
         # what gets counted -- but it still decides what a skip would be allowed to
         # do silently, which is why it does not filter. Selecting by model here
         # once put the nine split families outside the skip machinery entirely:
         # the run reported six results and an empty `skipped` list, so a reader --
-        # or a --json consumer -- saw a complete-looking answer covering 6 of 15
-        # families with nothing to say the other nine were never attempted. A
-        # family that stops being measurable for any reason must show up in the
-        # skip list and in the tally, not vanish from the denominator.
+        # or a --json consumer -- saw a complete-looking answer covering 6 of the
+        # 15 families the tree held then, with nothing to say the other nine were
+        # never attempted. A family that stops being measurable for any reason
+        # must show up in the skip list and in the tally, not vanish from the
+        # denominator.
         families_sel = list(families)
 
     results, skipped = {}, []

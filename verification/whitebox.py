@@ -5,27 +5,17 @@ curve, a basis, both divisors, both balancing weights. They already pass under M
 so the inputs are vetted. This reads them, runs the real `.mag` formulas on those
 inputs through the interpreter, and compares against `reference.py`.
 
-**Where those cases came from, precisely.** They were *found by random search*, not
-built by hand. `whitebox/genFiles/*_WB_gen.mag` loops over random curves and divisor
-pairs, prints a block for each operation that agrees with Magma's own Cantor
-arithmetic, and lets the formula's own ADD_DEBUG/DBL_DEBUG label name the branch;
-`whitebox/whitebox_auto_NEG.py` keeps the first block seen for each label until every
-label has one. So "constructed case" below means **frozen and committed**, as opposed
-to sampled afresh each run -- it does not mean anyone chose the inputs. That is worth
-being exact about, because the value of these cases rests on two properties that
-survive the correction and one claim that does not:
+The cases were found by random search, not designed by hand:
+`whitebox/genFiles/*_WB_gen.mag` loops over random curves and divisor pairs keeping a
+block per branch label for each operation that agrees with Magma's own Cantor
+arithmetic, and `whitebox/whitebox_auto_NEG.py` keeps the first block per label.  So a
+"constructed case" is complete (every labelled branch has one) and deterministic (the
+same inputs every run), but NOT an independently designed probe: a branch is covered
+by whatever input the search landed on first.
 
-  * they are **complete** -- every labelled branch has a case, which random sampling
-    in CI time does not achieve;
-  * they are **deterministic** -- the same inputs every run, so coverage is a fact
-    about the corpus rather than about this run's luck;
-  * they are *not* independently designed probes of each branch. A branch is covered
-    by whatever input the search happened to land on first.
-
-Coverage under sampling is coupon-collector -- measured across all fourteen families,
-35% at 2 curves, 54% at 4, 77% at 16, 84% at 30, then it stalls -- so 100% is not
-reachable in CI time and possibly not at all. A frozen corpus with one case per branch
-reaches every branch in seconds, every time.
+Sampling instead is coupon-collector and does not reach 100% in CI time.  2026-08-05
+sweep over the fourteen families of that date: 35% at 2 curves, 54% at 4, 77% at 16,
+84% at 30, then it stalls.
 
 Usage:
 
@@ -37,38 +27,29 @@ Usage:
 Exit status is 0 only if every case replayed, every case reached a branch, and every
 result matched the reference.
 
-Cases are extracted at run time rather than from a committed corpus. A corpus would be
-one more artefact able to drift away from the testers it came from; reading the testers
-directly cannot go stale, and parsing eleven files costs a fraction of a second.
+Cases are extracted at run time rather than from a committed corpus: a corpus is one
+more artefact able to drift from the testers it came from, and parsing fifteen files
+costs a fraction of a second.  Provenance is always visible in the report:
 
-Cases come from two places, and which one is always visible in the report:
+  extracted from a whitebox tester (15 testers, 7,043 cases, one per affine family)
+  and held to 100% coverage, since the tester was built by searching until every
+  branch had a case.  Covering fewer branches than its tester holds is a regression.
 
-  **extracted** from a whitebox tester -- 14 families, 1,838 cases, which since PR6 is
-  every family in the repository -- and held to 100% coverage. A tester was built by
-  searching until every branch had a case, so a file that now covers fewer branches
-  than its tester holds is a regression.
+  harvested by `--harvest`, for every branch no extracted case reaches: the family
+  has no tester, or the tester's own search missed the branch (genus-3 split ch2,
+  whose regenerated tester reaches 347 of 413).  Held to the coverage recorded when
+  it was harvested, since search cannot be assumed to reach a branch needing an
+  algebraic coincidence.  The corpus is empty today, genus-3 ramified having been its
+  only resident before PR6 gave it real testers, so the channel is dormant, not gone.
 
-  **harvested** by `--harvest`, for every branch no extracted case reaches: because a
-  family has no tester at all, or because the tester's own search missed a branch
-  (genus-3 split ch2, whose regenerated tester reaches 347 of 413). Search for an input
-  reaching the branch, then freeze it. Held to the coverage recorded when it was
-  harvested, since search cannot be assumed to reach a branch needing an algebraic
-  coincidence. **The corpus is empty today** -- genus-3 ramified was its only resident
-  and PR6 gave it real testers -- so this channel is currently dormant, not gone.
+Both are the frozen output of a coverage-guided random search; only the language of
+the search differs.  That is why harvesting substitutes acceptably where no tester
+exists, and why the report labels provenance rather than implying one is sounder.
+Either way this replays frozen inputs and never samples: randomness builds the corpus
+once, offline, and is not part of the gate.
 
-**These two are the same kind of artefact.** Both are the frozen output of a
-coverage-guided random search; the difference is only which language ran the search
-and whether the result was committed as a Magma tester. That symmetry is the reason
-harvesting is an acceptable substitute where no tester exists, and it is why the
-report labels each case's provenance rather than implying one is sounder.
-
-Either way, this replays frozen inputs and never samples. Randomness builds the
-corpus once, offline; it is not part of the gate.
-
-Genus-3 ramified used to be the exception, harvested rather than extracted because it
-had no Magma whitebox tester. Its generators and testers exist now, so it is extracted
-like everything else and the harvested corpus is empty. Every family in the repository
-is covered: all six cells of {arb, nch2, ch2} x {genus 2, genus 3} in both models.
+Every family in the repository is covered: all six cells of {arb, nch2, ch2} x
+{genus 2, genus 3} in both models.
 """
 
 from __future__ import annotations
@@ -90,18 +71,15 @@ from poly import Poly
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Frozen cases for branches no Magma tester reaches. Committed, because there is
-# nothing to read them out of -- either no tester exists for the family, or its
-# search never landed on the branch. Written by `--harvest`, replayed exactly like an
+# Frozen cases for branches no Magma tester reaches, committed because there is
+# nothing to read them out of.  Written by `--harvest`, replayed exactly like an
 # extracted case.
 HARVEST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             "harvested_cases.json")
 
 # Every formula file whose coverage is expected to be below its label count, with the
-# reason. One artefact for all such cases, because there are two unrelated causes and
-# collapsing them into "whatever the last harvest happened to find" made the number
-# self-certifying: `--harvest` wrote both the cases and the figure they were graded
-# against, so a worse harvest silently lowered the bar.
+# reason.  Kept out of the harvest file because `--harvest` would then write both the
+# cases and the figure they are graded against, so a worse harvest lowered its own bar.
 #
 # Written by `--record-baseline`, which REFUSES to lower an existing entry without
 # --allow-lower, so a regression cannot be absorbed by re-recording.
@@ -114,10 +92,9 @@ BASELINE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 # ---------------------------------------------------------------------------
 
 def _element(F, text):
-    """One field element, as the testers write them.
-
-    Prime fields carry plain integers. Extension fields use `FF.1^k`, powers of the
-    field generator, which is why this needs the field rather than just the text.
+    """One field element, as the testers write them: a plain integer over a prime
+    field, or `FF.1^k` over an extension, which is why the field is needed and not
+    just the text.
     """
     text = text.strip()
     m = re.fullmatch(r"FF\.1\s*\^\s*(\d+)", text)
@@ -134,10 +111,9 @@ def _element(F, text):
 
 
 def _poly(F, text):
-    """A univariate polynomial as the testers write them.
-
-    Handles `R! x^5 + FF.1*x^2 + FF.1^2*x + FF.1`, an `R!`/`R !` prefix, implicit
-    coefficient 1, bare constants and a leading minus.
+    """A univariate polynomial as the testers write them: `R! x^5 + FF.1*x^2 + FF.1`,
+    with an `R!`/`R !` prefix, implicit coefficient 1, bare constants and a leading
+    minus all accepted.
     """
     text = re.sub(r"^\s*R\s*!\s*", "", text.strip())
     text = text.replace(" ", "")
@@ -177,10 +153,9 @@ def tname(path):
     """A tester label that is unambiguous in reports.
 
     Basenames collide: nch2_splitG2_whiteBox_tester.mag exists under both
-    g2/splitModel/posReduced/ and negReduced/, and those are different algorithms
-    (which leading coefficient the reduce loop tests first). A failure reported as
-    the basename alone left the reader to guess which basis it came from. The parent
-    directory is enough to separate every collision in the tree.
+    g2/splitModel/posReduced/ and negReduced/, which are different algorithms (which
+    leading coefficient the reduce loop tests first).  The parent directory separates
+    every collision in the tree.
     """
     return os.path.join(os.path.basename(os.path.dirname(path)),
                         os.path.basename(path))
@@ -205,10 +180,9 @@ def find_testers(root=ROOT):
     for dirpath, _dirs, files in os.walk(root):
         if os.sep + "timings" + os.sep in dirpath + os.sep:
             continue
-        # `whitebox/testerFiles/` is the generator's staging area, not the testers
-        # of record, and it is stale: its genus-3 split arb copy holds 2 cases where
-        # the deployed tester holds 405. Including it would silently halve the
-        # coverage denominator for that family. Excluded and named, not skipped.
+        # `whitebox/testerFiles/` is the generator's staging area, not the testers of
+        # record, and it is stale: its genus-3 split arb copy holds 2 cases where the
+        # deployed tester holds 405, which would halve that family's denominator.
         if os.sep + "whitebox" + os.sep in dirpath + os.sep:
             continue
         for fn in sorted(files):
@@ -224,11 +198,10 @@ def family_of(tester):
     name = os.path.basename(tester)
     m = re.match(r"(arb|nch2|ch2)_(ramified|split)G([23])_", name)
     if m is None:
-        # `m.group(1)` on None is an AttributeError, and `find_testers` globs on
-        # `hite[bB]ox_tester\.mag$` -- so any tester whose name is not one of the
-        # six existing shapes IS picked up and then crashes the gate with a
-        # traceback instead of a reported failure. Raised with the name in it so
-        # the report says which file rather than which line of Python.
+        # `find_testers` globs on `hite[bB]ox_tester\.mag$`, so a tester whose name
+        # is not one of the six existing shapes IS picked up; without this it dies
+        # on an AttributeError traceback instead of a reported failure.  The name is
+        # in the message so the report says which file, not which line of Python.
         raise ValueError(
             "tester %r does not match the <kind>_<model>G<genus>_ naming the "
             "harness keys families on. A gate cannot report on a family it "
@@ -246,8 +219,8 @@ def extract(tester):
     """Every constructed case in one tester, plus any block that could not be read.
 
     Blocks are delimited by `FF := GF(q);`, which the generators emit once per case.
-    Measured: 1,338 blocks across the eleven testers and 1,338 asserts, so the
-    delimiter is exact rather than approximate.
+    Measured exact, not approximate: 1,338 blocks across the eleven testers and
+    1,338 asserts.
     """
     src = open(tester).read()
     parts = re.split(r"^FF\s*:=\s*GF\((\d+)\);", src, flags=re.M)
@@ -312,31 +285,28 @@ class Result(object):
         self.no_branch = []
         self.covered = collections.defaultdict(set)
         self.precondition = []
-        # Coverage here is 100% by construction -- one constructed case per branch --
-        # so any gap is a regression, not a sampling artefact, and fails the run.
+        # 100% by construction, one case per branch, so any gap is a regression
+        # rather than a sampling artefact and fails the run.
         self.coverage_gaps = []
-        # Unguarded fall-through markers reached. Never a coverage win: reaching one
+        # Unguarded fall-through markers reached.  Never a coverage win: reaching one
         # means the formulas fell through to a case their author believed impossible.
         self.sentinels = []
-        # Returns whose value count is not what the model calls for -- errata E2. The
-        # extra value used to be truncated and the case counted as a match.
+        # Returns whose value count is not what the model calls for (errata E2).
         self.arity = []            # unexpected: fatal
         self.arity_known = []      # errata E2, pinned by identity: reported only
         self.arity_seen = set()
         self.drifted = []          # a harvested case no longer reaches what it recorded
         # Files that MUST be accounted for, derived from the testers found and the
-        # harvest baseline rather than from what happened to be covered. Without this
-        # the coverage loop iterated over its own results, so a tester that yielded no
-        # cases left its formula file out of the loop entirely and the run passed
-        # having tested nothing. Verified: 11 testers, 0 cases, exit 0.
+        # harvest baseline rather than from what happened to be covered.  A coverage
+        # loop over its own results lets a tester yielding no cases drop its formula
+        # file silently: 11 testers, 0 cases, exit 0.
         self.expected_files = set()
         self.cases_per_tester = {}
 
     def failed(self):
-        # `precondition` is fatal here, unlike in driver.py. driver.py generates inputs
-        # and legitimately lands in the D1 == D2 region; a CONSTRUCTED case never should,
-        # and measurably none does, so a case arriving there means this harness
-        # misclassified it.
+        # `precondition` is fatal here, unlike in driver.py: driver.py generates inputs
+        # and legitimately lands in the D1 == D2 region, a CONSTRUCTED case measurably
+        # never does, so arriving there means this harness misclassified the case.
         return bool(self.mismatches or self.unparsed or self.errors
                     or self.no_branch or self.coverage_gaps or self.precondition
                     or self.sentinels or self.arity or self.drifted
@@ -357,13 +327,12 @@ def _formula_paths(model, genus, kind, basis):
 
 
 def expected_formula_files():
-    """Every formula file that must be accounted for, from the authoritative source.
+    """Every formula file that must be accounted for.
 
-    Derived from `driver.discover_families`, which walks the tree, rather than from the
-    whitebox testers found on disk. Deriving it from the testers made the expectation a
-    function of the evidence: delete a tester and its formula file stopped being
-    expected, so it vanished from the report instead of failing. A newly added formula
-    file was equally invisible.
+    From `driver.discover_families`, which walks the tree, not from the testers found
+    on disk.  Deriving it from the testers makes the expectation a function of the
+    evidence: a deleted tester stops its formula file being expected, and a newly
+    added formula file is invisible.
     """
     out = set()
     fams, _excluded = D.discover_families()
@@ -417,16 +386,16 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         return
 
     if model == "split":
-        # The case supplies V explicitly, so the reference needs no root choice of
-        # its own -- which is what makes these cases stronger than generated ones.
-        # The tester's `V` is the positive basis; negReduced then uses -V - h.
+        # The case supplies V explicitly, so the reference needs no root choice of its
+        # own, which is what makes these cases stronger than generated ones.  The
+        # tester's `V` is the positive basis; negReduced then uses -V - h.
         Vp = case.V if case.V is not None else R.compute_vp(cur)
         basis_poly = Vp if basis == "pos" else (-Vp - case.h)
         # Pin the infinite-place root to the one this case's own V names, so
-        # Precompute's constants describe the same basis the case was built in.
-        # Nothing is chosen by convention here: y_{g+1} is V's leading coefficient.
-        # Neither global ordering suits every case -- one fails 247 constructed
-        # cases, all in characteristic 2, the other fails 332, all over odd primes.
+        # Precompute's constants describe the basis the case was built in.  Nothing is
+        # chosen by convention: y_{g+1} is V's leading coefficient.  Neither global
+        # ordering suits every case: one fails 247 constructed cases, all in
+        # characteristic 2, the other fails 332, all over odd primes.
         M.ROOT_PIN[0] = Vp.coeff(genus + 1)
         try:
             raw = subs["Precompute"](case.f, case.h, case.q, path=path,
@@ -451,16 +420,14 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         d2 = (case.D2[0], case.D2[1]) if case.D2 else None
         args = D.build_args(params[case.op], cur, d1, d2)
 
-    # The whole divisor, not just (u, v). In the split model a divisor is (u, v, w, n)
-    # and the balancing weight is part of its identity, so two operands agreeing on u
-    # and v but differing in n are DISTINCT divisors and a perfectly legal addition.
-    #
-    # Comparing only u and v classified 41 such cases as the documented `D1 != D2`
-    # precondition and discarded their verdicts. Measured across the extracted corpus:
-    # 41 ADD cases have equal (u, v) and ZERO have equal (u, v, n) -- so the test never
-    # once fired on a genuinely identical pair, only on 41 legal additions. Those 41 are
-    # also the sole coverage of 41 branches, 13 of them in arb_splitG3_ADD.mag. A defect
-    # confined to them produced "1682 replayed, 1641 matched, 0 mismatched, PASS", exit 0.
+    # The whole divisor, not just (u, v).  In the split model a divisor is (u, v, w, n)
+    # and the balancing weight is part of its identity, so operands agreeing on u and v
+    # but differing in n are DISTINCT and a legal addition.  Measured across the
+    # extracted corpus: 41 ADD cases have equal (u, v) and ZERO have equal (u, v, n),
+    # so comparing only u and v never fired on an identical pair, only on those 41,
+    # which are the sole coverage of 41 branches, 13 of them in arb_splitG3_ADD.mag.
+    # Discarding their verdicts read as "1682 replayed, 1641 matched, 0 mismatched,
+    # PASS", exit 0.
     same = (case.op == "ADD" and case.D2 is not None
             and tuple(case.D1) == tuple(case.D2))
     try:
@@ -477,9 +444,9 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
                       type(exc).__name__, str(exc)[:50])] += 1
         return
 
-    # Precompute's labels belong to the UTL file, not to the ADD/DBL file, so they are
-    # split out by name. Without this they were discarded entirely: the nine split UTL
-    # files carry 42 labels between them and all 42 read as unexercised.
+    # Precompute's labels belong to the UTL file, not the ADD/DBL file, so they are
+    # split out by name.  Otherwise they are discarded: the nine split UTL files carry
+    # 42 labels between them and all 42 read as unexercised.
     utl_labels = set()
     if utl_path and os.path.isfile(utl_path):
         utl_labels = D.labels_in(utl_path)
@@ -514,8 +481,8 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
         gu, gv, note = D.decode_divisor(F, genus, vals)
         if note:
             res.arity_seen.add(_case_id(case))
-            # errata E2: a return with one value too many. driver.py already records
-            # this; whitebox truncated it and counted the case as a match.
+            # errata E2: a return with one value too many.  Truncating it silently
+            # counts the case as a match.
             line = "%s over GF(%d): %s" % (_case_id(case), case.q, note)
             if _case_id(case) in KNOWN_ARITY[0]:
                 res.arity_known.append(line)
@@ -536,15 +503,15 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
     res.replayed += 1
     if all(a == b for a, b in zip(got, exp)):
         res.matched += 1
-        # Coverage is banked only for a verdict that was actually CHECKED. Banking it
-        # before the comparison meant a discarded verdict still counted its branch as
-        # covered, so 41 branches read as verified while nothing verified them.
+        # Coverage is banked only for a verdict that was actually CHECKED.  Banking it
+        # before the comparison let a discarded verdict still count its branch, so 41
+        # branches read as verified while nothing verified them.
         res.covered[src].update(labels)
         return
     if same:
-        # A constructed case must never be in the D1 == D2 region -- none of the 1,338
-        # extracted cases is -- so landing here means the harness is wrong about the
-        # case, not that the case is excused. Recorded and fatal.
+        # A constructed case must never be in the D1 == D2 region, and none of the
+        # 1,338 extracted cases is, so landing here means the harness is wrong about
+        # the case rather than the case being excused.  Recorded and fatal.
         res.precondition.append(
             "%s #%d %s disagreed where D1 == D2"
             % (tname(case.tester), case.index, case.op))
@@ -560,10 +527,9 @@ def _replay_one(case, model, genus, basis, subs, params, add_path, dbl_path, res
 def kind_for(case, model):
     """The Curve `kind` a case's field forces, which is not always the file's kind.
 
-    An `arb` tester runs cases over both odd and characteristic-2 fields, and Curve
-    validates `nch2` as requiring odd characteristic and `ch2` as requiring
-    characteristic 2. `arb` accepts either, so it is the honest label for a case
-    whose file is arb regardless of the field it uses.
+    An `arb` tester runs cases over both odd and characteristic-2 fields, while Curve
+    requires odd characteristic for `nch2` and characteristic 2 for `ch2`.  `arb`
+    accepts either, so it is the honest label whatever field the case uses.
     """
     _model, _genus, kind, _basis = family_of(case.tester)
     if kind == "nch2" and case.q % 2 == 0:
@@ -617,33 +583,22 @@ def _de_poly(F, data):
 
 
 def harvest(families, seed=1, curves=40, pairs=12, already=None):
-    """Find one input per branch for families that have no whitebox tester.
+    """Search for one input per branch, then freeze it.
 
-    Genus-3 ramified is the reason this exists. It had no whitebox tester and was the
-    family this merge series is for, so it could not go untested: its files got
-    constructed cases the only way then available -- search for an input reaching each
-    labelled branch, then freeze it. Real generators ended that, so the corpus is empty
-    and this function now supplements extracted testers only -- filling a branch a
-    tester's own search happened to miss, which is a different thing from a family
-    having no tester at all.
+    The search uses the random generators, but the result is a frozen case like any
+    other: CI replays it and never samples.  That is the procedure the Magma whitebox
+    generators use too, so an extracted case and a harvested one are the same kind of
+    artefact.  See the module docstring.
 
-    The search uses the random generators, but **the result is a frozen case like any
-    other**: CI replays frozen inputs and never samples. Randomness builds the corpus
-    once, offline; it is not part of the gate. That is the same procedure the Magma
-    whitebox generators use, so an extracted case and a harvested one are the same kind
-    of artefact -- see the module docstring.
+    `already` maps a formula file to the labels an extracted case already reaches, and
+    those are skipped, so the corpus is the union of both searches.  Restricting this
+    to families with no tester at all left no way to fill a branch a tester's own
+    search missed: the genus-3 split ch2 tester covers 347 of its 413 labels, and the
+    remainder are reachable but rare.
 
-    `already` maps a formula file to the labels an extracted tester case already
-    reaches, and those are skipped. This used to run only for families with no tester
-    at all, which left no way to fill a branch a tester's own search had missed: the
-    genus-3 split ch2 tester covers 347 of its 413 labels, and the remainder are
-    reachable but rare. Harvesting the difference makes the corpus the union of both
-    searches -- and it kept working unchanged when PR6 added the genus-3 ramified
-    testers, which is what let their harvested cases be retired rather than migrated.
-
-    For the split model the infinite-place root is pinned to the reference's own Vp, so
-    Precompute's constants and the reference agree by construction rather than by
-    convention -- the same trick the extracted cases use with their supplied V.
+    For the split model the infinite-place root is pinned to the reference's own Vp,
+    so Precompute's constants and the reference agree by construction rather than by
+    convention, the same trick the extracted cases use with their supplied V.
     """
     out, baseline = [], {}
     for fam in families:
@@ -715,9 +670,8 @@ def harvest(families, seed=1, curves=40, pairs=12, already=None):
 def _harvest_context(fam, cur, subs, F, utl_path_labels=None):
     """(basis polynomial, ccs) for a generated curve, or None if unusable.
 
-    `utl_path_labels` collects Precompute's own branch labels, which are otherwise
-    discarded: the nine split UTL files carry 42 of them and all 42 read as unexercised
-    because the call was made without a path to record into.
+    `utl_path_labels` collects Precompute's own branch labels; called without a path
+    to record into, the nine split UTL files' 42 labels all read as unexercised.
     """
     if utl_path_labels is None:
         utl_path_labels = []
@@ -750,12 +704,11 @@ def _try_pair(fam, cur, subs, params, op, mode, rng, basis_poly, ccs,
     if not pair:
         return None
     d1, d2 = pair
-    # The whole divisor, for the same reason the replay path compares the whole divisor:
-    # in the split model (u, v) equal with different weights is a legal addition, not the
-    # documented precondition. Comparing only u and v here discarded exactly the class of
-    # input that turned out to be the sole coverage of 41 branches.
+    # The whole divisor, as in the replay path: in the split model (u, v) equal with
+    # different weights is a legal addition, not the documented precondition.  Comparing
+    # only u and v discards the class of input that is the sole coverage of 41 branches.
     if tuple(d1) == tuple(d2):
-        return None                 # the documented D1 == D2 precondition; PR5's
+        return None                 # the documented D1 == D2 precondition
     arg_d2 = d2 if op == "ADD" else None
     path = []
     try:
@@ -799,15 +752,13 @@ def load_harvested():
 
 
 def load_baseline():
-    """{repo-relative file: set of branches EXEMPT from coverage} -- `unreached`.
+    """{repo-relative file: set of branches EXEMPT from coverage}, key `unreached`.
 
-    The exempt set is stored explicitly, as labels, and everything else in the file
-    must be covered. Storing what IS covered was tried first and left a hole: a newly
-    added branch was neither in the recorded set nor missing from it, so it was exempt
-    by accident. Storing what is NOT covered makes a new branch fail by default, which
-    is the right default. A count was worse still -- it let branches be traded
-    one-for-one while the number held, kept a stale entry downgrading a file that had
-    since acquired a tester, and made a baseline of 0 unfailable.
+    The exempt set is stored as labels and everything else in the file must be
+    covered, so a newly added branch fails by default.  Storing what IS covered made
+    a new branch exempt by accident.  A count was worse: branches could be traded
+    one-for-one while the number held, a stale entry went on downgrading a file that
+    had since acquired a tester, and a baseline of 0 was unfailable.
     """
     if not os.path.isfile(BASELINE_FILE):
         return {}
@@ -823,11 +774,10 @@ def known_arity_anomalies():
     """Case identities allowed to return the wrong number of values.
 
     Pinned by IDENTITY rather than by count, so a NEW anomaly fails even when known
-    ones exist. The set is EMPTY since PR5 fixed errata E2 -- one branch of every
-    genus-2 ramified ADD returned 6 values where 5 are expected, and the three
-    tester cases reaching it were pinned here until the fix landed. The machinery
-    stays: it is what let the gate run green over a recorded defect without hiding
-    it, and the next such defect uses it the same way.
+    ones exist.  EMPTY since PR5 fixed errata E2 (one branch of every genus-2
+    ramified ADD returned 6 values where 5 are expected, and the three tester cases
+    reaching it were pinned here until the fix landed).  The machinery stays: it is
+    what lets the gate run green over a recorded defect without hiding it.
     """
     if not os.path.isfile(BASELINE_FILE):
         return set()
@@ -846,8 +796,8 @@ def replay_harvested(res, show_all, only=None):
     """Replay the committed harvested cases, for both models.
 
     Model-aware for the same reason `harvest` is: genus-3 split ch2 has formulas but
-    no whitebox tester, so its cases are harvested too, and a split case needs its
-    basis polynomial and ccs rebuilt rather than just a curve and two divisors.
+    no whitebox tester, and a split case needs its basis polynomial and ccs rebuilt,
+    not just a curve and two divisors.
     """
     records = load_harvested()
     baseline = load_baseline()
@@ -930,9 +880,8 @@ def replay_harvested(res, show_all, only=None):
             continue
         labels = [x[6:] for x in path if x.startswith("PRINT:")]
         _note_sentinels(res, src, labels, "harvested case %d" % i)
-        # The corpus is only meaningful if a case still reaches what it recorded.
-        # Coverage is compared in aggregate, so a case could drift to a different
-        # branch and the totals would hide it. Zero drift measured today; this is the
+        # Coverage is compared in aggregate, so a case drifting to a different branch
+        # would be hidden by the totals.  Zero drift measured today, and this is the
         # guard that keeps it so.
         if rec.get("labels") is not None and labels != rec["labels"]:
             res.drifted.append(
@@ -1023,8 +972,8 @@ def report(res, testers, show_all, baseline=None):
     w("  branch coverage from constructed cases\n")
     total_l = total_c = 0
     gaps = []
-    # Iterate the EXPECTED files, not the covered ones. A file that received no cases
-    # must appear here as 0/N and fail, rather than vanishing from the report.
+    # Iterate the EXPECTED files, not the covered ones, so a file that received no
+    # cases appears as 0/N and fails rather than vanishing from the report.
     for src in sorted(res.expected_files | set(res.covered)):
         labels = D.labels_in(src)
         if not labels:
@@ -1033,19 +982,16 @@ def report(res, testers, show_all, baseline=None):
         rel = os.path.relpath(src, ROOT)
         total_l += len(labels)
         total_c += len(hit)
-        # Two kinds of expectation, because the cases have two sources. A file with a
-        # whitebox tester must be at 100%: the tester holds one case per branch by
-        # construction, so anything less is a regression. A file whose cases were
-        # harvested is held to the baseline recorded when they were harvested, since
-        # search cannot reach branches that need an algebraic coincidence -- and that
-        # shortfall is written down as a number rather than hidden under a threshold.
-        # Compared as SETS, with the baseline storing what is EXEMPT (`unreached`).
-        # Everything not exempt must be covered, so a newly added branch fails by
-        # default rather than inheriting the exemption -- the hole the covered-set
-        # form left open. Three further rules keep an entry honest: an exempt label
-        # that IS now reached is stale and must be re-recorded; an exempt label the
-        # file no longer contains is stale the other way; and no entry may exempt a
-        # whole file.
+        # Two kinds of expectation, because the cases have two sources.  A file with a
+        # whitebox tester must be at 100%, the tester holding one case per branch by
+        # construction.  A file whose cases were harvested is held to the baseline
+        # recorded at harvest time, since search cannot reach branches that need an
+        # algebraic coincidence, and that shortfall is written down rather than hidden
+        # under a threshold.  Compared as SETS, the baseline storing what is EXEMPT
+        # (`unreached`), so a newly added branch fails by default instead of
+        # inheriting an exemption.  Three further rules keep an entry honest: an
+        # exempt label that IS now reached is stale; an exempt label the file no
+        # longer contains is stale the other way; no entry may exempt a whole file.
         exempt = baseline.get(rel)
         missing = labels - hit
         extra_note = ""
@@ -1089,9 +1035,9 @@ def report(res, testers, show_all, baseline=None):
         w("    %s %-56s %3d/%3d  %5.1f%%%s\n"
           % (mark, rel, len(hit), len(labels),
              100.0 * len(hit) / len(labels) if labels else 100.0, extra_note))
-        # Unexercised branches are listed for EVERY file, baselined or not. They used
-        # to be listed only for non-baselined files, so ~131 uncovered branches could
-        # not be named by any invocation.
+        # Unexercised branches are listed for EVERY file, baselined or not.  Listing
+        # them only for non-baselined files left ~131 uncovered branches unnameable by
+        # any invocation.
         if labels - hit:
             gaps.append((src, sorted(labels - hit)))
     if total_l:
@@ -1237,17 +1183,11 @@ def report(res, testers, show_all, baseline=None):
 def _families_without_testers(testers):
     """Families whose cases can only be harvested, because no tester exists.
 
-    The genus-3 split ch2 entry has been removed: its generator was repaired and its
-    tester regenerated, so it is extracted like every other split family. Harvest still
-    supplements it for the branches that tester's own search did not reach, which is a
-    different thing and is reported by file coverage rather than here.
-
-    The three genus-3 ramified entries have been removed for the same reason: their
-    generators and testers exist, so they are extracted too, and the harvested corpus
-    they existed for is now empty. THE LIST IS DELIBERATELY EMPTY, and with the
-    six-cell matrix complete there is no family left to add: every one has a Magma
-    whitebox tester. A future family derived ADD-first would arrive here before its
-    tester does, which is what the channel is kept for.
+    THE LIST IS DELIBERATELY EMPTY: with the six-cell matrix complete, every family
+    has a Magma whitebox tester and is extracted.  A future family derived ADD-first
+    would arrive here before its tester does, which is what the channel is kept for.
+    Branches a tester's own search did not reach are a different thing and are
+    reported by file coverage rather than here.
     """
     have = {family_of(t)[:3] + (family_of(t)[3],) for t in testers}
     known = []
@@ -1320,8 +1260,8 @@ def main(argv=None):
             return 2
 
     if a.harvest and a.family:
-        # A filtered harvest would write cases for some families and leave the rest of
-        # the corpus stale, while the baseline it is graded against covers all of them.
+        # A filtered harvest leaves the rest of the corpus stale while the baseline it
+        # is graded against covers all of it.
         print("--harvest cannot be combined with --family: a partial harvest would\n"
               "leave the rest of the corpus stale. Harvest everything, or not at all.")
         return 2
@@ -1330,10 +1270,9 @@ def main(argv=None):
         fams, _excl = D.discover_families()
 
         # What the Magma testers already reach, so the harvest fills the difference
-        # instead of duplicating them. Every family is a candidate now, not just the
-        # ones with no tester: a tester is itself the product of a random search, so it
-        # can leave branches uncovered -- genus-3 split ch2 leaves 66 of 413 -- and
-        # there was previously no way to reach those without hand-writing cases.
+        # instead of duplicating them.  Every family is a candidate, not just the ones
+        # with no tester: a tester is itself the product of a random search and can
+        # leave branches uncovered, genus-3 split ch2 leaving 66 of 413.
         extracted = Result()
         for t_path in testers:
             replay_tester(t_path, extracted, False)
@@ -1366,18 +1305,17 @@ def main(argv=None):
         return 0
 
     if a.record_baseline and a.family:
-        # A filtered run replays a subset, so recording from it would write
-        # zero-coverage entries for every family the filter excluded -- a live path to
-        # an unfailable baseline. Same rule as --harvest, for the same reason.
+        # Recording from a filtered run would write zero-coverage entries for every
+        # family the filter excluded, a live path to an unfailable baseline.  Same
+        # rule as --harvest, for the same reason.
         print("--record-baseline cannot be combined with --family: a filtered run\n"
               "would record zero coverage for everything the filter excluded.")
         return 2
 
     KNOWN_ARITY[0] = known_arity_anomalies()
     res = Result()
-    # Expectations scope to the filter: a filtered run must account for the filtered
-    # families' files and no others, or --family marks the other 33 files LOST and
-    # exits 1, making the flag useless for the focused runs it exists for. The
+    # Expectations scope to the filter, or --family marks the other 33 files LOST and
+    # exits 1, making the flag useless for the focused runs it exists for.  The
     # anti-vacuity guarantee is unchanged for the full run, which is what CI executes.
     expected = expected_formula_files()
     if a.family:

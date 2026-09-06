@@ -1,29 +1,24 @@
 #!/usr/bin/env python3
 """Reads that no assignment reaches, checked in statement order.
 
-`undef.py` asks, per function, "is this name assigned anywhere in the body".
-That question is satisfied by an assignment that sits BELOW the read, which is
-exactly the shape a mid-edit rename leaves behind: a variable is inlined at one
-site, its definition deleted, and a surviving read further up now resolves to a
-definition that has not run yet. Four such breakages reached real Magma during
-the 2026-08-20 genus-3 addition work -- `ta` twice, `k3` twice -- and `undef.py`
-reported every one of those files clean.
+`undef.py` asks whether a name is assigned anywhere in the function body, which
+an assignment BELOW the read satisfies.  That is exactly the shape a mid-edit
+rename leaves behind, and four such breakages reached real Magma during the
+2026-08-20 genus-3 addition work (`ta` twice, `k3` twice) with `undef.py`
+reporting every one of those files clean.
 
-This asks the ordered question instead: walking the body top to bottom, does
-each read have an assignment ABOVE it? A name whose only assignment comes later
-is reported, as is a name never assigned at all.
+This walks the body top to bottom and asks whether each read has an assignment
+ABOVE it.  A name assigned only later, or never, is reported.
 
     python3 dominance.py g3/ramifiedModel/g3Formulas/arb_ramifiedG3_ADD.mag
     python3 dominance.py                    # every formula file in the tree
 
-WHAT THIS DOES NOT CATCH, and it matters. Statement order is not dominance. An
-assignment inside an `if` block above the read counts as reaching it here, even
-though that block may not execute -- so a value defined only on a sibling path
-still passes. Closing that needs the branch structure, and the guards in these
-files nest six deep with `end if;//name` closers that a line scanner cannot
-match reliably. What is implemented is the weaker check that happens to catch
-every failure this project has actually had, and it is cheap enough for CI.
-Real Magma remains the only oracle that sees the rest.
+WHAT THIS DOES NOT CATCH: statement order is not dominance.  An assignment inside
+an `if` block above the read counts as reaching it, so a value defined only on a
+sibling path still passes.  Closing that needs the branch structure, and the
+guards here nest six deep with `end if;//name` closers a line scanner cannot
+match reliably.  This weaker check catches every failure this project has
+actually had and is cheap enough for CI; real Magma sees the rest.
 
 Exit status is 1 if any read is reported, so this can gate.
 """
@@ -38,9 +33,9 @@ ROOT = os.path.dirname(HERE)
 # Flags set by the caller before `load`, so they are live on entry everywhere.
 GLOBALS = {"ADD_DEBUG", "DBL_DEBUG", "UTL_DEBUG", "DEBUG"}
 
-# Magma keywords and the builtins these files call. A name here is never a read
-# of a local. Anything genuinely missing shows up as a false report, not as a
-# silent pass, which is the safe direction for a gate.
+# Magma keywords and the builtins these files call; a name here is never a read
+# of a local.  A missing entry shows up as a false report rather than a silent
+# pass, which is the safe direction for a gate.
 RESERVED = {
     "if", "then", "else", "elif", "end", "return", "function", "procedure",
     "for", "while", "do", "repeat", "until", "case", "when", "true", "false",
