@@ -3766,3 +3766,41 @@ Frequent path only, as with everything in this projective set.  `Deg3ADDmix` has
 than three, so its floor is less well established than the general addition's, though the two share
 this block verbatim.  And the affine `Deg3ADD` is **not** touched: the identity is projective, resting
 on `W` and `P2`, which have no affine counterpart.
+
+---
+
+## N41 — Two hundred and thirty-seven signs that carried no information
+
+**Status** — applied, and count-neutral by measurement.  **Where** —
+`g3/splitModel/negReduced/g3Formulas/ch2_splitG3_ADD.mag`, `Thesis/ERRATA.md` E-T8.
+
+`ch2_splitG3_ADD.mag` wrote a unary `+` in front of a term in 237 places, in statements such as
+`vpp0 := +v0 + h0 + t5 + s1*upp0`.  It was the only file in the corpus that did.  The construct is
+an artifact of deriving the characteristic-2 file from the odd-characteristic one, where those
+positions carry `-`: in characteristic 2 addition and subtraction are one operation, so the sign
+was preserved as a trace of the derivation rather than kept for a reason.  Every one is now gone.
+
+**The change moves no operation count, and that is measured rather than argued.**
+`verification/_parser.py` has always accepted a leading `+`, consuming it and returning the operand
+unwrapped, so the two spellings produce the same tree.  Parsing both versions gives 27 functions
+each, 0 unparsable, **0 AST differences**, and 350 identical branch labels.  `opcount.py --json`
+for the family is byte-identical across the change, md5 `3c7920cde1c327e96f2c1ef482f53e6d`.
+
+**Only 18 of the 237 were live code**; the other 219 sat in commented-out derivation notes.  The
+live ones are in six functions: `Deg12ADDUP2` 1, `Deg2ADD` 1, `Deg2ADDUP2` 8, `Deg23ADD` 2,
+`Deg23ADDUP` 4, `Deg3ADD` 2.
+
+**The cost of doing it, stated because it is a real one.**  `Thesis/ERRATA.md` E-T8 cited this file
+at line 4173 by text as the worked example of `latexConverter.py`'s "a unary sign was charged as an
+addition" fault.  That specimen no longer exists in the tree, so the entry now quotes the original
+text and records that it was removed.  The fault in the converter is untouched and the converter
+remains unrepaired.  No published cell moves: the eighteen cells E-T8 corrects were established by
+the fixed static scan and by the interpreter, neither of which ever charged a leading sign, and
+those corrections landed before this change.  **The two counts of eighteen are unrelated** and the
+coincidence should not be read as an identity.
+
+**The argument against having done it, for the record.**  Nothing in this repository needed the
+change: the parser of record accepts the construct and its own comment named this file's spelling.
+The case for it is uniformity across the corpus and the loss is a published erratum's specimen.
+That trade was the author's call, and PR4's standing decision that imported formulas are not
+respelled to suit a tool is the nearest precedent against it.

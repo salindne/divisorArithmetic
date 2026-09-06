@@ -2797,7 +2797,7 @@ Deg12ADDUP2:= function(u0,v0,up1,up0,vp1,vp0,ccs)
         t3 := h2 + upp0 + t2;
         t4 := upp0*t3;
         vpp1 := vh1 + (upp1 + upp0)*(upp1 + t3) + t2 + t4;
-        vpp0 := +vp0 + h0 + t4;
+        vpp0 := vp0 + h0 + t4;
 
         if ADD_DEBUG then "ADD104"; end if;
         return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
@@ -4170,7 +4170,7 @@ Deg2ADD:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
     //vpp := V - (V + u*s + v + h) mod upp;
     vpp2 := yn2 + t3 + s1*upp2;
     vpp1 := vh1 + t6 + s1*upp1;
-    vpp0 := +v0 + h0 + t5 + s1*upp0;
+    vpp0 := v0 + h0 + t5 + s1*upp0;
 
     if ADD_DEBUG then "ADD155"; end if;
     return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
@@ -4305,7 +4305,7 @@ Deg2ADDUP:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             m2 := vh1 + v1 + up0*up1 + up1*t1;
             m1 := vp0 + v0 + h0 + up0*t1;
 
-            if IsZero(m1) and IsZero(m2) then //vp = +v+h
+            if IsZero(m1) and IsZero(m2) then //vp = v+h
 
                 if ADD_DEBUG then "ADD156"; end if;
                 return 0,0,0,1,yn2,yn1,yn0,1;
@@ -4382,8 +4382,8 @@ Deg2ADDUP:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
                     return 0,0,1,upp0,yn2,yn1,vpp0,2;
                 end if;//sp0
 
-                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp   := upp/LeadingCoefficient(upp);
                 w0 := (dw*sp0)^-1;
                 w1 := w0*dw^2;
@@ -4401,8 +4401,8 @@ Deg2ADDUP:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
                 return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
             end if;//sp1
             
-            //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(u*s + 2*v + h) + k, up); 
+            //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(u*s + 2*v + h) + k, up); 
             //upp := upp/LeadingCoefficient(upp);
             w0 := (dw*sp1)^-1;  //1/s1*D
             w1 := dw^2*w0;  //1/s1
@@ -4432,7 +4432,7 @@ Deg2ADDUP:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
         end if;//m3
 
-        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (+m3)^-1;
+        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (m3)^-1;
         //S1 := dw1*a1;//S10 := m4*a1;//S1 := x + S10;
         //dw := (vp+v+h) mod S1;// = (b2^-1)*S for S,a2,b2 = XGCD(S1,v + vp + h);
         M2 := m3^2;
@@ -4510,8 +4510,8 @@ Deg2ADDUP:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
                 return 0,0,1,upp0,yn2,yn1,vpp0,2;
             end if;//sp0
 
-            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp   := upp/LeadingCoefficient(upp);
             w0 := (dw*sp0)^-1;
             w1 := w0*dw^2;
@@ -4528,8 +4528,8 @@ Deg2ADDUP:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
         end if;//sp1
         
-        //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp := ExactQuotient(+s*(u*s + 2*v + h) + k, up); 
+        //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp := ExactQuotient(s*(u*s + 2*v + h) + k, up); 
         //upp := upp/LeadingCoefficient(upp);
         w0 := (dw*sp1)^-1;  //1/s1*D
         w1 := dw^2*w0;  //1/s1
@@ -4587,8 +4587,8 @@ Deg2ADDUP:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             return 0,0,1,upp0,yn2,yn1,vpp0,2;
         end if;//sp0
 
-        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp   := upp/LeadingCoefficient(upp);
         w0 := (d*sp0)^-1;
         w1 := w0*d^2;
@@ -4605,8 +4605,8 @@ Deg2ADDUP:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
         return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
     end if;//sp1
     
-    //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-    //upp := ExactQuotient(+s*(u*s + 2*v + h) + k, up); 
+    //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+    //upp := ExactQuotient(s*(u*s + 2*v + h) + k, up); 
     //upp := upp/LeadingCoefficient(upp);
     w0 := (d*sp1)^-1;  //1/s1*D
     w1 := d^2*w0;  //1/s1
@@ -4764,14 +4764,14 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
     m2 := up0*m3;
     d  := m1*m4 + m2*m3;
     if IsZero(d) then
-        //dw1 := u mod up; // = (a1^-1)*S for S,a1,b1 = XGCD(u,up); // +m3x + m4
+        //dw1 := u mod up; // = (a1^-1)*S for S,a1,b1 = XGCD(u,up); // m3x + m4
         if IsZero(m3) then //u = up
             //dw2 := (vp+v+h) mod up;// = (b2^-1)*S for S,a2,b2 = XGCD(u,v + vp + h);
             vh1 := vp1 + h1;
             t1 := up0 + h2 + up1^2;
             dw21:= v1 + vh1 + up1*(up0 + t1);
             dw20:= vp0 + v0 + h0 + up0*t1;
-            if IsZero(dw21) then //vp = +v+h
+            if IsZero(dw21) then //vp = v+h
 
                 if ADD_DEBUG then "ADD171"; end if;
                 return 0,0,0,1,yn2,yn1,yn0,0;
@@ -4814,14 +4814,14 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
                     end if;//w2
 
                     w0 := (dw21*w2)^-1;
-                    w1 := t0*t1*w0;    //1/(+s0*h2 + k2)
+                    w1 := t0*t1*w0;    //1/(s0*h2 + k2)
                     w3 := w0*w2;    //1/dw21
                     w4 := w3^2;     //1/t0
                     s0 := sp0*w4^2;
                     up0 := up0*w3;
 
                     //M2  := ExactQuotient(s*(vp + vp + h) + k*S, up);
-                    //upp := +s^2 + M2;
+                    //upp := s^2 + M2;
                     //upp := upp/LeadingCoefficient(upp);
                     upp0 := w1*(s0*(s0 + h1) + w3*kp1) + up0;
                     
@@ -4840,7 +4840,7 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
                 up0 := up0*w3;
 
                 //M2  := ExactQuotient(s*(vp + vp + h) + k*S, up);
-                //upp := +s^2 + M2;
+                //upp := s^2 + M2;
                 //upp := upp/LeadingCoefficient(upp);
                 upp1 := w2*(h2*s0 + w3*kp2) + up0;
                 upp0 := w2*(s0*(h1 + s0) + w3*kp1) + up0*upp1;
@@ -4857,7 +4857,7 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             end if;//w0  
 
             w1 := (dw21*w0)^-1;
-            w2 := t0*t1*w1;    //1/(+s0*c4 + k4)
+            w2 := t0*t1*w1;    //1/(s0*c4 + k4)
             w3 := w1*w0;    //1/dw21
             w4 := w3^2;     //1/t0
             s0 := sp0*w4^2;
@@ -4866,7 +4866,7 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             w5 := w2*w3;
 
             //M2  := ExactQuotient(s*(vp + vp + h) + k*S, up);
-            //upp := +s^2 + M2;
+            //upp := s^2 + M2;
             //upp := upp/LeadingCoefficient(upp);
             upp2 := w5*kp3 + up0;
             upp1 := h2*spp0 + w5*kp2 + up0*upp2;
@@ -4881,7 +4881,7 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
         end if;//m3
 
-        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (+m3)^-1;
+        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (m3)^-1;
         //S1 := dw1*a1;//S10 := m4*a1;//S1 := x + S10;
         //dw := (vp+v+h) mod S1;// = (b2^-1)*S for S,a2,b2 = XGCD(S1,v + vp + h);
         M2 := m3^2;
@@ -4927,8 +4927,8 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
                     s0 := sp0*w4;
                     up0 := up0*w3;
 
-                    //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp   := upp/LeadingCoefficient(upp);
                     upp0 := w1*(s0*(h1 + s0) + w4*w3*k1) + up0;
                     
@@ -4946,8 +4946,8 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
                 s0 := sp0*w4;
                 up0 := up0*w3;
 
-                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp   := upp/LeadingCoefficient(upp);
                 upp1 := w2*(s0*h2 + w4*k2) + up0;
                 upp0 := w2*(s0*(h1 + s0) + w4*w3*k1) + up0*upp1;
@@ -4970,8 +4970,8 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             s0 := sp0*w4;
             up0 := up0*w3;
 
-            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp   := upp/LeadingCoefficient(upp);
             upp2 := w2*w3*k3 + up0;
             upp1 := w2*(s0*h2 + w4*k2) + up0*upp2;
@@ -5025,8 +5025,8 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
                 return 0,0,1,upp0,yn2,yn1,vpp0,1;
             end if;//sp0
 
-            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp   := upp/LeadingCoefficient(upp);
             w0 := (dw*sp0)^-1;
             w1 := w0*dw^2;
@@ -5037,15 +5037,15 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             //vpp   := V + (V + s*u + v + h) mod upp;
             t0 := upp1;
             t1 := s0 + h2 + upp0 + upp1^2;
-            vpp1 := +v1 + h1 + s0*u1 + upp1*(upp0 + t1);
-            vpp0 := +v0 + h0 + s0*u0 + upp0*t1;
+            vpp1 := v1 + h1 + s0*u1 + upp1*(upp0 + t1);
+            vpp0 := v0 + h0 + s0*u0 + upp0*t1;
 
             if ADD_DEBUG then "ADD182"; end if;
             return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
         end if;//sp1
         
-        //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp := ExactQuotient(+s*(u*s + 2*v + h) + k, up); 
+        //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp := ExactQuotient(s*(u*s + 2*v + h) + k, up); 
         //upp := upp/LeadingCoefficient(upp);
         W := dw*sp1;
         W2:= W^2;
@@ -5119,8 +5119,8 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             t2 := upp1^2;
             t3 := h2 + upp0 + t2;
             t4 := upp0*t3;
-            vpp1 := +vp1*w2 + h1 + (upp1 + upp0)*(upp1 + t3) + t2 + t4;
-            vpp0 := +vp0*w2 + h0 + t4;
+            vpp1 := vp1*w2 + h1 + (upp1 + upp0)*(upp1 + t3) + t2 + t4;
+            vpp0 := vp0*w2 + h0 + t4;
 
             if ADD_DEBUG then "ADD185"; end if;
             return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
@@ -5177,8 +5177,8 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
             return 0,0,1,upp0,yn2,yn1,vpp0,1;
         end if;//sp0
 
-        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp   := upp/LeadingCoefficient(upp);
         w0 := (d*sp0)^-1;
         w1 := w0*d^2;
@@ -5189,15 +5189,15 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
         //vpp   := V + (V + s*u + v + h) mod upp;
         t0 := upp1;
         t1 := s0 + h2 + upp0 + upp1^2;
-        vpp1 := +v1 + h1 + s0*u1 + upp1*(upp0 + t1);
-        vpp0 := +v0 + h0 + s0*u0 + upp0*t1;
+        vpp1 := v1 + h1 + s0*u1 + upp1*(upp0 + t1);
+        vpp0 := v0 + h0 + s0*u0 + upp0*t1;
 
         if ADD_DEBUG then "ADD189"; end if;
         return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
     end if;//sp1
     
-    //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-    //upp := ExactQuotient(+s*(u*s + 2*v + h) + k, up); 
+    //M1:=ExactQuotient(u*s+vp+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+    //upp := ExactQuotient(s*(u*s + 2*v + h) + k, up); 
     //upp := upp/LeadingCoefficient(upp);
     W := d*sp1;
     W2:= W^2;
@@ -5271,8 +5271,8 @@ Deg2ADDUP2:= function(u1,u0,v1,v0,up1,up0,vp1,vp0,ccs)
         t2 := upp1^2;
         t3 := h2 + upp0 + t2;
         t4 := upp0*t3;
-        vpp1 := +vp1*w2 + h1 + (upp1 + upp0)*(upp1 + t3) + t2 + t4;
-        vpp0 := +vp0*w2 + h0 + t4;
+        vpp1 := vp1*w2 + h1 + (upp1 + upp0)*(upp1 + t3) + t2 + t4;
+        vpp0 := vp0*w2 + h0 + t4;
 
         if ADD_DEBUG then "ADD192"; end if;
         return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
@@ -5447,7 +5447,7 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             m2 := vh1 + vp1 + u0*u1 + u1*t1;
             m1 := v0 + vp0 + h0 + u0*t1;
 
-            if IsZero(m1) and IsZero(m2) then //vp = +v+h
+            if IsZero(m1) and IsZero(m2) then //vp = v+h
                 //upp := ExactQuotient(u,up);
                 //vpp := V + (V + v) mod upp;
                 upp0 := up2 + u1;                
@@ -5542,8 +5542,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,0,1,upp0,yn2,yn1,vpp0,2;
                 end if;//sp0
 
-                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp   := upp/LeadingCoefficient(upp);
                 w0 := (dw*sp0)^-1;
                 w1 := w0*dw^2;
@@ -5574,8 +5574,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return 0,0,0,1,yn2,yn1,yn0,0;
                     end if;//w2
 
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     w0 := (w2*dw)^-1;
                     w1 := w0*D*dw;
@@ -5599,8 +5599,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,0,1,upp0,yn2,yn1,vpp0,0;
                 end if;//w1
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 w0 := (w1*dw)^-1;
                 w2 := w0*D*dw;;
@@ -5627,14 +5627,14 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 t7 := l2 + vp2 + y2 + upp0*t4 + t6;
                 t8 := upp0*t7;
                 vpp1 := vh1 + l1 + (upp0 + upp1)*(t5 + t7) + t6 + t8; 
-                vpp0 := +vp0 + h0 + l0 + t8;
+                vpp0 := vp0 + h0 + l0 + t8;
 
                 if ADD_DEBUG then "ADD201"; end if;
                 return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
             end if;//w0
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
             w1 := (w0*dw)^-1;
             w2 := w1*D*dw;;
@@ -5669,7 +5669,7 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
         end if;//m3
 
-        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (+m3)^-1;
+        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (m3)^-1;
         //S1 := dw1*a1;//S10 := m4*a1;//S1 := x + S10;
         //dw := (vp+v+h) mod S1;// = (b2^-1)*S for S,a2,b2 = XGCD(S1,v + vp + h);
         M2 := m3^2;
@@ -5755,8 +5755,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 return 0,0,1,upp0,yn2,yn1,vpp0,2;
             end if;//sp0
 
-            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp   := upp/LeadingCoefficient(upp);
             w0 := (dw*sp0)^-1;
             w1 := w0*dw^2;
@@ -5787,8 +5787,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,0,0,1,yn2,yn1,yn0,0;
                 end if;//w2
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 w0 := (w2*dw)^-1;
                 w1 := w0*D*dw;
@@ -5806,14 +5806,14 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
                 //vpp := V + (V + s*u + v + h) mod upp;
                 t3 := upp0*(vp2 + y2 + l2 + upp0*(l3 + upp0*(s1 + 1)));
-                vpp0 := +vp0 + h0 + l0 + upp0*(vp1 + y1 + l1 + t3);
+                vpp0 := vp0 + h0 + l0 + upp0*(vp1 + y1 + l1 + t3);
 
                 if ADD_DEBUG then "ADD208"; end if;
                 return 0,0,1,upp0,yn2,yn1,vpp0,0;
             end if;//w1
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
             w0 := (w1*dw)^-1;
             w2 := w0*D*dw;;
@@ -5845,8 +5845,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
         end if;//w0
 
-        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp := upp/LeadingCoefficient(upp);
         w1 := (w0*dw)^-1;
         w2 := w1*D*dw;;
@@ -5913,8 +5913,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 0,0,1,upp0,yn2,yn1,vpp0,2;
         end if;//sp0
 
-        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp   := upp/LeadingCoefficient(upp);
         w0 := (d*sp0)^-1;
         w1 := w0*d^2;
@@ -5945,8 +5945,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 return 0,0,0,1,yn2,yn1,yn0,0;
             end if;//w2
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
             w0 := (w2*d)^-1;
             w1 := w0*D*d;
@@ -5970,8 +5970,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 0,0,1,upp0,yn2,yn1,vpp0,0;
         end if;//w1
 
-        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp := upp/LeadingCoefficient(upp);
         w0 := (w1*d)^-1;
         w2 := w0*D*d;
@@ -6003,8 +6003,8 @@ Deg23ADD:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
         return 0,1,upp1,upp0,yn2,vpp1,vpp0,0;
     end if;//w0
 
-    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
     //upp := upp/LeadingCoefficient(upp);
     w1 := (w0*d)^-1;
     w2 := w1*D*d;
@@ -6211,7 +6211,7 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             t1 := u0 + vp2 + y2 + u1^2;
             m2 := vh1 + vp1 + u0*u1 + u1*t1;
             m1 := v0 + vp0 + h0 + u0*t1;
-            if IsZero(m1) and IsZero(m2) then //vp = +v+h
+            if IsZero(m1) and IsZero(m2) then //vp = v+h
                 //upp := ExactQuotient(u,up);
                 //vpp := V + (V + v) mod upp;
                 upp0 := up2 + u1;                
@@ -6235,7 +6235,7 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
                 //b2 := LeadingCoefficient(dw2)^-1;
                 //S := dw2*b2;
-                //S0 := +m1;
+                //S0 := m1;
                 //u := ExactQuotient(u,S);
                 M2 := m2^2;
                 un1 := m2*up2 + m1;
@@ -6267,15 +6267,15 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         end if;//w2
                         
                         w0 := (m2*w2)^-1;
-                        w1 := M4^2*m2*w0;    //1/(+s0*(vp2+y2 + s0) + k2)
+                        w1 := M4^2*m2*w0;    //1/(s0*(vp2+y2 + s0) + k2)
                         w3 := w0*w2;    //1/m2
                         w4 := w3^2;     //1/M2
                         s0 := sp0*w4^2;
                         u0 := u0*w3;
                         t0 := s0*un1*w3;
 
-                        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                        //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                        //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                         //upp   := upp/LeadingCoefficient(upp);
                         upp0 := w1*(s0*(h1 + t0) + w3*k1) + u0;
                         
@@ -6294,8 +6294,8 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     u0 := u0*w3;
                     t4 := s0*un1*w3;
 
-                    //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp   := upp/LeadingCoefficient(upp);
                     upp1 := w2*(s0*(h2 + s0) + w3*k2) + u0;
                     upp0 := w2*(s0*(h1 + t4) + w3*k1) + u0*upp1;
@@ -6318,8 +6318,8 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 u0 := u0*w3;
                 t3 := s0*un1*w3;
 
-                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp   := upp/LeadingCoefficient(upp);
                 upp2 := w2*w3*k3 + u0;
                 upp1 := w2*(s0*(h2 + s0) + w3*k2) + u0*upp2;
@@ -6375,8 +6375,8 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,0,1,upp0,yn2,yn1,vpp0,1;
                 end if;//sp0
 
-                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp   := upp/LeadingCoefficient(upp);
                 w0 := (dw*sp0)^-1;
                 w1 := w0*dw^2;
@@ -6408,12 +6408,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return ccs[3][1][4],ccs[3][1][3],ccs[3][1][2],ccs[3][1][1],ccs[3][1][8],ccs[3][1][7],ccs[3][1][6],ccs[3][1][5];
                     end if;//w2
 
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
-                    W := w2*dw;            //dw^3*(+s1*(s1 + c4))
-                    W2 := W^2;              //dw^6*(+s1*(s1 + c4))^2
-                    W3 := W*W2;             //dw^5*(+s1*(s1 + c4))^2  
+                    W := w2*dw;            //dw^3*(s1*(s1 + c4))
+                    W2 := W^2;              //dw^6*(s1*(s1 + c4))^2
+                    W3 := W*W2;             //dw^5*(s1*(s1 + c4))^2  
                     W4 := W2^2;
                     
                     //l := s*u; //l4 := s1
@@ -6427,7 +6427,7 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
                     //vpp := V + (V + s*u + v + h) mod upp;
                     t3 := u0*(W2*(vp2 + y2) + W*w2*l2 + u0*(w2*l3 + upp0*(sp1 + dw))); //W3
-                    v0 := W4*(+vp0 + h0) + W3*w2*l0 + u0*(W3*(vp1 + y1) + W2*w2*l1 + t3); //W4
+                    v0 := W4*(vp0 + h0) + W3*w2*l0 + u0*(W3*(vp1 + y1) + W2*w2*l1 + t3); //W4
                     
                     //z := (f+vpp*(vpp + h))/c4;
                     z4  := v0 + W4*yn0;               //W4
@@ -6502,12 +6502,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
                 end if;//w1
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
-                W := w1*dw;            //dw^3*(+s1*(s1 + c4))
-                W2 := W^2;              //dw^6*(+s1*(s1 + c4))^2
-                W3 := W*W2;             //dw^5*(+s1*(s1 + c4))^2  
+                W := w1*dw;            //dw^3*(s1*(s1 + c4))
+                W2 := W^2;              //dw^6*(s1*(s1 + c4))^2
+                W3 := W*W2;             //dw^5*(s1*(s1 + c4))^2  
                 Wp := W2*w1;  
 
                 //l := s*u; //l4 := s1
@@ -6612,12 +6612,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
             end if;//w0
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
-            W := w0*dw;            //dw^3*(+s1*(s1 + c4))
-            W2 := W^2;              //dw^6*(+s1*(s1 + c4))^2
-            W3 := W*w0;             //dw^5*(+s1*(s1 + c4))^2    
+            W := w0*dw;            //dw^3*(s1*(s1 + c4))
+            W2 := W^2;              //dw^6*(s1*(s1 + c4))^2
+            W3 := W*w0;             //dw^5*(s1*(s1 + c4))^2    
 
             //l := s*u; //l4 := s1
             t1 := sp1*up1;
@@ -6724,7 +6724,7 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
         end if;//m3
 
-        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (+m3)^-1;
+        //a1 := LeadingCoefficient(dw1)^-1; //a1 := (m3)^-1;
         //S1 := dw1*a1;//S10 := m4*a1;//S1 := x + S10;
         //dw := (vp+v+h) mod S1;// = (b2^-1)*S for S,a2,b2 = XGCD(S1,v + vp + h);
         M2 := m3^2;
@@ -6743,7 +6743,7 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             //S1 = S, a2 = 1, b2 = 0;
             //a1 := LeadingCoefficient(dw1)^-1;
             //S1 := dw1*a1;
-            //a1 := +m3^-1;
+            //a1 := m3^-1;
             //S10 := m4;
 
             //u := ExactQuotient(u,S1);
@@ -6756,7 +6756,7 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             sp0 := M2*(vp0 + v0) + u0*(m3*(v1 + vp1) + u0*(yn2 + vp2));
 
             //k := ExactQuotient(f + v*(v + h),u);
-            vh2 := +vp2 + h2;
+            vh2 := vp2 + h2;
             t1  := vp1 + yn1;
             k4  := vp2 + yn2;
             k3  := m3*t1 + un1*k4;                                     //m3
@@ -6783,8 +6783,8 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     u0 := u0*w3;
                     t0 := s0*un1*w3;
 
-                    //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp   := upp/LeadingCoefficient(upp);
                     upp0 := w1*(s0*(h1 + t0) + w5*k1) + u0;
                     
@@ -6804,8 +6804,8 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 u0 := u0*w3;
                 t4 := s0*un1*w3;
 
-                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp   := upp/LeadingCoefficient(upp);
                 upp1 := w2*(s0*(h2 + s0) + w4*k2) + u0;
                 upp0 := w2*(s0*(h1 + t4) + w5*k1) + u0*upp1;
@@ -6830,8 +6830,8 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             u0 := u0*w3;
             t3 := s0*un1*w3;
 
-            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp   := upp/LeadingCoefficient(upp);
             upp2 := w2*w3*k3 + u0;
             upp1 := w2*(s0*(h2 + s0) + w4*k2) + u0*upp2;
@@ -6888,8 +6888,8 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 return 0,0,1,upp0,yn2,yn1,vpp0,1;
             end if;//sp0
 
-            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp   := upp/LeadingCoefficient(upp);
             w0 := (dw*sp0)^-1;
             w1 := w0*dw^2;
@@ -6921,12 +6921,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return ccs[3][1][4],ccs[3][1][3],ccs[3][1][2],ccs[3][1][1],ccs[3][1][8],ccs[3][1][7],ccs[3][1][6],ccs[3][1][5];
                 end if;//w2
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
-                W := w2*dw;            //dw^3*(+s1*(s1 + c4))
-                W2 := W^2;              //dw^6*(+s1*(s1 + c4))^2
-                W3 := W*W2;             //dw^5*(+s1*(s1 + c4))^2  
+                W := w2*dw;            //dw^3*(s1*(s1 + c4))
+                W2 := W^2;              //dw^6*(s1*(s1 + c4))^2
+                W3 := W*W2;             //dw^5*(s1*(s1 + c4))^2  
                 W4 := W2^2;
                 
                 //l := s*u; //l4 := s1
@@ -6940,7 +6940,7 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
                 //vpp := V + (V + s*u + v + h) mod upp;
                 t3 := u0*(W2*(vp2 + y2) + W*w2*l2 + u0*(w2*l3 + upp0*(sp1 + dw))); //W3
-                v0 := W4*(+vp0 + h0) + W3*w2*l0 + u0*(W3*(vp1 + y1) + W2*w2*l1 + t3); //W4
+                v0 := W4*(vp0 + h0) + W3*w2*l0 + u0*(W3*(vp1 + y1) + W2*w2*l1 + t3); //W4
                 
                 //z := (f+vpp*(vpp + h))/c4;
                 z4  := v0 + W4*yn0;               //W4
@@ -7015,12 +7015,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
             end if;//w1
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
-            W := w1*dw;            //dw^3*(+s1*(s1 + c4))
-            W2 := W^2;              //dw^6*(+s1*(s1 + c4))^2
-            W3 := W*W2;             //dw^5*(+s1*(s1 + c4))^2  
+            W := w1*dw;            //dw^3*(s1*(s1 + c4))
+            W2 := W^2;              //dw^6*(s1*(s1 + c4))^2
+            W3 := W*W2;             //dw^5*(s1*(s1 + c4))^2  
             Wp := W2*w1;  
 
             //l := s*u; //l4 := s1
@@ -7125,12 +7125,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
         end if;//w0
 
-        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp := upp/LeadingCoefficient(upp);
-        W := w0*dw;            //dw^3*(+s1*(s1 + c4))
-        W2 := W^2;              //dw^6*(+s1*(s1 + c4))^2
-        W3 := W*w0;             //dw^5*(+s1*(s1 + c4))^2    
+        W := w0*dw;            //dw^3*(s1*(s1 + c4))
+        W2 := W^2;              //dw^6*(s1*(s1 + c4))^2
+        W3 := W*w0;             //dw^5*(s1*(s1 + c4))^2    
 
         //l := s*u; //l4 := s1
         t1 := sp1*up1;
@@ -7269,8 +7269,8 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 0,0,1,upp0,yn2,yn1,vpp0,1;
         end if;//sp0
 
-        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp  := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(upp*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp  := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp   := upp/LeadingCoefficient(upp);
         w0 := (d*sp0)^-1;
         w1 := w0*d^2;
@@ -7302,12 +7302,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 return ccs[3][1][4],ccs[3][1][3],ccs[3][1][2],ccs[3][1][1],ccs[3][1][8],ccs[3][1][7],ccs[3][1][6],ccs[3][1][5];
             end if;//w2
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
-            W := w2*d;            //d^3*(+s1*(s1 + c4))
-            W2 := W^2;              //d^6*(+s1*(s1 + c4))^2
-            W3 := W*W2;             //d^5*(+s1*(s1 + c4))^2  
+            W := w2*d;            //d^3*(s1*(s1 + c4))
+            W2 := W^2;              //d^6*(s1*(s1 + c4))^2
+            W3 := W*W2;             //d^5*(s1*(s1 + c4))^2  
             W4 := W2^2;
             
             //l := s*u; //l4 := s1
@@ -7321,7 +7321,7 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
             //vpp := V + (V + s*u + v + h) mod upp;
             t3 := u0*(W2*(vp2 + y2) + W*w2*l2 + u0*(w2*l3 + upp0*(sp1 + d))); //W3
-            v0 := W4*(+vp0 + h0) + W3*w2*l0 + u0*(W3*(vp1 + y1) + W2*w2*l1 + t3); //W4
+            v0 := W4*(vp0 + h0) + W3*w2*l0 + u0*(W3*(vp1 + y1) + W2*w2*l1 + t3); //W4
             
             //z := (f+vpp*(vpp + h))/c4;
             z4  := v0 + W4*yn0;               //W4
@@ -7396,12 +7396,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
         end if;//w1
 
-        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp := upp/LeadingCoefficient(upp);
-        W := w1*d;            //d^3*(+s1*(s1 + c4))
-        W2 := W^2;              //d^6*(+s1*(s1 + c4))^2
-        W3 := W*W2;             //d^5*(+s1*(s1 + c4))^2  
+        W := w1*d;            //d^3*(s1*(s1 + c4))
+        W2 := W^2;              //d^6*(s1*(s1 + c4))^2
+        W3 := W*W2;             //d^5*(s1*(s1 + c4))^2  
         Wp := W2*w1;  
 
         //l := s*u; //l4 := s1
@@ -7506,12 +7506,12 @@ Deg23ADDUP:= function(u1,u0,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
         return 1,upp2,upp1,upp0,vpp2,vpp1,vpp0,0;
     end if;//w0
 
-    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
     //upp := upp/LeadingCoefficient(upp);
-    W := w0*d;            //d^3*(+s1*(s1 + c4))
-    W2 := W^2;              //d^6*(+s1*(s1 + c4))^2
-    W3 := W*w0;             //d^5*(+s1*(s1 + c4))^2    
+    W := w0*d;            //d^3*(s1*(s1 + c4))
+    W2 := W^2;              //d^6*(s1*(s1 + c4))^2
+    W3 := W*w0;             //d^5*(s1*(s1 + c4))^2    
 
     //l := s*u; //l4 := s1
     t1 := sp1*up1;
@@ -8050,8 +8050,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                                 if ADD_DEBUG then "ADD276"; end if;
                                 return 0,0,0,1,yn2,yn1,yn0,3;
                             end if;//w3
-                            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                             //upp := upp/LeadingCoefficient(upp);
                             w4 := (w3*w1)^-1;
                             w5 := w4*w3;            //1/w1
@@ -8069,8 +8069,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                             return 0,0,1,upp0,yn2,yn1,vpp0,2;
                         end if;//w2
 
-                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                         //upp := upp/LeadingCoefficient(upp);
                         w4 := (w2*w1)^-1;
                         w5 := w4*w2;            //1/w1
@@ -8092,8 +8092,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
                     end if;//sp1
 
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     w0 := (w1*sp1)^-1;  //1/s1*W2^2
                     w2 := W2^2*w0;  //1/s1*c4
@@ -8225,8 +8225,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                                 if ADD_DEBUG then "ADD281"; end if;
                                 return 0,0,0,1,yn2,yn1,yn0,3;
                             end if;//w1
-                            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                             //upp := upp/LeadingCoefficient(upp);
                             w0 := d*w3;
                             w2 := (w1*w0)^-1;
@@ -8245,8 +8245,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                             return 0,0,1,upp0,yn2,yn1,vpp0,2;
                         end if;//w2
 
-                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                        //upp := ExactQuotient(+s*(s*up + 2*v + h) + k, up);
+                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                        //upp := ExactQuotient(s*(s*up + 2*v + h) + k, up);
                         //upp := upp/LeadingCoefficient(upp);
                         w0 := d*w3;
                         w1 := (w2*w0)^-1;
@@ -8269,8 +8269,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
                 end if;//sp1
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 w0 := d*w3;
                 w1 := (w0*sp1)^-1;  //1/s1*d^2*w3
@@ -8347,8 +8347,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                             if ADD_DEBUG then "ADD285"; end if;
                             return 0,0,0,1,yn2,yn1,yn0,3;
                         end if;//w3
-                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                         //upp := upp/LeadingCoefficient(upp);
                         w4 := (w3*T1)^-1;
                         w5 := w4*w3;            //1/T1
@@ -8366,8 +8366,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return 0,0,1,upp0,yn2,yn1,vpp0,2;
                     end if;//w2
 
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     w4 := (w2*T1)^-1;
                     w5 := w4*w2;            //1/T1
@@ -8389,8 +8389,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
                 end if;//sp1
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 w0 := (T1*sp1)^-1;  //1/s1*T3
                 w2 := T3*w0;  //1/s1*c4
@@ -8459,8 +8459,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return 0,0,0,1,yn2,yn1,yn0,2;
                     end if;//sp0
 
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     w1 := (dw2*sp0)^-1;
                     w2 := w1*sp0;
@@ -8484,8 +8484,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         if ADD_DEBUG then "ADD291"; end if;
                         return 0,0,0,1,yn2,yn1,yn0,0;
                     end if;//w1
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     k3 := v2 + yn2;
                     w0 := w1*sp1;           
@@ -8510,8 +8510,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,0,1,upp0,yn2,yn1,vpp0,0;
                 end if;//w0
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 k3 := v2 + yn2;
                 w1 := w0*sp1;           //s1*(s1 + c4)*D
@@ -8572,8 +8572,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     end if;//k3
 
                     //M2  := ExactQuotient(k*q, up);
-                    //upp := +q*M2;
-                    //l := ExactQuotient(+upp, q);
+                    //upp := q*M2;
+                    //l := ExactQuotient(upp, q);
                     //upp := upp/LeadingCoefficient(upp);           
                     w3 := (k3*sp2)^-1;  //1/s2*k3*dw2
                     w4 := w3*k3;        //1/s2*dw2
@@ -8585,7 +8585,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     upp1 := t1 + t2;
                     upp0 := t1*t2;
                     
-                    //vpp := +V + h + (M2 + v + V) mod upp;
+                    //vpp := V + h + (M2 + v + V) mod upp;
                     t1 := upp1^2;
                     t2 := y2 + v2 + upp0 + t1;
                     t3 := t2*upp0;
@@ -8607,7 +8607,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
                     //q,r := Quotrem(up,s);
                     //M1  := ExactQuotient(u*r + (vp + v)*q, up);
-                    //M2  := ExactQuotient(+r*(vp + v + h) + k*q, up);
+                    //M2  := ExactQuotient(r*(vp + v + h) + k*q, up);
                     //upp := r*M1 + q*M2;
                     w5 := (t11*w4)^-1;
                     w6 := w5*t11;        //1/(k2*q1 + k3*q0 + r0*c3)(s2^2*dw2^2)
@@ -8618,7 +8618,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     upp0 := w9 + w2*w6*(w10 + vp2 + v2);
 
                     //upp2 := q1*(c4*r0 + k3*q1)
-                    //vpp := +V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
+                    //vpp := V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
                     //l2 := w10;
                     t1 := w10*(u2 + w9);
                     t0 := w10*u1 + w4*w8^2 + w9*t1;
@@ -8637,7 +8637,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 w10:= w3*w7^2;          //c4*r0 + k3*q1
 
                 //M1  := ExactQuotient(u*r + (vp + v)*q, up);
-                //M2  := ExactQuotient(+r*(vp + v + h) + k*q, up);
+                //M2  := ExactQuotient(r*(vp + v + h) + k*q, up);
                 //upp := r*M1 + q*M2;
                 //upp := upp/LeadingCoefficient(upp);
                 t1 := w5*(k3*w0*dw2 + t11*k2) + up2;
@@ -8645,7 +8645,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 upp0 := t1*w8 + w5*w2*(w9 + vp2 + v2);
 
                 //upp2 := q1*(c4*r0 + k3*q1)
-                //vpp := +V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
+                //vpp := V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
                 t1 := upp1^2;
                 t2 := y2 + v2 + w9 + upp0 + t1;
                 t3 := upp0*t2;
@@ -8686,7 +8686,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             upp1 := vt2 + rq11*t7 + rq01 + rq01 + M20p + qq01*M21p;
             upp0 := rr01*vt2 + rq01*(t7 + rr01) + qq01*M20p;
 
-            //vp  := + V + h  + (ExactQuotient(r*u1 + up*(c4*r1*q1)), q) + v1 + V) mod up;
+            //vp  := V + h  + (ExactQuotient(r*u1 + up*(c4*r1*q1)), q) + v1 + V) mod up;
             t3 := rq11 + upp2;
             t2 := rq11*(u2 + qq01) + rq01 + w6;
             t1 := rq11*u1 + rq01*u2 + w6*upp2 + qq01*t2;
@@ -8700,7 +8700,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
         end if;//t7
 
         //dw3 := up mod dw1;
-        //dw31 := m7/T1; //dw30 = +m8/T1;
+        //dw31 := m7/T1; //dw30 = m8/T1;
         m8 := t7*t2 + t1*t8;
         
         if IsZero(m7) then
@@ -8719,7 +8719,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             S0 := t1;                                       //T1
             t1 := S0*T1;                                    //T2
             t2 := T2*(vp2 + vh2) + t1 + S1^2;               //T2
-            dw21 := T3*(vp1 + vh1) + S1*(t1 + t2);          //T3     //+b1
+            dw21 := T3*(vp1 + vh1) + S1*(t1 + t2);          //T3     //b1
             dw20 := T3*(vp0 + vh0) + S0*t2;                 //T3   
             t0 := T1*dw20;
             t1 := S1*dw21;
@@ -8802,8 +8802,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                             if ADD_DEBUG then "ADD301"; end if;
                             return 0,0,0,1,yn2,yn1,yn0,3;
                         end if;//w1
-                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                         //upp := upp/LeadingCoefficient(upp);
                         w2 := (w1*W1)^-1;
                         w4 := w2*w1;            //1/W1
@@ -8821,8 +8821,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return 0,0,1,upp0,yn2,yn1,vpp0,2;
                     end if;//w2
 
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*up + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*up + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     w1 := (w2*W1)^-1;
                     w4 := w1*w2;               //1/W1
@@ -8843,8 +8843,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
                 end if;//sp1
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 w1 := (W1*sp1)^-1;  //1/s1*W4
                 w2 := W2^2*w1;    //1/s1*c4
@@ -8857,8 +8857,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 u0 := un0*w5;
                 u1 := un1*w4;
 
-                vh2 := +v2 + h2;
-                vh1 := +v1 + h1;
+                vh2 := v2 + h2;
+                vh1 := v1 + h1;
                 t1 := s1*u1;
                 l0 := s0*u0;
                 l2 := s1*u1 + s0;
@@ -8882,7 +8882,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             
             //Q := quo<R | S>;
             //b2 := R!(Q!dw2^-1) mod S;
-            //b2 = (b1/T3)x + b0/T4 where b1 := +dw21
+            //b2 = (b1/T3)x + b0/T4 where b1 := dw21
 
             //k := ExactQuotient(f + v*(v + h), u);
             t1  := v1 + yn1;
@@ -8919,8 +8919,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return 0,0,0,1,yn2,yn1,yn0,2;
                     end if;//sp0
 
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     w1 := (dw*sp0)^-1;
                     w2 := w1*sp0;
@@ -8944,8 +8944,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         if ADD_DEBUG then "ADD307"; end if;
                         return 0,0,0,1,yn2,yn1,yn0,0;
                     end if;//w1
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     k3 := v2 + yn2;
                     w0 := w1*sp1;           
@@ -8970,8 +8970,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,0,1,upp0,yn2,yn1,vpp0,0;
                 end if;//w0
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 k3 := v2 + yn2;
                 w1 := w0*sp1;           //s1*(s1 + c4)*D
@@ -9031,8 +9031,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     end if;//k3
 
                     //M2  := ExactQuotient(k*q, up);
-                    //upp := +q*M2;
-                    //l := ExactQuotient(+upp, q);
+                    //upp := q*M2;
+                    //l := ExactQuotient(upp, q);
                     //upp := upp/LeadingCoefficient(upp);           
                     w3 := (k3*sp2)^-1;  //1/s2*k3*dw
                     w4 := w3*k3;        //1/s2*dw
@@ -9044,7 +9044,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     upp1 := t1 + t2;
                     upp0 := t1*t2;
                     
-                    //vpp := +V + h + (M2 + v + V) mod upp;
+                    //vpp := V + h + (M2 + v + V) mod upp;
                     t1 := upp1^2;
                     t2 := y2 + v2 + upp0 + t1;
                     t3 := t2*upp0;
@@ -9067,7 +9067,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
                     //q,r := Quotrem(up,s);
                     //M1  := ExactQuotient(u*r + (vp + v)*q, up);
-                    //M2  := ExactQuotient(+r*(vp + v + h) + k*q, up);
+                    //M2  := ExactQuotient(r*(vp + v + h) + k*q, up);
                     //upp := r*M1 + q*M2;
                     w5 := (t11*w4)^-1;
                     w6 := w5*t11;        //1/(k2*q1 + k3*q0 + r0*c3)(s2^2*dw^2)
@@ -9078,7 +9078,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     upp0 := w9 + w2*w6*(w10 + vp2 + v2);
 
                     //upp2 := q1*(c4*r0 + k3*q1)
-                    //vpp := +V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
+                    //vpp := V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
                     //l2 := w10;
                     t1 := w10*(u2 + w9);
                     t0 := w10*u1 + w4*w8^2 + w9*t1;
@@ -9097,7 +9097,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 w10:= w3*w7^2;          //c4*r0 + k3*q1
 
                 //M1  := ExactQuotient(u*r + (vp + v)*q, up);
-                //M2  := ExactQuotient(+r*(vp + v + h) + k*q, up);
+                //M2  := ExactQuotient(r*(vp + v + h) + k*q, up);
                 //upp := r*M1 + q*M2;
                 //upp := upp/LeadingCoefficient(upp);
                 t1 := w5*(k3*w0*dw + t11*k2) + up2;
@@ -9105,7 +9105,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 upp0 := t1*w8 + w5*w2*(w9 + vp2 + v2);
 
                 //upp2 := q1*(c4*r0 + k3*q1)
-                //vpp := +V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
+                //vpp := V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
                 t1 := upp1^2;
                 t2 := y2 + v2 + w9 + upp0 + t1;
                 t3 := upp0*t2;
@@ -9146,7 +9146,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             upp1 := vt2 + rq11*t7 + rq01 + rq01 + M20p + qq01*M21p;
             upp0 := rr01*vt2 + rq01*(t7 + rr01) + qq01*M20p;
 
-            //vp  := + V + h  + (ExactQuotient(r*u1 + up*(c4*r1*q1)), q) + v1 + V) mod up;
+            //vp  := V + h  + (ExactQuotient(r*u1 + up*(c4*r1*q1)), q) + v1 + V) mod up;
             t3 := rq11 + upp2;
             t2 := rq11*(u2 + qq01) + rq01 + w6;
             t1 := rq11*u1 + rq01*u2 + w6*upp2 + qq01*t2;
@@ -9204,8 +9204,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                             return 0,0,0,1,yn2,yn1,yn0,3;
                         end if;//w1
 
-                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                         //upp := upp/LeadingCoefficient(upp);
                         w0 := d*m7;
                         w2 := (w1*w0)^-1;
@@ -9225,8 +9225,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                         return 0,0,1,upp0,yn2,yn1,vpp0,2;
                     end if;//w2
 
-                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                    //upp := ExactQuotient(+s*(s*up + 2*v + h) + k, up);
+                    //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                    //upp := ExactQuotient(s*(s*up + 2*v + h) + k, up);
                     //upp := upp/LeadingCoefficient(upp);
                     w0 := d*m7;
                     w1 := (w2*w0)^-1;
@@ -9249,8 +9249,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,1,upp1,upp0,yn2,vpp1,vpp0,1;
             end if;//sp1
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
             w0 := d*m7;
             w1 := (w0*sp1)^-1;  //1/s1*d^2
@@ -9351,8 +9351,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     return 0,0,0,1,yn2,yn1,yn0,2;
                 end if;//sp0
 
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 w1 := (dw*sp0)^-1;
                 w2 := w1*sp0;
@@ -9376,8 +9376,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                     if ADD_DEBUG then "ADD322"; end if;
                     return 0,0,0,1,yn2,yn1,yn0,0;
                 end if;//w1
-                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-                //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+                //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+                //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
                 //upp := upp/LeadingCoefficient(upp);
                 k3 := v2 + yn2;
                 w0 := w1*sp1;           
@@ -9402,8 +9402,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 return 0,0,1,upp0,yn2,yn1,vpp0,0;
             end if;//w0
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
             k3 := v2 + yn2;
             w1 := w0*sp1;           //s1*(s1 + c4)*D
@@ -9463,8 +9463,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 end if;//k3
 
                 //M2  := ExactQuotient(k*q, up);
-                //upp := +q*M2;
-                //l := ExactQuotient(+upp, q);
+                //upp := q*M2;
+                //l := ExactQuotient(upp, q);
                 //upp := upp/LeadingCoefficient(upp);           
                 w3 := (k3*sp2)^-1;  //1/s2*k3*dw
                 w4 := w3*k3;        //1/s2*dw
@@ -9476,7 +9476,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 upp1 := t1 + t2;
                 upp0 := t1*t2;
                 
-                //vpp := +V + h + (M2 + v + V) mod upp
+                //vpp := V + h + (M2 + v + V) mod upp
                 t1 := upp1^2;
                 t2 := y2 + v2 + upp0 + t1;
                 t3 := t2*upp0;
@@ -9499,7 +9499,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
                 //q,r := Quotrem(up,s);
                 //M1  := ExactQuotient(u*r + (vp + v)*q, up);
-                //M2  := ExactQuotient(+r*(vp + v + h) + k*q, up);
+                //M2  := ExactQuotient(r*(vp + v + h) + k*q, up);
                 //upp := r*M1 + q*M2;
                 w5 := (t11*w4)^-1;
                 w6 := w5*t11;        //1/(k2*q1 + k3*q0 + r0*c3)(s2^2*dw^2)
@@ -9510,7 +9510,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 upp0 := w9 + w2*w6*(w10 + vp2 + v2);
 
                 //upp2 := q1*(c4*r0 + k3*q1)
-                //vpp := +V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
+                //vpp := V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
                 //l2 := w10;
                 t1 := w10*(u2 + w9);
                 t0 := w10*u1 + w4*w8^2 + w9*t1;
@@ -9529,7 +9529,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             w10:= w3*w7^2;          //c4*r0 + k3*q1
 
             //M1  := ExactQuotient(u*r + (vp + v)*q, up);
-            //M2  := ExactQuotient(+r*(vp + v + h) + k*q, up);
+            //M2  := ExactQuotient(r*(vp + v + h) + k*q, up);
             //upp := r*M1 + q*M2;
             //upp := upp/LeadingCoefficient(upp);
             t1 := w5*(k3*w0*dw + t11*k2) + up2;
@@ -9537,7 +9537,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             upp0 := t1*w8 + w5*w2*(w9 + vp2 + v2);
 
             //upp2 := q1*(c4*r0 + k3*q1)
-            //vpp := +V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
+            //vpp := V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
             t1 := upp1^2;
             t2 := y2 + v2 + w9 + upp0 + t1;
             t3 := upp0*t2;
@@ -9578,7 +9578,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
         upp1 := vt2 + rq11*t7 + rq01 + rq01 + M20p + qq01*M21p;
         upp0 := rr01*vt2 + rq01*(t7 + rr01) + qq01*M20p;
 
-        //vp  := + V + h  + (ExactQuotient(r*u1 + up*(c4*r1*q1)), q) + v1 + V) mod up;
+        //vp  := V + h  + (ExactQuotient(r*u1 + up*(c4*r1*q1)), q) + v1 + V) mod up;
         t3 := rq11 + upp2;
         t2 := rq11*(u2 + qq01) + rq01 + w6;
         t1 := rq11*u1 + rq01*u2 + w6*upp2 + qq01*t2;
@@ -9617,8 +9617,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 return 0,0,0,1,yn2,yn1,yn0,2;
             end if;//sp0
 
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
             w1 := (d*sp0)^-1;
             w2 := w1*sp0;
@@ -9642,8 +9642,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
                 if ADD_DEBUG then "ADD333"; end if;
                 return 0,0,0,1,yn2,yn1,yn0,0;
             end if;//w1
-            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-            //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+            //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+            //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
             //upp := upp/LeadingCoefficient(upp);
             k3 := v2 + yn2;
             w0 := w1*sp1;           
@@ -9668,8 +9668,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             return 0,0,1,upp0,yn2,yn1,vpp0,0;
         end if;//w0
 
-        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=+s*M1+M2;
-        //upp := ExactQuotient(+s*(s*u + 2*v + h) + k, up);
+        //M1 := ExactQuotient(u*s+v+v,up); M2:=ExactQuotient(s*(vp+v+h)+k,up); upp:=s*M1+M2;
+        //upp := ExactQuotient(s*(s*u + 2*v + h) + k, up);
         //upp := upp/LeadingCoefficient(upp);
         k3 := v2 + yn2;
         w1 := w0*sp1;           //s1*(s1 + c4)*D
@@ -9729,8 +9729,8 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             end if;//k3
 
             //M2  := ExactQuotient(k*q, up);
-            //upp := +q*M2;
-            //l := ExactQuotient(+upp, q);
+            //upp := q*M2;
+            //l := ExactQuotient(upp, q);
             //upp := upp/LeadingCoefficient(upp);           
             w3 := (k3*sp2)^-1;  //1/s2*k3*d
             w4 := w3*k3;        //1/s2*d
@@ -9742,7 +9742,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             upp1 := t1 + t2;
             upp0 := t1*t2;
             
-            //vpp := +V + h + (M2 + v + V) mod upp
+            //vpp := V + h + (M2 + v + V) mod upp
             t1 := upp1^2;
             t2 := y2 + v2 + upp0 + t1;
             t3 := t2*upp0;
@@ -9765,7 +9765,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
 
             //q,r := Quotrem(up,s);
             //M1  := ExactQuotient(u*r + (vp + v)*q, up);
-            //M2  := ExactQuotient(+r*(vp + v + h) + k*q, up);
+            //M2  := ExactQuotient(r*(vp + v + h) + k*q, up);
             //upp := r*M1 + q*M2;
             w5 := (t11*w4)^-1;
             w6 := w5*t11;        //1/(k2*q1 + k3*q0 + r0*c3)(s2^2*d^2)
@@ -9776,7 +9776,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
             upp0 := w9 + w2*w6*(w10 + vp2 + v2);
 
             //upp2 := q1*(c4*r0 + k3*q1)
-            //vpp := +V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
+            //vpp := V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
             //l2 := w10;
             t1 := w10*(u2 + w9);
             t0 := w10*u1 + w4*w8^2 + w9*t1;
@@ -9795,7 +9795,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
         w10:= w3*w7^2;          //c4*r0 + k3*q1
 
         //M1  := ExactQuotient(u*r + (vp + v)*q, up);
-        //M2  := ExactQuotient(+r*(vp + v + h) + k*q, up);
+        //M2  := ExactQuotient(r*(vp + v + h) + k*q, up);
         //upp := r*M1 + q*M2;
         //upp := upp/LeadingCoefficient(upp);
         t1 := w5*(k3*w0*d + t11*k2) + up2;
@@ -9803,7 +9803,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
         upp0 := t1*w8 + w5*w2*(w9 + vp2 + v2);
 
         //upp2 := q1*(c4*r0 + k3*q1)
-        //vpp := +V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
+        //vpp := V + h + (ExactQuotient(u*r +upp*upp2), q) + v + V) mod upp;
         t1 := upp1^2;
         t2 := y2 + v2 + w9 + upp0 + t1;
         t3 := upp0*t2;
@@ -9845,7 +9845,7 @@ Deg3ADD:= function(u2,u1,u0,v2,v1,v0,up2,up1,up0,vp2,vp1,vp0,ccs)
     upp1 := vt2 + rq11*t7 + rq01 + rq01 + M20p + qq01*M21p;
     upp0 := rr01*vt2 + rq01*(t7 + rr01) + qq01*M20p;
 
-    //vp  := + V + h  + (ExactQuotient(r*u1 + up*(c4*r1*q1)), q) + v1 + V) mod up;
+    //vp  := V + h  + (ExactQuotient(r*u1 + up*(c4*r1*q1)), q) + v1 + V) mod up;
     t3 := rq11 + upp2;
     t2 := rq11*(u2 + qq01) + rq01 + w6;
     t1 := rq11*u1 + rq01*u2 + w6*upp2 + qq01*t2;
