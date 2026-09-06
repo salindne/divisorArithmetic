@@ -1,0 +1,238 @@
+{
+  "generated_by": "tools/gen_manifest.py",
+  "source_of_truth": "verification/driver.py discover_families()",
+  "scope": "files tracked by git, outside the rust submodule",
+  "counts": {
+    "families": 16,
+    "families_affine": 15,
+    "families_projective": 1,
+    "formula_files": 41,
+    "competitor_files": 6,
+    "excluded_files": 10,
+    "unclaimed_formula_files": 0
+  },
+  "families": [
+    {
+      "name": "ramified/g2/arb",
+      "model": "ramified",
+      "genus": 2,
+      "class": "arb",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/ramifiedModel/g2Formulas/arb_ramifiedG2_ADD.mag",
+        "DBL": "g2/ramifiedModel/g2Formulas/arb_ramifiedG2_DBL.mag"
+      }
+    },
+    {
+      "name": "ramified/g2/ch2",
+      "model": "ramified",
+      "genus": 2,
+      "class": "ch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/ramifiedModel/g2Formulas/ch2_ramifiedG2_ADD.mag",
+        "DBL": "g2/ramifiedModel/g2Formulas/ch2_ramifiedG2_DBL.mag"
+      }
+    },
+    {
+      "name": "ramified/g2/nch2",
+      "model": "ramified",
+      "genus": 2,
+      "class": "nch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/ramifiedModel/g2Formulas/nch2_ramifiedG2_ADD.mag",
+        "DBL": "g2/ramifiedModel/g2Formulas/nch2_ramifiedG2_DBL.mag"
+      }
+    },
+    {
+      "name": "ramified/g3/arb",
+      "model": "ramified",
+      "genus": 3,
+      "class": "arb",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g3/ramifiedModel/g3Formulas/arb_ramifiedG3_ADD.mag",
+        "DBL": "g3/ramifiedModel/g3Formulas/arb_ramifiedG3_DBL.mag"
+      }
+    },
+    {
+      "name": "ramified/g3/ch2",
+      "model": "ramified",
+      "genus": 3,
+      "class": "ch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g3/ramifiedModel/g3Formulas/ch2_ramifiedG3_ADD.mag",
+        "DBL": "g3/ramifiedModel/g3Formulas/ch2_ramifiedG3_DBL.mag"
+      }
+    },
+    {
+      "name": "ramified/g3/nch2",
+      "model": "ramified",
+      "genus": 3,
+      "class": "nch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g3/ramifiedModel/g3Formulas/nch2_ramifiedG3_ADD.mag",
+        "DBL": "g3/ramifiedModel/g3Formulas/nch2_ramifiedG3_DBL.mag"
+      }
+    },
+    {
+      "name": "ramified/g3/nch2/projective",
+      "model": "ramified",
+      "genus": 3,
+      "class": "nch2",
+      "coordinates": "projective",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_ADD.mag",
+        "DBL": "g3/ramifiedModel/projective/g3Formulas/nch2_ramifiedG3_DBL.mag"
+      }
+    },
+    {
+      "name": "splitneg/g2/arb",
+      "model": "splitneg",
+      "genus": 2,
+      "class": "arb",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/splitModel/negReduced/g2Formulas/arb_splitG2_ADD.mag",
+        "DBL": "g2/splitModel/negReduced/g2Formulas/arb_splitG2_DBL.mag",
+        "UTL": "g2/splitModel/negReduced/g2Formulas/arb_splitG2_UTL.mag"
+      }
+    },
+    {
+      "name": "splitneg/g2/ch2",
+      "model": "splitneg",
+      "genus": 2,
+      "class": "ch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/splitModel/negReduced/g2Formulas/ch2_splitG2_ADD.mag",
+        "DBL": "g2/splitModel/negReduced/g2Formulas/ch2_splitG2_DBL.mag",
+        "UTL": "g2/splitModel/negReduced/g2Formulas/ch2_splitG2_UTL.mag"
+      }
+    },
+    {
+      "name": "splitneg/g2/nch2",
+      "model": "splitneg",
+      "genus": 2,
+      "class": "nch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/splitModel/negReduced/g2Formulas/nch2_splitG2_ADD.mag",
+        "DBL": "g2/splitModel/negReduced/g2Formulas/nch2_splitG2_DBL.mag",
+        "UTL": "g2/splitModel/negReduced/g2Formulas/nch2_splitG2_UTL.mag"
+      }
+    },
+    {
+      "name": "splitneg/g3/arb",
+      "model": "splitneg",
+      "genus": 3,
+      "class": "arb",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g3/splitModel/negReduced/g3Formulas/arb_splitG3_ADD.mag",
+        "DBL": "g3/splitModel/negReduced/g3Formulas/arb_splitG3_DBL.mag",
+        "UTL": "g3/splitModel/negReduced/g3Formulas/arb_splitG3_UTL.mag"
+      }
+    },
+    {
+      "name": "splitneg/g3/ch2",
+      "model": "splitneg",
+      "genus": 3,
+      "class": "ch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_ADD.mag",
+        "DBL": "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_DBL.mag",
+        "UTL": "g3/splitModel/negReduced/g3Formulas/ch2_splitG3_UTL.mag"
+      }
+    },
+    {
+      "name": "splitneg/g3/nch2",
+      "model": "splitneg",
+      "genus": 3,
+      "class": "nch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g3/splitModel/negReduced/g3Formulas/nch2_splitG3_ADD.mag",
+        "DBL": "g3/splitModel/negReduced/g3Formulas/nch2_splitG3_DBL.mag",
+        "UTL": "g3/splitModel/negReduced/g3Formulas/nch2_splitG3_UTL.mag"
+      }
+    },
+    {
+      "name": "splitpos/g2/arb",
+      "model": "splitpos",
+      "genus": 2,
+      "class": "arb",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/splitModel/posReduced/g2Formulas/arb_splitG2_ADD.mag",
+        "DBL": "g2/splitModel/posReduced/g2Formulas/arb_splitG2_DBL.mag",
+        "UTL": "g2/splitModel/posReduced/g2Formulas/arb_splitG2_UTL.mag"
+      }
+    },
+    {
+      "name": "splitpos/g2/ch2",
+      "model": "splitpos",
+      "genus": 2,
+      "class": "ch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/splitModel/posReduced/g2Formulas/ch2_splitG2_ADD.mag",
+        "DBL": "g2/splitModel/posReduced/g2Formulas/ch2_splitG2_DBL.mag",
+        "UTL": "g2/splitModel/posReduced/g2Formulas/ch2_splitG2_UTL.mag"
+      }
+    },
+    {
+      "name": "splitpos/g2/nch2",
+      "model": "splitpos",
+      "genus": 2,
+      "class": "nch2",
+      "coordinates": "affine",
+      "doubling_borrowed": false,
+      "files": {
+        "ADD": "g2/splitModel/posReduced/g2Formulas/nch2_splitG2_ADD.mag",
+        "DBL": "g2/splitModel/posReduced/g2Formulas/nch2_splitG2_DBL.mag",
+        "UTL": "g2/splitModel/posReduced/g2Formulas/nch2_splitG2_UTL.mag"
+      }
+    }
+  ],
+  "competitors": [
+    "g2/timings/formulas/previousBest/geo_2011.mag",
+    "g2/timings/formulas/previousBest/geo_noTrade_2011.mag",
+    "g2/timings/formulas/previousBest/inf_2010.mag",
+    "g2/timings/formulas/previousBest/lange_2005.mag",
+    "g3/timings/formulas/previousBest/rad_2019.mag",
+    "g3/timings/formulas/previousBest/sutherland_2019.mag"
+  ],
+  "excluded": [
+    "g2/timings/arbitrary_implementation/ramFormulas/arb_ramifiedG2_ADD.mag",
+    "g2/timings/arbitrary_implementation/ramFormulas/arb_ramifiedG2_DBL.mag",
+    "g2/timings/arbitrary_implementation/splitFormulas/arb_splitG2_ADD.mag",
+    "g2/timings/arbitrary_implementation/splitFormulas/arb_splitG2_DBL.mag",
+    "g2/timings/formulas/ramFormulas/nch2_ramifiedG2_ADD.mag",
+    "g2/timings/formulas/ramFormulas/nch2_ramifiedG2_DBL.mag",
+    "g2/timings/formulas/splitFormulas/nch2_splitG2_ADD.mag",
+    "g2/timings/formulas/splitFormulas/nch2_splitG2_DBL.mag",
+    "g3/timings/formulas/splitFormulas/nch2_splitG3_ADD.mag",
+    "g3/timings/formulas/splitFormulas/nch2_splitG3_DBL.mag"
+  ],
+  "unclaimed": []
+}
