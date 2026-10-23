@@ -1,0 +1,220 @@
+///////////////////////////////////////////////////////////////////////////////
+// Competitor formula: Nyukai-Matsuo-Chao-Tsujii 2006, genus 3 ramified
+// addition. The previous best published odd characteristic genus 3 addition.
+//
+// Original source: J. Nyukai, K. Matsuo, J. Chao, S. Tsujii, "On the resultant
+//   computation in the addition Harley algorithms on hyperelliptic curves",
+//   IEICE Tech. Report ISEC2006-5, 2006 (in Japanese, not openly available).
+//
+// Transcribed from the reprint in: X. Fan, T. Wollinger, G. Gong, "Efficient
+//   Explicit Formulae for Genus 3 Hyperelliptic Curve Cryptosystems", CACR
+//   Tech. Report 2006-38, University of Waterloo, TABLE XVII (EXPLICIT FORMULA
+//   FOR ADDITION ON A HEC OF GENUS THREE OVER Fp), where it is attributed to
+//   reference [86]. Variable names, step boundaries and intermediate reuse are
+//   kept as printed so the transcription can be checked line against line.
+//
+// Curve form (TABLE XVII "Input" row), the ramified model with
+//   char(K) not 2 and f6 = 0:
+//
+//       C : Y^2 = F(X),   F = X^7 + f5X^5 + f4X^4 + f3X^3 + f2X^2 + f1X + f0
+//
+//   Only f5 and f4 are ever read; f3, f2, f1, f0 land in remainders every
+//   division discards. This is the same curve form as
+//   g3/ramifiedModel/g3Formulas/nch2_ramifiedG3_ADD.mag, so the counts below
+//   are directly comparable with that file's.
+//
+// Divisor convention: D1 = (U1,V1) and D2 = (U2,V2) with
+//       U1 = X^3 + u12X^2 + u11X + u10,   V1 = v12X^2 + v11X + v10,
+//       U2 = X^3 + u22X^2 + u21X + u20,   V2 = v22X^2 + v21X + v20,
+//   both of degree exactly 3, and the result D3 = D1 + D2 returned as
+//   <u3,u2,u1,u0,v2,v1,v0>, the degree-3 ramified tuple (no weight slot,
+//   unlike the split-model competitor files).
+//
+// Published cost: 1I + 67M (TABLE XVII "Sum" row; TABLE I prices it 1I + 67M/S,
+//   i.e. FWG does not separate squarings in its Fp tables).
+// Recount of this transcription: 1I + 64M + 3S + 105A, where A follows the
+//   thesis convention (RELATED_WORK.md "Rules" 1-3: each binary +/- is 1A, a
+//   leading unary minus is free, each division by 2 is 1A). A further 3
+//   multiplications by the literal 2 are tallied separately, as the thesis has
+//   no rule for them; verification/opcount.py charges each as an A, so its A
+//   figure is 108. Per-step M, S and A are given at each step below and sum to
+//   64M, 3S and 105A.
+//
+// Non-frequent cases are not transcribed: the table itself says "call the
+//   Cantor algorithm" at Steps 2 and 5, and that is what the fallbacks below
+//   do. D1 = D2 reaches the same route, since U1 = U2 forces r = 0. No third
+//   guard is needed: once r and sp2 are nonzero, Ut is monic of degree 4 and
+//   U3 = (F - Vt^2)/Ut is monic of degree exactly 3.
+//
+// Requires: generic/reduced_basis_arithmetic.mag for Coeff(f,n) and the
+//   ramified Cantor Add_RAM(D1,D2,f,g).
+//
+// Verification: 11310 operations against an independent Cantor implementation
+//, plus 4400 operations against Magma's own
+//   Jacobian in g3/timings/nyukai_2006_check.mag, every branch reached.
+///////////////////////////////////////////////////////////////////////////////
+
+//Curve constants, read by verification/opcount.py
+//Constant: f5,f4,f3,f2,f1,f0
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Deg3ADD_Nyukai():
+// Input:  u12,u11,u10,v12,v11,v10: Mumford coordinates of a degree 3 divisor D1
+//         u22,u21,u20,v22,v21,v20: Mumford coordinates of a degree 3 divisor D2
+//         f:                       the curve polynomial
+//
+// Output: <u3,u2,u1,u0,v2,v1,v0> for D3 = D1 + D2
+///////////////////////////////////////////////////////////////////////////////
+Deg3ADD_Nyukai:= function(u12,u11,u10,v12,v11,v10,u22,u21,u20,v22,v21,v20,f)
+
+    f5:= Coeff(f,5);
+    f4:= Coeff(f,4);
+
+    //Step 1: resultant r of U1 and U2.                            15M, 12A
+    t0:= u10 - u20;
+    t1:= u11 - u21;
+    t2:= u12 - u22;
+    t3:= t1 - u22*t2;
+    t4:= t0 - u21*t2;
+    t5:= t4 - u22*t3;
+    t6:= u20*t2 + u21*t3;
+    t7:= -(t4*t5 + t3*t6);
+    t8:= t2*t6 + t1*t5;
+    t9:= t2*t4 - t1*t3;
+    r := t0*t7 - u20*(t3*t9 + t2*t8);
+
+    //Step 2: if r = 0 then call the Cantor algorithm.
+    if IsZero(r) then //startIGNORE
+        R<x>:= Parent(f);
+        u := x^3 + u12*x^2 + u11*x + u10;
+        v := v12*x^2 + v11*x + v10;
+        w := ExactQuotient(f - v^2, u);
+        up:= x^3 + u22*x^2 + u21*x + u20;
+        vp:= v22*x^2 + v21*x + v20;
+        wp:= ExactQuotient(f - vp^2, up);
+        gen:= Add_RAM(<u,v,w>, <up,vp,wp>, f, 3);
+        return <Coeff(gen[1],3), Coeff(gen[1],2), Coeff(gen[1],1), Coeff(gen[1],0),
+                Coeff(gen[2],2), Coeff(gen[2],1), Coeff(gen[2],0)>;
+    end if;//endIGNORE
+
+    //Step 3: pseudo-inverse I = i2X^2 + i1X + i0 = r/U1 mod U2.       free
+    i2:= t9;
+    i1:= t8;
+    i0:= t7;
+
+    //Step 4: S' = sp2X^2 + sp1X + sp0 = rS = (V2 - V1)I mod U2.   10M, 30A
+    //        t9 is reassigned mid-step, exactly as printed; t10 above and the
+    //        right hand side of the reassignment both read the old value.
+    t1 := v10 - v20;
+    t2 := v11 - v21;
+    t3 := v12 - v22;
+    t4 := t2*i1;
+    t5 := t1*i0;
+    t6 := t3*i2;
+    t7 := u22*t6;
+    t8 := t4 + t6 + t7 - (t2 + t3)*(i1 + i2);
+    t9 := u20 + u22;
+    t10:= (t9 + u21)*(t8 - t6);
+    t9 := (t9 - u21)*(t8 + t6);
+    sp0:= -(u20*t8 + t5);
+    sp1:= t4 + t5 + (t9 - t10)/2 - (t7 + (t1 + t2)*(i0 + i1));
+    sp2:= t6 - (sp0 + t4 + (t1 + t3)*(i0 + i2) + (t9 + t10)/2);
+
+    //Step 5: if sp2 = 0 then call the Cantor algorithm.
+    if IsZero(sp2) then //startIGNORE
+        R<x>:= Parent(f);
+        u := x^3 + u12*x^2 + u11*x + u10;
+        v := v12*x^2 + v11*x + v10;
+        w := ExactQuotient(f - v^2, u);
+        up:= x^3 + u22*x^2 + u21*x + u20;
+        vp:= v22*x^2 + v21*x + v20;
+        wp:= ExactQuotient(f - vp^2, up);
+        gen:= Add_RAM(<u,v,w>, <up,vp,wp>, f, 3);
+        return <Coeff(gen[1],3), Coeff(gen[1],2), Coeff(gen[1],1), Coeff(gen[1],0),
+                Coeff(gen[2],2), Coeff(gen[2],1), Coeff(gen[2],0)>;
+    end if;//endIGNORE
+
+    //Step 6: S = S'/r, made monic.                        1I, 6M, 1S, 0A
+    //        w = s2 (the leading coefficient of the non-monic S) and wi = 1/w.
+    t1:= (r*sp2)^-1;
+    t2:= r*t1;
+    w := t1*sp2^2;
+    wi:= r*t2;
+    s0:= t2*sp0;
+    s1:= t2*sp1;
+
+    //Step 7: Z = X^5 + z4X^4 + z3X^3 + z2X^2 + z1X + z0 = S*U1.    4M, 15A
+    t1:= u10 + u12;
+    t2:= (s0 + s1)*(t1 + u11);
+    t3:= (s0 - s1)*(t1 - u11);
+    t4:= u12*s1;
+    z0:= u10*s0;
+    z1:= (t2 - t3)/2 - t4;
+    z2:= (t2 + t3)/2 - z0 + u10;
+    z3:= u11 + s0 + t4;
+    z4:= u12 + s1;
+
+    //Step 8: Ut = X^4 + ut3X^3 + ut2X^2 + ut1X + ut0
+    //           = (S(Z + 2*wi*V1) - wi^2*((F - V1^2)/U1))/U2.      13M, 25A
+    ut3:= z4 + s1 - u22;
+    t1 := s1*z4 - u22*ut3;
+    ut2:= z3 + s0 + t1 - u21;
+    t2 := (u22 + u21)*(ut3 + ut2);
+    t3 := s0*z3 - u21*ut2;
+    ut1:= z2 + (s0 + s1)*(z4 + z3) + wi*(2*v12 - wi) - (t1 + t2 + t3 + u20);
+    ut0:= z1 + t3 + s1*z2 + wi*(2*(v11 + s1*v12) + wi*u12) - (u22*ut1 + u20*ut3);
+
+    //Step 9: Vt = vt3X^3 + vt2X^2 + vt1X + vt0 = w*Z + V1 mod Ut.   8M, 11A
+    t1 := ut3 - z4;
+    vt0:= w*(t1*ut0 + z0) + v10;
+    vt1:= w*(t1*ut1 + z1 - ut0) + v11;
+    vt2:= w*(t1*ut2 + z2 - ut1) + v12;
+    vt3:= w*(t1*ut3 + z3 - ut2);
+
+    //Step 10: U3 = X^3 + u32X^2 + u31X + u30 = (F - Vt^2)/Ut.   5M, 2S, 9A
+    t1 := 2*vt3;
+    u32:= -(ut3 + vt3^2);
+    u31:= f5 - (ut2 + u32*ut3 + t1*vt2);
+    u30:= f4 - (ut1 + vt2^2 + u32*ut2 + u31*ut3 + t1*vt1);
+
+    //Step 11: V3 = v32X^2 + v31X + v30 = Vt mod U3.                 3M, 3A
+    //         Steps 9 and 11 both omit the Cantor sign flip; the two omissions
+    //         cancel, so (U3,V3) is the reduced representative of D1 + D2.
+    v32:= vt2 - u32*vt3;
+    v31:= vt1 - u31*vt3;
+    v30:= vt0 - u30*vt3;
+
+    //Sum: 1I + 64M + 3S + 105A, and 3 multiplications by the literal 2.
+    return <1,u32,u31,u30,v32,v31,v30>;
+end function;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// ADD_Nyukai_RAM():
+// Input:  d1,d2: <u3,u2,u1,u0,v2,v1,v0> ramified divisor tuples
+//         f:     the curve polynomial
+//
+// Output: <u3,u2,u1,u0,v2,v1,v0> for d1 + d2
+//
+// Description: TABLE XVII covers two degree 3 operands only. Every other
+//              operand degree falls back to the repository's generic Cantor,
+//              the same arrangement the other previousBest files use.
+///////////////////////////////////////////////////////////////////////////////
+ADD_Nyukai_RAM:= function(d1,d2,f)//startIGNORE
+    if IsOne(d1[1]) and IsOne(d2[1]) then
+        return Deg3ADD_Nyukai(d1[2],d1[3],d1[4],d1[5],d1[6],d1[7],
+                              d2[2],d2[3],d2[4],d2[5],d2[6],d2[7],f);
+    else
+        R<x>:= Parent(f);
+        u := d1[1]*x^3 + d1[2]*x^2 + d1[3]*x + d1[4];
+        v := d1[5]*x^2 + d1[6]*x + d1[7];
+        w := ExactQuotient(f - v^2, u);
+        up:= d2[1]*x^3 + d2[2]*x^2 + d2[3]*x + d2[4];
+        vp:= d2[5]*x^2 + d2[6]*x + d2[7];
+        wp:= ExactQuotient(f - vp^2, up);
+        gen:= Add_RAM(<u,v,w>, <up,vp,wp>, f, 3);
+        return <Coeff(gen[1],3), Coeff(gen[1],2), Coeff(gen[1],1), Coeff(gen[1],0),
+                Coeff(gen[2],2), Coeff(gen[2],1), Coeff(gen[2],0)>;
+    end if;
+end function;//endIGNORE
