@@ -85,6 +85,18 @@ def _bump(k, n=1):
     COUNT[k] = COUNT.get(k, 0) + n
 
 
+def _isint(node):
+    """Whether a factor is an integer literal, seeing through unary minus.
+
+    `-4*t2` parses as ("*", ("neg", ("int", 4)), ("var", "t2")), so a bare
+    node[0] == "int" test misses the literal behind a minus sign and charges M
+    where the cost is A.  Mirrors _leafname below.
+    """
+    while node[0] == "neg":
+        node = node[1]
+    return node[0] == "int"
+
+
 def _leafname(node):
     """The variable name a factor reduces to, seeing through unary minus.
 
@@ -396,7 +408,7 @@ def ev(node, env, F, funcs=None):
     a = ev(node[1], env, F, funcs)
     b = ev(node[2], env, F, funcs)
     if k == "*":
-        if node[1][0] == "int" or node[2][0] == "int":
+        if _isint(node[1]) or _isint(node[2]):
             _bump("A")
             return a * b
         if CONSTS or IGNORED:

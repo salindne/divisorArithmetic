@@ -164,6 +164,7 @@ Deg3ADD_Rad:= function(u12,u11,u10,v12,v11,v10,u22,u21,u20,v22,v21,v20,ccs)
 
 
 
+    // As published. Corrected below; see Thesis/chapter6.tex Frequent Case Comparisons.
     //uh3 := sp2*(sp2*u11 - sp0) - sp1*(sp2*u12 - sp1);
     uh3 := sp2*(sp0 - u11*sp2 + 2*r*(u12 - u22)) - sp1*(sp1 - sp2*u12 + 4*r) -  4*r^2;
     t1 := sp2*r;    //sp2*r
@@ -230,11 +231,6 @@ Deg3ADD_Rad:= function(u12,u11,u10,v12,v11,v10,u22,u21,u20,v22,v21,v20,ccs)
     vt1:= t1*ut1 - s2*(ut0 - l1) + v21;
     vt0:= t1*ut0 + s2*l0 + v20;
 
-    //Step 9
-    //w3:= vt3 - ut3;
-    //w2:= vt2 - ut2;
-    //w1:= vt1 - ut1;
-    //w0:= vt0 - ut0 + y0;
     w3:= -vt3 - ut3;
     w2:= -vt2 - ut2;
     w1:= -vt1 - ut1;
@@ -244,11 +240,6 @@ Deg3ADD_Rad:= function(u12,u11,u10,v12,v11,v10,u22,u21,u20,v22,v21,v20,ccs)
     upp0:= Iup*((y2^2 - w2^2)/2 + w0) - w1 - ut3*upp1 - ut2*upp2 - ut1;
 
     
-    //Step10
-    //t1:= w3 + 2*up2;
-    //vp2:=-t1*up2 + 2*up1 + w2;
-    //vp1:=-t1*up1 + 2*up0 + w1;
-    //vp0:=-t1*up0 + w0 - y0;
     vpp2:=upp2*w3 - w2;
     vpp1:=upp1*w3 - w1;
     vpp0:=upp0*w3 - w0 + y0;
@@ -380,9 +371,7 @@ Deg3DBL_Rad:= function(u2,u1,u0,v2,v1,v0,ccs)
     t1:= y2 - v2;
     t2:= u2*t1;
     k3:= 2*t1;
-    //k2:= -4*t1 + 2*y1 - 2*v1;
     k2:= -4*t2 + 2*y1 - 2*v1;
-    //k1:= 2*u2*(t2 - y1 + v1) + t2*(y2 + v2 - 4*u1) + 2*y0 - 2*v0;
     k1:= 2*u2*(t2 - y1 + v1) + t1*(y2 + v2 - 4*u1) + 2*y0 - 2*v0;
     k0:= f3 - u2*k1 - 4*u0*t1 - 2*u1*(y1 - v1) - 2*v1*v2;
 
@@ -405,6 +394,7 @@ Deg3DBL_Rad:= function(u2,u1,u0,v2,v1,v0,ccs)
 
 
     //Step 4
+    // As published. Corrected below; see Thesis/chapter6.tex Frequent Case Comparisons.
     //uh3:= sp2*(sp2*u2 - sp0) - sp1*(sp1 - sp2*u2);
     uh3 := sp2*(sp0 - sp2*u1) - sp1*(sp1 - u2*sp2) - 4*r*(r + sp1);
     t1 := sp2*r;
@@ -454,7 +444,6 @@ Deg3DBL_Rad:= function(u2,u1,u0,v2,v1,v0,ccs)
     ut2:= s1*(2*w + s1) + 2*wt1 - t1 + 2*s0;
     t2:= u1*ut2;
     ut1:= 2*w*(s0 + v2) + s1*(wt1 + 2*s0) - (ut2 + ut3)*(u1 + u2) + 2*l2 - 2*u0 + t1 + t2;
-    //ut0:= w*(2*s1*v2 - w*2*k3 + 2*v1) + s1*(l2 + u0) + s0*(s0 + wt1 + 2*u1) - t2 - u2*ut1 - u0*ut3;
     ut0:= w*(2*s1*v2 - w*k3 + 2*v1) + s1*(l2 + u0) + s0*(s0 + wt1 + 2*u1) - t2 - u2*ut1 - u0*ut3;
 
 
@@ -466,11 +455,6 @@ Deg3DBL_Rad:= function(u2,u1,u0,v2,v1,v0,ccs)
     vt1:= ut1*t1 - s2*(ut0 - l1) + v1;
     vt0:= ut0*t1 + s2*l0 + v0;
 
-    //Step9
-    //w3:= vt3 - ut3;
-    //w2:= vt2 - ut2;
-    //w1:= vt1 - ut1;
-    //w0:= vt0 - ut0 + y0;
     w3:= -vt3 - ut3;
     w2:= -vt2 - ut2;
     w1:= -vt1 - ut1;
@@ -479,11 +463,6 @@ Deg3DBL_Rad:= function(u2,u1,u0,v2,v1,v0,ccs)
     up1:= Iup*(w1 + y1) - w2 - ut3*up2 - ut2;
     up0:= Iup*((y2^2 - w2^2)/2 + w0) - w1 - ut3*up1 - ut2*up2 - ut1;
 
-    //Step10
-    //t1:= w3 + 2*up2;
-    //vp2:=-t1*up2 + 2*up1 + w2;
-    //vp1:=-t1*up1 + 2*up0 + w1;
-    //vp0:=-t1*up0 + w0 - y0;
     vp2:=up2*w3 - w2;
     vp1:=up1*w3 - w1;
     vp0:=up0*w3 - w0 + y0;
