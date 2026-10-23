@@ -333,7 +333,7 @@ ADD_inf_SPLIT:= function(d1,d2,ccs)
             if d3[6] lt 0 then
                 if IsOne(d3[1]) then
                     return Deg2BABY(d3[3],d3[2],d3[5],d3[4],d3[6],ccs); 
-                elif IsOne(d3[1]) then
+                elif IsOne(d3[2]) then
                     return Deg1BABY(d3[3],d3[5],d3[6],ccs);
                 else
                     f := ccs[1];
@@ -362,7 +362,7 @@ ADD_inf_SPLIT:= function(d1,d2,ccs)
             if d3[6] lt 0 then
                 if IsOne(d3[1]) then
                     return Deg2BABY(d3[3],d3[2],d3[5],d3[4],d3[6],ccs); 
-                elif IsOne(d3[1]) then
+                elif IsOne(d3[2]) then
                     return Deg1BABY(d3[3],d3[5],d3[6],ccs);
                 else
                     f := ccs[1];
