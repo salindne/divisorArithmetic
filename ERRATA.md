@@ -1537,3 +1537,97 @@ invocation. The provision check therefore matches on basename, which is the only
 question available. **Any run reporting a nonzero count should be assumed to be measuring its own
 path resolution until proved otherwise** -- three of the four attempts were, and the fourth still
 needed its population pinned before it meant anything.
+
+## E27: `rad_2019.mag` carried superseded transcription drafts beside its live formulas
+
+**`g3/timings/formulas/previousBest/rad_2019.mag`.** Housekeeping, no behaviour change.
+
+The file is this repository's transcription of the genus-3 split frequent-case
+formulas of Rezai Rad, Jacobson and Scheidler 2019, used as the previous-best
+competitor in the genus-3 split timings. It carried commented-out earlier forms
+directly above the live line that superseded them, in nineteen places across seven
+blocks. Those commented forms were **this repository's own transcription drafts,
+not the published text**, and reading them as the published formulas invites a
+false conclusion about what the comparison measures.
+
+Removed, with the live line in each case left untouched:
+
+    ADD Step 9    w3, w2, w1, w0      sign of the vt term
+    ADD Step 10   t1, vp2, vp1, vp0   superseded by the vpp form
+    DBL           k2                  t1 in place of t2
+    DBL           k1                  t2 in place of t1
+    DBL           ut0                 a spurious factor 2 on k3
+    DBL Step 9    w3, w2, w1, w0      sign of the vt term, the ADD block's twin
+    DBL Step 10   t1, vp2, vp1, vp0   superseded by the vpp form, the ADD twin
+
+`k2` and `k1` are a transposed pair: the draft used `t1` where the live line uses
+`t2` and `t2` where it uses `t1`, with `t2 := u2*t1` defined two lines above.
+
+**Two commented lines are NOT drafts and are kept**, now labelled as such: the
+`uh3` lines at the head of ADD Step 3 and DBL Step 4. Those are the formulas **as
+published**, and the live lines below them are the corrections this work made to
+genuine errors in the published tables. `Thesis/chapter6.tex`, "Frequent Case
+Comparisons", states both corrections in full and prices them at `1M + 1S + 8A`
+for the addition and `1M + 4A` for the doubling.
+
+**The comparison row does not move.** The quoted Rezai Rad costs, `3DBL 85M 2S
+163A` and `3ADD 75M 2S 138A` at `Thesis/chapter6.tex` and `README.md`, already
+include the two published-error corrections and were never affected by the
+drafts, which were inert comments. Verified: the file's live assignment count is
+unchanged at 312 across this edit.
+
+**Left alone.** The alternative precompute constants at lines 11 to 32 are
+explanatory, showing how `ComputeVpl` is made explicit rather than recording a
+superseded attempt. One further superseded line remains at `:102`, a `vt`
+reduction rewritten as two statements; it sits in the generic dispatcher rather
+than an explicit formula and is kept pending a decision on that routine.
+
+## E28: the published Rezai Rad operation counts were computed, not measured
+
+**`Thesis/chapter6.tex:2529-2530`, mirrored at `README.md`.** Counted three ways.
+
+The thesis prices Rezai Rad et al. 2019 at `3DBL 85M 2S 163A 0C` and
+`33ADD 75M 2S 138A 0C`. Counting `g3/timings/formulas/previousBest/rad_2019.mag`
+gives:
+
+    Deg3DBL_Rad   1I + 85M + 3S + 164A + 0C
+    Deg3ADD_Rad   1I + 75M + 3S + 135A + 0C
+
+by hand statement by statement, by `verification/maginterp.py` under
+`opcount.py` conventions, and by a standalone static counter, all three agreeing.
+M matches the published row exactly in both routines. The implementation itself
+is correct: 1800 additions and 40 doublings agree with `Add_SPLIT_POS` and
+`Double_SPLIT_POS` in Magma.
+
+**The S delta.** `y2^2` is evaluated inline in the last line of each routine, in
+`Iup*((y2^2 - w2^2)/2 + w0)`. `y2 = f6/2` is a curve constant and
+`Precompute_Rad` already forms both it and its square, so the source prices that
+as precomputation. Reading it from `ccs` would give `2S` with M, A, C and I
+unchanged.
+
+**The A deltas.** The published row is the paper's cost plus the thesis's own
+stated corrections, never a measurement. Restoring the as-published `uh3` lines
+the file keeps as comments and recounting gives `3DBL 84M 3S 161A` and
+`33ADD 74M 2S 128A`, so the corrections actually cost `+1M +3A` and
+`+1M +1S +7A` where `Thesis/chapter6.tex` states `+1M +4A` and `+1M +1S +8A`.
+Each stated correction is one addition high, the price of a literal 4 counted as
+one doubling rather than two.
+
+**Resolution, and what it moves.** Publish the measured figures. Adopting this changes
+`Thesis/chapter6.tex:2530` and therefore the four savings claims at `:2557-2563` that
+`Thesis/ERRATA.md` E-T17 has just corrected: the nch2 doubling becomes an additional `1S`
+saving `12M + 79A`, and the nch2 addition no additional `S` saving `9M + 62A`. This entry
+also finds the two correction prices at `:2549` and `:2553` are each one addition high.
+All of that is applied, in the same change set: the row at `:2530`, the four savings
+claims, and both correction prices. `Thesis/ERRATA.md` E-T17 records the thesis side. They are the cost of the formulas
+this repository implements, times and compares, they are reproducible three ways,
+and the operation they price is verified against Magma. The row then reads as the
+cost of this repository's transcription rather than the paper's schedule.
+
+**A counter defect found on the way, fixed in this change.** `verification/maginterp.py:399`
+tests `node[1][0] == "int" or node[2][0] == "int"` to price a product by a
+literal as an addition. In `k2:= -4*t2 + 2*y1 - 2*v1;` the literal sits behind a
+`neg` node, so the product was charged M. `_leafname` already sees through `neg`
+for the curve-constant test; the literal test did not. The pattern occurs at six
+sites repository wide, all of them in `previousBest/`, never in this work's own
+formulas, so no published own-work count moves.
