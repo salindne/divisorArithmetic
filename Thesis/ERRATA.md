@@ -23,7 +23,7 @@ that is stated plainly rather than left to the reader to assume.
 |---|---|
 | files differing | **3** (`chapter4.tex`, `chapter5.tex`, `chapter6.tex`) |
 | files present only here | **2** (`thesis.tex`, the reconstructed master; `ERRATA.md`, this file) |
-| entries | **16** (E-T1 … E-T16) |
+| entries | **17** (E-T1 … E-T17) |
 | published state | commit `399c817` |
 
 `thesis.tex` is not a divergence in the sense the rest of this file records: it was never in
@@ -463,6 +463,70 @@ figures by execution and a hand count of the changed region reproduces the same
 `+1M -12A`, two methods sharing no code. `verification/selftest.py`'s published
 pins for `33ADD n=0,0` and `3DBL n=0` are updated with the reason recorded
 inline, and every other pinned cell still matches its published value.
+
+## E-T17 — E-T10's new counts were not carried into the prose or the comparison table
+
+**`chapter6.tex:2536`, `:2557-2563`, `:2566`; `chapter5.tex:1042`, `:2493`.**
+**Arithmetic, reproduced from the tables themselves.**
+
+E-T10 moved six cells in `tab:g3splitfcostsDBL` and `tab:g3splitfcostsADD` by
+`+1M -12A`. The same quantities are restated in three other places that were not
+updated, so the chapter quoted two different costs for one formula.
+
+**The comparison table.** `tab:g3splitfcomparisons`'s "This work" row at `:2536`
+still held the pre-E-T10 values:
+
+    &72&4&97&0  &65&3&85&0   &71&4&86&1 &65&3&80&0   becomes
+    &73&4&85&0  &66&3&73&0   &72&4&74&1 &66&3&68&0
+
+**The savings paragraph**, `:2557-2563`. All four claims are differences against
+the Rezai Rad row at `:2530` and the Sutherland row at `:2533`, so all four move.
+Each published figure reproduces exactly from the pre-E-T10 cells, which is how
+the dependency was established:
+
+    nch2 DBL  13M + 66A  ->  12M + 79A     see the two notes below
+    nch2 ADD  10M + 51A  ->   9M + 62A     see the two notes below
+    ch2  DBL  18M + 30A  ->  17M + 42A     (89-71=18, 89-72=17; 116-86=30, 116-74=42)
+    ch2  ADD  16M + 38A  ->  15M + 50A     (81-65=16, 81-66=15; 118-80=38, 118-68=50)
+
+and against Sutherland at `:2566`, `2M + 4S + 30A` and `8M + 3S + 42A` become
+`1M + 4S + 42A` and `7M + 3S + 54A`.
+
+**The nch2 pair is differenced against a row that moved in the same change set.**
+`ERRATA.md` E28 found the Rezai Rad row at `:2530` was the paper's cost plus this
+work's stated corrections rather than a measurement, and the measured figures
+`3DBL 85M 3S 164A` and `3ADD 75M 3S 135A` are now in the table. The two nch2
+claims are differenced against those, which is why the doubling carries `1S`
+rather than `2S` and the addition no `S` at all. The two ch2 claims are unchanged,
+since no characteristic 2 implementation exists to measure. E28 also found the two
+correction prices at `:2549` and `:2553` each one addition high; both are corrected
+here to `1M + 1S + 7A` and `1M + 3A`.
+
+**One of those was already wrong.** The published `10M + 51A` does not reproduce:
+`138 - 85 = 53`, not 51. The `51` is the A value of the *arbitrary* column of the
+same Degree 3 row, so the published sentence appears to have taken one figure from
+the wrong column. The corrected value is `9M + 65A`, which is `138 - 73`. This is a
+pre-existing fault corrected here rather than a consequence of E-T10.
+
+**Two genus-2 knock-ons of earlier entries.**
+
+`chapter5.tex:1042`, from E-T7: the char-2 doubling saving against Lange reads
+`1M + 1S + 8A` and should read `1M + 1S + 9A`. E-T7 moved our cell from `21,4,25,0`
+to `21,4,24,0`; Lange's is `22,5,33,0`, so the A saving is `33 - 24 = 9`.
+
+`chapter5.tex:2493`, from E-T8: the text claims `at least 1M + 2A` is saved in the
+Degree 0 and 2 ADD operations over arbitrary fields. After E-T8 the 2DWN and 2UP
+cells are `6,0,17,3` against EJS's `6,0,21,4` and `6,0,19,4`, so M now ties at 6
+and the claim should read `at least 2A + 1C`. Leaving `1M` asserts a saving the
+table denies.
+
+**Not applied here, and why.** Several further sites were identified in the same
+sweep and are deliberately left alone: the derivation blocks that still describe
+the pre-adjugate formulas (E-T10 already records this), a proposed formula repair
+at `:531`, a missing distinctness precondition at `chapter5.tex:828`, three
+algorithm step references in chapter 6, and the split-model `f_5` sentence at
+`chapter5.tex:1167`, which E-T9 explicitly instructs not to touch. Each needs a
+judgement this entry does not make.
 
 ## E-T11 — `\EndIf` lines were numbered, so every prose step reference drifted
 
