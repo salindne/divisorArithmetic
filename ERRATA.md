@@ -1631,3 +1631,35 @@ literal as an addition. In `k2:= -4*t2 + 2*y1 - 2*v1;` the literal sits behind a
 for the curve-constant test; the literal test did not. The pattern occurs at six
 sites repository wide, all of them in `previousBest/`, never in this work's own
 formulas, so no published own-work count moves.
+
+## E29: a repeated condition left the degree 1 baby step unreachable
+
+**`g2/timings/formulas/previousBest/inf_2010.mag:336` and `:365`.** Latent, fixed.
+
+Both sites read:
+
+    if IsOne(d3[1]) then      return Deg2BABY(...)
+    elif IsOne(d3[1]) then    return Deg1BABY(...)
+
+The two conditions are identical, so the `elif` can never fire and the degree 1
+baby step has never executed.
+
+**The predicate.** `Deg12ADD_inf_SPLIT` returns
+`<Coefficient(u,2), Coefficient(u,1), Coefficient(u,0), Coefficient(v,1), Coefficient(v,0), n>`,
+so `d3[1]` is 1 exactly when `u` has degree 2, and `d3[2]` is 1 when it has
+degree 1. The `elif` should test `d3[2]`, which is now what it does.
+
+**Severity: latent, no published result is affected.** The `else` arm the degree 1
+case currently falls into builds `<R!1, V, f - V^2, d3[6]>` for both operands,
+which is the identity rather than `d3`, so a degree 1 result would come back as
+the identity. That would be a wrong answer. It has not been one, because the
+branch is unreachable: instrumented with a sentinel return and run over 1395
+random additions across `GF(7)`, `GF(11)`, `GF(13)`, `GF(101)` and `GF(1009)`,
+the branch fired zero times. Reaching it needs the degree 1 plus degree 2 path,
+a negative distance, and a degree 1 result together.
+
+**Verification.** Differential run of the current and fixed files over the same
+1395 additions against `Add_SPLIT_POS`: both agree on 1394 and disagree on the
+same single case, so the fix changes no reachable behaviour. That one
+disagreement is present in both and is not caused by this entry; it is
+unexplained and worth a look.

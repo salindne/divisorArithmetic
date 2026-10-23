@@ -169,13 +169,16 @@ odd-characteristic sources publish only a combined M/S and none publishes a C.
 The whole comparison in one table. Every entry is the **frequent case** (the
 only thing prior work prices) and every operation costs exactly **1I**, so the
 columns are combined **M+S** and **A**. Ours are exact, per the note above;
-prior-work A counts are derived here rather than published by their authors —
-`†` marks those.
+prior-work A counts are not published by their authors, so they are obtained
+here: `†` marks ones still derived by reading the source, and unmarked prior-work
+A counts are measured from an implementation in this repository. The nch2 cells
+are now measured, from `g3/timings/formulas/previousBest/nyukai_2006_{ADD,DBL}.mag`,
+and they reproduce the figures previously derived.
 
 | Case | Previous best | Ours | Standing |
 |---|---|---|---|
-| **nch2 ADD** | **67 M+S, 105A†** — Nyukai 2006 (GKP 2004: 70, 105†) | **56 M+S, 0C, 59A** | **ahead on both axes, and now on the same curve form**: 11 better than Nyukai and 14 better than GKP on M+S, 46 fewer additions. The `f₆` depression landed, so C is 0 and the comparison is apples-to-apples |
-| **nch2 DBL** | **68 M+S, 93A†** — Nyukai 2006 (GKP 2004: 70, 90†) | **58 M+S, 0C, 61A** | **ahead on both axes**: 10 better than Nyukai and 12 better than GKP on M+S, 32 fewer additions. Derived in PR6 at `h = 0` AND `f₆ = 0`, so it is on this lane's curve form rather than borrowing the arb doubling and paying h-terms these curves do not have |
+| **nch2 ADD** | **67 M+S, 105A** — Nyukai 2006, measured | **56 M+S, 0C, 59A** | **ahead on both axes, and now on the same curve form**: 11 better than Nyukai on M+S, 46 fewer additions. The `f₆` depression landed, so C is 0 and the comparison is apples-to-apples |
+| **nch2 DBL** | **68 M+S, 93A** — Nyukai 2006, measured | **58 M+S, 0C, 61A** | **ahead on both axes**: 10 better than Nyukai on M+S, 32 fewer additions. Derived in PR6 at `h = 0` AND `f₆ = 0`, so it is on this lane's curve form rather than borrowing the arb doubling and paying h-terms these curves do not have |
 | **ch2 ADD** | **67 M+S, 100A†** — GKP 2004, `deg h = 3, h₂ = 0` (their `f₆ = 0` variant: 68, 105†) | **54 M+S, 0C, 62A** | **ahead on both axes**: 13 better on M+S and 38 fewer additions against their `h₂ = 0` variant, 14 and 43 against their `f₆ = 0` one. Note the normal forms differ — ours is any degree-3 `h` with `f₆ = 0`; see the reconciliation note below |
 | **ch2 DBL** | **69 M+S, 107A†** — GKP 2004, `deg h = 3, f₆ = 0` (their `h₂ = 0` variant: 72, 113–114†) | **55 M+S, 2C, 55A** | **ahead on both axes**: 14 better on M+S and 52 fewer additions. The doubling gains most from characteristic 2, because half of every integer multiplier in the derivative vanishes |
 | **arb ADD** | **none** | **56 M+S, 1C, 71A** | No published arbitrary-characteristic genus-3 ramified formulas exist. Against the thesis's own *split* Degree-3 ADD (68 M+S, 12C, 87A): **12 better on M+S, 11 better on C, 16 better on A**, and a tie on S alone (3 vs 3) |

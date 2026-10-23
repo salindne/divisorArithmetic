@@ -7,7 +7,7 @@
     "families_affine": 15,
     "families_projective": 1,
     "formula_files": 41,
-    "competitor_files": 6,
+    "competitor_files": 8,
     "excluded_files": 10,
     "unclaimed_formula_files": 0
   },
@@ -219,6 +219,8 @@
     "g2/timings/formulas/previousBest/geo_noTrade_2011.mag",
     "g2/timings/formulas/previousBest/inf_2010.mag",
     "g2/timings/formulas/previousBest/lange_2005.mag",
+    "g3/timings/formulas/previousBest/nyukai_2006_ADD.mag",
+    "g3/timings/formulas/previousBest/nyukai_2006_DBL.mag",
     "g3/timings/formulas/previousBest/rad_2019.mag",
     "g3/timings/formulas/previousBest/sutherland_2019.mag"
   ],

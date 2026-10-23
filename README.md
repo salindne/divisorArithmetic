@@ -397,9 +397,11 @@ What this project contributes beyond the published thesis, every correction, com
 | [geo_2011.mag](g2/timings/formulas/previousBest/geo_2011.mag) | 2 | ramified | Costello and Lauter 2011, as published |
 | [geo_noTrade_2011.mag](g2/timings/formulas/previousBest/geo_noTrade_2011.mag) | 2 | ramified | Costello and Lauter 2011, with one trade undone here |
 | [rad_2019.mag](g3/timings/formulas/previousBest/rad_2019.mag) | 3 | split | Rezai Rad et al. 2019 |
+| [nyukai_2006_ADD.mag](g3/timings/formulas/previousBest/nyukai_2006_ADD.mag) | 3 | ramified | Nyukai, Matsuo, Chao and Tsujii 2006 |
+| [nyukai_2006_DBL.mag](g3/timings/formulas/previousBest/nyukai_2006_DBL.mag) | 3 | ramified | Nyukai, Matsuo, Chao and Tsujii 2006 |
 | [sutherland_2019.mag](g3/timings/formulas/previousBest/sutherland_2019.mag) | 3 | split | Sutherland 2019 |
 
-Only [lange_2005.mag](g2/timings/formulas/previousBest/lange_2005.mag) names an author, `// Author: Sebastian Lindner,2019`, which is accurate about who wrote the transcription rather than who derived the mathematics.  The other five carry no author line.  [ERRATA.md](ERRATA.md) records that header.  All six fall back on Cantor's algorithm in the cases their source did not develop, so the timed chains are complete.
+Only [lange_2005.mag](g2/timings/formulas/previousBest/lange_2005.mag) names an author, `// Author: Sebastian Lindner,2019`, which is accurate about who wrote the transcription rather than who derived the mathematics.  The other seven carry no author line.  [ERRATA.md](ERRATA.md) records that header.  All eight fall back on Cantor's algorithm in the cases their source did not develop, so the timed chains are complete.
 
 - **Lange 2005.**  T. Lange, "Formulae for Arithmetic on Genus 2 Hyperelliptic Curves," Applicable Algebra in Engineering, Communication and Computing 15, 295–328, 2005.  Bib key `Lange_explicit_2005`.  Degree 1 and 2 addition, degree 2 addition, degree 2 doubling and the special output cases of each.
 - **Erickson, Jacobson and Stein 2011.**  S. Erickson, M. J. Jacobson and A. Stein, "Explicit formulas for real hyperelliptic curves of genus 2 in affine representation," Advances in Mathematics of Communications 5(4), 623–666, 2011.  Bib key `EricksonJacobsonStein_realg2_2011`.  The file's Baby Step and Inverse Baby Step operations are the Degree 0 and 2 ADD with up and down adjust of this work, which is the comparison the thesis draws in chapter 5.  The filename says 2010 and the journal issue is 2011; the later date is the one every citation here uses.

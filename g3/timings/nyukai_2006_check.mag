@@ -1,0 +1,159 @@
+clear;
+///////////////////////////////////////////////////////////////////////////////
+/// CORRECTNESS CHECK FOR THE NYUKAI 2006 GENUS 3 RAMIFIED COMPETITOR /////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Checks formulas/previousBest/nyukai_2006_ADD.mag and nyukai_2006_DBL.mag
+// against Magma's own Jacobian arithmetic on random nch2 ramified genus 3
+// curves (f monic of degree 7, f6 = 0, h = 0).
+//
+// Every call is also classified from outside the formulas, so the branch
+// tallies below are evidence rather than assertion: the dispatcher fallback,
+// the Step 2 resultant fallback, the Step 5 (ADD) / Step 6 (DBL) leading
+// coefficient fallback, and the table's own frequent case.
+//
+// Run from g3/timings/ :
+//     ../../tools/magma-docker/magma.sh nyukai_2006_check.mag
+//
+// Replay a failing draw with RND_SEED=<n>, printed in the banner.
+///////////////////////////////////////////////////////////////////////////////
+
+load "../../generic/reduced_basis_arithmetic.mag";
+load "formulas/previousBest/nyukai_2006_ADD.mag";
+load "formulas/previousBest/nyukai_2006_DBL.mag";
+
+FIELDS  := [11,13,17,19,23,29,31,37,41,43];
+DIVISORS:= 40;
+
+if GetEnv("RND_SEED") ne "" then
+    SetSeed(StringToInteger(GetEnv("RND_SEED")));
+end if;
+
+
+//Random f, monic separable of degree 7 with f6 = 0 and one place at infinity.
+RandomRamG3:= function(q)
+    F   := GF(q);
+    R<x>:= PolynomialRing(F);
+    while true do
+        f:= x^7 + Random(F)*x^5 + Random(F)*x^4 + Random(F)*x^3
+                + Random(F)*x^2 + Random(F)*x + Random(F);
+        ok:= false;
+        try
+            C := HyperellipticCurve(f);
+            ok:= (#PointsAtInfinity(C) eq 1) and (Degree(f) eq 7);
+        catch e
+            ok:= false;
+        end try;
+        if ok then return f; end if;
+    end while;
+end function;
+
+//Magma Jacobian point to the seven wide ramified tuple the formulas take.
+ToTuple:= function(D)
+    u:= D[1]; v:= D[2];
+    return <Coeff(u,3),Coeff(u,2),Coeff(u,1),Coeff(u,0),
+            Coeff(v,2),Coeff(v,1),Coeff(v,0)>;
+end function;
+
+//The formulas' tuple back to a (u,v) pair over R.
+ToPoly:= function(t,R)
+    x:= R.1;
+    return t[1]*x^3 + t[2]*x^2 + t[3]*x + t[4], t[5]*x^2 + t[6]*x + t[7];
+end function;
+
+//Which branch of Deg3ADD_Nyukai an operand pair reaches, decided independently
+//of the formulas: "dispatch", "step2" (r = 0), "step5" (sp2 = 0), "frequent".
+ClassifyADD:= function(A,B)
+    if Degree(A[1]) ne 3 or Degree(B[1]) ne 3 then return "dispatch"; end if;
+    if IsZero(Resultant(A[1],B[1])) then return "step2"; end if;
+    S:= ((B[2] - A[2])*InverseMod(A[1],B[1])) mod B[1];
+    return IsZero(Coefficient(S,2) ) select "step5" else "frequent";
+end function;
+
+//The same for Deg3DBL_Nyukai: Step 2 is r = Res(U1,V1) = 0, Step 6 is
+//sp2 = 0, i.e. deg(Z/V1 mod U1) < 2 with Z = ((F - V1^2)/U1) mod U1.
+ClassifyDBL:= function(A,f)
+    if Degree(A[1]) ne 3 then return "dispatch"; end if;
+    if IsZero(A[2]) or IsZero(Resultant(A[1],A[2])) then return "step2"; end if;
+    Z:= ExactQuotient(f - A[2]^2, A[1]) mod A[1];
+    S:= (Z*InverseMod(A[2],A[1])) mod A[1];
+    return IsZero(Coefficient(S,2)) select "step6" else "frequent";
+end function;
+
+
+printf "///////////////////////////////////////////////////////////////////////\n";
+printf "//\n";
+printf "// Nyukai 2006 genus 3 ramified competitor, against Magma's Jacobian.\n";
+printf "// - %o fields, %o random divisor draws each.\n", #FIELDS, DIVISORS;
+sd, st:= GetSeed();
+printf "// - Random seed %o, step %o. Replay this run with RND_SEED=%o\n", sd, st, sd;
+printf "//";
+
+errors:= 0;
+hits  := AssociativeArray();
+for k in ["frequent","step2","step5","step6","dispatch"] do hits[k]:= 0; end for;
+
+for q in FIELDS do
+    printf "\n//    FF(%o)", q;
+    R<x>:= PolynomialRing(GF(q));
+    f   := RandomRamG3(q);
+    C   := HyperellipticCurve(f);
+    J   := Jacobian(C);
+
+    for i in [1..DIVISORS] do
+        D1:= Random(J);
+        D2:= Random(J);
+        D3:= Random(J);
+
+        //Random pairs for the frequent case, then the forced ones that drive
+        //the dispatcher and the Step 2 resultant fallback.
+        pairs:= [<D1,D2>, <D1,D3>, <D3,D2>, <D1,D1>, <D1,-D1>,
+                 <D1,J!0>, <J!0,D2>];
+
+        for p in pairs do
+            A:= p[1]; B:= p[2];
+            cantor:= A + B;
+            got   := ADD_Nyukai_RAM(ToTuple(A), ToTuple(B), f);
+            gu,gv := ToPoly(got,R);
+            k     := ClassifyADD(A,B);
+            hits[k]:= hits[k] + 1;
+            if gu ne cantor[1] or gv ne cantor[2] then
+                errors +:= 1;
+                printf "\nADD MISMATCH over FF(%o), branch %o\n  f  = %o\n", q, k, f;
+                printf "  D1 = %o\n  D2 = %o\n", A, B;
+                printf "  cantor = %o, %o\n  nyukai = %o, %o\n",
+                       cantor[1], cantor[2], gu, gv;
+            end if;
+        end for;
+
+        for A in [D1, D2, D3, J!0] do
+            cantor:= A + A;
+            got   := DBL_Nyukai_RAM(ToTuple(A), f);
+            gu,gv := ToPoly(got,R);
+            k     := ClassifyDBL(A,f);
+            hits[k]:= hits[k] + 1;
+            if gu ne cantor[1] or gv ne cantor[2] then
+                errors +:= 1;
+                printf "\nDBL MISMATCH over FF(%o), branch %o\n  f  = %o\n", q, k, f;
+                printf "  D  = %o\n", A;
+                printf "  cantor = %o, %o\n  nyukai = %o, %o\n",
+                       cantor[1], cantor[2], gu, gv;
+            end if;
+        end for;
+    end for;
+end for;
+
+total:= &+[hits[k] : k in ["frequent","step2","step5","step6","dispatch"]];
+printf "\n//\n";
+printf "// branch hits: frequent %o, ADD step 2 / DBL step 2 %o, ADD step 5 %o,\n",
+       hits["frequent"], hits["step2"], hits["step5"];
+printf "//              DBL step 6 %o, dispatcher fallback %o\n",
+       hits["step6"], hits["dispatch"];
+if errors eq 0 then
+    printf "// PASS: %o operations, no mismatch against Magma.\n", total;
+else
+    printf "// FAIL: %o mismatches out of %o operations.\n", errors, total;
+end if;
+printf "///////////////////////////////////////////////////////////////////////\n";
+
+quit;
